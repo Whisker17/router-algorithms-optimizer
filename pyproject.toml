@@ -1,0 +1,46 @@
+[project]
+name = "{{PROJECT_NAME}}"
+version = "0.1.0"
+description = "{{PROJECT_DESCRIPTION}}"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+# No build-system on purpose: uv treats this as a virtual project (deps only, nothing
+# installed as a package), which keeps `uv sync` green while the skeleton is empty.
+# When real packages land, add hatchling here and list them, mirroring
+# docs/DESIGN.md §4.2:
+#
+# [build-system]
+# requires = ["hatchling"]
+# build-backend = "hatchling.build"
+#
+# [tool.hatch.build.targets.wheel]
+# packages = ["<module1>", "<module2>"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "strict"
+# The template is a virtual project (nothing installed as a package), so tests import
+# from the repo root via pythonpath. Remove if the project later installs as a package.
+pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+# Mirror the wheel packages list once modules land:
+files = ["main.py"]

@@ -1,0 +1,53 @@
+# Secrets — never commit these (API keys, private keys, webhooks)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Runtime data
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Package manager caches
+.uv/
+.cache/
+
+# Test / lint / type-check artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Docker
+docker-compose.override.yml
+
+# Per-deployment config overrides (see config/README.md)
+config/*.local.yaml
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

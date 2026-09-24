@@ -1,0 +1,24 @@
+# Optional deploy skeleton — SETUP.md asks whether to keep or delete this.
+services:
+  app:
+    build: .
+    image: "{{PROJECT_NAME}}:latest"
+    container_name: "{{PROJECT_NAME}}"
+    # unless-stopped, not always: restarts after a crash or host reboot, but honors a
+    # deliberate `docker compose stop` across a later reboot — an emergency stop must
+    # not silently undo itself.
+    restart: unless-stopped
+    init: true
+    # Raise if shutdown does real work (flushing state, closing in-flight operations).
+    stop_grace_period: 30s
+    env_file:
+      - .env
+    volumes: []
+      # Typical additions once the project takes shape:
+      # - ./config/app.local.yaml:/app/config/app.yaml:ro   # editable without rebuild
+      # - ./data:/app/data                                  # state persisted across restarts
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Orchestrate"
+  short_description: "Drive a set of tracker issues to merged and closed"
+policy:
+  allow_implicit_invocation: false
