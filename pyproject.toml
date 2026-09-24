@@ -3,7 +3,9 @@ name = "router-algorithms-optimizer"
 version = "0.1.0"
 description = "Offline benchmark for Mantle swap-routing algorithms"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pyyaml>=6.0.3",
+]
 
 [dependency-groups]
 dev = [
@@ -11,6 +13,7 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "ruff>=0.6",
     "mypy>=1.11",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 
 # No build-system on purpose: uv treats this as a virtual project (deps only, nothing
@@ -43,4 +46,4 @@ pythonpath = ["."]
 python_version = "3.12"
 strict = true
 # Mirror the wheel packages list once modules land:
-files = ["main.py"]
+files = ["main.py", "snapshot", "tests"]

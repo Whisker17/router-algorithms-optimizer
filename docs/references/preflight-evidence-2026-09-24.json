@@ -1,0 +1,97 @@
+{
+  "checked_sources": [
+    "uniswap_v3",
+    "agni_v3",
+    "fusionx_v3",
+    "moe_classic_v1",
+    "moe_lb_v2_2"
+  ],
+  "generated_at": "2026-09-24T11:36:18.068718+00:00",
+  "issues": [],
+  "known_blockers": [
+    {
+      "blocks": [
+        "I04"
+      ],
+      "description": "Explorer-verified-source retrieval was not obtained for this deployment in this pass (see catalog-wide note below); identity above rests on Uniswap Labs' own deployments feed plus the on-chain fingerprint, which is strong but is not itself a byte-for-byte verified-source diff.\n",
+      "id": "uniswap_v3_explorer_source",
+      "source_key": "uniswap_v3"
+    },
+    {
+      "blocks": [
+        "I03",
+        "I04"
+      ],
+      "description": "api.mantlescan.xyz getsourcecode requires a paid Etherscan-V2 API key (none provisioned); explorer.mantle.xyz returned 502 for the whole session; mantlescan.xyz's web UI returns 403 to scripted fetches; Sourcify (sourcify.dev) has no full/partial match for factory, pool_deployer or example_pool on chain 5000. Byte-exact source/commit pin for Agni's fork is therefore unconfirmed pending explorer/API access, a manual bytecode diff against a compiled PancakeSwap-v3-core build, or a direct response from the Agni team.\n",
+      "id": "agni_v3_explorer_source",
+      "source_key": "agni_v3"
+    },
+    {
+      "blocks": [
+        "I04"
+      ],
+      "description": "No authoritative Agni Finance documentation site with a contracts page was confirmed reachable in this pass (docs.agni.finance did not resolve; the top hit for an \"agni\" GitBook space, agni.gitbook.io, is an empty placeholder \"First Workspace\" unrelated to the protocol). The addresses above rest on independent on-chain discovery (a live Agni-labeled pool from GeckoTerminal's dex listing, then pool.factory()/factory.poolDeployer() round-trips) rather than a project-published contracts page.\n",
+      "id": "agni_v3_official_docs_unconfirmed",
+      "source_key": "agni_v3"
+    },
+    {
+      "blocks": [
+        "I05"
+      ],
+      "description": "Same explorer/API access gap as agni_v3_explorer_source (mantlescan keyed-API/403, explorer.mantle.xyz 502, no Sourcify match). Byte-exact commit pin for FusionX's fork is unconfirmed despite the strong address corroboration above.\n",
+      "id": "fusionx_v3_explorer_source",
+      "source_key": "fusionx_v3"
+    },
+    {
+      "blocks": [
+        "I07"
+      ],
+      "description": "No candidate upstream repository has been matched to the on-chain MoeFactory/MoePair bytecode (solc 0.8.20, EIP-1167-style minimal-proxy clones). lfj-gg/joe-core is confirmed NOT a match (see confidence_basis). Explorer-verified-source retrieval is also blocked (same mantlescan keyed-API/403 and explorer.mantle.xyz 502 issues as the v3 sources). Until a source is matched or the Merchant Moe team responds, Moe Classic's swap math must not be migrated from an assumed reference \u2014 I07 needs either (a) explorer/API access, (b) a direct source from the Merchant Moe team, or (c) narrow independent differential fixtures (fixed-block quoter/simulation-only admission) that do not depend on matching a Solidity source file, per DESIGN \u00a72.3's \"otherwise a fork simulation\" fallback. Recorded as a hard blocker, not a generic-AMM substitute.\n",
+      "id": "moe_classic_v1_no_source_match",
+      "source_key": "moe_classic_v1"
+    },
+    {
+      "blocks": [
+        "I08"
+      ],
+      "description": "Same explorer/API access gap as the v3 sources (no getsourcecode key, explorer.mantle.xyz down, no Sourcify match). The joe-v2@v2.2.0 match above is from independent behavioral/metadata fingerprinting, not an explorer source diff; I08 should still obtain one if access becomes available, to catch any Merchant-Moe-specific patch on top of v2.2.0.\n",
+      "id": "moe_lb_v2_2_explorer_source",
+      "source_key": "moe_lb_v2_2"
+    }
+  ],
+  "observed_block": {
+    "baseFeePerGas": "0xba43b7400",
+    "blobGasUsed": "0x0",
+    "difficulty": "0x0",
+    "excessBlobGas": "0x0",
+    "extraData": "0x0100000032000000040000000ba43b7400",
+    "gasLimit": "0x3938700",
+    "gasUsed": "0xb4db",
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "miner": "0x4200000000000000000000000000000000000011",
+    "mixHash": "0xe5346f61447f0760e1955abe12323f8345d695178c3a5b206b00362c4641f0f9",
+    "nonce": "0x0000000000000000",
+    "number": "0x606048e",
+    "parentBeaconBlockRoot": "0xd431623345241fd920e557709a82ce9c848e04ffc8dd82b46fd8daad36fcfce2",
+    "parentHash": "0xdf15b9d15d798a16802cba429566feb344eb2b67e2580e9abea231f617c96b85",
+    "receiptsRoot": "0x74cf646e910ffb147115148f6beeafc558ab5fa6b5655156e03cf67e977e81f5",
+    "requestsHash": "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+    "size": "0x390",
+    "stateRoot": "0x9a57fefb9ba58cd4710814c960ba99055136e73333a2c20f15d6a1579e237a14",
+    "timestamp": "0x6ab4fb24",
+    "transactions": [
+      "0xdb5f69bb4e78a1a765dd1f5005d58cfadc6d35a959eaf2e2b911af7bbcaf7728"
+    ],
+    "transactionsRoot": "0x33aa7ee55bea0c92467de400bb3930f79aa886a2fa01179e403a58b617363477",
+    "uncles": [],
+    "withdrawals": [],
+    "withdrawalsRoot": "0x042858dc04c81802e0cf07c4d752e20c1d24f4cd96ace09d7fd6dc9f05db4fa1"
+  },
+  "observed_chain_id": 5000,
+  "ok": true,
+  "rpc_cache_hits": 0,
+  "rpc_call_count": 48,
+  "rpc_url": "https://rpc.mantle.xyz"
+}
