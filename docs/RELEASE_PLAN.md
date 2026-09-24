@@ -8,12 +8,15 @@ Team: Whisker-Personal (`WHI`), UUID `37abcce9-0070-470b-a57b-d8213047c418`.
 
 ## Published releases
 
-| Version | Linear Release | ID | Issues |
+| Version | Linear Release | ID | Original product-plan issues |
 | --- | --- | --- | ---: |
-| 0.1.0 | [Reproducible Mantle routing benchmark](https://linear.app/whisker-personal/pipeline/router-algorithms-optimizer/release/010-reproducible-mantle-routing-benchmark-68441970a261) | `c257e99c-df35-41d6-8576-a072601dcb5b` | 24 (original 23 + WHI-1469 handoff) |
+| 0.1.0 | [Reproducible Mantle routing benchmark](https://linear.app/whisker-personal/pipeline/router-algorithms-optimizer/release/010-reproducible-mantle-routing-benchmark-68441970a261) | `c257e99c-df35-41d6-8576-a072601dcb5b` | 23 |
 | 0.2.0 | [Jupiter Metis challenge](https://linear.app/whisker-personal/pipeline/router-algorithms-optimizer/release/020-jupiter-metis-challenge-14714fc6ff72) | `a65958a5-f0b4-42e7-9ace-1d376e363bca` | 2 |
 
-Linear limits Release descriptions to 255 characters. The stored summaries point to this document for the full scope and exit gates; issue bodies were not shortened.
+The counts above describe the original product/bootstrap plan, not a live tracker total.
+Documentation/workflow follow-ups are tracked separately; current membership is visible
+in each linked Linear Release. Linear limits Release descriptions to 255 characters.
+Stored summaries point here for the full scope and exit gates; issue bodies were not shortened.
 
 ## Current execution decision — 0.1.0 only
 
@@ -32,7 +35,7 @@ All releases start in the pipeline's **Planned** stage. The pipeline's `isProduc
 
 ## 0.1.0 — Reproducible Mantle routing benchmark
 
-**Original product plan: 23 assigned issues** — G00 plus I01–I22. WHI-1469 adds the committed documentation handoff, bringing the current Release association count to 24. WHI-1470 is a separate, unversioned governance-only follow-up. All feature/research titles carry `[0.1.0]`; G00 retains its governance title/routing as described below.
+**Original product plan: 23 assigned issues** — G00 plus I01–I22. Subsequent documentation/workflow handoffs include WHI-1469 and WHI-1472; their real Release associations are in Linear. WHI-1470/WHI-1471 are separate unversioned governance follow-ups. All feature/research titles carry `[0.1.0]`; G00 retains its governance title/routing as described below.
 
 Deliver:
 
@@ -50,6 +53,7 @@ Exit gates:
 - Every scheduled case remains represented, including errors/unsupported/timeouts; deterministic replays and cohort denominators are checked.
 - Daily/full timing is measured and reported, with no total-runtime pass/fail threshold. Correctness, reproducibility and coverage remain mandatory; per-case limits still guard runaway work.
 - I21 produces the convergence report; M0–M4 are capability milestones, not replacements for real Release bindings.
+- Before shipping, complete the independent [whole-release review gate](GIT_WORKFLOW.md#release-review-gate) over the full integrated candidate and verify blocker fixes plus end-to-end evidence. Issue-level validation does not substitute for this release gate. No fixed review count is imposed on individual issues; existing human promotion/integration gates remain.
 
 ## 0.2.0 — Jupiter/Metis challenge
 
