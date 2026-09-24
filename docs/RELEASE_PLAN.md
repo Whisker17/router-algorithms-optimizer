@@ -69,7 +69,9 @@ The owner requested every current issue receive a version assignment in the new 
 
 G00 / WHI-1425 is Done after PR #1 established `origin/dev` and project governance. Its delivery association remains 0.1.0. The approved specification is delivered through WHI-1469 with a separate AGENTS mirror in WHI-1470; subsequent issue worktrees must use the resolved base carrying these documents. Product implementation and production release remain separate work.
 
-## Publication metadata
+## Publication metadata (original 25-issue publication)
+
+The rules below describe the original 25 published issues. Later follow-ups are WHI-1469 (0.1.0, `chore`) and WHI-1470 (unversioned governance, no Release, `chore`); current workflow state is authoritative in Linear.
 
 - Every issue is in the specified project/team and has exactly one Release in this pipeline.
 - All 25 issues start Todo, unassigned, without fabricated due dates. Status means queued, not implemented or unblocked.
