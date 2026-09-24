@@ -6,59 +6,9 @@
     "moe_classic_v1",
     "moe_lb_v2_2"
   ],
-  "generated_at": "2026-09-24T11:36:18.068718+00:00",
+  "generated_at": "2026-09-24T12:47:05.954908+00:00",
   "issues": [],
-  "known_blockers": [
-    {
-      "blocks": [
-        "I04"
-      ],
-      "description": "Explorer-verified-source retrieval was not obtained for this deployment in this pass (see catalog-wide note below); identity above rests on Uniswap Labs' own deployments feed plus the on-chain fingerprint, which is strong but is not itself a byte-for-byte verified-source diff.\n",
-      "id": "uniswap_v3_explorer_source",
-      "source_key": "uniswap_v3"
-    },
-    {
-      "blocks": [
-        "I03",
-        "I04"
-      ],
-      "description": "api.mantlescan.xyz getsourcecode requires a paid Etherscan-V2 API key (none provisioned); explorer.mantle.xyz returned 502 for the whole session; mantlescan.xyz's web UI returns 403 to scripted fetches; Sourcify (sourcify.dev) has no full/partial match for factory, pool_deployer or example_pool on chain 5000. Byte-exact source/commit pin for Agni's fork is therefore unconfirmed pending explorer/API access, a manual bytecode diff against a compiled PancakeSwap-v3-core build, or a direct response from the Agni team.\n",
-      "id": "agni_v3_explorer_source",
-      "source_key": "agni_v3"
-    },
-    {
-      "blocks": [
-        "I04"
-      ],
-      "description": "No authoritative Agni Finance documentation site with a contracts page was confirmed reachable in this pass (docs.agni.finance did not resolve; the top hit for an \"agni\" GitBook space, agni.gitbook.io, is an empty placeholder \"First Workspace\" unrelated to the protocol). The addresses above rest on independent on-chain discovery (a live Agni-labeled pool from GeckoTerminal's dex listing, then pool.factory()/factory.poolDeployer() round-trips) rather than a project-published contracts page.\n",
-      "id": "agni_v3_official_docs_unconfirmed",
-      "source_key": "agni_v3"
-    },
-    {
-      "blocks": [
-        "I05"
-      ],
-      "description": "Same explorer/API access gap as agni_v3_explorer_source (mantlescan keyed-API/403, explorer.mantle.xyz 502, no Sourcify match). Byte-exact commit pin for FusionX's fork is unconfirmed despite the strong address corroboration above.\n",
-      "id": "fusionx_v3_explorer_source",
-      "source_key": "fusionx_v3"
-    },
-    {
-      "blocks": [
-        "I07"
-      ],
-      "description": "No candidate upstream repository has been matched to the on-chain MoeFactory/MoePair bytecode (solc 0.8.20, EIP-1167-style minimal-proxy clones). lfj-gg/joe-core is confirmed NOT a match (see confidence_basis). Explorer-verified-source retrieval is also blocked (same mantlescan keyed-API/403 and explorer.mantle.xyz 502 issues as the v3 sources). Until a source is matched or the Merchant Moe team responds, Moe Classic's swap math must not be migrated from an assumed reference \u2014 I07 needs either (a) explorer/API access, (b) a direct source from the Merchant Moe team, or (c) narrow independent differential fixtures (fixed-block quoter/simulation-only admission) that do not depend on matching a Solidity source file, per DESIGN \u00a72.3's \"otherwise a fork simulation\" fallback. Recorded as a hard blocker, not a generic-AMM substitute.\n",
-      "id": "moe_classic_v1_no_source_match",
-      "source_key": "moe_classic_v1"
-    },
-    {
-      "blocks": [
-        "I08"
-      ],
-      "description": "Same explorer/API access gap as the v3 sources (no getsourcecode key, explorer.mantle.xyz down, no Sourcify match). The joe-v2@v2.2.0 match above is from independent behavioral/metadata fingerprinting, not an explorer source diff; I08 should still obtain one if access becomes available, to catch any Merchant-Moe-specific patch on top of v2.2.0.\n",
-      "id": "moe_lb_v2_2_explorer_source",
-      "source_key": "moe_lb_v2_2"
-    }
-  ],
+  "known_blockers": [],
   "observed_block": {
     "baseFeePerGas": "0xba43b7400",
     "blobGasUsed": "0x0",
@@ -92,6 +42,6 @@
   "observed_chain_id": 5000,
   "ok": true,
   "rpc_cache_hits": 0,
-  "rpc_call_count": 48,
+  "rpc_call_count": 49,
   "rpc_url": "https://rpc.mantle.xyz"
 }

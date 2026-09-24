@@ -30,7 +30,7 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 from snapshot import abi
-from snapshot.config import CandidateBlock, ProtocolCatalog, SourceConfig, load_catalog
+from snapshot.config import CandidateBlock, ContractRef, ProtocolCatalog, SourceConfig, load_catalog
 from snapshot.rpc import HttpJsonRpcTransport, RpcError, RpcTransport, RpcTransportError
 
 
@@ -195,37 +195,71 @@ def check_candidate_block(
 
 
 def _check_code_present(
-    transport: RpcTransport, block_param: str, address: str, source_key: str, role: str
-) -> tuple[int, PreflightIssue | None]:
+    transport: RpcTransport, block_param: str, ref: ContractRef, source_key: str, role: str
+) -> tuple[int, list[PreflightIssue]]:
+    """Verify code is present, and — when the catalog pins one — that its
+    Keccak-256 still matches. A hash mismatch is reported distinctly from missing
+    code entirely: the former is a live drift/substitution, the latter is an
+    address/chain/pruning problem."""
+    issues: list[PreflightIssue] = []
     try:
-        code = transport.call("eth_getCode", [address, block_param])
+        code = transport.call("eth_getCode", [ref.address, block_param])
     except (RpcError, RpcTransportError) as exc:
-        return 0, PreflightIssue(
-            severity="error",
-            code="rpc_unavailable",
-            message=f"eth_getCode({address}) failed: {exc}",
-            source_key=source_key,
-            contract_role=role,
-        )
+        return 0, [
+            PreflightIssue(
+                severity="error",
+                code="rpc_unavailable",
+                message=f"eth_getCode({ref.address}) failed: {exc}",
+                source_key=source_key,
+                contract_role=role,
+            )
+        ]
     size = abi.byte_length(code)
     if size == 0:
-        return 0, PreflightIssue(
-            severity="error",
-            code="missing_code",
-            message=f"no bytecode at {address} ({role}) for {source_key} at this block",
-            source_key=source_key,
-            contract_role=role,
-        )
-    return size, None
+        return 0, [
+            PreflightIssue(
+                severity="error",
+                code="missing_code",
+                message=f"no bytecode at {ref.address} ({role}) for {source_key} at this block",
+                source_key=source_key,
+                contract_role=role,
+            )
+        ]
+    if ref.code_hash is not None:
+        observed_hash = abi.code_hash(code)
+        if observed_hash is None or observed_hash.lower() != ref.code_hash.lower():
+            issues.append(
+                PreflightIssue(
+                    severity="error",
+                    code="code_hash_mismatch",
+                    message=(
+                        f"{ref.address} ({role}) code hash {observed_hash} != pinned "
+                        f"{ref.code_hash} (bytecode changed since the catalog was written)"
+                    ),
+                    source_key=source_key,
+                    contract_role=role,
+                )
+            )
+    return size, issues
+
+
+def _check_all_contract_code(
+    transport: RpcTransport, block_param: str, source: SourceConfig
+) -> list[PreflightIssue]:
+    issues: list[PreflightIssue] = []
+    for role, ref in source.contracts.items():
+        _, ref_issues = _check_code_present(transport, block_param, ref, source.key, role)
+        issues.extend(ref_issues)
+    return issues
 
 
 def _check_v3_family(
     transport: RpcTransport, block_param: str, source: SourceConfig
 ) -> list[PreflightIssue]:
     issues: list[PreflightIssue] = []
-    factory = source.contracts.get("factory")
-    example_pool = source.contracts.get("example_pool")
-    if factory is None or example_pool is None:
+    factory_ref = source.contracts.get("factory")
+    pool_ref = source.contracts.get("example_pool")
+    if factory_ref is None or pool_ref is None:
         return [
             PreflightIssue(
                 severity="error",
@@ -234,13 +268,11 @@ def _check_v3_family(
                 source_key=source.key,
             )
         ]
+    factory, example_pool = factory_ref.address, pool_ref.address
 
-    for role, address in source.contracts.items():
-        _, issue = _check_code_present(transport, block_param, address, source.key, role)
-        if issue:
-            issues.append(issue)
+    issues.extend(_check_all_contract_code(transport, block_param, source))
     if issues:
-        return issues  # missing code makes every further call meaningless
+        return issues  # missing/mismatched code makes every further call meaningless
 
     # pool.factory() must round-trip to the configured factory.
     result, issue = _call(transport, example_pool, abi.encode_call(abi.SEL_FACTORY), block_param)
@@ -317,9 +349,9 @@ def _check_v2_classic_family(
     transport: RpcTransport, block_param: str, source: SourceConfig
 ) -> list[PreflightIssue]:
     issues: list[PreflightIssue] = []
-    factory = source.contracts.get("factory")
-    example_pool = source.contracts.get("example_pool")
-    if factory is None or example_pool is None:
+    factory_ref = source.contracts.get("factory")
+    pool_ref = source.contracts.get("example_pool")
+    if factory_ref is None or pool_ref is None:
         return [
             PreflightIssue(
                 severity="error",
@@ -328,11 +360,9 @@ def _check_v2_classic_family(
                 source_key=source.key,
             )
         ]
+    factory, example_pool = factory_ref.address, pool_ref.address
 
-    for role, address in source.contracts.items():
-        _, issue = _check_code_present(transport, block_param, address, source.key, role)
-        if issue:
-            issues.append(issue)
+    issues.extend(_check_all_contract_code(transport, block_param, source))
     if issues:
         return issues
 
@@ -399,9 +429,9 @@ def _check_liquidity_book_family(
     transport: RpcTransport, block_param: str, source: SourceConfig
 ) -> list[PreflightIssue]:
     issues: list[PreflightIssue] = []
-    factory = source.contracts.get("factory")
-    example_pair = source.contracts.get("example_pair")
-    if factory is None or example_pair is None:
+    factory_ref = source.contracts.get("factory")
+    pair_ref = source.contracts.get("example_pair")
+    if factory_ref is None or pair_ref is None:
         return [
             PreflightIssue(
                 severity="error",
@@ -410,11 +440,9 @@ def _check_liquidity_book_family(
                 source_key=source.key,
             )
         ]
+    factory, example_pair = factory_ref.address, pair_ref.address
 
-    for role, address in source.contracts.items():
-        _, issue = _check_code_present(transport, block_param, address, source.key, role)
-        if issue:
-            issues.append(issue)
+    issues.extend(_check_all_contract_code(transport, block_param, source))
     if issues:
         return issues
 

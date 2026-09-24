@@ -12,6 +12,7 @@ Two implementations:
 
 from __future__ import annotations
 
+import http.client
 import json
 import time
 import urllib.error
@@ -104,7 +105,13 @@ class HttpJsonRpcTransport:
                 )
                 with urllib.request.urlopen(request, timeout=self._timeout_seconds) as response:
                     payload = json.loads(response.read())
-            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+            except (
+                urllib.error.URLError,
+                TimeoutError,
+                json.JSONDecodeError,
+                OSError,
+                http.client.HTTPException,
+            ) as exc:
                 last_error = exc
                 if attempt + 1 < self._retry_policy.max_attempts:
                     self._sleep(self._retry_policy.delay_for(attempt))

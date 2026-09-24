@@ -16,6 +16,7 @@ from snapshot import abi
 from snapshot.config import (
     Blocker,
     CandidateBlock,
+    ContractRef,
     NetworkConfig,
     ProtocolCatalog,
     SourceConfig,
@@ -90,10 +91,14 @@ def build_v3_source(
     key: str = "test_v3",
     fee_tiers: dict[int, int] | None = None,
     pool_deployer: str | None = None,
+    factory_code_hash: str | None = None,
 ) -> SourceConfig:
-    contracts = {"factory": FACTORY, "example_pool": POOL}
+    contracts = {
+        "factory": ContractRef(address=FACTORY, code_hash=factory_code_hash),
+        "example_pool": ContractRef(address=POOL),
+    }
     if pool_deployer:
-        contracts["pool_deployer"] = pool_deployer
+        contracts["pool_deployer"] = ContractRef(address=pool_deployer)
     return SourceConfig(
         key=key,
         display_name="Test V3",
@@ -131,10 +136,10 @@ def build_catalog(sources: tuple[SourceConfig, ...]) -> ProtocolCatalog:
 
 def script_healthy_v3(transport: ScriptedTransport, source: SourceConfig) -> None:
     """Script every call `_check_v3_family` will make for a fully-healthy source."""
-    factory = source.contracts["factory"]
-    pool = source.contracts["example_pool"]
-    for address in source.contracts.values():
-        transport.code[address.lower()] = "0x60"  # any non-empty bytecode
+    factory = source.contracts["factory"].address
+    pool = source.contracts["example_pool"].address
+    for ref in source.contracts.values():
+        transport.code[ref.address.lower()] = "0x60"  # any non-empty bytecode
 
     transport.calls[(pool.lower(), abi.encode_call(abi.SEL_FACTORY))] = (
         "0x" + factory[2:].rjust(64, "0")
@@ -200,12 +205,37 @@ class TestChainAndBlockRejection:
 
 
 class TestContractStateRejection:
+    def test_rejects_code_hash_mismatch(self) -> None:
+        pinned_hash = "0x" + "cc" * 32
+        source = build_v3_source(factory_code_hash=pinned_hash)
+        catalog = build_catalog((source,))
+        transport = ScriptedTransport(chain_id=5000, block=default_block())
+        script_healthy_v3(transport, source)
+        # The scripted factory bytecode ("0x60") hashes to something other than
+        # the pinned hash -- simulating bytecode drift since the catalog was written.
+        report = run_preflight(catalog, transport)
+        assert not report.ok
+        mismatches = [i for i in report.issues if i.code == "code_hash_mismatch"]
+        assert len(mismatches) == 1
+        assert mismatches[0].contract_role == "factory"
+
+    def test_accepts_matching_code_hash(self) -> None:
+        pinned_hash = abi.code_hash("0x60")
+        source = build_v3_source(factory_code_hash=pinned_hash)
+        catalog = build_catalog((source,))
+        transport = ScriptedTransport(chain_id=5000, block=default_block())
+        script_healthy_v3(transport, source)
+        report = run_preflight(catalog, transport)
+        assert report.ok, report.issues
+
     def test_rejects_missing_code(self) -> None:
         source = build_v3_source()
         catalog = build_catalog((source,))
         transport = ScriptedTransport(chain_id=5000, block=default_block())
         script_healthy_v3(transport, source)
-        del transport.code[source.contracts["example_pool"].lower()]  # simulate wrong address/chain
+        del transport.code[
+            source.contracts["example_pool"].address.lower()
+        ]  # simulate wrong address/chain
         report = run_preflight(catalog, transport)
         assert not report.ok
         assert any(i.code == "missing_code" for i in report.issues)
@@ -301,7 +331,10 @@ class TestClassicAndLiquidityBookFamilies:
             display_name="Test Classic",
             protocol_family="v2_classic",
             confidence="high",
-            contracts={"factory": factory, "example_pool": pool},
+            contracts={
+                "factory": ContractRef(address=factory),
+                "example_pool": ContractRef(address=pool),
+            },
             tokens={"token0": TOKEN0, "token1": TOKEN1},
         )
         catalog = build_catalog((source,))
@@ -328,7 +361,10 @@ class TestClassicAndLiquidityBookFamilies:
             display_name="Test Classic",
             protocol_family="v2_classic",
             confidence="high",
-            contracts={"factory": factory, "example_pool": pool},
+            contracts={
+                "factory": ContractRef(address=factory),
+                "example_pool": ContractRef(address=pool),
+            },
             tokens={"token0": TOKEN0, "token1": TOKEN1},
         )
         catalog = build_catalog((source,))
@@ -356,7 +392,10 @@ class TestClassicAndLiquidityBookFamilies:
             display_name="Test LB",
             protocol_family="liquidity_book_v2",
             confidence="high",
-            contracts={"factory": factory, "example_pair": pair},
+            contracts={
+                "factory": ContractRef(address=factory),
+                "example_pair": ContractRef(address=pair),
+            },
         )
         catalog = build_catalog((source,))
         transport = ScriptedTransport(chain_id=5000, block=default_block())
@@ -385,7 +424,10 @@ class TestClassicAndLiquidityBookFamilies:
             display_name="Test LB",
             protocol_family="liquidity_book_v2",
             confidence="high",
-            contracts={"factory": factory, "example_pair": pair},
+            contracts={
+                "factory": ContractRef(address=factory),
+                "example_pair": ContractRef(address=pair),
+            },
         )
         catalog = build_catalog((source,))
         transport = ScriptedTransport(chain_id=5000, block=default_block())
@@ -460,3 +502,15 @@ class TestRealCatalogSchema:
                 assert source.blockers, f"{source.key} is unmatched but declares no blocker"
             else:
                 assert source.upstream is not None, f"{source.key} has no upstream provenance"
+
+    def test_most_contracts_have_a_pinned_code_hash(self) -> None:
+        catalog = load_catalog("config/protocols.yaml")
+        total = 0
+        hashed = 0
+        for source in catalog.sources:
+            for ref in source.contracts.values():
+                total += 1
+                if ref.code_hash is not None:
+                    hashed += 1
+        assert total >= 15
+        assert hashed == total, "every configured contract should carry a pinned code hash"

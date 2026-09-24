@@ -15,6 +15,8 @@ preflight and are not implemented.
 
 from __future__ import annotations
 
+from Crypto.Hash import keccak
+
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 # --- Selectors (4-byte function selectors = keccak256(signature)[:4]) -------------
@@ -96,12 +98,14 @@ def decode_uint(result_hex: str | None) -> int | None:
 
 
 def decode_int24(result_hex: str | None) -> int | None:
-    """Decode a single `int24` return value (e.g. tickSpacing, tick), sign-extended."""
+    """Decode a signed integer (e.g. `int24` tickSpacing/tick) ABI-encoded as a
+    sign-extended 256-bit word -- the general rule for any signed fixed-size
+    Solidity integer, not specific to 24 bits."""
     value = decode_uint(result_hex)
     if value is None:
         return None
-    if value >= 1 << 23:
-        value -= 1 << 24
+    if value >= 1 << 255:
+        value -= 1 << 256
     return value
 
 
@@ -116,3 +120,21 @@ def byte_length(result_hex: str | None) -> int:
         return 0
     body = result_hex.removeprefix("0x")
     return len(body) // 2
+
+
+def keccak256_hex(data: bytes) -> str:
+    """`0x`-prefixed Keccak-256 (the EVM's own hash/CODEHASH function -- *not*
+    NIST SHA3-256, which uses different padding). Used to fingerprint runtime
+    bytecode so the preflight can detect any drift at a configured address
+    without re-deriving every identity call."""
+    digest = keccak.new(digest_bits=256)
+    digest.update(data)
+    return "0x" + digest.hexdigest()
+
+
+def code_hash(result_hex: str | None) -> str | None:
+    """Keccak-256 of an `eth_getCode` result's raw bytes, or `None` for empty code
+    (mirrors the EVM convention that an account with no code has no CODEHASH)."""
+    if not result_hex or result_hex == "0x":
+        return None
+    return keccak256_hex(bytes.fromhex(result_hex.removeprefix("0x")))

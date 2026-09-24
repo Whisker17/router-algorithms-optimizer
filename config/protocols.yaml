@@ -1,21 +1,27 @@
 # Verified five-source admission catalog (WHI-1426 / I01).
 #
-# Machine-readable half of the catalog: chain/contract identity, the checks
-# `snapshot/preflight.py` runs against them, and known evidence blockers. The
-# narrative (how each fact was established, Solidity->Python migration plans,
-# license audits, Dune-emitter-to-pool validation strategy, tick/bin recovery
-# method) lives in docs/references/protocol-admission.md — read that file first;
-# this one is the checkable data it cites.
+# Machine-readable half of the catalog: chain/contract identity, per-contract
+# Keccak-256 code hashes (pinned at the candidate block below; `snapshot/
+# preflight.py` re-checks every run and rejects on drift), and known evidence
+# blockers. The narrative (how each fact was established, Solidity->Python
+# migration plans, license audits, Dune-emitter-to-pool validation strategy,
+# tick/bin recovery method) lives in docs/references/protocol-admission.md —
+# read that file first; this one is the checkable data it cites.
 #
-# Every address below was independently re-derived from at least one of:
-#   (a) a direct eth_call/eth_getCode against the public Mantle RPC at the
-#       candidate_block below (recorded per-source as "onchain_*" in
-#       protocol-admission.md's verification tables), or
-#   (b) a source's own current official documentation site fetched at
-#       catalog-authoring time (recorded per-source as "official_docs"), or
-#   (c) Uniswap Labs' own signed deployments feed (developers.uniswap.org).
-# No address here was accepted from a search engine snippet, a GeckoTerminal pool
-# listing alone, or an LLM's prior knowledge without an (a)/(b)/(c) cross-check.
+# Revision note (2026-09-24, second pass): the first pass of this catalog wrongly
+# concluded explorer-verified source was unavailable ("api.mantlescan.xyz requires
+# a paid key") and left Agni v3/FusionX v3 as unconfirmed "candidate" upstream pins
+# and Merchant Moe Classic v1 as `confidence: unmatched`. A supervisor review
+# pointed at a free, keyless Etherscan-compatible endpoint
+# (api.routescan.io/v2/network/mainnet/evm/5000/etherscan/api) that *is* reachable
+# and returns verified source for nearly every contract below, plus two
+# first-party GitHub repos (merchant-moe/moe-core, agni-protocol/contracts,
+# FusionX-Finance/v3-contracts) this pass had not searched for. Every address
+# below was then re-verified against explorer-verified source and/or an
+# independent local `forge build` bytecode comparison (documented per source in
+# protocol-admission.md). This revision corrects every confidence level and
+# removes the now-resolved "explorer access blocked" blockers; it does not
+# silently expand scope beyond the five configured sources.
 
 version: 1
 
@@ -37,11 +43,10 @@ candidate_block:
     latest-1000 blocks on the public RPC at catalog-authoring time (chain head was
     101058675..101058873 across this session), chosen only to be a fixed,
     non-"latest" point with a little reorg margin; it is not an archive-node or
-    finality guarantee. Every one of the five families' example contracts above
-    was re-verified to have code and to answer the identity/state calls below at
-    exactly this block/hash. Re-run `python -m snapshot.preflight` immediately
-    before reusing this block for anything else: the public RPC has no documented
-    retention SLA and may have pruned it by the time you read this.
+    finality guarantee. Every contract's code hash below was computed at exactly
+    this block. Re-run `python -m snapshot.preflight` immediately before reusing
+    this block for anything else: the public RPC has no documented retention SLA
+    and may have pruned it by the time you read this.
 
 sources:
   - key: uniswap_v3
@@ -49,10 +54,30 @@ sources:
     protocol_family: v3_concentrated_liquidity
     confidence: high
     contracts:
-      factory: "0x0d922Fb1Bc191F64970ac40376643808b4B74Df9"
-      example_pool: "0x4cdFc22bF05209de87Ee564746Dc7E5174631d2b" # WMNT/USDT 0.05%
-      quoter_v2: "0xdD489C75be1039ec7d843A6aC2Fd658350B067Cf"
-      tick_lens: "0x38EB9e62ABe4d3F70C0e161971F29593b8aE29FF"
+      factory:
+        address: "0x0d922Fb1Bc191F64970ac40376643808b4B74Df9"
+        code_hash: "0xde76db50667744def5d2fd1edc36bb8396bfd3d764f99f480e94ef2c4417ec93"
+        verification: >
+          routescan_explorer_verified: UniswapV3Factory, solc v0.7.6+commit.7338295f,
+          optimizer runs=800, 33 files, matches Uniswap/v3-core@v1.0.0 exactly (same
+          ContractName, same file layout).
+      example_pool:
+        address: "0x4cdFc22bF05209de87Ee564746Dc7E5174631d2b" # WMNT/USDT 0.05%
+        code_hash: "0x3ca1ddb051776c121bd6e0916ffa297804b2467b059b786e6afe6417560a04e2"
+        verification: "routescan_explorer_verified: UniswapV3Pool, same compiler/settings as factory."
+      quoter_v2:
+        address: "0xdD489C75be1039ec7d843A6aC2Fd658350B067Cf"
+        code_hash: "0xa7f3aac9363bb8acf5b9bbdae738c973127cfc72d9c0ab20afac24cfe3339bcc"
+        verification: >
+          routescan_explorer_verified: QuoterV2, solc v0.7.6+commit.7338295f,
+          optimizer runs=1000000, evm=istanbul, 21 files.
+      tick_lens:
+        address: "0x38EB9e62ABe4d3F70C0e161971F29593b8aE29FF"
+        code_hash: "0xbf1bb07babb013f146395ed6e1127f8f48d598f1765bc660a91d7b164cf93ff8"
+        verification: >
+          routescan_explorer_verified: TickLens, solc v0.7.6+commit.7338295f,
+          optimizer runs=1000000, evm=istanbul, 9 files. Byte-identical code hash to
+          fusionx_v3's tick_lens (both are the unmodified upstream TickLens.sol).
     tokens:
       token0: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
       token1: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
@@ -66,208 +91,289 @@ sources:
         automatically GPL-2.0-or-later since that date per the LICENSE file at the
         pinned tag; treat as GPL-2.0-or-later for this 2026 migration.
       confidence_basis: >
-        factory/quoter/tick_lens addresses match Uniswap Labs' own signed
-        deployments feed (developers.uniswap.org/deployments.json, source repo
-        Uniswap/contracts) for chain Mantle/5000, tier "dao-deployed". On-chain
-        confirmation: factory bytecode is 24535 bytes (matches embedding the full
-        UniswapV3Pool creation code inline, as v1.0.0's Factory does); its
-        feeAmountTickSpacing fingerprint is the canonical Uniswap set (100->1,
-        500->10, 3000->60, 10000->200) unlike the two Mantle "v3-style" forks
-        below; its CBOR metadata trailer contains only a `solc=0x000706` (0.7.6)
-        key with *no* ipfs hash, exactly matching v1.0.0's hardhat.config.ts
-        `metadata.bytecodeHash: "none"` setting (Uniswap's own deterministic-build
-        convention) rather than a generic omission.
-    blockers:
-      - id: uniswap_v3_explorer_source
-        description: >
-          Explorer-verified-source retrieval was not obtained for this deployment
-          in this pass (see catalog-wide note below); identity above rests on
-          Uniswap Labs' own deployments feed plus the on-chain fingerprint, which
-          is strong but is not itself a byte-for-byte verified-source diff.
-        blocks: ["I04"]
+        Explorer-verified source (Routescan, an Etherscan-compatible service) for
+        factory/pool/quoter_v2/tick_lens all confirms the exact upstream
+        ContractName and compiler settings. Independently corroborated by Uniswap
+        Labs' own signed deployments feed (developers.uniswap.org/deployments.json,
+        source repo Uniswap/contracts), the canonical fee-tier fingerprint
+        (100->1, 500->10, 3000->60, 10000->200 — unlike both Mantle-native v3-style
+        forks below), and a CBOR metadata trailer containing only `solc=0x000706`
+        (0.7.6) with no ipfs hash, matching v1.0.0's hardhat.config.ts
+        `metadata.bytecodeHash: "none"` setting.
 
   - key: agni_v3
     display_name: "Agni Finance v3"
     protocol_family: v3_concentrated_liquidity
-    confidence: moderate
+    confidence: high
     contracts:
-      factory: "0x25780dc8Fc3cfBD75F33bFDAB65e969b603b2035"
-      pool_deployer: "0xe9827B4EBeB9AE41FC57efDdDd79EDddC2EA4d03"
-      example_pool: "0x1858d52cf57c07a018171d7a1e68dc081f17144f" # USDC/WMNT 0.05%
+      factory:
+        address: "0x25780dc8Fc3cfBD75F33bFDAB65e969b603b2035"
+        code_hash: "0x2ae0e620e5883be43cb47e869bbdf3aba25f9744ed5b837a6cc5f4056ada6147"
+        verification: >
+          routescan_explorer_verified: AgniFactory, solc v0.7.6+commit.7338295f,
+          optimizer runs=200, 10 files; matches
+          agni-protocol/contracts@7278c3a (core/contracts/AgniFactory.sol).
+          agni-protocol/contracts' own core/deployments/mantleMainnet.json lists
+          this exact address as "AgniFactory".
+      pool_deployer:
+        address: "0xe9827B4EBeB9AE41FC57efDdDd79EDddC2EA4d03"
+        code_hash: "0xd42f50af5ca343c25c4b6648c664db0a51412b44a9ecc386868d0e5d1396fc03"
+        verification: >
+          routescan_explorer_verified: AgniPoolDeployer, same compiler/settings as
+          factory, 32 files. agni-protocol/contracts' mantleMainnet.json lists this
+          exact address as "AgniPoolDeployer".
+      example_pool:
+        address: "0x1858d52cf57c07a018171d7a1e68dc081f17144f" # USDC/WMNT 0.05%
+        code_hash: "0x8d13ccf6c0d122161b7f7b837bc14a1cea5d4becbcff966e8238ff11e4303053"
+        verification: >
+          routescan_explorer_verified: AgniPool, same compiler/settings as factory,
+          31 files, matches agni-protocol/contracts@7278c3a
+          (core/contracts/AgniPool.sol, single commit "add code", never modified
+          since).
     tokens:
       token0: "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9" # USDC
       token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
     pool_fee: 500
     expected_fee_tiers: { 100: 1, 500: 10, 2500: 50, 10000: 200 }
     upstream:
-      repo: "https://github.com/pancakeswap/pancake-v3-contracts"
-      ref: >
-        master@ffa4fb2cef38cf4769ff88e1cc5551c4af4f6c57,
-        projects/v3-core/contracts/PancakeV3Factory.sol (candidate, not explorer-confirmed)
-      license: "GPL-2.0-or-later (SPDX header in PancakeV3Factory.sol at the pinned commit)"
+      repo: "https://github.com/agni-protocol/contracts"
+      ref: "main, core/contracts/{AgniFactory,AgniPool,AgniPoolDeployer}.sol @ commit 7278c3aafba82db83bbb85e5c0f5554f77ec3db4"
+      license: "GPL-2.0-or-later (SPDX header in AgniPool.sol/AgniFactory.sol)"
       confidence_basis: >
-        Agni is *not* a byte-plausible Uniswap/v3-core deployment: its factory is
-        only 3900 bytes (v3-core's factory embeds the full ~24.5KB Pool creation
-        code and cannot be this small) and it exposes a `poolDeployer()` getter
-        Uniswap's factory does not have, returning a second ~24.5KB contract. That
-        exact Factory/PoolDeployer split, plus the fee-tier fingerprint (100->1,
-        500->10, 2500->50, 10000->200 — no 3000/60 tier), matches
-        PancakeV3Factory.sol's constructor at the commit above token-for-token.
-        Treat "Agni v3" as a PancakeSwap-V3-core-family fork for migration
-        purposes, not a Uniswap-v3-core one, until explorer-verified source
-        confirms an exact commit.
-    blockers:
-      - id: agni_v3_explorer_source
-        description: >
-          api.mantlescan.xyz getsourcecode requires a paid Etherscan-V2 API key
-          (none provisioned); explorer.mantle.xyz returned 502 for the whole
-          session; mantlescan.xyz's web UI returns 403 to scripted fetches;
-          Sourcify (sourcify.dev) has no full/partial match for factory,
-          pool_deployer or example_pool on chain 5000. Byte-exact source/commit
-          pin for Agni's fork is therefore unconfirmed pending explorer/API
-          access, a manual bytecode diff against a compiled PancakeSwap-v3-core
-          build, or a direct response from the Agni team.
-        blocks: ["I03", "I04"]
-      - id: agni_v3_official_docs_unconfirmed
-        description: >
-          No authoritative Agni Finance documentation site with a contracts page
-          was confirmed reachable in this pass (docs.agni.finance did not
-          resolve; the top hit for an "agni" GitBook space, agni.gitbook.io, is an
-          empty placeholder "First Workspace" unrelated to the protocol). The
-          addresses above rest on independent on-chain discovery (a live
-          Agni-labeled pool from GeckoTerminal's dex listing, then
-          pool.factory()/factory.poolDeployer() round-trips) rather than a
-          project-published contracts page.
-        blocks: ["I04"]
+        Upgraded from `moderate` (first pass) to `high`: (1) explorer-verified
+        source on Routescan for all three contracts, with ContractName
+        `AgniFactory`/`AgniPool`/`AgniPoolDeployer` exactly; (2) Agni's own
+        first-party repo, agni-protocol/contracts, has a checked-in
+        core/deployments/mantleMainnet.json that names these *exact* addresses.
+        Agni is architecturally a PancakeSwap-V3-core-family fork, not a raw
+        Uniswap-v3-core deployment: the verified AgniPool.sol source imports
+        `IAgniLmPool` (a liquidity-mining pool hook with no Uniswap-v3-core
+        equivalent — the same concept as PancakeSwap V3's `ILMPool`), and the
+        Factory/PoolDeployer split plus the {100,500,2500,10000} (no 3000) fee-tier
+        set matches PancakeV3Factory.sol's constructor at
+        pancakeswap/pancake-v3-contracts@ffa4fb2 token-for-token. Treat the core
+        swap-math libraries (SwapMath/TickMath/SqrtPriceMath/LiquidityMath/Tick/
+        TickBitmap — file names identical to Uniswap/Pancake's) as
+        Uniswap-V3-core-equivalent math *plus* an LmPool hook call
+        (`lmPool.accumulateReward`/`lmPool.crossLmTick`, present in the sibling
+        FusionX source below and structurally identical in Agni's) that must be
+        explicitly modeled as a no-op (or excluded with a documented reason) since
+        it is outside the admitted Exact Input domain.
 
   - key: fusionx_v3
     display_name: "FusionX v3"
     protocol_family: v3_concentrated_liquidity
     confidence: high
     contracts:
-      factory: "0x530d2766D1988CC1c000C8b7d00334c14B69AD71"
-      pool_deployer: "0x8790c2C3BA67223D83C8FCF2a5E3C650059987b4"
-      example_pool: "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff" # WMNT/USDT 0.05%
-      quoter_v2: "0x90f72244294E7c5028aFd6a96E18CC2c1E913995"
-      tick_lens: "0xE80EE7e19Dd06365111471E1478bA671CAd024C0"
+      factory:
+        address: "0x530d2766D1988CC1c000C8b7d00334c14B69AD71"
+        code_hash: "0x701e4c703248a80761e6e105efd8e30e64bd0cad8ed817e24588203884894c57"
+        verification: >
+          routescan_explorer_verified: FusionXV3Factory, solc v0.7.6+commit.7338295f,
+          optimizer runs=20, 10 files. Matches docs.fusionx.finance's own published
+          address and FusionX-Finance/v3-contracts@7f7406e
+          (projects/v3-core/contracts/FusionXV3Factory.sol).
+      pool_deployer:
+        address: "0x8790c2C3BA67223D83C8FCF2a5E3C650059987b4"
+        code_hash: "0x13e05651129765463ff6a98f3f68e9c56d99a0793d290aa00938a9b469001d1e"
+        verification: >
+          routescan_explorer_verified: FusionXV3PoolDeployer, same compiler/settings
+          as factory, 32 files. Matches docs.fusionx.finance's published address.
+      example_pool:
+        address: "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff" # WMNT/USDT 0.05%
+        code_hash: "0x5760b2fc07eb3ff5cf65ca4089d1f8bd59635849386c53afd2e12340859e2ac0"
+        verification: >
+          routescan_explorer_verified: FusionXV3Pool, same compiler/settings as
+          factory. Verified as a single flattened file (not a multi-file
+          standard-JSON submission); the flattened file's own import comment
+          ("File @fusionx/v3-lm-pool/contracts/interfaces/IFusionXV3LmPool.sol@v1.0.0")
+          shows FusionX's own npm/foundry package namespace and confirms the same
+          LmPool-hook architecture as agni_v3 (`lmPool.accumulateReward(...)` at
+          swap start, `lmPool.crossLmTick(...)` on every tick crossing).
+      quoter_v2:
+        address: "0x90f72244294E7c5028aFd6a96E18CC2c1E913995"
+        code_hash: "0xbe18d6666afa32d193068e0a3a7f346c2c2c35082b087dfa572724844ba2e509"
+        verification: >
+          routescan_explorer_verified: QuoterV2, solc v0.7.6+commit.7338295f,
+          optimizer runs=1000000, evm=istanbul, 21 files.
+      tick_lens:
+        address: "0xE80EE7e19Dd06365111471E1478bA671CAd024C0"
+        code_hash: "0xbf1bb07babb013f146395ed6e1127f8f48d598f1765bc660a91d7b164cf93ff8"
+        verification: >
+          routescan_explorer_verified: TickLens, same compiler/settings as
+          uniswap_v3's tick_lens; byte-identical code hash (unmodified upstream
+          TickLens.sol reused as-is).
     tokens:
       token0: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
       token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
     pool_fee: 500
     expected_fee_tiers: { 100: 1, 500: 10, 2500: 50, 10000: 200 }
     upstream:
-      repo: "https://github.com/pancakeswap/pancake-v3-contracts"
-      ref: >
-        master@ffa4fb2cef38cf4769ff88e1cc5551c4af4f6c57,
-        projects/v3-core/contracts/PancakeV3Factory.sol (candidate, not explorer-confirmed)
-      license: "GPL-2.0-or-later (SPDX header in PancakeV3Factory.sol at the pinned commit)"
+      repo: "https://github.com/FusionX-Finance/v3-contracts"
+      ref: "main, projects/v3-core/contracts/{FusionXV3Factory,FusionXV3Pool,FusionXV3PoolDeployer}.sol @ commit 7f7406e5fbdf610acf0fedac815c29fbca69925a"
+      license: "GPL-2.0-or-later (SPDX header in FusionXV3Factory.sol)"
       confidence_basis: >
-        Same PancakeSwap-V3-core-family fingerprint as agni_v3 (Factory/
-        PoolDeployer split, identical fee-tier set). Higher confidence than Agni
-        because docs.fusionx.finance/developers/smart-contracts-mantle-mainnet/
-        v3-smart-contracts.md — FusionX's own current official documentation —
-        publishes `FusionXV3Factory = 0x530d...AD71` and
-        `FusionXV3PoolDeployer = 0x8790...87b4`, and both exactly match the
-        addresses independently derived on-chain via
-        example_pool.factory()/factory.poolDeployer(). Two independent
-        discovery paths (official docs vs. live on-chain pool) agreeing is strong
-        identity evidence; it is still not an explorer-verified-source diff.
-    blockers:
-      - id: fusionx_v3_explorer_source
-        description: >
-          Same explorer/API access gap as agni_v3_explorer_source (mantlescan
-          keyed-API/403, explorer.mantle.xyz 502, no Sourcify match). Byte-exact
-          commit pin for FusionX's fork is unconfirmed despite the strong address
-          corroboration above.
-        blocks: ["I05"]
+        Explorer-verified source on Routescan for factory/pool_deployer/pool/
+        quoter_v2/tick_lens; FusionX-Finance/v3-contracts mirrors
+        pancake-v3-contracts' own `projects/{v3-core,v3-periphery,v3-lm-pool}`
+        monorepo layout under the `@fusionx/*` package scope, and
+        docs.fusionx.finance's own current documentation
+        (developers/smart-contracts-mantle-mainnet/v3-smart-contracts.md)
+        publishes the factory/pool_deployer addresses verbatim. Same
+        PancakeSwap-V3-core-family lineage and LmPool-hook caveat as agni_v3.
+        Not independently `forge`-recompiled by this catalog (unlike Moe
+        Classic/LB below) — resting on Routescan's explorer verification plus the
+        address/docs/package-namespace corroboration, which is nonetheless
+        multiply independent evidence.
 
   - key: moe_classic_v1
     display_name: "Merchant Moe Classic v1"
     protocol_family: v2_classic
-    confidence: unmatched
+    confidence: high
     contracts:
-      factory: "0x5bEf015CA9424A7C07B68490616a4C1F094BEdEc"
-      example_pool: "0x4e7685df06201521f35a182467feefe02c53d847" # USDT/WMNT
-      pair_implementation: "0x08477e01A19d44C31E4C11Dc2aC86E3BBE69c28B"
-      router: "0xeaEE7EE68874218c3558b40063c42B82D3E7232a"
+      factory:
+        address: "0x5bEf015CA9424A7C07B68490616a4C1F094BEdEc"
+        code_hash: "0x67d999ab19b15f5b4233f167453abadfc7e580942291af8c395d0b50ab39e6c0"
+        verification: >
+          forge_recompile_match: merchant-moe/moe-core @ 460bf55b8330f31d31d356634d0129fd78b4fd07
+          (src/dex/MoeFactory.sol), compiled with the repo's own foundry.toml
+          (solc 0.8.20, optimizer runs=600, evm_version=paris). Runtime bytecode is
+          byte-identical to the on-chain code except for the embedded
+          `moePairImplementation` immutable (three occurrences, each exactly
+          `08477e01a19d44c31e4c11dc2ac86e3bbe69c28b` on-chain vs. a zero placeholder
+          in the unlinked build artifact) and the trailing CBOR metadata hash
+          (differs only because absolute build paths differ, as expected). Not
+          independently explorer-verified (Routescan returns no source for this
+          address); this `forge build` diff is the primary evidence.
+      example_pool:
+        address: "0x4e7685df06201521f35a182467feefe02c53d847" # USDT/WMNT
+        code_hash: "0x984b80b03c251d7d850fb6d583101eafbe483cdb31dff9d741ac1b2e52cfa531"
+        verification: >
+          Structural match only (see pair_implementation): a 95-byte
+          EIP-1167-style minimal-proxy clone whose embedded target decodes to
+          `pair_implementation` below. Every Moe Classic pool shares this exact
+          code hash regardless of which token pair it holds (only storage
+          differs), since MoeFactory clones all point at the same implementation.
+      pair_implementation:
+        address: "0x08477e01A19d44C31E4C11Dc2aC86E3BBE69c28B"
+        code_hash: "0xb7969f45e694a2f22a645a3ce42e240669e09ebbd800925260fa3c3856160d87"
+        verification: >
+          forge_recompile_match: merchant-moe/moe-core @ 460bf55 (src/dex/MoePair.sol),
+          same build settings as factory. Byte-identical modulo two embedded
+          immutables (`moePairImplementation`'s own address, appearing as a
+          self-reference, and the `factory` address) and the metadata hash. Also
+          confirmed by merchant-moe/moe-core's own
+          script/mantle/Addresses.sol, which hardcodes
+          `moePairImplementation = 0x08477e01A19d44C31E4C11Dc2aC86E3BBE69c28B`.
+      router:
+        address: "0xeaEE7EE68874218c3558b40063c42B82D3E7232a"
+        code_hash: "0x566a0de9f04097861602d59ad600c8d4504b6ad395d99deb24fc717a58a4a06e"
+        verification: >
+          routescan_explorer_verified: MoeRouter, solc v0.8.20+commit.a1b79de6,
+          optimizer runs=600, evm=paris, 13 files. merchant-moe/moe-core's own
+          script/mantle/Addresses.sol hardcodes this exact address as `moeRouter`.
     tokens:
       token0: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
       token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
     upstream:
-      repo: "https://github.com/lfj-gg/joe-core"
-      ref: "master, contracts/traderjoe/{JoeFactory,JoePair}.sol (rejected candidate, see basis)"
-      license: "GPL-3.0 (contracts/traderjoe/LICENSE at lfj-gg/joe-core)"
+      repo: "https://github.com/merchant-moe/moe-core"
+      ref: "main, src/dex/{MoeFactory,MoePair}.sol @ commit 460bf55b8330f31d31d356634d0129fd78b4fd07"
+      license: "GPL-3.0 (SPDX header in src/dex/MoeFactory.sol and MoePair.sol)"
       confidence_basis: >
-        REJECTED, recorded to save the next investigator repeat work. Merchant
-        Moe's own docs (docs.merchantmoe.com/resources/contracts.md) name
-        "MoeFactory"/"MoePair"/"MoeRouter" and describe them as built on "the same
-        robust technology as LFJ Dex" (LFJ = Trader Joe's current org, github.com/
-        lfj-gg), so joe-core's JoeFactory/JoePair was the natural first candidate.
-        It does not match: (1) every Moe Classic pool is a ~95-byte minimal-proxy
-        clone whose embedded implementation address decodes to exactly
-        pair_implementation above (which matches docs.merchantmoe.com's published
-        "MoePair" address byte-for-byte); lfj-gg/joe-core's JoeFactory.createPair
-        uses `create2` with JoePair's *full* creationCode, never a clone -
-        architecturally incompatible. (2) pair_implementation's own CBOR metadata
-        reports `solc=0x000814` (0.8.20); JoeFactory.sol/JoePair.sol at
-        lfj-gg/joe-core@master are `pragma solidity =0.6.12`. Moe Classic v1 is
-        therefore a *different*, unidentified Solidity implementation that
-        happens to be behaviorally Uniswap-V2-shaped (getPair/allPairsLength/
-        getReserves round-trip correctly, confirmed on-chain) deployed via clone
-        factory. No matching upstream source has been found.
-    blockers:
-      - id: moe_classic_v1_no_source_match
-        description: >
-          No candidate upstream repository has been matched to the on-chain
-          MoeFactory/MoePair bytecode (solc 0.8.20, EIP-1167-style minimal-proxy
-          clones). lfj-gg/joe-core is confirmed NOT a match (see confidence_basis).
-          Explorer-verified-source retrieval is also blocked (same mantlescan
-          keyed-API/403 and explorer.mantle.xyz 502 issues as the v3 sources).
-          Until a source is matched or the Merchant Moe team responds, Moe
-          Classic's swap math must not be migrated from an assumed reference —
-          I07 needs either (a) explorer/API access, (b) a direct source from the
-          Merchant Moe team, or (c) narrow independent differential fixtures
-          (fixed-block quoter/simulation-only admission) that do not depend on
-          matching a Solidity source file, per DESIGN §2.3's "otherwise a fork
-          simulation" fallback. Recorded as a hard blocker, not a generic-AMM
-          substitute.
-        blocks: ["I07"]
+        RESOLVED from `unmatched` (first pass) to `high`. The first pass correctly
+        rejected lfj-gg/joe-core (architecturally incompatible: full-bytecode
+        CREATE2 vs. this deployment's minimal-proxy clones; solc 0.6.12 vs. this
+        deployment's 0.8.20) but did not find the real source because it never
+        searched for a Merchant-Moe-owned repository. merchant-moe/moe-core's
+        `src/dex/MoeFactory.sol` imports `ImmutableClone` and takes a
+        `moePairImplementation_` constructor immutable — exactly the clone
+        architecture observed on-chain — and its own
+        `script/mantle/Addresses.sol` hardcodes all three addresses above
+        verbatim. An independent local `forge build` of that exact commit
+        reproduces the on-chain factory/pair-implementation bytecode
+        byte-for-byte outside of immutables and metadata (see each contract's
+        `verification` field for the precise diff). This is now the
+        strongest-possible non-explorer evidence class this catalog uses.
 
   - key: moe_lb_v2_2
     display_name: "Merchant Moe Liquidity Book v2.2"
     protocol_family: liquidity_book_v2
     confidence: high
     contracts:
-      factory: "0xa6630671775c4EA2743840F9A5016dCf2A104054"
-      example_pair: "0xf6c9020c9e915808481757779edb53daceae2415" # WMNT/USDT, binStep 15
-      router: "0x013e138EF6008ae5FDFDE29700e3f2Bc61d21E3a"
-      quoter: "0x501b8AFd35df20f531fF45F6f695793AC3316c85"
+      factory:
+        address: "0xa6630671775c4EA2743840F9A5016dCf2A104054"
+        code_hash: "0x24760bc3bcdceb37006bed0ee363ff2f93f79242e14c19dcd135d606cad3d249"
+        verification: >
+          routescan_explorer_verified: LBFactory, solc v0.8.20+commit.a1b79de6,
+          optimizer runs=800, evm=paris, 26 files. Independently confirmed by a
+          local `forge build` of lfj-gg/joe-v2 (both tag v2.2.0 @ 1297c382 and the
+          moe-core-pinned branch `v2.2` head @ 24efde2 give byte-identical
+          output for this file): the on-chain runtime bytecode is 100%
+          byte-identical to the compiled artifact, including the CBOR metadata
+          trailer — no immutable substitution was even needed.
+      example_pair:
+        address: "0xf6c9020c9e915808481757779edb53daceae2415" # WMNT/USDT, binStep 15
+        code_hash: "0xb5d12ab2b36748a7996c827c10c70490ea32d41c9bb54d693e79da60299c0d0e"
+        verification: >
+          Structural match only (see pair_implementation): a 97-byte
+          EIP-1167-style minimal-proxy clone; Routescan correctly reports no
+          source for this address (a raw clone has no independently meaningful
+          bytecode of its own).
+      pair_implementation:
+        address: "0xf6863Db7323aaC43fE8AEF0B3eF63AA6b32DDB3B"
+        code_hash: "0x4b7e74d0e7b8738bc0a95199fdfb27a3e8bb7578d034e5ff15034f0158be508a"
+        verification: >
+          routescan_explorer_verified: LBPair, solc v0.8.20+commit.a1b79de6,
+          optimizer **runs=300** (notably different from LBFactory/LBRouter/
+          LBQuoter's runs=800 — a genuine per-contract override, not a mistake).
+          Independently confirmed: a local `forge build --optimizer-runs 300` of
+          lfj-gg/joe-v2 (tag v2.2.0) reproduces the on-chain runtime bytecode
+          byte-for-byte outside of two embedded immutables (this contract's own
+          address and the LBFactory address, 7 occurrences total) and the CBOR
+          metadata hash; building with the repo's *default* runs=800 instead
+          produces bytecode of the wrong *length* entirely (24321 on-chain vs.
+          25224 default-build bytes), which is what first made the runs=300
+          override discoverable.
+      router:
+        address: "0x013e138EF6008ae5FDFDE29700e3f2Bc61d21E3a"
+        code_hash: "0x827ec4f0e64daa0406a3ce838d85e10bc8bf2b77cbd8d3d69cb96d480245787e"
+        verification: >
+          routescan_explorer_verified: LBRouter, solc v0.8.20+commit.a1b79de6,
+          optimizer runs=800, evm=paris, 33 files. Despite matching compiler
+          settings, a local `forge build` of lfj-gg/joe-v2 (either commit above)
+          produces different-length bytecode (21003 vs. this address's 21011
+          bytes) -- Merchant Moe's LBRouter carries real source changes on top of
+          vanilla joe-v2. Not in the `quote_exact_in` critical path (LBPair owns
+          swap math); recorded so a future router-level integration does not
+          assume vanilla joe-v2 Router behavior.
+      quoter:
+        address: "0x501b8AFd35df20f531fF45F6f695793AC3316c85"
+        code_hash: "0x59b0f082bb2508333c981242c847bbfb13a2b8a718f4a93469e350a38914562f"
+        verification: >
+          routescan_explorer_verified: LBQuoter, solc v0.8.20+commit.a1b79de6,
+          optimizer runs=800, evm=paris, 24 files. Same caveat as router: local
+          `forge build` output is a different length (14792 vs. this address's
+          18102 bytes) -- a real Merchant-Moe-specific LBQuoter (plausibly
+          quoting both Classic and LB routes in one contract). Not in the
+          `quote_exact_in` critical path.
     tokens:
       token_x: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
       token_y: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
     upstream:
       repo: "https://github.com/lfj-gg/joe-v2"
-      ref: "tag v2.2.0, commit 1297c3822f0605e643155c35948959c0a0d05e17"
-      license: "MIT (repo-root LICENSE at the pinned tag)"
+      ref: "tag v2.2.0, commit 1297c3822f0605e643155c35948959c0a0d05e17 (LBFactory.sol, LBPair.sol -- see pair_implementation.verification for the required optimizer-runs=300 override)"
+      license: "MIT (repo-root LICENSE at the pinned tag; per-file SPDX headers agree)"
       confidence_basis: >
-        docs.merchantmoe.com/resources/contracts.md publishes "LB Factory" =
-        0xa663...4054, matching the address independently used here. On-chain:
-        example_pair.getFactory() round-trips to that same factory;
-        factory.getNumberOfLBPairs() = 195 (a real, populated deployment, not an
-        empty placeholder); the pair's own CBOR metadata reports `solc=0x000814`
-        (0.8.20), exactly matching joe-v2@v2.2.0's foundry.toml
-        (`solc_version = "0.8.20"`); the pair is itself an
-        ~97-byte minimal-proxy clone, matching joe-v2's own
-        `src/libraries/ImmutableClone.sol` deployment pattern (LBFactory does not
-        deploy full LBPair bytecode per pair). The tag name "v2.2.0" itself
-        matches the "v2.2" the design/Dune labels use. This is the strongest
-        identity match of the five sources.
-    blockers:
-      - id: moe_lb_v2_2_explorer_source
-        description: >
-          Same explorer/API access gap as the v3 sources (no getsourcecode key,
-          explorer.mantle.xyz down, no Sourcify match). The joe-v2@v2.2.0 match
-          above is from independent behavioral/metadata fingerprinting, not an
-          explorer source diff; I08 should still obtain one if access becomes
-          available, to catch any Merchant-Moe-specific patch on top of v2.2.0.
-        blocks: ["I08"]
+        The swap-math-critical contracts (LBFactory identity, LBPair
+        implementation) are now independently confirmed two ways: Routescan
+        explorer verification *and* our own local `forge build` byte-for-byte
+        match (once LBPair's non-default optimizer runs=300 was accounted for —
+        discovered from Routescan's own compiler metadata, not guessed).
+        merchant-moe/moe-core's pinned submodule commit for `lib/dexv2`
+        (24efde2, on branch `v2.2`, itself a rename-tracked continuation of
+        `traderjoe-xyz/dexv2`) gives the same LBFactory/LBPair bytecode as the
+        `v2.2.0` tag, so either commit is an equally valid pin for those two
+        files specifically. LBRouter/LBQuoter are real Merchant-Moe-specific
+        forks of the vanilla periphery contracts (see their own `verification`
+        fields) — downgrade any future claim of "vanilla joe-v2 Router/Quoter"
+        accordingly; this does not affect swap-math admission.

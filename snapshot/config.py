@@ -71,6 +71,13 @@ class CandidateBlock:
 
 
 @dataclass(frozen=True)
+class ContractRef:
+    address: str
+    code_hash: str | None = None
+    verification: str = ""
+
+
+@dataclass(frozen=True)
 class UpstreamProvenance:
     repo: str
     ref: str
@@ -91,7 +98,7 @@ class SourceConfig:
     display_name: str
     protocol_family: str
     confidence: str
-    contracts: dict[str, str]
+    contracts: dict[str, ContractRef]
     tokens: dict[str, str] = field(default_factory=dict)
     pool_fee: int | None = None
     expected_fee_tiers: dict[int, int] | None = None
@@ -156,6 +163,20 @@ def _parse_blocker(obj: Any, where: str) -> Blocker:
     return Blocker(id=str(obj["id"]), description=str(obj["description"]), blocks=tuple(blocks))
 
 
+def _parse_contract_ref(obj: Any, where: str) -> ContractRef:
+    if isinstance(obj, str):
+        # Bare-address shorthand: no code hash pinned yet for this role.
+        return ContractRef(address=_validate_address(obj, where))
+    _require_keys(obj, {"address"}, {"code_hash", "verification"}, where)
+    address = _validate_address(obj["address"], f"{where}.address")
+    code_hash = obj.get("code_hash")
+    if code_hash is not None:
+        code_hash = _validate_hash32(code_hash, f"{where}.code_hash")
+    return ContractRef(
+        address=address, code_hash=code_hash, verification=str(obj.get("verification", ""))
+    )
+
+
 def _parse_source(obj: Any) -> SourceConfig:
     required = {"key", "display_name", "protocol_family", "confidence", "contracts"}
     optional = {"tokens", "pool_fee", "expected_fee_tiers", "upstream", "blockers", "notes"}
@@ -176,8 +197,8 @@ def _parse_source(obj: Any) -> SourceConfig:
     if not isinstance(contracts_obj, dict) or not contracts_obj:
         raise ConfigError(f"{where}.contracts: expected a non-empty mapping")
     contracts = {
-        str(role): _validate_address(addr, f"{where}.contracts.{role}")
-        for role, addr in contracts_obj.items()
+        str(role): _parse_contract_ref(ref, f"{where}.contracts.{role}")
+        for role, ref in contracts_obj.items()
     }
 
     tokens_obj = obj.get("tokens", {})
