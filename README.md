@@ -5,7 +5,7 @@ liquidity snapshot, compare exact-input solvers with a common evaluator, and rep
 quality/latency/cost trade-offs. Uniswap SOR is a required scoped comparator;
 Jupiter/Metis is a separate research challenge.
 
-The full PRD will live in `docs/DESIGN.md`.
+The full PRD is in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Workflow & Development
 
