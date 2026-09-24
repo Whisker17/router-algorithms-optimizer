@@ -64,7 +64,7 @@ Publication metadata: Release 0.1.0 (delivery association by explicit owner requ
 Establish the documented git/tracker prerequisites so subsequent implementation issues can resolve a valid base and project identity without guessing.
 
 ## Context
-DESIGN §6 records only `origin/main` and no production tag. Governance must be isolated from version-scoped documentation/product changes. The owner requested every current issue be assigned in the new pipeline: G00 is associated with 0.1.0 solely as a delivery prerequisite, while its unversioned title, governance-only carve-out scope and `dev` routing remain unchanged. No merge/human-review exception is waived.
+At original publication, DESIGN §6 recorded only `origin/main` and no production tag. G00 is now Done and `origin/dev` exists; see the current DESIGN §6. Governance must be isolated from version-scoped documentation/product changes. The owner requested every current issue be assigned in the new pipeline: G00 is associated with 0.1.0 solely as a delivery prerequisite, while its unversioned title, governance-only carve-out scope and `dev` routing remain unchanged. No merge/human-review exception is waived.
 
 ## Blocked By
 None (entry point). The initial `dev` creation is a deliberate owner/bootstrap operation, not ordinary issue implementation.

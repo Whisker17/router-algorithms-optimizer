@@ -12,7 +12,7 @@ Build an offline, reproducible experimental tool for choosing and improving Mant
 
 The Linear project is [Mantle Router Algorithm Optimizer](https://linear.app/whisker-personal/project/mantle-router-algorithm-optimizer-3abba3f613f7), project UUID `29829418-7ca6-43c9-bf03-a49f05c76b1a`, team `Whisker-Personal` (`WHI`). Its description calls for a pluggable benchmark, static liquidity snapshots, and historical fee calibration using Dune.
 
-The colleague's `plan-and-compilation.html` explains compilation and execution after route selection. Its conservation, rounding and ordered-state lessons are useful; its IR, opcodes, JIT policies, registry and ABI are not requirements here. The local [pre-research](references/pre-research-from-gpt-6-pro.md) supplies algorithm leads, not a validated implementation specification. Its unresolved citation markers and illustrative numeric parameters must not be treated as verified evidence.
+The colleague's `plan-and-compilation.html`, attached to the Linear project description linked above (not archived in this repository; fetch the current attachment URL from Linear), explains compilation and execution after route selection. Its conservation, rounding and ordered-state lessons are useful; its IR, opcodes, JIT policies, registry and ABI are not requirements here. The local [pre-research](references/pre-research-from-gpt-6-pro.md) supplies algorithm leads, not a validated implementation specification. Its unresolved citation markers and illustrative numeric parameters must not be treated as verified evidence.
 
 ### 1.2 v1 Scope
 
