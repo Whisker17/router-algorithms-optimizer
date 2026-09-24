@@ -23,17 +23,21 @@ placeholders. Agents must not assume a module exists until its issue lands. -->
 The complete product specification, issue/release plans and supporting references landed
 on `dev` through WHI-1469 / PR #2. Read `docs/DESIGN.md`, `docs/ISSUE_PLAN.md`,
 `docs/RELEASE_PLAN.md` and `docs/references/0.1.0-execution-decisions.md`. The original
-25-issue publication (WHI-1425–WHI-1449) and its six milestones are recorded in the dated
-publication audit; later documentation handoffs are tracked separately by WHI-1469/1470.
+25-issue publication (WHI-1425–WHI-1449) and its six milestones are recorded in
+`docs/references/linear-publication-audit.md` (a dated as-of snapshot); later
+documentation handoffs are tracked separately by WHI-1469/1470.
 Repository bootstrap is complete (`origin/dev` established and project binding configured
 via WHI-1425).
 
-The current execution batch is **0.1.0 only**. Use the default public Mantle RPC and
-existing Enterprise Dune access with bounded, cached queries. Runtime is measured, with
-**no total-runtime acceptance threshold**. Suitable upstream code may be reused
-autonomously for private internal research while retaining required notices and source
-pins; do not change repository visibility or publish/relicense code incidentally.
-These decisions do not relax protocol correctness, source parity, coverage or the
+The current execution batch is **0.1.0 only**: the five-source static benchmark and all
+six mandatory algorithms, including the source-pinned, parity-tested Uniswap SOR port.
+Use the default public Mantle RPC (preflight fixed-block state; no `latest`/mixed-block
+fallback or silent private endpoint) and existing Enterprise Dune access with bounded,
+cached queries. Runtime is measured, with **no total-runtime acceptance threshold**.
+Suitable upstream code may be reused autonomously for private internal research while
+retaining required notices and source pins; do not change repository visibility or
+publish/relicense code incidentally. These decisions do not relax integer protocol
+correctness, independent verification, source parity, coverage, reproducibility or the
 review/merge rules below. Jupiter/Metis (0.2.0) remains future work.
 
 Product implementation has **not** started: source, tests and tooling remain template
