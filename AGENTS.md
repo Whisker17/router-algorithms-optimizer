@@ -123,7 +123,7 @@ create it as a side effect of picking up a ticket.
 **Then, once the base is resolved:**
 
 1. `git fetch` + create the worktree from the **resolved** base
-   (`fix/whi-NNN-topic` or `feat/whi-NNN-topic`).
+   (`fix/whi-NNN-topic`, `feat/whi-NNN-topic`, or `chore/whi-NNN-topic`).
    Verify immediately — `git merge-base HEAD origin/<resolved-base>` must equal
    `git rev-parse origin/<resolved-base>` — whatever tooling created the worktree.
    *(Runtime aside: Claude Code's `EnterWorktree` defaults to `origin/main`, which
@@ -137,8 +137,8 @@ create it as a side effect of picking up a ticket.
 4. A PR whose implementation went through `/implement`'s full three-round review loop
    (plus the escalation pass, when round 3 left findings open) is **pre-authorized to
    self-squash-merge** once it reads MERGEABLE/CLEAN and tests + lint pass — no separate
-   human approval. **Exceptions that stop at `In Review` for a human:** No sensitive-surface
-   exception applies (offline benchmark, no signing keys or production deployment);
+   human approval. **Exceptions that stop at `In Review` for a human:** (no sensitive-path
+   exception applies — offline benchmark, no signing keys or production deployment);
    `release/*` → `main` promotions, and a finished version-integration `release/v*` → `dev`. PRs that skipped the
    review loop also stop at `In Review`. After merging, run the **post-merge cleanup**
    below. **No waiver of these exceptions is in force.** If the owner ever grants
