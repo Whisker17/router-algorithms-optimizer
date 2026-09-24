@@ -27,6 +27,11 @@ The numbered entries below are **process-layer** traps measured while this skill
 dogfooded. Stack-specific traps (formatter scoping, measurement-binary paths, report-slot
 collisions) belong in the downstream project's copy of this file, not here.
 
+**Review applicability (WHI-1472):** reviewer-specific entries apply only when independent
+review is requested or required. They do not create an ordinary per-issue reviewer gate.
+The current development/release policy in `docs/GIT_WORKFLOW.md` is authoritative.
+Entries 4 and 7 retain their measured lessons with that scope; no numbered entry is removed.
+
 1. **`gh pr create` (and every later `gh` call) needs `--repo <owner/repo>` whenever
    `gh` would resolve the wrong GitHub repo.** A fork, a `no_push` `upstream`, or
    `gh repo view` reporting a different `nameWithOwner` than `origin` are the usual
@@ -44,11 +49,12 @@ collisions) belong in the downstream project's copy of this file, not here.
    (`git diff <base>`) looks like the fix for an empty three-dot on an uncommitted
    branch, but once `<base>` advances it shows the reviewer those foreign commits,
    reversed. Commit first; use three-dot; refuse to dispatch on an empty range.
-4. **`--probe` is not G1.** `scripts/agent-dispatch.sh --probe` only checks that the
-   binary resolves. A role whose binary is on `PATH` but whose auth/quota/flags fail
-   still reports `ok`. The gate is a real one-line dispatch that must print
-   `DISPATCH-OK` and exit 0 (`docs/agents/runtime.md` § Preflight). A failed G1 means
-   the review loop did not run — stop at `In Review`, never self-review.
+4. **`--probe` is not proof that a required review can run.** It only checks binary
+   discovery. Authentication, quota and flags need a real bounded dispatch (for example,
+   one that prints `DISPATCH-OK` and exits 0; see runtime § Preflight). If required
+   release review cannot run, keep its PR open and tracking issue at `In Review`; do not
+   claim self-review as independent evidence. This does not block ordinary issue work
+   whose own validation gates pass, and it is not the orchestrator's per-issue G1.
 5. **Empty reviewer stdout is a vacuous gate, not a clean pass.** Exit 0 with no
    findings-shaped content is indistinguishable from "the dispatch never ran." Inline
    the three-dot diff (and any file the spec needs) in both axis prompts rather than
@@ -57,8 +63,9 @@ collisions) belong in the downstream project's copy of this file, not here.
 6. **`pgrep -fl` dumps this machine's entire shell-snapshot environment** instead of the
    one process you meant to find. Use `pgrep -f <pat> | head -1` to get the pid, then
    `ps -o pid,etime,command -p <pid>`.
-7. **Generate committed measurement artifacts once, after the review loop closes, from a
-   clean committed sha.** Reviewers read `git diff <fixed-point>...HEAD`, not generated
-   reports — regenerating a report per round turns every prose finding into a full
-   re-measurement. If the tree is dirty at generation time, stamp provenance accordingly
-   rather than silently attributing a dirty run to a later commit.
+7. **Generate final measurement artifacts from the validated candidate and bind them
+   to its commit/data/config identities.** Ordinary issue work need not wait for an
+   independent-review loop. During release review, provide existing evidence, then
+   regenerate only when a changed candidate or finding invalidates the measurement;
+   a prose-only correction does not automatically require a full rerun. If generation
+   uses a dirty tree, stamp that provenance instead of attributing it to a clean commit.
