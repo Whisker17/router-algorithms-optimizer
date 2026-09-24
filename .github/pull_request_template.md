@@ -26,6 +26,18 @@ this has to be a hotfix off `origin/main`, not a release. -->
       a governance rule is only in force on branches that carry it.
       N/A if this PR does not target `dev`.
 
+## Independent release review (release / hotfix / integration completion only)
+
+Ordinary issue PRs use validation-based merge eligibility; no fixed review rounds are
+required. For release work, complete `docs/GIT_WORKFLOW.md` § Release review gate:
+
+- [ ] Candidate commit/tree and production-tag or explicit bootstrap baseline recorded
+- [ ] Entire integrated release reviewed in independent Standards and Spec contexts
+- [ ] Full relevant regression/end-to-end/acceptance evidence attached
+- [ ] Release blockers fixed and independently verified; nonblocking residuals tracked
+- [ ] Evidence applies to the final candidate; changed deltas and affected checks revalidated
+- [ ] Existing human promotion/integration approval obtained before gated merge
+
 ## Release / hotfix only
 
 - [ ] Project version bumped to match the tag being created
@@ -46,7 +58,7 @@ this has to be a hotfix off `origin/main`, not a release. -->
 
 ## Test plan
 
-- [ ] Local tests run (`uv run pytest` or the relevant subset)
+- [ ] Local tests, lint and type checks run (`uv run pytest`, `uv run ruff check .`, `uv run mypy`, or the required affected scope); acceptance and change scope checked
 - [ ] If this touches high-risk paths (none configured): verification approach documented (dry-run /
       staging / mocked)
 - [ ] No new tunable parameters outside `docs/DESIGN.md` §2, or the deviation is

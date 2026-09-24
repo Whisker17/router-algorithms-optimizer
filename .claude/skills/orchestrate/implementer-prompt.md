@@ -37,11 +37,11 @@ directly — a skill is just markdown"):
 1. `AGENTS.md` — all of it, especially § Git workflow, § Post-merge cleanup, and whatever
    lint/format caveats it states.
 2. `docs/GIT_WORKFLOW.md` § Resolving the base branch, including the **bootstrap** subsection.
-3. `.claude/skills/implement/SKILL.md` — your process contract, the three-round review loop,
-   and what authorizes a self-merge. **Follow its loop as written; nothing below restates it.**
-4. `.claude/skills/code-review/SKILL.md` — how review is dispatched, including the diff command
-   (§ below corrects one thing about it) and the Standards-axis smell baseline, which you must
-   paste in full into every Standards dispatch — the reviewer has no other access to it.
+3. `.claude/skills/implement/SKILL.md` — your validation-driven development process and
+   what authorizes an ordinary issue self-merge. Do not add fixed review rounds.
+4. `.claude/skills/code-review/SKILL.md` **when independent review is actually needed**:
+   required release review or an explicitly scoped issue review. It defines dispatch,
+   the diff command and the Standards-axis smell baseline.
 5. `.claude/skills/ponytail/SKILL.md` and `.claude/skills/ponytail/review.md` — generation
    constraint (what to write, not how the issue moves). Follow `/implement` for when to
    apply them; this entry exists so you load them. Not a review round.
@@ -73,22 +73,24 @@ integration branch is the owner's deliberate act, never a side effect of picking
   per clone.
 - Implement there, never in the primary clone.
 
-## Adversarial review
+## Validation and review
 
-Follow `/implement`'s three-round loop and `/code-review`'s two-axis dispatch as those skills
-describe — this prompt does not restate either. This project's runtime dispatches both axes
-as **subprocesses** (`scripts/agent-dispatch.sh REVIEWER <prompt-file>`, twice per round: one
-per axis, never collapsed) rather than through a native sub-agent primitive, because a spawned
-implementer session typically has no such primitive available to it; re-probe before each round
-with a real one-shot dispatch (`docs/agents/runtime.md` § Degraded mode), not just `--probe`.
-REVIEWER and ESCALATOR are whatever `config/agent-roles.conf` currently names — read it, don't
-assume a specific model.
+For an ordinary issue, follow `/implement`'s acceptance, tests/lint/type, shrink/self-check,
+scope and semantic-conflict checks. Independent review and reviewer preflight are not
+automatic per-issue steps. If the owner/issue explicitly requires focused review, honor it;
+if a concrete uncertainty warrants review, state its scope and use the configured role.
+Do not manufacture a fixed round count or an escalation stage.
 
-What is genuinely specific to this repo is the three-dot vs two-dot trap in `docs/TRAPS.md` —
-read it there, it is not restated here. Record the exact command you passed, per round, per
-axis, and confirm each reviewer actually saw content, not just that the dispatch exited 0.
-(The remaining repo-specific deltas — `--repo`, the post-merge checkout, the semantic-conflict
-check — belong to the merge sequence, not the review loop; see § Take it all the way below.)
+When assigned release work, follow `docs/GIT_WORKFLOW.md` § Release review gate over the
+complete pinned integrated candidate, not merely this issue diff. Use `/code-review`'s
+fresh independent Standards/Spec contexts and full relevant acceptance tests. Verify
+review dispatch with a real call; lack of a required reviewer blocks release, not every
+ordinary issue. `ESCALATOR` is optional expert help, with no fixed trigger.
+
+When any independent review runs, read the three-dot vs two-dot trap in `docs/TRAPS.md`,
+record the exact scope/command and reviewed commit, and confirm the reviewer saw a
+nonempty relevant diff. Follow up on concrete findings and changed areas, not a round
+counter. The remaining merge-sequence checks are below.
 
 ## Scope — {{ISSUE_ID}}'s own constraint
 
@@ -98,6 +100,10 @@ If implementation appears to require touching anything on that list, **stop and 
 rather than editing it. Scope creep is likeliest at the "while I'm here" moment.
 
 ## Traps — every one of these has already cost this project hours
+
+Apply reviewer-specific traps only when an independent review is actually requested or
+required. They do not create a per-issue review or reviewer-preflight gate; the current
+`docs/GIT_WORKFLOW.md` development/release policy controls when review runs.
 
 {{PASTE THE TRAP REGISTRY FROM docs/TRAPS.md, plus anything specific to this issue.}}
 
@@ -112,11 +118,12 @@ completion.
 
 ## Take it all the way
 
-{{GATED_OR_NOT — for an ungated PR, a completed review loop authorizes the self-merge; check
-this issue against `/implement`'s own gated-change list (high-risk paths, `release/*` → `main`,
-a finished integration branch → `dev`) before assuming step 5 below applies. If gated, do steps
-1-2 only and stop at `In Review` for a human — say so explicitly rather than leaving this
-placeholder to imply the ungated path by default.}}
+{{GATED_OR_NOT — for an ordinary development PR, passing issue acceptance and required
+validation/scope/mergeability checks authorizes self-merge; independent per-issue review is
+not mandatory. Check `/implement`'s human-gated list (high-risk paths, `release/*` → `main`,
+finished integration branch → `dev`). Release work must also pass the whole-release review
+gate. A human-gated PR stops at `In Review` after preparing evidence; do not imply an
+ungated path by default.}}
 
 Follow `/implement`'s own "take it all the way" steps (push, PR, `In Review`, verify
 MERGEABLE/CLEAN, tests+lint, squash-merge, post-merge cleanup, fan-out, `Done`) — not restated
@@ -146,9 +153,10 @@ here. Only the repo-specific deltas on top of that sequence:
   `/implement` requires). Exactly what `.claude/skills/ponytail/SKILL.md`
   § Completion criterion requires. Missing from the PR body means the generation
   constraint did not run.
-- **The review rounds verbatim**: per round, per axis — the exact command passed, every
-  finding, your disposition of each. Whether every dispatch genuinely succeeded and actually
-  saw content. Whether an escalation pass was needed.
+- **Review evidence only when review ran or was explicitly required:** exact scope/commit,
+  reviewer role, command, findings and disposition; prove dispatch saw content. Otherwise
+  state "Independent issue review not requested; required validation completed" rather
+  than inventing a reviewer pass. Release work requires the whole-release evidence record.
 - {{MEASUREMENT_REPORTING: which numbers, on which segment, at what n, from which build
   profile and which checkout. Omit if the issue has no measurement.}}
 - Actual test and lint output, not "passed".

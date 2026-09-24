@@ -45,7 +45,7 @@ If the diff adds no new module, dependency, or abstraction, say so explicitly an
 
 ## Shrink pass
 
-After the implementation is in place and **before** round-1 `/code-review`, apply [review.md](review.md): delete what it flags. This is a shrink pass — not a review round, not merge-authorizing.
+After implementation and before the issue's final validation/merge, apply [review.md](review.md): delete what it flags. This is the author's shrink/self-check, not an independent review or a reason to create a review round. Release review is governed separately by `docs/GIT_WORKFLOW.md`.
 
 ## When not to be lazy
 
