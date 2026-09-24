@@ -49,8 +49,10 @@ def test_evaluate_single_step_ok() -> None:
     assert evaluation.gross_output == 181  # see tests/pools/test_constant_product.py
     assert evaluation.residuals == {}
     assert evaluation.route_features == {"hops": 1}
-    assert evaluation.next_states["pool_a"].reserve0 == 1100
-    assert evaluation.next_states["pool_a"].reserve1 == 2000 - 181
+    next_a = evaluation.next_states["pool_a"]
+    assert isinstance(next_a, ConstantProductPoolState)
+    assert next_a.reserve0 == 1100
+    assert next_a.reserve1 == 2000 - 181
     assert len(evaluation.trace) == 1
     assert evaluation.trace[0].amount_out == 181
 
@@ -261,7 +263,9 @@ def test_evaluate_explicit_zero_input_step_is_deterministic_and_no_pool_call() -
     assert evaluation.trace[0].amount_out == 0
     # The zero-input step made no pool call: pool_a's state only reflects the
     # second (real) step.
-    assert evaluation.next_states["pool_a"].reserve0 == 1000 + 100
+    next_a = evaluation.next_states["pool_a"]
+    assert isinstance(next_a, ConstantProductPoolState)
+    assert next_a.reserve0 == 1000 + 100
     assert evaluation.gross_output == 181  # see tests/pools/test_constant_product.py
 
 

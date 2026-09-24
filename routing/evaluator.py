@@ -35,9 +35,10 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
-from pools.constant_product import QuoteStatus, quote_exact_in
+from pools.quote import quote_exact_in
+from pools.result import QuoteStatus
 from routing.plan import ALL_REMAINING, REQUEST_FUND_ID, RoutePlan
-from snapshot.models import Case, ConstantProductPoolState, SnapshotBundle
+from snapshot.models import Case, PoolState, SnapshotBundle
 
 if TYPE_CHECKING:
     from benchmark.objective import ObjectiveContext
@@ -74,7 +75,7 @@ class Evaluation:
     gross_output: int
     trace: tuple[StepTrace, ...] = ()
     residuals: dict[str, int] = field(default_factory=dict)
-    next_states: dict[str, ConstantProductPoolState] = field(default_factory=dict)
+    next_states: dict[str, PoolState] = field(default_factory=dict)
     route_features: dict[str, int] = field(default_factory=dict)
     error: str | None = None
     # docs/DESIGN.md §2.9: every Evaluation carries the objective it was scored
@@ -136,7 +137,7 @@ def evaluate(
     funds: dict[str, int] = {REQUEST_FUND_ID: case.amount_in}
     fund_token: dict[str, str] = {REQUEST_FUND_ID: case.token_in}
     produced: set[str] = {REQUEST_FUND_ID}
-    next_states: dict[str, ConstantProductPoolState] = {}
+    next_states: dict[str, PoolState] = {}
     trace: list[StepTrace] = []
     route_features = {"hops": len(plan.steps)}
 
@@ -276,6 +277,8 @@ def evaluate(
                 objective,
             )
         next_states[step.pool_id] = result.new_state
+        for feature, value in result.features.items():  # e.g. CL initialized ticks crossed
+            route_features[feature] = route_features.get(feature, 0) + value
         funds[step.output_fund_id] = result.amount_out
         fund_token[step.output_fund_id] = step.token_out
         produced.add(step.output_fund_id)

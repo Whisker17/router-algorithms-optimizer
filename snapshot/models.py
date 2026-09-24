@@ -1,8 +1,8 @@
 """Minimal typed data shared by the offline bundle/case seam (docs/DESIGN.md §§2.1,
-2.2, 2.5, 4.3). Only what the synthetic constant-product slice (WHI-1427) needs is
-implemented here: a single pool family (`ConstantProductPoolState`) and a `Case`. CL
-(WHI-1428) and LB (WHI-1433) add their own pool-state types alongside this one without
-changing it.
+2.2, 2.5, 4.3): the constant-product pool family (`ConstantProductPoolState`,
+WHI-1427), the concentrated-liquidity family (`ConcentratedPoolState`, WHI-1428) and a
+`Case`. LB (WHI-1433) adds its own pool-state type alongside these without changing
+them; `PoolState` is the union every pool-agnostic caller (evaluator, bundle) uses.
 
 Every dataclass is frozen: a snapshot is immutable input data, never mutated in place
 (docs/DESIGN.md §2.2/§3). Amounts/reserves are plain Python `int` — protocol money is
@@ -11,7 +11,9 @@ never floating point (docs/DESIGN.md §2.12).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from types import MappingProxyType
 
 
 @dataclass(frozen=True)
@@ -85,6 +87,84 @@ class ConstantProductPoolState:
 
 
 @dataclass(frozen=True)
+class TickInfo:
+    """The swap-relevant part of one initialized tick's `Tick.Info` storage
+    (`ticks(int24)`): `liquidityGross` (uint128), `liquidityNet` (int128) and the two
+    `feeGrowthOutside{0,1}X128` (uint256) accumulators that `Tick.cross` flips.
+
+    The oracle-only fields (`tickCumulativeOutside`, `secondsPerLiquidityOutsideX128`,
+    `secondsOutside`) are deliberately not modeled: they depend on `block.timestamp`
+    and the observation array, never on swap amounts (see
+    docs/references/concentrated-liquidity-migration.md §4)."""
+
+    liquidity_gross: int
+    liquidity_net: int
+    fee_growth_outside0_x128: int
+    fee_growth_outside1_x128: int
+
+
+def _freeze_mapping(value: Mapping[int, object]) -> Mapping[int, object]:
+    return MappingProxyType(dict(value))
+
+
+@dataclass(frozen=True)
+class ConcentratedPoolState:
+    """One Uniswap-v3-family pool's frozen swap state (docs/DESIGN.md §2.2: price,
+    active liquidity, tick spacing, initialized tick data and fee configuration).
+
+    Field widths mirror the Solidity storage: `sqrt_price_x96` uint160 (Q64.96),
+    `tick` int24, `liquidity` uint128, `fee` uint24 in hundredths of a bip,
+    `fee_growth_global*_x128` uint256 (Q128.128), `protocol_fees*` uint128.
+    `fee_protocol` is the *raw* `slot0.feeProtocol`; its layout is source-specific
+    (Uniswap v3: two 4-bit `1/x` denominators in a uint8; Agni/FusionX: two 16-bit
+    ratios out of 10_000 in a uint32), so it is only interpreted together with
+    `source_key` by `pools.concentrated`.
+
+    Completeness is explicit: `bitmap_word_range` is the inclusive range of
+    `tickBitmap` words that were read; a word inside the range that is absent from
+    `tick_bitmap` is known to be zero, a word outside it is *unknown*. `ticks` holds
+    the `TickInfo` of initialized ticks; a swap that needs an unknown word or the data
+    of an initialized tick that is missing is an incomplete snapshot, never a zero.
+
+    `lm_pool` is the Agni/FusionX liquidity-mining hook address (`None` for Uniswap v3,
+    whose pool has no such slot). The mappings are frozen read-only views; a swap
+    returns a new state and never mutates this one."""
+
+    pool_id: str
+    source_key: str
+    token0: str
+    token1: str
+    fee: int
+    tick_spacing: int
+    sqrt_price_x96: int
+    tick: int
+    liquidity: int
+    fee_protocol: int
+    fee_growth_global0_x128: int
+    fee_growth_global1_x128: int
+    protocol_fees0: int
+    protocol_fees1: int
+    bitmap_word_range: tuple[int, int]
+    tick_bitmap: Mapping[int, int] = field(default_factory=dict)
+    ticks: Mapping[int, TickInfo] = field(default_factory=dict)
+    lm_pool: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "tick_bitmap", _freeze_mapping(self.tick_bitmap))
+        object.__setattr__(self, "ticks", _freeze_mapping(self.ticks))
+
+    def other_token(self, token: str) -> str:
+        if token == self.token0:
+            return self.token1
+        if token == self.token1:
+            return self.token0
+        raise ValueError(f"pool {self.pool_id!r} does not hold token {token!r}")
+
+
+PoolState = ConstantProductPoolState | ConcentratedPoolState
+
+
+@dataclass(frozen=True)
 class Case:
     """One Exact Input request against a frozen snapshot (docs/DESIGN.md §2.1)."""
 
@@ -105,12 +185,12 @@ class SnapshotBundle:
     # separate, clearly labeled correctness suite, never mixed into empirical results)
     schema_version: int
     block: BlockRef
-    pools: dict[str, ConstantProductPoolState]
+    pools: Mapping[str, PoolState]
     cases: tuple[Case, ...]
     bundle_hash: str
     source_path: str
 
-    def pools_for_pair(self, token_a: str, token_b: str) -> tuple[ConstantProductPoolState, ...]:
+    def pools_for_pair(self, token_a: str, token_b: str) -> tuple[PoolState, ...]:
         """All admitted pools directly connecting `token_a` and `token_b`, in a
         stable (insertion) order."""
         pair = {token_a, token_b}
