@@ -47,6 +47,10 @@ docker-compose.override.yml
 # Per-deployment config overrides (see config/README.md)
 config/*.local.yaml
 
+# Full snapshot bundles and benchmark run results (docs/DESIGN.md §2.2/§4.5).
+# Small regression fixtures live under tests/fixtures/ instead and are tracked.
+/data/
+
 # Editors / OS
 .vscode/
 .idea/

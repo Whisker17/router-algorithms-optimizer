@@ -1,0 +1,2 @@
+{"amount_in": "100000", "case_id": "direct_best_pool", "token_in": "TKA", "token_out": "TKB"}
+{"amount_in": "100000", "case_id": "direct_no_route", "token_in": "TKA", "token_out": "TKD"}
