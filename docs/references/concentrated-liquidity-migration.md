@@ -5,7 +5,9 @@ state transitions for `uniswap_v3`, `agni_v3` and `fusionx_v3`; verified offline
 against fork-simulation evidence of the deployed contracts.** Source-specific live
 admission (real collectors, bundle format, fixed-block replay): Agni done by WHI-1429
 (`docs/references/agni-fixed-block-replay.md`), FusionX by WHI-1430
-(`docs/references/fusionx-fixed-block-replay.md`); Uniswap remains WHI-1431.
+(`docs/references/fusionx-fixed-block-replay.md`), Uniswap v3 by WHI-1431
+(`docs/references/uniswap-v3-fixed-block-replay.md`, including fork-verified partial
+fills on real pools).
 
 This document is the Solidity-to-Python record DESIGN §2.3 requires: which deployed
 code was migrated, how the three V3-family deployments differ, every Solidity

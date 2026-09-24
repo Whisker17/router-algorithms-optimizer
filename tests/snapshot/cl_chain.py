@@ -1,10 +1,11 @@
-"""Scripted JSON-RPC node for the fixed-block CL collector tests (WHI-1429, WHI-1430).
+"""Scripted JSON-RPC node for the fixed-block CL collector tests (WHI-1429/1430/1431).
 
 `FakeChain` serves a set of `ConcentratedPoolState`s (typically a published fixture
 bundle's) at one block, answering exactly the calls `ConcentratedCollector` makes. Every
 state read must be EIP-1898 pinned to that block's hash; anything else fails the test.
 Pool runtime code is synthesized with every immutable as a `PUSH32` (solc 0.7.6 layout)
-unless a test patches in other bytes.
+-- plus the pool's own address when `embed_self_address` is set (Uniswap v3-core's
+`NoDelegateCall.original`) -- unless a test patches in other bytes.
 """
 
 from __future__ import annotations
@@ -58,6 +59,8 @@ class FakeChain:
         self.factory_of: dict[str, str] = {}  # what pool.factory() returns, per pool
         self.extra_pools: dict[tuple[str, str, int], str] = {}
         self.code_patch: dict[str, bytes] = {}
+        self.embed_self_address = False  # Uniswap v3: NoDelegateCall.original immutable
+        self.unlocked: dict[str, int] = {}  # slot0.unlocked override, per pool
         self.log: list[tuple[str, list[Any]]] = []
         self.spacings = {100: 1, 500: 10, 2500: 50, 10000: 200}
         # LM hooks (Agni/FusionX): each non-zero `lm_pool` is a live contract whose
@@ -82,6 +85,8 @@ class FakeChain:
             p.tick_spacing,
             self.max_liq,
         ]
+        if self.embed_self_address:
+            values.append(addr_int(pool_id))
         return b"".join(b"\x7f" + v.to_bytes(32, "big") for v in values) + b"\x00\x5b"
 
     def code(self, address: str) -> bytes:
@@ -156,7 +161,9 @@ class FakeChain:
             abi.SEL_FEE: lambda: ret(p.fee),
             abi.SEL_TICK_SPACING: lambda: ret(p.tick_spacing),
             abi.SEL_MAX_LIQUIDITY_PER_TICK: lambda: ret(self.max_liq),
-            abi.SEL_SLOT0: lambda: ret(p.sqrt_price_x96, p.tick, 0, 1, 1, p.fee_protocol, 1),
+            abi.SEL_SLOT0: lambda: ret(
+                p.sqrt_price_x96, p.tick, 0, 1, 1, p.fee_protocol, self.unlocked.get(to, 1)
+            ),
             abi.SEL_LIQUIDITY: lambda: ret(p.liquidity),
             abi.SEL_FEE_GROWTH_GLOBAL0_X128: lambda: ret(p.fee_growth_global0_x128),
             abi.SEL_FEE_GROWTH_GLOBAL1_X128: lambda: ret(p.fee_growth_global1_x128),

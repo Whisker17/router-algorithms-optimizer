@@ -1,0 +1,136 @@
+# Uniswap v3 (Mantle) fixed-block prepare selection (WHI-1431). Read by
+# `uv run python main.py prepare --source uniswap_v3 --block <n> --output <dir>`.
+#
+# Verified deployment facts (factory and pool code hashes, fee tiers, collection
+# admission, SOR capability) live in config/protocols.yaml (`uniswap_v3`); this file only
+# chooses what to collect. Token labels are local aliases; bundles store lowercase
+# addresses only.
+schema_version: 1
+source: uniswap_v3
+bundle_id_prefix: uniswap-v3
+tokens:
+  USDT: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE"  # 6 decimals
+  USDC: "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9"  # 6 decimals
+  WMNT: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8"  # 18 decimals
+  WETH: "0xdEAddEaDdeadDEadDEADDEAddEADDEAddead1111"  # 18 decimals
+  METH: "0xcDA86A272531e8640cD7F1a92c01839911B90bb0"  # 18 decimals (mETH)
+# Pool universe: every pair of the five tokens the other Mantle sources also list, times
+# every catalog fee tier, looked up through UniswapV3Factory.getPool at the frozen block
+# (not a Dune emitter list). Uniswap v3 on Mantle is thin (at block 101057678 its
+# deepest pool, WMNT/mETH 1%, holds ~$7k; USDT/WMNT 0.05%, the catalog example pool,
+# ~$22), so the universe is "every pool that exists", not a liquidity-ranked subset:
+# 13 non-zero pools, 12 admitted. Four of them run dry inside the envelope and are
+# collected over their whole int24 tick range, so those cases are a proven
+# `insufficient_liquidity`, never a guess: the two liquidity()==0 pools (WMNT/WETH 0.3%,
+# WMNT/mETH 0.3%) and USDC/mETH 0.3%, USDT/mETH 0.3%. Tiers whose getPool is zero are
+# recorded as omissions in the bundle provenance.
+pairs:
+  - tokens: [USDT, WMNT]
+    fee_tiers: [100, 500, 3000, 10000]
+  - tokens: [USDC, WMNT]
+    fee_tiers: [100, 500, 3000, 10000]
+  - tokens: [WMNT, WETH]
+    fee_tiers: [100, 500, 3000, 10000]
+  - tokens: [WMNT, METH]
+    fee_tiers: [100, 500, 3000, 10000]
+  - tokens: [METH, WETH]
+    fee_tiers: [100, 500, 3000, 10000]
+  - tokens: [USDC, METH]
+    fee_tiers: [100, 500, 3000, 10000]
+  - tokens: [USDT, WETH]
+    fee_tiers: [100, 500, 3000, 10000]
+  - tokens: [USDT, METH]
+    fee_tiers: [100, 500, 3000, 10000]
+  - tokens: [USDC, WETH]
+    fee_tiers: [100, 500, 3000, 10000]
+  - tokens: [USDC, USDT]
+    fee_tiers: [500, 3000, 10000]
+    excluded_fee_tiers:
+      - fee: 100
+        reason: >
+          USDC/USDT 0.01% (0x8cfee38ab8b8f4bc2ff662e8cc8bdfb0439c9d2c, tickSpacing 1) has
+          liquidity() == 0 at block 101057678 and holds only dust (0.211714 USDC,
+          0.007531 USDT), so any USDC/USDT case on it is a partial fill whose proof of
+          exhaustion must walk the empty bitmap from the current word (-1, tick -26) to
+          MIN_TICK/MAX_TICK: 3,465 words per direction, far beyond
+          collection.max_words_per_direction. Its envelope cannot be complete within
+          the declared bound, so it is declared out of this admission universe instead
+          of truncating the envelope (the pair has no other pool; it carries no cases).
+# Reference cases = the declared amount envelope: both directions of every pair with an
+# admitted pool, small/medium/large, scaled to that pair's depth (USD at the block:
+# WMNT ~$0.67, WETH ~$2,610, mETH ~$2,910). The large cases deliberately reach or exceed
+# the depth of the thin pools, so the envelope contains crossed ticks and real
+# exhaustion (`insufficient_liquidity`, admitted as such). Hand-chosen admission cases,
+# not the stratified empirical corpus (WHI-1436).
+cases:
+  # USDT/WMNT: USDT 1/5/20; WMNT 1/10/100
+  - {case_id: usdt_wmnt_small, token_in: USDT, token_out: WMNT, amount_in: "1000000"}
+  - {case_id: usdt_wmnt_medium, token_in: USDT, token_out: WMNT, amount_in: "5000000"}
+  - {case_id: usdt_wmnt_large, token_in: USDT, token_out: WMNT, amount_in: "20000000"}
+  - {case_id: wmnt_usdt_small, token_in: WMNT, token_out: USDT, amount_in: "1000000000000000000"}
+  - {case_id: wmnt_usdt_medium, token_in: WMNT, token_out: USDT, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_usdt_large, token_in: WMNT, token_out: USDT, amount_in: "100000000000000000000"}
+  # USDC/WMNT: USDC 1/5/20; WMNT 1/10/100
+  - {case_id: usdc_wmnt_small, token_in: USDC, token_out: WMNT, amount_in: "1000000"}
+  - {case_id: usdc_wmnt_medium, token_in: USDC, token_out: WMNT, amount_in: "5000000"}
+  - {case_id: usdc_wmnt_large, token_in: USDC, token_out: WMNT, amount_in: "20000000"}
+  - {case_id: wmnt_usdc_small, token_in: WMNT, token_out: USDC, amount_in: "1000000000000000000"}
+  - {case_id: wmnt_usdc_medium, token_in: WMNT, token_out: USDC, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_usdc_large, token_in: WMNT, token_out: USDC, amount_in: "100000000000000000000"}
+  # WMNT/WETH: WMNT 1/10/100; WETH 0.0005/0.002/0.01
+  - {case_id: wmnt_weth_small, token_in: WMNT, token_out: WETH, amount_in: "1000000000000000000"}
+  - {case_id: wmnt_weth_medium, token_in: WMNT, token_out: WETH, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_weth_large, token_in: WMNT, token_out: WETH, amount_in: "100000000000000000000"}
+  - {case_id: weth_wmnt_small, token_in: WETH, token_out: WMNT, amount_in: "500000000000000"}
+  - {case_id: weth_wmnt_medium, token_in: WETH, token_out: WMNT, amount_in: "2000000000000000"}
+  - {case_id: weth_wmnt_large, token_in: WETH, token_out: WMNT, amount_in: "10000000000000000"}
+  # WMNT/METH: WMNT 10/100/1000; METH 0.005/0.05/0.5
+  - {case_id: wmnt_meth_small, token_in: WMNT, token_out: METH, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_meth_medium, token_in: WMNT, token_out: METH, amount_in: "100000000000000000000"}
+  - {case_id: wmnt_meth_large, token_in: WMNT, token_out: METH, amount_in: "1000000000000000000000"}
+  - {case_id: meth_wmnt_small, token_in: METH, token_out: WMNT, amount_in: "5000000000000000"}
+  - {case_id: meth_wmnt_medium, token_in: METH, token_out: WMNT, amount_in: "50000000000000000"}
+  - {case_id: meth_wmnt_large, token_in: METH, token_out: WMNT, amount_in: "500000000000000000"}
+  # METH/WETH: METH 0.005/0.05/0.2; WETH 0.005/0.02/0.1
+  - {case_id: meth_weth_small, token_in: METH, token_out: WETH, amount_in: "5000000000000000"}
+  - {case_id: meth_weth_medium, token_in: METH, token_out: WETH, amount_in: "50000000000000000"}
+  - {case_id: meth_weth_large, token_in: METH, token_out: WETH, amount_in: "200000000000000000"}
+  - {case_id: weth_meth_small, token_in: WETH, token_out: METH, amount_in: "5000000000000000"}
+  - {case_id: weth_meth_medium, token_in: WETH, token_out: METH, amount_in: "20000000000000000"}
+  - {case_id: weth_meth_large, token_in: WETH, token_out: METH, amount_in: "100000000000000000"}
+  # USDC/METH: USDC 5/50/500; METH 0.002/0.02/0.2
+  - {case_id: usdc_meth_small, token_in: USDC, token_out: METH, amount_in: "5000000"}
+  - {case_id: usdc_meth_medium, token_in: USDC, token_out: METH, amount_in: "50000000"}
+  - {case_id: usdc_meth_large, token_in: USDC, token_out: METH, amount_in: "500000000"}
+  - {case_id: meth_usdc_small, token_in: METH, token_out: USDC, amount_in: "2000000000000000"}
+  - {case_id: meth_usdc_medium, token_in: METH, token_out: USDC, amount_in: "20000000000000000"}
+  - {case_id: meth_usdc_large, token_in: METH, token_out: USDC, amount_in: "200000000000000000"}
+  # USDT/WETH: USDT 1/5/20; WETH 0.0005/0.002/0.01
+  - {case_id: usdt_weth_small, token_in: USDT, token_out: WETH, amount_in: "1000000"}
+  - {case_id: usdt_weth_medium, token_in: USDT, token_out: WETH, amount_in: "5000000"}
+  - {case_id: usdt_weth_large, token_in: USDT, token_out: WETH, amount_in: "20000000"}
+  - {case_id: weth_usdt_small, token_in: WETH, token_out: USDT, amount_in: "500000000000000"}
+  - {case_id: weth_usdt_medium, token_in: WETH, token_out: USDT, amount_in: "2000000000000000"}
+  - {case_id: weth_usdt_large, token_in: WETH, token_out: USDT, amount_in: "10000000000000000"}
+  # USDT/METH: USDT 1/5/20; METH 0.0005/0.005/0.05
+  - {case_id: usdt_meth_small, token_in: USDT, token_out: METH, amount_in: "1000000"}
+  - {case_id: usdt_meth_medium, token_in: USDT, token_out: METH, amount_in: "5000000"}
+  - {case_id: usdt_meth_large, token_in: USDT, token_out: METH, amount_in: "20000000"}
+  - {case_id: meth_usdt_small, token_in: METH, token_out: USDT, amount_in: "500000000000000"}
+  - {case_id: meth_usdt_medium, token_in: METH, token_out: USDT, amount_in: "5000000000000000"}
+  - {case_id: meth_usdt_large, token_in: METH, token_out: USDT, amount_in: "50000000000000000"}
+# 128 words per side: a tickSpacing-60 pool's whole int24 range is bitmap words
+# -58..57 and a tickSpacing-200 pool's -18..17, so every admitted spacing-60/200 pool
+# (current words -6..18 at block 101057678) can be walked to MIN_TICK/MAX_TICK and a
+# partial fill proven; the spacing-1/10 pools' largest cases need at most 55 words. The
+# deepest walk at the block is 70 words (USDT/mETH 0.3%, word 12 down to -58).
+collection:
+  initial_margin_words: 1
+  margin_words: 1
+  max_words_per_direction: 128
+rpc:
+  max_batch_size: 5
+  max_attempts: 8
+  base_delay_seconds: 1.0
+  max_delay_seconds: 16.0
+  timeout_seconds: 30

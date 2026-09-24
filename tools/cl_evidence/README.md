@@ -1,4 +1,4 @@
-# `tools/cl_evidence` — independent CL swap evidence (WHI-1428, WHI-1429, WHI-1430)
+# `tools/cl_evidence` — independent CL swap evidence (WHI-1428, WHI-1429, WHI-1430, WHI-1431)
 
 Validation-only Foundry project. It generates the offline fixtures in
 `tests/fixtures/concentrated/` that `tests/pools/test_concentrated.py` replays against
@@ -76,3 +76,23 @@ tools/cl_evidence/rebuild_fusionx.sh [workdir]                       # local rec
 with solc-js 0.7.6 and reports `IDENTICAL` for FusionXV3Pool/Factory/PoolDeployer against
 the deployed code outside immutable sites, plus the pool build's Keccak-256 (= the catalog
 fingerprint). Details: `docs/references/fusionx-fixed-block-replay.md`.
+
+## Uniswap v3 fixed-block replay evidence and recompile (WHI-1431)
+
+`test/CaptureUniswapV3Replay.t.sol` is the Uniswap v3 counterpart: the same per-request
+capture against the published Uniswap bundle's block, with Uniswap's deployed QuoterV2
+(or `quoter_reverted` for a swap that moves no token), recording partial fills as the pool
+really executes them and discovering crossed ticks word by word. Output:
+`tests/fixtures/uniswap_v3/evidence.jsonl.gz`, replayed by `tests/snapshot/test_uniswap_v3.py`.
+
+```bash
+tools/cl_evidence/replay_uniswap_v3.sh tests/fixtures/uniswap_v3/bundle   # requests/ + evidence
+uv run pytest tests/snapshot/test_uniswap_v3.py                          # offline replay
+tools/cl_evidence/rebuild_uniswap_v3.sh [workdir]                        # local recompile check
+```
+
+`rebuild_uniswap_v3.sh` (git, node/npm, cast) recompiles `Uniswap/v3-core@v1.0.0` with
+solc-js 0.7.6 and reports `IDENTICAL` for UniswapV3Pool/UniswapV3Factory against the
+deployed code outside immutable sites, the pool build's Keccak-256 (= the catalog
+fingerprint) and its creation-code hash (= `POOL_INIT_CODE_HASH`). Details:
+`docs/references/uniswap-v3-fixed-block-replay.md`.

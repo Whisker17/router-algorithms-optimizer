@@ -577,8 +577,10 @@ def test_real_pool_code_fingerprints(source_key: str) -> None:
     assert FUSIONX.cl_collection is not None
     matches_fusionx = normalized == FUSIONX.cl_collection.pool_code_normalized_hash
     assert matches_fusionx is (source_key == "fusionx_v3")
-    if source.cl_collection is not None:  # Agni: valid code for its *own* admission
+    if source_key == "agni_v3":  # valid code for its *own* admission
+        assert source.cl_collection is not None
         assert normalized == source.cl_collection.pool_code_normalized_hash
+    # (Uniswap's own fingerprint also normalizes `original`: tests/snapshot/test_uniswap_v3.py)
 
 
 @pytest.mark.parametrize("foreign", ["agni_v3", "uniswap_v3"])
