@@ -28,6 +28,7 @@ SIGNATURES = {
     abi.SEL_PROTOCOL_FEES: "protocolFees()",
     abi.SEL_MAX_LIQUIDITY_PER_TICK: "maxLiquidityPerTick()",
     abi.SEL_LM_POOL: "lmPool()",
+    abi.SEL_POOL: "pool()",
     abi.SEL_GET_RESERVES: "getReserves()",
     abi.SEL_GET_PAIR: "getPair(address,address)",
     abi.SEL_ALL_PAIRS_LENGTH: "allPairsLength()",

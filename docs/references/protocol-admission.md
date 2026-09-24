@@ -6,8 +6,10 @@ migrated and verified against fork evidence by WHI-1428 — see
 `docs/references/concentrated-liquidity-migration.md` (source diff, Solidity-to-Python
 map, LM-hook handling, evidence). Per-source fixed-block admission: **Agni v3 is
 admitted** by WHI-1429 (I04) — shared collector, pool-code normalization, published
-bundle and fork evidence in `docs/references/agni-fixed-block-replay.md`; I05–I08 are
-not started.
+bundle and fork evidence in `docs/references/agni-fixed-block-replay.md`; **FusionX v3
+is admitted** by WHI-1430 (I05) on its own fingerprint, bundle, fork + QuoterV2
+evidence and an independent local recompile (§3.3, §8) —
+`docs/references/fusionx-fixed-block-replay.md`; I06–I08 are not started.
 This document records what was independently verified about each of the five
 DESIGN §1.2 sources on Mantle mainnet (chain id `5000`), what still cannot be
 verified with the access available in this pass, and the exact Solidity→Python
@@ -229,14 +231,19 @@ PancakeSwap-V3-core-family lineage and non-canonical fee-tier set as Agni.
 `tick_lens`'s code hash is byte-identical to `uniswap_v3.tick_lens` (both run
 unmodified upstream `TickLens.sol`).
 
-**What is *not* claimed here:** unlike Agni and Merchant Moe (§3.2, §3.4, §3.5),
-this catalog did not independently `forge`-recompile FusionX's contracts against
-`FusionX-Finance/v3-contracts` to reproduce the exact runtime bytecode — the
-evidence above (explorer verification, official docs, package-namespace match,
-address round-trips) is multiply independent but rests on trusting Routescan's
-own verification rather than a from-scratch local rebuild. A future issue
-wanting the strongest possible guarantee should still do that rebuild; this is
-recorded as a minor residual gap, not a blocker.
+**Local recompilation (added by WHI-1430).** The first pass did not recompile
+FusionX (it rested on Routescan's verification plus the corroboration above).
+WHI-1430 closed that gap: `tools/cl_evidence/rebuild_fusionx.sh` compiles
+`FusionX-Finance/v3-contracts@7f7406e` `projects/v3-core` with solc 0.7.6 (solc-js;
+optimizer runs 20, `istanbul`, `bytecodeHash: none` — the on-chain CBOR trailer
+`a164736f6c6343000706000a` carries no IPFS hash) and the deployed runtime code at the
+candidate block is **byte-identical** outside compiler-reported immutable sites:
+`FusionXV3Pool` 22,718/22,718 bytes (34 sites), `FusionXV3Factory` 3,806/3,806 (2
+`poolDeployer` sites), `FusionXV3PoolDeployer` 24,461/24,461 (none). The pinned commit
+ships only `projects/v3-core`; its one external import, the two-function
+`IFusionXV3LmPool` *interface*, is written from the verified source's own flattened
+`@fusionx/v3-lm-pool@v1.0.0` section (interfaces only fix selectors). The pool build's
+Keccak-256 (immutables zero) is exactly `fusionx_v3.cl_collection.pool_code_normalized_hash`.
 
 **Migration scope.** Same as Agni (§3.2): Uniswap-V3-core-equivalent math
 libraries plus the LmPool hook branch, in a separate `pools/concentrated.py`
@@ -374,7 +381,7 @@ matched during verification.
 | --- | --- | --- | --- |
 | Uniswap v3 | `Uniswap/v3-core@v1.0.0` | GPL-2.0-or-later | Was BUSL-1.1; Change Date 2023-04-01 already passed. |
 | Agni v3 | `agni-protocol/contracts@7278c3a` | GPL-2.0-or-later | Confirmed via explorer + first-party repo (this revision). |
-| FusionX v3 | `FusionX-Finance/v3-contracts@7f7406e` | GPL-2.0-or-later | Confirmed via explorer + official docs + package namespace; not independently recompiled (§3.3). |
+| FusionX v3 | `FusionX-Finance/v3-contracts@7f7406e` | GPL-2.0-or-later | Confirmed via explorer + official docs + package namespace + independent local recompile (WHI-1430, §3.3). |
 | Moe Classic v1 | `merchant-moe/moe-core@460bf55` | GPL-3.0 | Confirmed via first-party repo + independent `forge` bytecode match (this revision). The repo's own deploy-script files, e.g. `script/mantle/Addresses.sol`, are separately MIT-licensed but are not migration-relevant. |
 | Moe LB v2.2 | `lfj-gg/joe-v2@v2.2.0` (LBFactory/LBPair only — see §3.5 for Router/Quoter caveat) | MIT | Confirmed via explorer + independent `forge` bytecode match (including the `runs=300` LBPair nuance). |
 
@@ -518,13 +525,9 @@ sources: all five now have an explorer-verified and/or independently
 `forge`-recompiled match to a named, commit-pinned upstream repository. The
 residual, honestly-scoped gaps are:
 
-1. **FusionX v3 was not independently `forge`-recompiled by this catalog**
-   (§3.3) — its match rests on Routescan's own explorer verification plus
-   address/docs/package-namespace corroboration, which is strong but not a
-   from-scratch local rebuild the way Agni/Moe-Classic/Moe-LB got. Not a hard
-   blocker (Routescan verification is itself independent third-party evidence),
-   but flagged for I05 as the one source where the strongest possible check
-   (local recompilation) is still open.
+1. ~~FusionX v3 was not independently recompiled~~ — **resolved by WHI-1430** (§3.3):
+   the pinned upstream rebuilds byte-identically (outside immutables) for the pool,
+   factory and pool deployer.
 2. **Merchant Moe LB Router/Quoter are confirmed customized, not vanilla
    `joe-v2`** (§3.5) — real, source-confirmed (via their own Routescan-verified
    code, not guessed) but not yet diffed against a specific alternate upstream.

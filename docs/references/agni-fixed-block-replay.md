@@ -4,15 +4,16 @@ Status: **Agni v3 is admitted for fixed-block collection.** `main.py prepare --s
 agni --block <n>` captures verified Agni pools at one finalized block and publishes an
 immutable bundle; `main.py run` replays the `direct` baseline on it offline. The result
 agrees exactly with fork execution of the deployed AgniPool bytecode at that block, in
-both swap directions. FusionX (WHI-1430) and Uniswap v3 (WHI-1431) will reuse the shared
-collector but are **not** admitted by it (see §1).
+both swap directions. FusionX has since been admitted through the same collector on its
+own evidence (WHI-1430, `docs/references/fusionx-fixed-block-replay.md`); Uniswap v3
+(WHI-1431) is **not** admitted by it (see §1).
 
 ## 1. Shared, source-parametrized CL collector
 
 `snapshot/collectors/concentrated.py` collects any Uniswap-v3-family source that has
 *both* an admitted `cl_collection` block in `config/protocols.yaml` and migrated swap
-semantics in `pools.concentrated.SOURCES`. Only `agni_v3` has the former today;
-`fusionx_v3`/`uniswap_v3` are refused with `source_not_admitted`
+semantics in `pools.concentrated.SOURCES`. `agni_v3` and (since WHI-1430) `fusionx_v3`
+have the former; `uniswap_v3` is refused with `source_not_admitted`
 (`test_only_admitted_sources_are_collected`). A later source adds its own catalog block
 and a two-line `snapshot/collectors/<name>.py`, plus one `COLLECTORS` entry.
 

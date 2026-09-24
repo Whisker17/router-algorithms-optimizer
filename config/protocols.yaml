@@ -159,10 +159,10 @@ sources:
         FusionX source below and structurally identical in Agni's) that must be
         explicitly modeled as a no-op (or excluded with a documented reason) since
         it is outside the admitted Exact Input domain.
-    # Fixed-block collection admission (WHI-1429): the only CL source the shared
-    # collector (snapshot/collectors/concentrated.py) may collect today. FusionX
-    # (WHI-1430) and Uniswap v3 (WHI-1431) add their own block after their own
-    # admission evidence; sharing the collector code does not admit them.
+    # Fixed-block collection admission (WHI-1429). The shared collector
+    # (snapshot/collectors/concentrated.py) collects only sources carrying their own
+    # block: agni_v3 here and fusionx_v3 (WHI-1430) below; Uniswap v3 (WHI-1431) adds
+    # its own after its own admission evidence -- sharing the code does not admit it.
     cl_collection:
       admitted: true
       pool_code_normalized_hash: "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
@@ -191,13 +191,18 @@ sources:
           routescan_explorer_verified: FusionXV3Factory, solc v0.7.6+commit.7338295f,
           optimizer runs=20, 10 files. Matches docs.fusionx.finance's own published
           address and FusionX-Finance/v3-contracts@7f7406e
-          (projects/v3-core/contracts/FusionXV3Factory.sol).
+          (projects/v3-core/contracts/FusionXV3Factory.sol). local_recompile_match
+          (WHI-1430, tools/cl_evidence/rebuild_fusionx.sh): solc 0.7.6, runs=20,
+          istanbul, bytecodeHash none reproduces all 3806 runtime bytes outside the 2
+          `poolDeployer` immutable sites.
       pool_deployer:
         address: "0x8790c2C3BA67223D83C8FCF2a5E3C650059987b4"
         code_hash: "0x13e05651129765463ff6a98f3f68e9c56d99a0793d290aa00938a9b469001d1e"
         verification: >
           routescan_explorer_verified: FusionXV3PoolDeployer, same compiler/settings
           as factory, 32 files. Matches docs.fusionx.finance's published address.
+          local_recompile_match (WHI-1430): 24461/24461 runtime bytes identical
+          (no immutables), i.e. it embeds exactly the upstream pool creation code.
       example_pool:
         address: "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff" # WMNT/USDT 0.05%
         code_hash: "0x5760b2fc07eb3ff5cf65ca4089d1f8bd59635849386c53afd2e12340859e2ac0"
@@ -209,6 +214,10 @@ sources:
           shows FusionX's own npm/foundry package namespace and confirms the same
           LmPool-hook architecture as agni_v3 (`lmPool.accumulateReward(...)` at
           swap start, `lmPool.crossLmTick(...)` on every tick crossing).
+          local_recompile_match (WHI-1430): the upstream FusionXV3Pool.sol at the
+          pinned commit rebuilds to these 22718 runtime bytes exactly outside the 34
+          immutable sites; keccak256 of that build equals
+          cl_collection.pool_code_normalized_hash below.
       quoter_v2:
         address: "0x90f72244294E7c5028aFd6a96E18CC2c1E913995"
         code_hash: "0xbe18d6666afa32d193068e0a3a7f346c2c2c35082b087dfa572724844ba2e509"
@@ -240,10 +249,35 @@ sources:
         (developers/smart-contracts-mantle-mainnet/v3-smart-contracts.md)
         publishes the factory/pool_deployer addresses verbatim. Same
         PancakeSwap-V3-core-family lineage and LmPool-hook caveat as agni_v3.
-        Not independently `forge`-recompiled by this catalog (unlike Moe
-        Classic/LB below) — resting on Routescan's explorer verification plus the
-        address/docs/package-namespace corroboration, which is nonetheless
-        multiply independent evidence.
+        The first pass left FusionX not independently recompiled; WHI-1430 closed
+        that: solc-js 0.7.6 (runs=20, istanbul, bytecodeHash none) builds of the
+        pinned FusionXV3Factory/FusionXV3Pool/FusionXV3PoolDeployer are
+        byte-identical to the deployed runtime code outside compiler-reported
+        immutable sites (tools/cl_evidence/rebuild_fusionx.sh). The pinned commit
+        ships only projects/v3-core, so the one imported interface
+        (IFusionXV3LmPool: two signatures) is taken from the verified source.
+    # Fixed-block collection admission (WHI-1430), same mechanism as agni_v3 above but
+    # FusionX's own evidence: its own pool bytecode fingerprint, its own pools.
+    cl_collection:
+      admitted: true
+      pool_code_normalized_hash: "0x7ba898ca845dddf5aa6085d74a3a186d0f25ee3fd9c1f276346a653b242bf293"
+      pool_immutables: [factory, token0, token1, fee, tickSpacing, maxLiquidityPerTick]
+      verification: >
+        Computed 2026-09-24 at the candidate block (101057678) over all four
+        USDT/WMNT FusionXV3Factory.getPool results (fee 100/500/2500/10000 ->
+        0x4a313244..., 0x262255f4... [example_pool, whose exact code_hash is pinned
+        above], 0xed3ee32b..., 0xe39688f2...): each is 22718 bytes (not AgniPool's
+        22964 -- different optimizer runs, 20 vs 200, so a distinct fingerprint),
+        and zeroing the PUSH32 sites equal to its own
+        factory/token0/token1/fee/tickSpacing/maxLiquidityPerTick getters
+        (7/6/6/8/4/3 sites for all four) yields this same hash -- which is also
+        exactly keccak256 of the independent upstream recompile (immutables zero,
+        tools/cl_evidence/rebuild_fusionx.sh). Any other code,
+        including a genuine AgniPool or UniswapV3Pool, fails closed. The 0.05% pool
+        has a live LM hook (lmPool 0x19170a0f..., whose pool() round-trips); the
+        collector records the hook's code hash, and the simulator models its
+        accumulateReward/crossLmTick calls as no-ops (WHI-1428 D3) -- validated at
+        the block by fork execution of the real hook, not assumed.
 
   - key: moe_classic_v1
     display_name: "Merchant Moe Classic v1"

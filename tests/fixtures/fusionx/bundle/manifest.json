@@ -1,0 +1,21 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "bundle_id": "fusionx-v3-101057678-a2195dd2",
+  "checksums": {
+    "cases.jsonl": "bfbcba024bc89d33fe466e502fa22f0388cfafe4ddc01bf9a27518681cdd27f4",
+    "pools.json": "98d5f9b053ae14f1fa3bac54464eb30f79d91dbf8a971de6e608d33c7497a45e",
+    "provenance.json": "3927d09163d869cc3a3b1a97f35197ff84b5ab4b1475b99eff89cd060793b86b"
+  },
+  "files": {
+    "cases": "cases.jsonl",
+    "pools": "pools.json",
+    "provenance": "provenance.json"
+  },
+  "kind": "real",
+  "schema_version": 1
+}

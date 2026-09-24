@@ -1,0 +1,48 @@
+# FusionX v3 fixed-block prepare selection (WHI-1430). Read by
+# `uv run python main.py prepare --source fusionx --block <n> --output <dir>`.
+#
+# Verified deployment facts (factory/deployer/pool code hashes, fee tiers, collection
+# admission) live in config/protocols.yaml (`fusionx_v3`); this file only chooses what to
+# collect. Token labels are local aliases; bundles store lowercase addresses only.
+schema_version: 1
+source: fusionx_v3
+bundle_id_prefix: fusionx-v3
+tokens:
+  USDT: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE"  # 6 decimals
+  WMNT: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8"  # 18 decimals
+# Pool universe: the catalog's own example pair, every catalog fee tier looked up
+# through FusionXV3Factory.getPool at the frozen block (not a Dune emitter list).
+pairs:
+  - tokens: [USDT, WMNT]
+    fee_tiers: [500, 2500, 10000]
+    excluded_fee_tiers:
+      - fee: 100
+        reason: >
+          USDT/WMNT 0.01% (0x4a313244ccddd402ef8c3b2c0bcbbd31782a5f88, tickSpacing 1)
+          holds only a thin band of liquidity around the price at block 101057678: a
+          200 USDT USDT->WMNT swap fits in 2 bitmap words, but the 500 USDT medium case
+          already needs state beyond 64 words (observed at 32 and 64), and proving real
+          exhaustion would mean walking ~4,560 words to MIN_TICK. The medium/large
+          envelope below cannot be complete for it within
+          collection.max_words_per_direction, so it is declared out of this admission
+          universe instead of truncating the envelope.
+# Reference cases = the declared amount envelope, both directions, small/medium/large
+# (10/500/5,000 USDT; 10/500/5,000 WMNT ~ $6.6/$330/$3,300 at the block). Hand-chosen
+# admission cases, not the stratified empirical corpus (WHI-1436).
+cases:
+  - {case_id: usdt_wmnt_small, token_in: USDT, token_out: WMNT, amount_in: "10000000"}
+  - {case_id: usdt_wmnt_medium, token_in: USDT, token_out: WMNT, amount_in: "500000000"}
+  - {case_id: usdt_wmnt_large, token_in: USDT, token_out: WMNT, amount_in: "5000000000"}
+  - {case_id: wmnt_usdt_small, token_in: WMNT, token_out: USDT, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_usdt_medium, token_in: WMNT, token_out: USDT, amount_in: "500000000000000000000"}
+  - {case_id: wmnt_usdt_large, token_in: WMNT, token_out: USDT, amount_in: "5000000000000000000000"}
+collection:
+  initial_margin_words: 1
+  margin_words: 1
+  max_words_per_direction: 32
+rpc:
+  max_batch_size: 5
+  max_attempts: 8
+  base_delay_seconds: 1.0
+  max_delay_seconds: 16.0
+  timeout_seconds: 30

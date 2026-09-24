@@ -3,7 +3,8 @@
 Source-parametrized: `collect_for_source(source_key, request)` collects any
 Uniswap-v3-family source whose `config/protocols.yaml` entry carries
 `cl_collection.admitted: true` and whose swap semantics `pools.concentrated.SOURCES`
-has migrated. Today that is only `agni_v3`; sharing this code admits nothing else.
+has migrated. Today that is `agni_v3` (WHI-1429) and `fusionx_v3` (WHI-1430); sharing
+this code admits nothing else.
 
 The flow (docs/DESIGN.md §2.2, §4.4 Prepare):
 
@@ -22,12 +23,14 @@ The flow (docs/DESIGN.md §2.2, §4.4 Prepare):
    `factory.feeAmountTickSpacing(fee)` == the catalog's expected tier) consistently; and
    be unlocked at the block boundary.
 4. **State + complete tick recovery.** `slot0`, `liquidity`, both `feeGrowthGlobal`,
-   `protocolFees`, `lmPool`, then a `tickBitmap` + `ticks()` walk outward from the
-   current word. The walk is driven by the migrated simulator itself: the largest
-   reference case in each direction is quoted against the collected state and the range
-   grows one word toward the side that returned `incomplete_snapshot`, until the swap
-   fits (then `margin_words` more) or `max_words_per_direction` is exceeded -- which
-   refuses publication with `incomplete_snapshot` instead of truncating the envelope.
+   `protocolFees`, `lmPool` (a non-zero LM hook must have code and its `pool()` must
+   round-trip to this pool; its code hash is recorded), then a `tickBitmap` + `ticks()`
+   walk outward from the current word. The walk is driven by the migrated simulator
+   itself: the largest reference case in each direction is quoted against the collected
+   state and the range grows one word toward the side that returned
+   `incomplete_snapshot`, until the swap fits (then `margin_words` more) or
+   `max_words_per_direction` is exceeded -- which refuses publication with
+   `incomplete_snapshot` instead of truncating the envelope.
 5. **Admission.** Every reference case is quoted on every pool of its pair; anything but
    `ok`/`insufficient_liquidity` (i.e. incomplete, unsupported or reverting) refuses
    publication.
@@ -71,7 +74,10 @@ from snapshot.rpc import (
 
 PROVENANCE_SCHEMA = "cl-collection/1"
 COLLECTOR = "snapshot.collectors.concentrated"
-DEFAULT_PREPARE_CONFIGS = {"agni_v3": Path("config/prepare/agni.yaml")}
+DEFAULT_PREPARE_CONFIGS = {
+    "agni_v3": Path("config/prepare/agni.yaml"),
+    "fusionx_v3": Path("config/prepare/fusionx.yaml"),
+}
 
 
 def _floor_word(tick: int, spacing: int) -> int:
@@ -94,6 +100,7 @@ class _Pool:
     immutable_sites: dict[str, int]
     max_liquidity_per_tick: int
     lm_pool: str | None = None
+    lm_pool_code_hash: str | None = None
     sqrt_price_x96: int = 0
     tick: int = 0
     liquidity: int = 0
@@ -499,10 +506,31 @@ class ConcentratedCollector:
                 "inconsistent_state",
                 f"pool {pool.address}: slot0.unlocked is {unlocked} at a block boundary",
             )
+        if pool.lm_pool is not None and not abi.is_zero_address(pool.lm_pool):
+            self._verify_lm_pool(pool)
         w = _floor_word(pool.tick, pool.spacing)
         margin = self.config.limits.initial_margin_words
         pool.word_lo, pool.word_hi = w - margin, w + margin
         self._read_words(pool, list(range(pool.word_lo, pool.word_hi + 1)))
+
+    def _verify_lm_pool(self, pool: _Pool) -> None:
+        """An attached LM hook is called by every swap (`accumulateReward`, and
+        `crossLmTick` per crossed tick). The simulator models it as a no-op that cannot
+        change the pool's output or storage; the hook must at least be a live contract
+        bound to this pool, and its exact code is recorded so a changed hook is visible."""
+        assert pool.lm_pool is not None
+        code = self._code(pool.lm_pool)
+        back = abi.decode_address(
+            self._eth_call(
+                pool.lm_pool, abi.encode_call(abi.SEL_POOL), f"lm pool {pool.lm_pool} pool()"
+            )
+        )
+        if back is None or back.lower() != pool.address:
+            raise PrepareError(
+                "identity_mismatch",
+                f"pool {pool.address}: lmPool {pool.lm_pool}.pool() = {back}, not this pool",
+            )
+        pool.lm_pool_code_hash = abi.keccak256_hex(code)
 
     def _read_words(self, pool: _Pool, words: list[int]) -> None:
         if not words:
@@ -702,6 +730,17 @@ class ConcentratedCollector:
                     "immutable_sites": dict(sorted(p.immutable_sites.items())),
                     "max_liquidity_per_tick": str(p.max_liquidity_per_tick),
                     "lm_pool": p.lm_pool,
+                    **(
+                        {}
+                        if p.lm_pool_code_hash is None
+                        else {
+                            "lm_pool_identity": {
+                                "code_hash": p.lm_pool_code_hash,
+                                "pool": p.address,
+                                "modeled_as": "no-op hook (accumulateReward, crossLmTick)",
+                            }
+                        }
+                    ),
                     "completeness": {
                         "bitmap_word_range": [p.word_lo, p.word_hi],
                         "tick_range": [
