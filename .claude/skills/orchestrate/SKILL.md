@@ -8,9 +8,10 @@ You are the **orchestrator**. You do not implement. You set up gates an implemen
 fake, verify every claim yourself, intervene at the points where a wrong result would look
 right, and carry what each issue learns into the next one.
 
-Pairs with `/implement`, which is the *implementer's* contract, and `/code-review`, which
-defines how review is dispatched — do not restate either here. You spawn implementers; they
-follow `/implement`, which in turn drives `/code-review`.
+Pairs with `/implement`, which is the *implementer's* contract. Ordinary issues iterate
+through acceptance, tests and scope checks without mandatory review rounds. `/code-review`
+is used for required whole-release review or an explicitly scoped optional issue review.
+Do not turn review dispatch into a default per-issue prerequisite.
 
 **The least valuable thing you can do is manage progress.** An implementer that says "still
 running" needs a sentinel, not a reply. Spend your attention on what follows, not on
@@ -18,23 +19,17 @@ progress narration.
 
 ## Before the first issue: three gates
 
-**G1 — Prove the reviewer works, with a real dispatch.** `scripts/agent-dispatch.sh --probe`
-only checks that a binary resolves; `config/agent-roles.conf` documents a configuration where
-probe said `ok` and every real call returned `503 auth_unavailable`. So:
+**G1 — Establish the execution and validation scope.** Read the requested Release/issue
+set, acceptance criteria, test/lint/type commands and resource constraints. Ordinary issue
+workers do not need a reviewer availability check before every launch. Require a focused
+review only when the issue/owner explicitly requests it or a concrete concern warrants it;
+record that scope rather than imposing a blanket review loop.
 
-```
-printf 'Reply with exactly: DISPATCH-OK\n' > /tmp/p.txt
-scripts/agent-dispatch.sh REVIEWER /tmp/p.txt     # must print DISPATCH-OK, exit 0
-```
-
-If this fails, **no issue in the set can self-merge** (`docs/agents/runtime.md` § Degraded
-mode). Say so to the user before starting — it changes the whole plan, not one step. Run this
-same real one-line dispatch again before each issue that needs REVIEWER/ESCALATOR, not just
-once at the start of the set — a role that worked for issue 1 can fail mid-set (auth expiry,
-a config edit). A failed real dispatch mid-set routes that issue to § Degraded mode and forces
-a re-plan of the remaining set, exactly as if it had failed at G1. Roles and models come from
-`config/agent-roles.conf`, not from a name stated in this skill or its launch prompt — a model
-name written into a skill is the drift `docs/agents/runtime.md` warns against.
+**Before release**, prove the configured REVIEWER dispatch actually works with a real
+call (`--probe` checks binary discovery only), then execute `docs/GIT_WORKFLOW.md`
+§ Release review gate over the pinned integrated candidate. If required review is
+unavailable, hold the release; ordinary validated issue work may continue. A reviewer
+failure is never evidence that the independent review passed.
 
 **G2 — Resolve each issue's base, and refuse rather than guess.** Per
 `docs/GIT_WORKFLOW.md` § Resolving the base branch: the title prefix `[X.Y.Z]` and the
@@ -215,6 +210,14 @@ Observed, not hypothetical:
 Tell implementers to treat **your** claims as unverified assertions and check them. They
 have caught false orchestrator claims and one bad gate instruction that way. That channel is
 a feature; do not close it by being authoritative.
+
+## Before completing a release
+
+Issue-level Done is not release approval. Follow `docs/GIT_WORKFLOW.md` § Release review
+gate: pin the complete candidate/range, run independent Standards/Spec examination and
+integrated acceptance, fix blockers, verify affected areas, and record residuals/evidence.
+Use follow-up review only for actual changes or unresolved findings; no fixed round count
+or automatic escalation stage. Preserve existing human promotion/integration gates.
 
 ## Trap registry — append-only, repo-specific
 

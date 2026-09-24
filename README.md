@@ -16,7 +16,8 @@ This repository follows a PRD-first, Linear-tracked, worktree-per-issue workflow
   - Version-scoped work targets `origin/release/v{version}` (or `dev` during initial bootstrap before the first production tag).
   - Repo-wide governance targets `origin/dev`.
   - Hotfixes target `origin/main`.
-- **Review loop**: 3-round review loop via `scripts/agent-dispatch.sh` before self-squash-merge; promotions to `main` and integration-branch merges back to `dev` remain human gates.
+- **Development checks**: ordinary issue PRs may self-squash-merge after acceptance, required tests/lint/type checks, scope and mergeability checks. No fixed per-issue review loop.
+- **Release review**: independently review the complete integrated release (Standards + Spec), validate end-to-end behavior and resolve blockers before release. Promotions to `main` and finished integration-branch merges into `dev` remain human gates; see `docs/GIT_WORKFLOW.md` § Release review gate.
 
 ## Build, Test, Run
 
@@ -47,9 +48,8 @@ Skills are pinned by `skills-lock.json`; upgrade them deliberately, not per-proj
 > cannot detect these edits and **re-vendoring via `/setup-matt-pocock-skills` will
 > silently overwrite them.** Diff before accepting any skill upgrade to:
 >
-> - `implement/SKILL.md` — three-round review loop + escalation pass; self-merge
->   authorization; `REVIEWER`/`ESCALATOR` role dispatch; ponytail generation
->   constraint + shrink pass before review
+> - `implement/SKILL.md` — validation-driven issue self-merge; independent whole-release
+>   review; optional focused review; ponytail generation constraint + shrink pass
 > - `code-review/SKILL.md` — `REVIEWER` role dispatch on both axes; Reinvented Wheel
 >   smell on the Standards baseline
 > - `improve-codebase-architecture/`, `codebase-design/DESIGN-IT-TWICE.md`,

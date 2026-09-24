@@ -25,8 +25,8 @@ only inside Claude Code — not the invariant itself.
 | Role | Purpose | Wants |
 |------|---------|-------|
 | `IMPLEMENTER` | The session reading this. Never dispatched — it *is* the caller. | — |
-| `REVIEWER` | Fresh-context review of a diff (`/code-review`, both axes). | ≥ implementer strength; different vendor preferred |
-| `ESCALATOR` | Resolves findings the review loop could not close (`/implement` round-3 escalation). | Strongest reasoner available. May equal `REVIEWER` |
+| `REVIEWER` | Independent release review, or an explicitly requested focused diff review (`/code-review`, both axes). | ≥ implementer strength; different vendor preferred |
+| `ESCALATOR` | Optional expert consultation for a specific hard finding or uncertainty; no mandatory stage or round counter. | Strongest reasoner available. May equal `REVIEWER` |
 | `EXPLORER` | Read-only codebase sweeps, parallelised (`/improve-codebase-architecture`, `/wayfinder` research, design-it-twice). | Cheap and fast; depth matters less |
 
 ## Two dispatch mechanisms
@@ -77,23 +77,24 @@ before trusting it.
 
 **This is the load-bearing rule of this file.**
 
-`/implement`'s authorization to self-squash-merge is *derived from* the review loop having
-actually run (`docs/GIT_WORKFLOW.md` § Agent / automation constraints #4). So a
-portability gap must never silently become an unreviewed merge.
+Ordinary issue merge eligibility comes from acceptance, required tests/lint/type checks,
+scope/semantic-conflict checks and mergeability, not a reviewer round count. Reviewer
+preflight runs when a review is actually needed; it is not an unconditional per-issue step.
+A missing optional reviewer alone does not prevent validated ordinary development merges.
 
-If a required role probes unusable:
+For **required release review**, probe and make a real dispatch before relying on the
+role. If the role is unavailable or the review does not run:
 
-1. **Stop. Do not review your own work in the implementing context** and call the loop
-   complete. Same-context self-review does not satisfy the invariant — it is the exact
-   failure the two-context split exists to prevent.
-2. Finish the implementation, open the PR, and leave the tracker at **`In Review`** for a
-   human. Say plainly in the PR body which role was unavailable and that the review loop
-   did not run.
-3. Never record findings in `docs/DEFERRED_ISSUES.md` on the strength of a review that
-   did not happen.
+1. Do not replace independent review with the implementing context and call it complete.
+2. Keep the release/promotion PR open and its tracking issue at `In Review`; leave the
+   Linear Release in its existing Planned/In Progress stage. Report missing evidence;
+   do not promote, tag, deploy or mark Released until the gate is satisfied. Ordinary
+   issue work may continue on its own validation gates.
+3. Never record invented findings or claim a pass from a failed or empty review.
 
-A missing `EXPLORER` is less severe — it degrades breadth, not the safety gate. Fall back
-to searching inline and say the sweep was narrower than intended.
+For an explicitly required issue-specific review, honor that stated requirement and
+report inability to run it; do not generalize it into a gate for unrelated issues.
+A missing `EXPLORER` reduces breadth: search directly and say the sweep was narrower.
 
 ## When a skill wants parallel sub-agents
 

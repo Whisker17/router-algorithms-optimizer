@@ -12,6 +12,20 @@ Both axes run in **separate fresh contexts** so they don't pollute each other, t
 
 The issue tracker should have been provided to you — run `/setup-matt-pocock-skills` if `docs/agents/issue-tracker.md` is missing.
 
+## When to run
+
+Systematic independent review is required at release time under `docs/GIT_WORKFLOW.md`
+§ Release review gate. It covers the full integrated candidate against the pinned
+production-tag/bootstrap baseline, the originating spec/issues and end-to-end evidence.
+Ordinary issue PRs use `/implement`'s validation-driven path without a fixed review loop.
+This skill can also review a specific issue when explicitly requested or justified by a
+concrete concern; state whether the caller made that focused review a required gate.
+
+For release fixes, follow up on the changed delta and integration impact, not a preset
+number of whole-review repetitions. Required independent review cannot be replaced by
+implementer self-checks. Reviewer absence blocks a required release review, not all
+ordinary development merges.
+
 ## Process
 
 ### 1. Pin the fixed point
@@ -58,14 +72,15 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Dispatch both reviews in parallel
 
-Both axes run as the **`REVIEWER` role** defined in `docs/agents/runtime.md` — a fresh
-context, at least as capable as whatever implemented the code. Never review in the
-implementing context, and do not skip the role dispatch when invoked from another skill
-such as `/implement`.
+Both axes use the **`REVIEWER` role** defined in `docs/agents/runtime.md`, in separate
+fresh contexts at least as capable as the implementer. Once an independent review is
+requested, keep that separation; do not relabel author self-checks as this review.
 
-Probe the role first: `scripts/agent-dispatch.sh --probe REVIEWER`. Exit `3` means the
-reviewer is unavailable — follow § Degraded mode in `docs/agents/runtime.md` (stop at
-`In Review`, do not self-review). Then dispatch, by whichever mechanism your runtime has:
+Probe the role first: `scripts/agent-dispatch.sh --probe REVIEWER`, then prove the
+selected dispatch works with a real call. If unavailable, report the review as unrun.
+Required release review remains blocked under runtime § Degraded mode; an optional
+issue review does not introduce a new merge gate. Honor any explicit issue-specific
+requirement. Then dispatch through the available mechanism:
 
 - **Native sub-agent** (Claude Code): a single message with two `Agent` tool calls, the
   `general-purpose` subagent for both, `model:` set to `REVIEWER_MODEL` from

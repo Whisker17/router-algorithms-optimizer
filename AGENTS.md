@@ -149,18 +149,19 @@ create it as a side effect of picking up a ticket.
    **and the resolved base plus the signals it was derived from**); tracker →
    **`In Review`**. Any review finding you intentionally leave unfixed goes in
    `docs/DEFERRED_ISSUES.md` as part of this PR — see that file for the format.
-4. A PR whose implementation went through `/implement`'s full three-round review loop
-   (plus the escalation pass, when round 3 left findings open) is **pre-authorized to
-   self-squash-merge** once it reads MERGEABLE/CLEAN and tests + lint pass — no separate
-   human approval. **Exceptions that stop at `In Review` for a human:** (no sensitive-path
-   exception applies — offline benchmark, no signing keys or production deployment);
-   `release/*` → `main` promotions, and a finished version-integration `release/v*` → `dev`. PRs that skipped the
-   review loop also stop at `In Review`. After merging, run the **post-merge cleanup**
-   below. **No waiver of these exceptions is in force.** If the owner ever grants
-   one for a bounded issue set it must take the shape in `docs/GIT_WORKFLOW.md`
-   § Waiving an exception — machine-checkable scope, an expiry bound to a Release,
-   the compensating control — *and* amend the rule it overrides at every site that
-   states it, this one included. A tracker label alone waives nothing.
+4. Ordinary development PRs into `dev` or a live version-integration branch are
+   **pre-authorized to self-squash-merge** after issue acceptance criteria, the required
+   tests/lint/type checks, scope and semantic-conflict checks pass and GitHub reads
+   MERGEABLE/CLEAN. **No fixed per-issue review rounds or escalation pass are required.**
+   Focused review is optional when requested or justified by a concrete concern; reviewer
+   unavailability alone does not block the ordinary development lane. Complete the
+   mandatory **whole-release independent review** in `docs/GIT_WORKFLOW.md`
+   § Release review gate before shipping a release.
+   **Human gates remain:** configured high-risk paths (none in this offline benchmark),
+   `release/*` → `main` promotions, and a finished version-integration `release/v*` → `dev`.
+   After merging, run the post-merge cleanup below. **No waiver of these human gates is
+   in force.** Any bounded waiver must follow `docs/GIT_WORKFLOW.md` § Waiving an exception
+   and amend every rule site it overrides; a tracker label alone waives nothing.
 
 ### Two `release/` lifecycles
 
@@ -257,12 +258,14 @@ workflow names a model. Instead, skills name a **role** — `REVIEWER`, `ESCALAT
 
 Two rules matter more than the mechanism:
 
-- **Review happens in a different context than implementation**, with a model at least as
-  capable (cross-vendor preferred). Check the path before relying on it:
-  `scripts/agent-dispatch.sh --probe`.
-- **If the reviewer is unavailable, the review loop did not run** — finish the work, open
-  the PR, and stop at `In Review` for a human. Self-review in the implementing context
-  never authorizes a self-merge.
+- **Release review happens in a different context than implementation**, with a model
+  at least as capable (cross-vendor preferred). Prove the selected dispatch works before
+  relying on it; a binary-only `--probe` is not an authentication check.
+- **If a required release reviewer is unavailable, the release gate has not passed** —
+  keep the release PR open and its tracking issue at `In Review`; do not mark the Linear
+  Release as Released. Report the missing role. Ordinary issue development
+  may continue after its validation gates pass. Never relabel implementing-context
+  self-checks as independent review. Reviewer preflight is not a default per-issue gate.
 
 When a model generation turns over, edit `config/agent-roles.conf` and nothing else.
 

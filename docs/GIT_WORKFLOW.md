@@ -154,7 +154,7 @@ Aligned with the tracker workflow states: `Todo` → `In Progress` → `In Revie
          tracker: state = In Review
                       │
                       ▼
-              review + tests/lint green
+              acceptance + validation green
                       │
                       ▼
          squash-merge PR → <resolved-base>
@@ -258,28 +258,73 @@ PR conventions:
   [§ Merge strategy](#merge-strategy-per-lane))
 - Remote branch is auto-deleted on merge (`delete_branch_on_merge`)
 
-### 4. Review, merge → Done
+### 4. Validate, merge → Done
 
-**Fast path — PRs that went through `/implement`'s full three-round review loop** (two
-independent reviewers per round on the Standards + Spec axes, each in a fresh context
-outside the implementing one, three fix-and-verify rounds; findings still open after round
-3 get an escalation fix pass, and only findings that are genuinely out of the issue's
-scope go to `docs/DEFERRED_ISSUES.md`): that loop **is** the review. Once the PR reads
-MERGEABLE/CLEAN and the full test + lint gate passes, the implementing agent
-squash-merges and runs cleanup itself — no separate human approval.
+**Ordinary development lane:** issue PRs into `dev` or a live version-integration
+branch may self-squash-merge once their acceptance criteria and required tests, lint,
+type checks, scope checks and semantic-conflict checks pass and GitHub reports
+MERGEABLE/CLEAN. This includes governance PRs. No fixed per-issue review count or
+automatic escalation ladder is required. An author checks their own diff and evidence;
+that is implementation validation, not a claim of independent review.
 
-Which model fills the reviewer seat is per-runtime and defined by
-`docs/agents/runtime.md`. The requirement this fast path rests on is not a specific model
-but the **separation**: reviewed by a different context, at least as capable as the
-implementer. A self-review inside the implementing context does not open the fast path.
+Focused independent review remains available when the owner requests it or a concrete
+uncertainty warrants it. Its scope and any explicit gate must be stated. Do not turn
+optional review into an unconditional checkpoint, and do not silently skip a review
+explicitly required by a particular issue. Merely not running a reviewer, or an optional
+reviewer being unavailable, does not block an otherwise validated ordinary issue PR.
 
-**Exceptions that always stop at `In Review` for a human:**
+**Whole-release review is mandatory** before release, as defined below. Tests passing
+for individual issues do not substitute for integrated release evidence.
 
-- Changes touching sensitive paths (no high-risk paths configured for this offline benchmark: no signing keys, live funds, or production deployment)
+**Exceptions that still stop at `In Review` for a human:**
+
+- Changes touching configured high-risk paths (none configured for this offline benchmark)
 - `release/*` → `main` promotions
-- Finished version-integration `release/v*` → `dev` (the merge-back that
-  makes `dev` shippable again)
-- PRs that skipped the review loop (human-implemented, or loop not run)
+- Finished version-integration `release/v*` → `dev` (the merge-back that makes `dev`
+  shippable again)
+
+### Release review gate
+
+Apply this gate before finishing a version integration or promoting a production release,
+including a hotfix release. It is a release-wide check, not a loop repeated on every issue.
+The existing human gates and per-lane merge strategies still apply after review passes.
+
+1. **Pin the full scope.** Record the candidate commit/tree, actual Linear Release,
+   originating spec/issues and comparison baseline. Normally the baseline is the last
+   production tag dereferenced to its commit; before the first production tag, record the
+   verified bootstrap baseline. Review the entire integrated release delta, not only the
+   final issue PR. Check the range includes every intended change and no unrelated release.
+2. **Independent review.** Run Standards and Spec reviews in separate fresh contexts using
+   the configured REVIEWER role (at least as capable as the implementer; cross-vendor
+   preferred). Prove dispatch/authentication works with a real call. Add focused specialist
+   examination only where the actual release needs it. For this benchmark, cover protocol
+   integer/state correctness, source-parity evidence, shared-pool funding, frozen data,
+   cost-model/measurement fairness, integration boundaries, failure handling and regressions.
+3. **Validate the integrated candidate.** Run the full relevant test/lint/type suite and
+   the release's end-to-end, snapshot replay and acceptance experiments. Record actual
+   results, dataset/config identities and environment. Template smoke success alone is
+   not product or release validation.
+4. **Resolve findings.** Fix release blockers (including P0/P1 and any unmet correctness,
+   security or release acceptance requirement regardless of label). Verify fixes with
+   targeted independent follow-up and affected tests; review the changed delta and its
+   integration impact. There is no predetermined round count or mandatory escalation
+   stage. Record genuinely nonblocking residual findings in `docs/DEFERRED_ISSUES.md`
+   with rationale and tracking; they cannot conceal an unmet release requirement.
+5. **Bind evidence to what ships.** Summarize scope, reviewer outcomes, fixes, residuals
+   and validation in the release PR. Pin the reviewed candidate and artifacts. If the
+   candidate changes, verify the new delta and rerun affected checks; do not reuse stale
+   approval. A merge commit with the identical reviewed tree may reuse the evidence only
+   after that identity and the intended comparison range are checked.
+6. **Hold incomplete releases.** If required review or validation is unavailable/failing,
+   keep the release/promotion PR open and its tracking issue at `In Review`; the Linear
+   Release stays in an existing Planned/In Progress pipeline stage, never Released.
+   Do not promote, tag or deploy. Ordinary development is not globally frozen by that
+   failure. Once the gate passes,
+   obtain the human approval required by the promotion/integration lane and follow its
+   merge/tag/deployment procedure.
+
+This gate also protects the first release and applies even if all individual issues are
+already Done. Issue completion and release readiness are distinct states.
 
 #### Waiving an exception (owner decision)
 
@@ -489,7 +534,8 @@ no way to tell this temporary cut from a live integration branch — it discrimi
 on the open PR into `main` — and a concurrent fan-out in that window would merge
 `dev`'s unreleased work into the branch you are about to ship.
 
-After the PR reads MERGEABLE/CLEAN and a human has approved it (`release/*` → `main` is
+After the PR reads MERGEABLE/CLEAN, the [Release review gate](#release-review-gate)
+passes for the exact candidate, and a human has approved it (`release/*` → `main` is
 **always** a human gate):
 
 1. **Merge with a merge commit, not squash** (see
@@ -672,13 +718,13 @@ Implementing agents (including unattended ones) **must**:
    `dev`; `hotfix` targets `main`. **Never default to `dev`.** If the
    issue does not fall into exactly one row, refuse to start. State the
    resolved base and the signals in the PR body
-4. Treat a completed `/implement` three-round review loop (plus the escalation pass when
-   round 3 left findings open) as pre-authorization to self-squash-merge, run post-merge
-   cleanup, and set the tracker to `Done`. PRs produced any other way — or that skipped
-   the loop — stop at `In Review` for a human. **The reviewer must be a context other than
-   the implementing one** (`docs/agents/runtime.md`); if the configured reviewer is
-   unavailable, the loop did not run and this pre-authorization does not apply — stop at
-   `In Review` and say which role was missing
+4. For ordinary issue PRs into `dev` or a live version-integration branch, passing
+   issue acceptance, required tests/lint/type checks, scope checks, semantic-conflict
+   checks and MERGEABLE/CLEAN authorizes self-squash-merge and mandatory cleanup.
+   No fixed per-issue review loop or reviewer-availability gate applies. Honor any
+   explicitly requested focused review. Before release, complete the independent
+   [Release review gate](#release-review-gate); unavailable required reviewers block
+   release, not all ordinary development.
 5. Respect module isolation when several issues run in parallel (see
    [§ Parallel issues](#parallel-issues))
 6. **Never** self-merge or deploy a change touching high-risk paths (none configured for this repo), even with a
