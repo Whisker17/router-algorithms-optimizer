@@ -1,0 +1,308 @@
+{
+  "admission": [
+    {
+      "case_id": "usdt_wmnt_small",
+      "pool_id": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_small",
+      "pool_id": "0xed3ee32bdcf51632707f130af827fd849929570e",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_small",
+      "pool_id": "0xe39688f2036261241e08951b69f9a4812a1e0402",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "pool_id": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "pool_id": "0xed3ee32bdcf51632707f130af827fd849929570e",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "pool_id": "0xe39688f2036261241e08951b69f9a4812a1e0402",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "pool_id": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "pool_id": "0xed3ee32bdcf51632707f130af827fd849929570e",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "pool_id": "0xe39688f2036261241e08951b69f9a4812a1e0402",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "pool_id": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "pool_id": "0xed3ee32bdcf51632707f130af827fd849929570e",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "pool_id": "0xe39688f2036261241e08951b69f9a4812a1e0402",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "pool_id": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "pool_id": "0xed3ee32bdcf51632707f130af827fd849929570e",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "pool_id": "0xe39688f2036261241e08951b69f9a4812a1e0402",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "pool_id": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "pool_id": "0xed3ee32bdcf51632707f130af827fd849929570e",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "pool_id": "0xe39688f2036261241e08951b69f9a4812a1e0402",
+      "status": "ok"
+    }
+  ],
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "block_verification": "resolved by number, <= finalized head, every state read EIP-1898 pinned to the hash with requireCanonical, header re-read by number and hash after collection",
+  "catalog": {
+    "factory": {
+      "address": "0x530d2766d1988cc1c000c8b7d00334c14b69ad71",
+      "code_hash": "0x701e4c703248a80761e6e105efd8e30e64bd0cad8ed817e24588203884894c57"
+    },
+    "pool_code_normalized_hash": "0x7ba898ca845dddf5aa6085d74a3a186d0f25ee3fd9c1f276346a653b242bf293",
+    "pool_deployer": {
+      "address": "0x8790c2c3ba67223d83c8fcf2a5e3c650059987b4",
+      "code_hash": "0x13e05651129765463ff6a98f3f68e9c56d99a0793d290aa00938a9b469001d1e"
+    },
+    "pool_immutables": [
+      "factory",
+      "token0",
+      "token1",
+      "fee",
+      "tickSpacing",
+      "maxLiquidityPerTick"
+    ],
+    "upstream": {
+      "license": "GPL-2.0-or-later (SPDX header in FusionXV3Factory.sol)",
+      "ref": "main, projects/v3-core/contracts/{FusionXV3Factory,FusionXV3Pool,FusionXV3PoolDeployer}.sol @ commit 7f7406e5fbdf610acf0fedac815c29fbca69925a",
+      "repo": "https://github.com/FusionX-Finance/v3-contracts"
+    }
+  },
+  "collector": "snapshot.collectors.concentrated",
+  "discovery": {
+    "admitted": [
+      {
+        "fee": 500,
+        "pool_id": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 2500,
+        "pool_id": "0xed3ee32bdcf51632707f130af827fd849929570e",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 10000,
+        "pool_id": "0xe39688f2036261241e08951b69f9a4812a1e0402",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      }
+    ],
+    "method": "factory.getPool over configured pairs x catalog fee tiers",
+    "omitted": [
+      {
+        "fee": 100,
+        "pool_id": "0x4a313244ccddd402ef8c3b2c0bcbbd31782a5f88",
+        "reason": "excluded by prepare config: USDT/WMNT 0.01% (0x4a313244ccddd402ef8c3b2c0bcbbd31782a5f88, tickSpacing 1) holds only a thin band of liquidity around the price at block 101057678: a 200 USDT USDT->WMNT swap fits in 2 bitmap words, but the 500 USDT medium case already needs state beyond 64 words (observed at 32 and 64), and proving real exhaustion would mean walking ~4,560 words to MIN_TICK. The medium/large envelope below cannot be complete for it within collection.max_words_per_direction, so it is declared out of this admission universe instead of truncating the envelope.",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      }
+    ]
+  },
+  "pools": {
+    "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff": {
+      "code_hash": "0x5760b2fc07eb3ff5cf65ca4089d1f8bd59635849386c53afd2e12340859e2ac0",
+      "completeness": {
+        "bitmap_word_range": [
+          101,
+          112
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "5000000000000000000000",
+            "end_tick": 284881,
+            "end_word": 111,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "5000000000",
+            "end_tick": 263340,
+            "end_word": 102,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 1621,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 32
+        },
+        "tick_range": [
+          258560,
+          289279
+        ]
+      },
+      "immutable_sites": {
+        "factory": 7,
+        "fee": 8,
+        "maxLiquidityPerTick": 3,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": "0x19170a0fb6ee15ac29feb0c8514fa58f89023107",
+      "lm_pool_identity": {
+        "code_hash": "0x1d8b1774dc1cbe0938e2853f940662ee7e50e1fdce6275194d8de3a94c9f6ea0",
+        "modeled_as": "no-op hook (accumulateReward, crossLmTick)",
+        "pool": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff"
+      },
+      "max_liquidity_per_tick": "1917569901783203986719870431555990",
+      "normalized_code_hash": "0x7ba898ca845dddf5aa6085d74a3a186d0f25ee3fd9c1f276346a653b242bf293"
+    },
+    "0xe39688f2036261241e08951b69f9a4812a1e0402": {
+      "code_hash": "0x827f0b6d658c373c0f9a85928a97cf1c4c3b289f71c6be9b6fceb4763934191d",
+      "completeness": {
+        "bitmap_word_range": [
+          2,
+          8
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "5000000000000000000000",
+            "end_tick": 403913,
+            "end_word": 7,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "5000000000",
+            "end_tick": 166978,
+            "end_word": 3,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 151,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 32
+        },
+        "tick_range": [
+          102400,
+          460799
+        ]
+      },
+      "immutable_sites": {
+        "factory": 7,
+        "fee": 8,
+        "maxLiquidityPerTick": 3,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": "0x0000000000000000000000000000000000000000",
+      "max_liquidity_per_tick": "38350317471085141830651933667504588",
+      "normalized_code_hash": "0x7ba898ca845dddf5aa6085d74a3a186d0f25ee3fd9c1f276346a653b242bf293"
+    },
+    "0xed3ee32bdcf51632707f130af827fd849929570e": {
+      "code_hash": "0xb4b9baae4bfc2f971152c9377541e646b77326a2754abc7923e8970159274a00",
+      "completeness": {
+        "bitmap_word_range": [
+          11,
+          31
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "5000000000000000000000",
+            "end_tick": 392638,
+            "end_word": 30,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "5000000000",
+            "end_tick": 160888,
+            "end_word": 12,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 642,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 32
+        },
+        "tick_range": [
+          140800,
+          409599
+        ]
+      },
+      "immutable_sites": {
+        "factory": 7,
+        "fee": 8,
+        "maxLiquidityPerTick": 3,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": "0x0000000000000000000000000000000000000000",
+      "max_liquidity_per_tick": "9587849508916019933599352157779950",
+      "normalized_code_hash": "0x7ba898ca845dddf5aa6085d74a3a186d0f25ee3fd9c1f276346a653b242bf293"
+    }
+  },
+  "prepare_config": {
+    "path": "config/prepare/fusionx.yaml",
+    "sha256": "5aa4fc77dc1639c74ad3834a602302f7e6b03a3d82b8453763534c9e51d35ba5"
+  },
+  "rpc_endpoint": "https://rpc.mantle.xyz",
+  "schema": "cl-collection/1",
+  "source_key": "fusionx_v3",
+  "token_labels": {
+    "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": "USDT",
+    "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": "WMNT"
+  }
+}

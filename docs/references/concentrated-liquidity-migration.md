@@ -4,7 +4,8 @@ Status: **`pools/concentrated.py` + `pools/cl_math.py` implement Exact Input swa
 state transitions for `uniswap_v3`, `agni_v3` and `fusionx_v3`; verified offline
 against fork-simulation evidence of the deployed contracts.** Source-specific live
 admission (real collectors, bundle format, fixed-block replay): Agni done by WHI-1429
-(`docs/references/agni-fixed-block-replay.md`); FusionX/Uniswap remain WHI-1430/1431.
+(`docs/references/agni-fixed-block-replay.md`), FusionX by WHI-1430
+(`docs/references/fusionx-fixed-block-replay.md`); Uniswap remains WHI-1431.
 
 This document is the Solidity-to-Python record DESIGN §2.3 requires: which deployed
 code was migrated, how the three V3-family deployments differ, every Solidity
@@ -102,8 +103,10 @@ only possible observable effect is a revert inside the hook contract, which woul
 the whole swap revert; this is not modeled. It is bounded by evidence: the FusionX
 example pool has a live `lmPool` (`0x19170A0F…023107`) at the evidence block, and all ten
 real-pool swaps there (including initialized-tick crossings, i.e. `crossLmTick` calls)
-succeed and match. The Agni example pool has `lmPool == 0`. A collector that finds an
-LM pool attached should record it in `ConcentratedPoolState.lm_pool`.
+succeed and match. The Agni example pool has `lmPool == 0`. The shared collector records
+an attached LM pool in `ConcentratedPoolState.lm_pool`, requires its code and `pool()`
+back-reference, and records its code hash in provenance (WHI-1430, where the FusionX
+0.05% pool's hook runs through every fixed-block replay swap).
 
 ## 6. Independent evidence
 

@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from cl_chain import FakeChain, addr_int
 
 import main
 from benchmark.objective import gross_only
@@ -460,167 +461,13 @@ def test_loader_rejects_mixed_block_or_incomplete_state(
 # ---------------------------------------------------------------------------
 
 
-def _word(value: int) -> str:
-    return format(value & ((1 << 256) - 1), "064x")
-
-
-def _ret(*values: int) -> str:
-    return "0x" + "".join(_word(v) for v in values)
-
-
-def _addr_int(a: str) -> int:
-    return int(a, 16)
-
-
-def _signed256(v: int) -> int:
-    return v - (1 << 256) if v >= 1 << 255 else v
-
-
-class FakeChain:
-    """A JSON-RPC node serving `pools` at one block. Every state read must be EIP-1898
-    pinned to that block's hash with `requireCanonical`; any other shape (a block
-    number, `latest`, a different hash) fails the test."""
-
-    def __init__(
-        self,
-        pools: dict[str, ConcentratedPoolState],
-        *,
-        block_number: int,
-        block_hash: str,
-        timestamp: int,
-    ) -> None:
-        self.pools = pools
-        self.block_number = block_number
-        self.hashes_by_number = [block_hash]  # successive answers for the header by number
-        self.block_hash = block_hash
-        self.timestamp = timestamp
-        self.finalized = block_number + 100
-        self.factory = "0x" + "fa" * 20
-        self.deployer = "0x" + "de" * 20
-        self.max_liq = 10**30
-        self.extra_pools: dict[tuple[str, str, int], str] = {}
-        self.code_patch: dict[str, bytes] = {}
-        self.log: list[tuple[str, list[Any]]] = []
-        self.spacings = {100: 1, 500: 10, 2500: 50, 10000: 200}
-
-    # fake runtime code: every immutable as a PUSH32, as solc 0.7.6 lays them out
-    def pool_code(self, pool_id: str) -> bytes:
-        if pool_id in self.code_patch:
-            return self.code_patch[pool_id]
-        p = self.pools[pool_id]
-        values = [
-            _addr_int(self.factory),
-            _addr_int(p.token0),
-            _addr_int(p.token1),
-            p.fee,
-            p.tick_spacing,
-            self.max_liq,
-        ]
-        return b"".join(b"\x7f" + v.to_bytes(32, "big") for v in values) + b"\x00\x5b"
-
-    def code(self, address: str) -> bytes:
-        if address == self.factory:
-            return b"\x60\x01factory"
-        if address == self.deployer:
-            return b"\x60\x02deployer"
-        return self.pool_code(address)
-
-    def _check_pin(self, pin: Any) -> None:
-        assert pin == {"blockHash": self.block_hash, "requireCanonical": True}, pin
-
-    def _header(self, block_hash: str) -> dict[str, str]:
-        return {
-            "number": hex(self.block_number),
-            "hash": block_hash,
-            "timestamp": hex(self.timestamp),
-        }
-
-    def call(self, method: str, params: list[Any]) -> Any:
-        self.log.append((method, params))
-        if method == "eth_chainId":
-            return hex(5000)
-        if method == "eth_getBlockByNumber":
-            if params[0] == "finalized":
-                return {"number": hex(self.finalized), "hash": "0x" + "00" * 32, "timestamp": "0x0"}
-            assert params[0] == hex(self.block_number), params
-            h = (
-                self.hashes_by_number.pop(0)
-                if len(self.hashes_by_number) > 1
-                else self.hashes_by_number[0]
-            )
-            return self._header(h)
-        if method == "eth_getBlockByHash":
-            return self._header(params[0])
-        if method == "eth_getCode":
-            self._check_pin(params[1])
-            return "0x" + self.code(params[0].lower()).hex()
-        if method == "eth_call":
-            self._check_pin(params[1])
-            return self._eth_call(params[0]["to"].lower(), params[0]["data"])
-        raise AssertionError(f"unscripted RPC method {method}")
-
-    def call_batch(self, calls: Any) -> list[Any]:
-        return [self.call(m, p) for m, p in calls]
-
-    def _eth_call(self, to: str, data: str) -> str:
-        sel, args = data[2:10], data[10:]
-        argv = [int(args[i : i + 64], 16) for i in range(0, len(args), 64)]
-        if to == self.factory:
-            if sel == abi.SEL_POOL_DEPLOYER:
-                return _ret(_addr_int(self.deployer))
-            if sel == abi.SEL_FEE_AMOUNT_TICK_SPACING:
-                return _ret(self.spacings.get(argv[0], 0))
-            if sel == abi.SEL_GET_POOL:
-                t0, t1, fee = f"0x{argv[0]:040x}", f"0x{argv[1]:040x}", argv[2]
-                for p in self.pools.values():
-                    if (p.token0, p.token1, p.fee) == (t0, t1, fee):
-                        return _ret(_addr_int(p.pool_id))
-                return _ret(_addr_int(self.extra_pools.get((t0, t1, fee), "0x" + "00" * 20)))
-            raise AssertionError(f"unscripted factory selector {sel}")
-        p = self.pools[to]
-        simple = {
-            abi.SEL_FACTORY: lambda: _ret(_addr_int(self.factory)),
-            abi.SEL_TOKEN0: lambda: _ret(_addr_int(p.token0)),
-            abi.SEL_TOKEN1: lambda: _ret(_addr_int(p.token1)),
-            abi.SEL_FEE: lambda: _ret(p.fee),
-            abi.SEL_TICK_SPACING: lambda: _ret(p.tick_spacing),
-            abi.SEL_MAX_LIQUIDITY_PER_TICK: lambda: _ret(self.max_liq),
-            abi.SEL_SLOT0: lambda: _ret(p.sqrt_price_x96, p.tick, 0, 1, 1, p.fee_protocol, 1),
-            abi.SEL_LIQUIDITY: lambda: _ret(p.liquidity),
-            abi.SEL_FEE_GROWTH_GLOBAL0_X128: lambda: _ret(p.fee_growth_global0_x128),
-            abi.SEL_FEE_GROWTH_GLOBAL1_X128: lambda: _ret(p.fee_growth_global1_x128),
-            abi.SEL_PROTOCOL_FEES: lambda: _ret(p.protocol_fees0, p.protocol_fees1),
-            abi.SEL_LM_POOL: lambda: _ret(_addr_int(p.lm_pool or "0x" + "00" * 20)),
-        }
-        if sel in simple:
-            return simple[sel]()
-        if sel == abi.SEL_TICK_BITMAP:
-            return _ret(p.tick_bitmap.get(_signed256(argv[0]), 0))
-        if sel == abi.SEL_TICKS:
-            t = _signed256(argv[0])
-            info = p.ticks.get(t)
-            if info is None:
-                return _ret(0, 0, 0, 0, 0, 0, 0, 0)
-            return _ret(
-                info.liquidity_gross,
-                info.liquidity_net,
-                info.fee_growth_outside0_x128,
-                info.fee_growth_outside1_x128,
-                0,
-                0,
-                0,
-                1,
-            )
-        raise AssertionError(f"unscripted pool selector {sel}")
-
-
 def _fake_catalog(chain: FakeChain, example_pool: str) -> ProtocolCatalog:
     agni = CATALOG.source("agni_v3")
     assert agni.cl_collection is not None
     immutables = {
-        "factory": _addr_int(chain.factory),
-        "token0": _addr_int(chain.pools[example_pool].token0),
-        "token1": _addr_int(chain.pools[example_pool].token1),
+        "factory": addr_int(chain.factory),
+        "token0": addr_int(chain.pools[example_pool].token0),
+        "token1": addr_int(chain.pools[example_pool].token1),
         "fee": chain.pools[example_pool].fee,
         "tickSpacing": chain.pools[example_pool].tick_spacing,
         "maxLiquidityPerTick": chain.max_liq,
@@ -726,7 +573,7 @@ def test_envelope_beyond_word_limit_refuses_publication(chain: FakeChain) -> Non
 
 def test_only_admitted_sources_are_collected(chain: FakeChain) -> None:
     with pytest.raises(PrepareError, match="source_not_admitted"):
-        _collector(chain, source_key="fusionx_v3")
+        _collector(chain, source_key="uniswap_v3")
     agni = CATALOG.source("agni_v3")
     assert agni.cl_collection is not None
     not_admitted = dataclasses.replace(
@@ -805,8 +652,8 @@ def test_prepare_config_rejects_invalid_values(mutate: Any, match: str) -> None:
         parse_prepare_config(raw, source_path="<test>", sha256="0" * 64)
 
 
-def test_agni_is_the_only_admitted_cl_collection_source() -> None:
+def test_cl_collection_admission_is_explicit_per_source() -> None:
     admitted = [
         s.key for s in CATALOG.sources if s.cl_collection is not None and s.cl_collection.admitted
     ]
-    assert admitted == ["agni_v3"]
+    assert admitted == ["agni_v3", "fusionx_v3"]  # FusionX by WHI-1430; Uniswap v3 not yet

@@ -1,11 +1,11 @@
-"""Write the fork-replay request file for a published CL bundle (WHI-1429).
+"""Write the fork-replay request file for a published CL bundle (WHI-1429, WHI-1430).
 
     uv run python tools/cl_evidence/make_replay_requests.py <bundle_dir> <out.json>
 
 One request per (case x pool of the case's pair): the inputs only -- pool, direction,
 raw amount -- plus the bundle's block identity and each pool's collected bitmap word
-range. `CaptureAgniReplay.t.sol` executes every request on a fork at that block with
-the deployed pool bytecode; no output value comes from here.
+range. `CaptureAgniReplay.t.sol` / `CaptureFusionXReplay.t.sol` execute every request on
+a fork at that block with the deployed pool bytecode; no output value comes from here.
 """
 
 from __future__ import annotations

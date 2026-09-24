@@ -1,4 +1,4 @@
-# `tools/cl_evidence` — independent CL swap evidence (WHI-1428, WHI-1429)
+# `tools/cl_evidence` — independent CL swap evidence (WHI-1428, WHI-1429, WHI-1430)
 
 Validation-only Foundry project. It generates the offline fixtures in
 `tests/fixtures/concentrated/` that `tests/pools/test_concentrated.py` replays against
@@ -58,3 +58,21 @@ and refuses a chain other than 5000 or a block whose hash differs from the bundl
 The large cases cross several hundred initialized ticks per pool; the first run fetches
 that storage slot by slot through the public RPC (tens of minutes) and is cached by
 Foundry afterwards. Details: `docs/references/agni-fixed-block-replay.md` §4.
+
+## FusionX fixed-block replay evidence and recompile (WHI-1430)
+
+`test/CaptureFusionXReplay.t.sol` is the FusionX counterpart of `CaptureAgniReplay`: the
+same per-request capture against the published FusionX bundle's block, plus FusionX's
+deployed QuoterV2 quote for every request and the pool/LM-hook code hashes. Output:
+`tests/fixtures/fusionx/evidence.jsonl.gz` (gzipped by the script), replayed by `tests/snapshot/test_fusionx.py`.
+
+```bash
+tools/cl_evidence/replay_fusionx.sh tests/fixtures/fusionx/bundle   # requests/ + evidence
+uv run pytest tests/snapshot/test_fusionx.py                         # offline replay
+tools/cl_evidence/rebuild_fusionx.sh [workdir]                       # local recompile check
+```
+
+`rebuild_fusionx.sh` (git, node/npm, cast) recompiles `FusionX-Finance/v3-contracts@7f7406e`
+with solc-js 0.7.6 and reports `IDENTICAL` for FusionXV3Pool/Factory/PoolDeployer against
+the deployed code outside immutable sites, plus the pool build's Keccak-256 (= the catalog
+fingerprint). Details: `docs/references/fusionx-fixed-block-replay.md`.

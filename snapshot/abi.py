@@ -40,6 +40,7 @@ SEL_FEE_GROWTH_GLOBAL1_X128 = "46141319"  # feeGrowthGlobal1X128()
 SEL_PROTOCOL_FEES = "1ad8b03b"  # protocolFees()
 SEL_MAX_LIQUIDITY_PER_TICK = "70cf754a"  # maxLiquidityPerTick()
 SEL_LM_POOL = "540d4918"  # lmPool()  (PancakeSwap-v3 family: Agni, FusionX)
+SEL_POOL = "16f0115b"  # pool()  (an LM pool's back-reference to its CL pool)
 
 # Uniswap-v2-family / Merchant Moe Classic v1
 SEL_GET_RESERVES = "0902f1ac"  # getReserves()

@@ -24,5 +24,6 @@ No loader code ships with the template — write it when the first config file l
 - `prepare/<source>.yaml` — fixed-block prepare selection for an online collector: pairs
   and fee tiers, reference cases (the declared amount envelope), tick-walk limits and RPC
   retry/batch settings (`snapshot/prepare_config.py`). `prepare/agni.yaml` drives
-  `main.py prepare --source agni --block <n>`.
+  `main.py prepare --source agni --block <n>`; `prepare/fusionx.yaml` drives
+  `--source fusionx` (WHI-1430).
 - `smoke.yaml` — run profile (`benchmark/profile.py`).
