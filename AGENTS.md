@@ -11,8 +11,8 @@ quality/latency/cost trade-offs. Uniswap SOR is a required scoped comparator;
 Jupiter/Metis is a separate research challenge.
 
 The full PRD — requirements, architecture, milestones, rejected alternatives, open
-risks — will live in `docs/DESIGN.md`. Read it once landed before making any design or
-architectural decision; do not re-derive parameters or decisions that are already validated there.
+risks — lives in `docs/DESIGN.md`. Read it before making any design or architectural
+decision; do not re-derive parameters or decisions that are already validated there.
 
 ## Status
 
@@ -20,15 +20,26 @@ architectural decision; do not re-derive parameters or decisions that are alread
 implemented yet. Update it the moment reality changes instead of leaving stale
 placeholders. Agents must not assume a module exists until its issue lands. -->
 
-Product design and issue decomposition were approved during design review and published
-to Linear (WHI-1425–WHI-1449, six milestones across Planned Releases 0.1.0 and 0.2.0).
-Repository bootstrap is complete (`origin/dev` established; Linear project binding
-configured via WHI-1425).
+The complete product specification, issue/release plans and supporting references landed
+on `dev` through WHI-1469 / PR #2. Read `docs/DESIGN.md`, `docs/ISSUE_PLAN.md`,
+`docs/RELEASE_PLAN.md` and `docs/references/0.1.0-execution-decisions.md`. The original
+25-issue publication (WHI-1425–WHI-1449) and its six milestones are recorded in the dated
+publication audit; later documentation handoffs are tracked separately by WHI-1469/1470.
+Repository bootstrap is complete (`origin/dev` established and project binding configured
+via WHI-1425).
 
-The full PRD and issue/release plans will land in their respective documentation updates.
+The current execution batch is **0.1.0 only**. Use the default public Mantle RPC and
+existing Enterprise Dune access with bounded, cached queries. Runtime is measured, with
+**no total-runtime acceptance threshold**. Suitable upstream code may be reused
+autonomously for private internal research while retaining required notices and source
+pins; do not change repository visibility or publish/relicense code incidentally.
+These decisions do not relax protocol correctness, source parity, coverage or the
+review/merge rules below. Jupiter/Metis (0.2.0) remains future work.
+
 Product implementation has **not** started: source, tests and tooling remain template
-scaffolding; no pool adapters, collectors, algorithms or benchmark modules exist yet. Code
-implementation begins with I01 and I02.
+scaffolding; no pool adapters, collectors, algorithms or benchmark modules exist yet.
+The first product issues are WHI-1426 (I01) and WHI-1427 (I02), using the committed spec
+and the resolved bootstrap base.
 
 ## Build, test, run
 
