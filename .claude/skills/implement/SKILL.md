@@ -34,7 +34,7 @@ Commit your work to the current branch.
 A completed review loop means the work is ready to merge — take the PR all the way, unless the change is **gated** (below):
 
 1. Push and open the PR: `git push -u origin HEAD`, then
-   `gh pr create --base <resolved-base>` (title/body include `{{ISSUE_PREFIX}}-NNN`
+   `gh pr create --base <resolved-base>` (title/body include `WHI-NNN`
    **and the resolved base plus the signals it was derived from** — see
    `docs/GIT_WORKFLOW.md` § Resolving the base branch). Tracker → `In Review`.
    Version-scoped work targets `release/v{version}`; repo-wide governance
@@ -50,7 +50,7 @@ A completed review loop means the work is ready to merge — take the PR all the
 
 **Gated changes stop at `In Review` and wait for a human** — do steps 1–2, skip 3:
 
-- Anything touching **{{HIGH_RISK_PATHS}}** (`docs/GIT_WORKFLOW.md` § Agent / automation constraints #6 — it overrides this skill's merge authorization).
+- Anything touching high-risk paths (**none** configured for this repo) (`docs/GIT_WORKFLOW.md` § Agent / automation constraints #6 — it overrides this skill's merge authorization).
 - Any `release/*` → `main` promotion.
 - A finished version-integration `release/v*` → `dev` (the merge-back that
   makes `dev` shippable again).

@@ -64,7 +64,7 @@ as `0.2.0` and have already disagreed in practice (title `[0.2.0]`, milestone
 
 | Field         | How to set it                                                            |
 | ------------- | ------------------------------------------------------------------------ |
-| **Project**   | `{{LINEAR_PROJECT}}` (always — the only project in scope for this repo). |
+| **Project**   | `Mantle Router Algorithm Optimizer` (always — the only project in scope for this repo). |
 | **Release**   | Required-by-convention for every version-scoped issue. Must match the `[X.Y.Z]` title prefix. **A missing Release blocks implementation** — the agent refuses rather than guessing `dev`. This table is a prompt, not a gate: trackers generally do not enforce non-empty fields; enforcement is the refusal in `docs/GIT_WORKFLOW.md`. Omit only for repo-wide governance (no version prefix). |
 | **Milestone** | Capability stage (`docs/DESIGN.md` §6). Orthogonal to Release. Do not use it to express the version or to route git. |
 | **Priority**  | `Urgent` / `High` / `Medium` / `Low` — see the table below.             |
@@ -76,7 +76,7 @@ as `0.2.0` and have already disagreed in practice (title `[0.2.0]`, milestone
 
 | Priority   | Use when…                                                                      |
 | ---------- | ------------------------------------------------------------------------------ |
-| **Urgent** | Blocks a milestone, or is a safety item on a {{HIGH_RISK_PATHS}} path. Do first. |
+| **Urgent** | Blocks a milestone, or is a safety item on a high-risk path (none configured). Do first. |
 | **High**   | Core deliverable of the milestone; needed for it to be "done."                 |
 | **Medium** | Valuable but not blocking; can slip a milestone without derailing it.          |
 | **Low**    | Nice-to-have, polish, or opportunistic cleanup.                                |
@@ -96,7 +96,7 @@ Background a newcomer needs: the relevant `docs/DESIGN.md` section, prior resear
 or an external platform fact. Skip if the Objective is fully self-explanatory.
 
 ### `## Blocked By` / `## Blocks`
-Dependency graph. List issue identifiers (e.g. `{{ISSUE_PREFIX}}-42`) and a short
+Dependency graph. List issue identifiers (e.g. `WHI-42`) and a short
 reason. Prefer to *also* wire these as Linear `blocked-by` / `blocks` relations; the
 body lines are the human-readable mirror. Use `None (entry point)` when there are no
 blockers.

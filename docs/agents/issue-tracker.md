@@ -1,7 +1,7 @@
 # Issue tracker: Linear
 
-Issues and PRDs for this repo live in **Linear**, project **"{{LINEAR_PROJECT}}"**, team
-`{{LINEAR_TEAM}}`.
+Issues and PRDs for this repo live in **Linear**, project **"Mantle Router Algorithm Optimizer"**, team
+`Whisker-Personal`.
 
 ## How to reach Linear
 
@@ -36,7 +36,7 @@ The rest of this file names Linear MCP tools (namespace `linear`); under rung 2,
 as its GraphQL equivalent. Core tools:
 
 - **Create / update an issue**: `linear.save_issue({...})`. When creating, `title` and
-  `team` are required; also set `project` to `"{{LINEAR_PROJECT}}"` so it's scoped
+  `team` are required; also set `project` to `"Mantle Router Algorithm Optimizer"` so it's scoped
   correctly. Omit `id` on create; pass `id` to update. Use `assignee` (a user id, name,
   email, or `"me"`) — not `assigneeId`. Set labels via the `labels` field (see
   `triage-labels.md` for the canonical strings).
@@ -117,7 +117,7 @@ fed from pull requests. `/triage` processes Linear issues only.
 ## When a skill says "publish to the issue tracker"
 
 Create a Linear issue with `linear.save_issue` (`title` + `team` required, `project` set
-to `"{{LINEAR_PROJECT}}"`). Follow the canonical structure in
+to `"Mantle Router Algorithm Optimizer"`). Follow the canonical structure in
 `docs/agents/issue-template.md` — title convention, body sections, and acceptance
 criteria. All issue content is written in English.
 
@@ -134,7 +134,7 @@ like this:
    each edge as a human-readable `## Blocked By` line in the body per
    `issue-template.md`; the native relation is the source of truth, the body line is the
    mirror.
-3. **Scoping**: every issue gets `project: "{{LINEAR_PROJECT}}"` and, if the
+3. **Scoping**: every issue gets `project: "Mantle Router Algorithm Optimizer"` and, if the
    set belongs to a version, the matching **Release** (title carries the `[X.Y.Z]`
    prefix per `issue-template.md`). Milestone is orthogonal — attach it when the
    set is a capability stage, but do not put it in the title.
@@ -156,11 +156,11 @@ accurate.
 
 - **Map**: one Linear issue labelled `wayfinder:map`, holding the Notes /
   Decisions-so-far / Fog body. Create with `linear.save_issue({ title, team,
-  project: "{{LINEAR_PROJECT}}", labels: ["wayfinder:map"] })`. Create the label first
+  project: "Mantle Router Algorithm Optimizer", labels: ["wayfinder:map"] })`. Create the label first
   with `linear.create_issue_label` if `linear.list_issue_labels` doesn't have it.
 - **Child ticket**: an issue whose **`parent`** is the map — Linear's native sub-issue
   relationship, visible in the map's own UI:
-  `linear.save_issue({ title, team, project: "{{LINEAR_PROJECT}}", parent: <map-id>,
+  `linear.save_issue({ title, team, project: "Mantle Router Algorithm Optimizer", parent: <map-id>,
   labels: ["wayfinder:<type>"] })`, where `<type>` is `research` / `prototype` /
   `grilling` / `task`. Once claimed, set `assignee` to the driving dev (`"me"` for the
   agent's own session).

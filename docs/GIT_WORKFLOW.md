@@ -173,10 +173,10 @@ The example below uses `origin/dev` (the governance row); substitute
 ```bash
 git fetch origin
 
-# Branch name: type/{{ISSUE_PREFIX_LOWER}}-<id>-short-topic (all lowercase, dash-separated)
-ISSUE={{ISSUE_PREFIX_LOWER}}-123
+# Branch name: type/whi-<id>-short-topic (all lowercase, dash-separated)
+ISSUE=whi-123
 BRANCH=feat/${ISSUE}-short-topic
-WT="../{{PROJECT_NAME}}-wt/${ISSUE}"
+WT="../router-algorithms-optimizer-wt/${ISSUE}"
 BASE=origin/dev   # or origin/release/vX.Y.Z / origin/main — from the table
 PR_BASE=${BASE#origin/}
 
@@ -217,13 +217,13 @@ and never a guessed `dev`.
 ```bash
 git push -u origin HEAD
 gh pr create --base "$PR_BASE" \
-  --title "feat({{ISSUE_PREFIX}}-123): short description" \
+  --title "feat(WHI-123): short description" \
   --body "$(cat <<'EOF'
 ## Summary
 - ...
 
 ## Tracker
-Closes {{ISSUE_PREFIX}}-123
+Closes WHI-123
 
 ## Base resolution
 - Category: version-scoped | governance | hotfix
@@ -250,7 +250,7 @@ PR conventions:
 - **base is the resolved base** (version-scoped work never targets `dev`;
   features/fixes never target `main` except an issue labelled `hotfix`, see
   [§ Hotfix](#hotfix))
-- Title carries `{{ISSUE_PREFIX}}-NNN`
+- Title carries `WHI-NNN`
 - Body links the tracker issue **and states the resolved base plus the
   signals it was derived from**
 - Merge strategy: **squash and merge** into `dev` or a long-lived
@@ -275,8 +275,8 @@ implementer. A self-review inside the implementing context does not open the fas
 
 **Exceptions that always stop at `In Review` for a human:**
 
-- Changes touching **{{HIGH_RISK_PATHS}}** (defined per-project at setup; e.g. payment
-  flows, auth, production data migrations, key handling)
+- Changes touching **none** (defined per-project at setup; e.g. payment
+  flows, auth, production data migrations, key handling — none configured for this offline benchmark)
 - `release/*` → `main` promotions
 - Finished version-integration `release/v*` → `dev` (the merge-back that
   makes `dev` shippable again)
@@ -324,7 +324,7 @@ documented exceptions — they are not PR-gated and they push with
 1. **Squash-merge + drop the remote branch:** `gh pr merge <N> --squash --delete-branch`
 2. **Remove the worktree:** `git worktree remove <worktree-path>` then
    `git worktree prune`
-3. **Delete the local branch:** `git branch -D feat/{{ISSUE_PREFIX_LOWER}}-123-topic`
+3. **Delete the local branch:** `git branch -D feat/whi-123-topic`
    (fails while the worktree still holds the branch — do step 2 first)
 4. **Fast-forward the resolved base:** `git fetch origin --prune` then
    `git merge --ff-only origin/<resolved-base>` (must fast-forward — if it
@@ -511,11 +511,11 @@ base.
 
 ```bash
 git fetch origin
-git worktree add -b hotfix/{{ISSUE_PREFIX_LOWER}}-123-short-topic \
-    ../{{PROJECT_NAME}}-wt/hotfix-{{ISSUE_PREFIX_LOWER}}-123 origin/main
+git worktree add -b hotfix/whi-123-short-topic \
+    ../router-algorithms-optimizer-wt/hotfix-whi-123 origin/main
 
 # Verify the base immediately — these two values must be equal
-git -C ../{{PROJECT_NAME}}-wt/hotfix-{{ISSUE_PREFIX_LOWER}}-123 merge-base HEAD origin/main
+git -C ../router-algorithms-optimizer-wt/hotfix-whi-123 merge-base HEAD origin/main
 git rev-parse origin/main
 ```
 
@@ -524,7 +524,7 @@ Then:
 1. Fix **only** this one issue
 2. **Bump the project version to a patch release** (`0.1.5` → `0.1.5.1`) — otherwise tag
    `v0.1.5.1` points at a tree that calls itself `0.1.5`
-3. `gh pr create --base main`, title/body carry `{{ISSUE_PREFIX}}-NNN`; tracker →
+3. `gh pr create --base main`, title/body carry `WHI-NNN`; tracker →
    `In Review`
 4. **Merge with a merge commit, not squash** (see
    [§ Merge strategy](#merge-strategy-per-lane))
@@ -549,7 +549,7 @@ Then:
    Release's `commitSha`
 
 When production is live, hotfixes outrank regular issues — anything on a
-{{HIGH_RISK_PATHS}} path takes this route.
+high-risk path takes this route.
 
 ## Version axis
 
@@ -606,14 +606,14 @@ This means the GitHub repo must have **both** `Allow squash merge` and
 
 | Type | Format | Example |
 |------|--------|---------|
-| Feature | `feat/{{ISSUE_PREFIX_LOWER}}-<id>-<topic>` | `feat/{{ISSUE_PREFIX_LOWER}}-101-user-auth` |
-| Fix | `fix/{{ISSUE_PREFIX_LOWER}}-<id>-<topic>` | `fix/{{ISSUE_PREFIX_LOWER}}-112-race-condition` |
-| Chore | `chore/{{ISSUE_PREFIX_LOWER}}-<id>-<topic>` | `chore/{{ISSUE_PREFIX_LOWER}}-108-lint-config` |
-| Hotfix | `hotfix/{{ISSUE_PREFIX_LOWER}}-<id>-<topic>` | `hotfix/{{ISSUE_PREFIX_LOWER}}-140-login-loop` |
+| Feature | `feat/whi-<id>-<topic>` | `feat/whi-101-user-auth` |
+| Fix | `fix/whi-<id>-<topic>` | `fix/whi-112-race-condition` |
+| Chore | `chore/whi-<id>-<topic>` | `chore/whi-108-lint-config` |
+| Hotfix | `hotfix/whi-<id>-<topic>` | `hotfix/whi-140-login-loop` |
 | Release | `release/v<version>` | `release/v0.1.0`, `release/v0.1.5.1` |
 
 - All lowercase, words joined with `-`
-- **Must include the tracker id** (`{{ISSUE_PREFIX_LOWER}}-NNN`) for PR ↔ issue tracing —
+- **Must include the tracker id** (`whi-NNN`) for PR ↔ issue tracing —
   hotfixes included, they are tracked issues too
 - One PR does one thing
 
@@ -621,10 +621,10 @@ This means the GitHub repo must have **both** `Allow squash merge` and
 
 ```text
 ~/Work/src/.../
-  {{PROJECT_NAME}}/              # primary clone (stays on dev)
-  {{PROJECT_NAME}}-wt/
-    {{ISSUE_PREFIX_LOWER}}-101/  # worktree
-    {{ISSUE_PREFIX_LOWER}}-105/
+  router-algorithms-optimizer/              # primary clone (stays on dev)
+  router-algorithms-optimizer-wt/
+    whi-101/  # worktree
+    whi-105/
     hotfix-…/
 ```
 
@@ -682,7 +682,7 @@ Implementing agents (including unattended ones) **must**:
    `In Review` and say which role was missing
 5. Respect module isolation when several issues run in parallel (see
    [§ Parallel issues](#parallel-issues))
-6. **Never** self-merge or deploy a change touching **{{HIGH_RISK_PATHS}}**, even with a
+6. **Never** self-merge or deploy a change touching high-risk paths (none configured for this repo), even with a
    green test run — stop at `In Review` for human confirmation. This gate **overrides the
    self-merge pre-authorization in #4.** No waiver of it is in force; if the owner ever
    grants one it must take the shape in
