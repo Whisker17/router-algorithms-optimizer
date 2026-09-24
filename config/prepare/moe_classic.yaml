@@ -1,0 +1,123 @@
+# Merchant Moe Classic v1 fixed-block prepare selection (WHI-1432). Read by
+# `uv run python main.py prepare --source moe_classic --block <n> --output <dir>`
+# (snapshot/collectors/classic.py, loader snapshot/prepare_config.py
+# `ClassicPrepareConfig`).
+#
+# Verified deployment facts (factory / pair-implementation code hashes, the fixed 0.3%
+# swap fee, collection admission, SOR capability) live in config/protocols.yaml
+# (`moe_classic_v1`); this file only chooses what to collect. Token labels are local
+# aliases; bundles store lowercase addresses only. `decimals` is a declaration the
+# token's own decimals() must match at the block. Only declared tokens can be collected:
+# every one is a plain ERC-20 whose pair balances equal the pair reserves at the block and
+# whose transfers credit the exact amount (fork evidence); fee-on-transfer / rebasing
+# tokens are out of scope.
+schema_version: 1
+source: moe_classic_v1
+bundle_id_prefix: moe-classic
+tokens:
+  USDT: {address: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE", decimals: 6}
+  USDC: {address: "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9", decimals: 6}
+  WMNT: {address: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8", decimals: 18}
+  WETH: {address: "0xdEAddEaDdeadDEadDEADDEAddEADDEAddead1111", decimals: 18}
+  METH: {address: "0xcDA86A272531e8640cD7F1a92c01839911B90bb0", decimals: 18}  # mETH
+# Pair universe: every pair of the five tokens the CL sources also list, looked up
+# through MoeFactory.getPair at the frozen block (not a Dune emitter list). Moe Classic
+# holds one pair per token pair (no fee tiers); at block 101057678 all ten exist.
+pairs:
+  - tokens: [USDT, WMNT]
+  - tokens: [USDC, WMNT]
+  - tokens: [WMNT, WETH]
+  - tokens: [WMNT, METH]
+  - tokens: [METH, WETH]
+  - tokens: [USDC, METH]
+  - tokens: [USDT, WETH]
+  - tokens: [USDT, METH]
+  - tokens: [USDC, WETH]
+  - tokens: [USDC, USDT]
+# Reference cases = the declared amount envelope: both directions of every pair,
+# small/medium/large, scaled to each pair's reserves at the block (USD: WMNT ~$0.67,
+# WETH ~$2,610, mETH ~$2,910). A constant-product pair never runs dry, so the large cases
+# are sized to reach a large fraction of the reserves (heavy price impact). Two dust
+# cases floor to zero output on-chain (`Moe: INSUFFICIENT_OUTPUT_AMOUNT`, admitted as
+# `insufficient_output_amount`). Hand-chosen admission cases, not the stratified
+# empirical corpus (WHI-1436).
+cases:
+  # USDT/WMNT (277 USDT / 416 WMNT): USDT 1/10/100; WMNT 1/10/150
+  - {case_id: usdt_wmnt_small, token_in: USDT, token_out: WMNT, amount_in: "1000000"}
+  - {case_id: usdt_wmnt_medium, token_in: USDT, token_out: WMNT, amount_in: "10000000"}
+  - {case_id: usdt_wmnt_large, token_in: USDT, token_out: WMNT, amount_in: "100000000"}
+  - {case_id: wmnt_usdt_small, token_in: WMNT, token_out: USDT, amount_in: "1000000000000000000"}
+  - {case_id: wmnt_usdt_medium, token_in: WMNT, token_out: USDT, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_usdt_large, token_in: WMNT, token_out: USDT, amount_in: "150000000000000000000"}
+  # USDC/WMNT (211 USDC / 319 WMNT): USDC 1/10/80; WMNT 1/10/120
+  - {case_id: usdc_wmnt_small, token_in: USDC, token_out: WMNT, amount_in: "1000000"}
+  - {case_id: usdc_wmnt_medium, token_in: USDC, token_out: WMNT, amount_in: "10000000"}
+  - {case_id: usdc_wmnt_large, token_in: USDC, token_out: WMNT, amount_in: "80000000"}
+  - {case_id: wmnt_usdc_small, token_in: WMNT, token_out: USDC, amount_in: "1000000000000000000"}
+  - {case_id: wmnt_usdc_medium, token_in: WMNT, token_out: USDC, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_usdc_large, token_in: WMNT, token_out: USDC, amount_in: "120000000000000000000"}
+  # WMNT/WETH (180 WMNT / 0.0456 WETH): WMNT 1/10/60; WETH 0.0002/0.002/0.015
+  - {case_id: wmnt_weth_small, token_in: WMNT, token_out: WETH, amount_in: "1000000000000000000"}
+  - {case_id: wmnt_weth_medium, token_in: WMNT, token_out: WETH, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_weth_large, token_in: WMNT, token_out: WETH, amount_in: "60000000000000000000"}
+  - {case_id: weth_wmnt_small, token_in: WETH, token_out: WMNT, amount_in: "200000000000000"}
+  - {case_id: weth_wmnt_medium, token_in: WETH, token_out: WMNT, amount_in: "2000000000000000"}
+  - {case_id: weth_wmnt_large, token_in: WETH, token_out: WMNT, amount_in: "15000000000000000"}
+  # WMNT/mETH (848 WMNT / 0.195 mETH): WMNT 1/20/300; mETH 0.0002/0.005/0.07
+  - {case_id: wmnt_meth_small, token_in: WMNT, token_out: METH, amount_in: "1000000000000000000"}
+  - {case_id: wmnt_meth_medium, token_in: WMNT, token_out: METH, amount_in: "20000000000000000000"}
+  - {case_id: wmnt_meth_large, token_in: WMNT, token_out: METH, amount_in: "300000000000000000000"}
+  - {case_id: meth_wmnt_small, token_in: METH, token_out: WMNT, amount_in: "200000000000000"}
+  - {case_id: meth_wmnt_medium, token_in: METH, token_out: WMNT, amount_in: "5000000000000000"}
+  - {case_id: meth_wmnt_large, token_in: METH, token_out: WMNT, amount_in: "70000000000000000"}
+  # mETH/WETH (0.720 mETH / 0.791 WETH): 0.001/0.02/0.25 each way
+  - {case_id: meth_weth_small, token_in: METH, token_out: WETH, amount_in: "1000000000000000"}
+  - {case_id: meth_weth_medium, token_in: METH, token_out: WETH, amount_in: "20000000000000000"}
+  - {case_id: meth_weth_large, token_in: METH, token_out: WETH, amount_in: "250000000000000000"}
+  - {case_id: weth_meth_small, token_in: WETH, token_out: METH, amount_in: "1000000000000000"}
+  - {case_id: weth_meth_medium, token_in: WETH, token_out: METH, amount_in: "20000000000000000"}
+  - {case_id: weth_meth_large, token_in: WETH, token_out: METH, amount_in: "250000000000000000"}
+  # USDC/mETH (3.61 USDC / 0.00118 mETH): USDC 0.05/0.5/1.5; mETH 0.00001/0.0001/0.0005
+  - {case_id: usdc_meth_small, token_in: USDC, token_out: METH, amount_in: "50000"}
+  - {case_id: usdc_meth_medium, token_in: USDC, token_out: METH, amount_in: "500000"}
+  - {case_id: usdc_meth_large, token_in: USDC, token_out: METH, amount_in: "1500000"}
+  - {case_id: meth_usdc_small, token_in: METH, token_out: USDC, amount_in: "10000000000000"}
+  - {case_id: meth_usdc_medium, token_in: METH, token_out: USDC, amount_in: "100000000000000"}
+  - {case_id: meth_usdc_large, token_in: METH, token_out: USDC, amount_in: "500000000000000"}
+  # USDT/WETH (0.96 USDT / 0.000373 WETH): USDT 0.01/0.1/0.4; WETH 0.000005/0.00005/0.00015;
+  # plus 1 wei of WETH, which floors to zero USDT (dust)
+  - {case_id: usdt_weth_small, token_in: USDT, token_out: WETH, amount_in: "10000"}
+  - {case_id: usdt_weth_medium, token_in: USDT, token_out: WETH, amount_in: "100000"}
+  - {case_id: usdt_weth_large, token_in: USDT, token_out: WETH, amount_in: "400000"}
+  - {case_id: weth_usdt_small, token_in: WETH, token_out: USDT, amount_in: "5000000000000"}
+  - {case_id: weth_usdt_medium, token_in: WETH, token_out: USDT, amount_in: "50000000000000"}
+  - {case_id: weth_usdt_large, token_in: WETH, token_out: USDT, amount_in: "150000000000000"}
+  - {case_id: weth_usdt_dust, token_in: WETH, token_out: USDT, amount_in: "1"}
+  # USDT/mETH (1,244 USDT / 0.426 mETH): USDT 1/50/500; mETH 0.0003/0.02/0.15
+  - {case_id: usdt_meth_small, token_in: USDT, token_out: METH, amount_in: "1000000"}
+  - {case_id: usdt_meth_medium, token_in: USDT, token_out: METH, amount_in: "50000000"}
+  - {case_id: usdt_meth_large, token_in: USDT, token_out: METH, amount_in: "500000000"}
+  - {case_id: meth_usdt_small, token_in: METH, token_out: USDT, amount_in: "300000000000000"}
+  - {case_id: meth_usdt_medium, token_in: METH, token_out: USDT, amount_in: "20000000000000000"}
+  - {case_id: meth_usdt_large, token_in: METH, token_out: USDT, amount_in: "150000000000000000"}
+  # USDC/WETH (119 USDC / 0.0446 WETH): USDC 1/10/50; WETH 0.0002/0.004/0.02
+  - {case_id: usdc_weth_small, token_in: USDC, token_out: WETH, amount_in: "1000000"}
+  - {case_id: usdc_weth_medium, token_in: USDC, token_out: WETH, amount_in: "10000000"}
+  - {case_id: usdc_weth_large, token_in: USDC, token_out: WETH, amount_in: "50000000"}
+  - {case_id: weth_usdc_small, token_in: WETH, token_out: USDC, amount_in: "200000000000000"}
+  - {case_id: weth_usdc_medium, token_in: WETH, token_out: USDC, amount_in: "4000000000000000"}
+  - {case_id: weth_usdc_large, token_in: WETH, token_out: USDC, amount_in: "20000000000000000"}
+  # USDC/USDT (42.9 USDC / 42.8 USDT): 1/5/20 each way; plus 1 raw USDC (dust)
+  - {case_id: usdc_usdt_small, token_in: USDC, token_out: USDT, amount_in: "1000000"}
+  - {case_id: usdc_usdt_medium, token_in: USDC, token_out: USDT, amount_in: "5000000"}
+  - {case_id: usdc_usdt_large, token_in: USDC, token_out: USDT, amount_in: "20000000"}
+  - {case_id: usdc_usdt_dust, token_in: USDC, token_out: USDT, amount_in: "1"}
+  - {case_id: usdt_usdc_small, token_in: USDT, token_out: USDC, amount_in: "1000000"}
+  - {case_id: usdt_usdc_medium, token_in: USDT, token_out: USDC, amount_in: "5000000"}
+  - {case_id: usdt_usdc_large, token_in: USDT, token_out: USDC, amount_in: "20000000"}
+rpc:
+  max_batch_size: 5
+  max_attempts: 8
+  base_delay_seconds: 1.0
+  max_delay_seconds: 16.0
+  timeout_seconds: 30.0

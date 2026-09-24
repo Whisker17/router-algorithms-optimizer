@@ -343,11 +343,17 @@ sources:
         address: "0x4e7685df06201521f35a182467feefe02c53d847" # USDT/WMNT
         code_hash: "0x984b80b03c251d7d850fb6d583101eafbe483cdb31dff9d741ac1b2e52cfa531"
         verification: >
-          Structural match only (see pair_implementation): a 95-byte
-          EIP-1167-style minimal-proxy clone whose embedded target decodes to
-          `pair_implementation` below. Every Moe Classic pool shares this exact
-          code hash regardless of which token pair it holds (only storage
-          differs), since MoeFactory clones all point at the same implementation.
+          A 95-byte `ImmutableClone` (lib/dexv2 src/libraries/ImmutableClone.sol, the
+          0age-style minimal proxy with appended immutable args that
+          MoeFactory.createPair deploys) whose embedded delegatecall target is
+          `pair_implementation` below and whose appended args are this pair's own
+          `token0 ++ token1`. WHI-1432 correction: the first pass said every Moe
+          Classic pool shares this exact code hash; it does not -- the token
+          addresses are part of the runtime code, so each pair's code hash is
+          pair-specific. The Classic collector therefore verifies every pair by
+          rebuilding its exact expected clone runtime (and CREATE2 address) from the
+          pinned implementation and its tokens (classic_collection below); this pin
+          is the USDT/WMNT instance of that rule, recomputed identically at the block.
       pair_implementation:
         address: "0x08477e01A19d44C31E4C11Dc2aC86E3BBE69c28B"
         code_hash: "0xb7969f45e694a2f22a645a3ce42e240669e09ebbd800925260fa3c3856160d87"
@@ -369,6 +375,28 @@ sources:
     tokens:
       token0: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
       token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
+    # Uniswap SOR V2 (docs/references/uni-sor-port-contract.md §2): one pair per token
+    # pair from one factory (v2PoolProvider's identity model) with a fixed 0.3% fee;
+    # SOR quotes come from the benchmark simulator's migrated MoePair math.
+    sor_protocol: V2
+    # Fixed-block collection admission (WHI-1432, snapshot/collectors/classic.py).
+    classic_collection:
+      admitted: true
+      swap_fee_bps: 30
+      verification: >
+        Read from the forge-rebuilt source (merchant-moe/moe-core@460bf55): MoePair.swap
+        enforces `(balance0 * 1000 - amount0In * 3) * (balance1 * 1000 - amount1In * 3)
+        >= reserve0 * reserve1 * 1000**2` -- a hardcoded 0.3% input fee with no per-pair
+        parameter, no factory setter and no swap-time protocol fee (MoeFactory.feeTo only
+        mints LP shares in mint/burn via _sendFee; it is non-zero at the candidate block,
+        0x03183940..., which affects no swap). MoeLibrary.getAmountOut / MoeRouter use
+        the matching 997/1000 formula. On-chain at block 101057678: all 10 pairs of the
+        5-token universe are ImmutableClones of pair_implementation with sorted
+        (token0, token1) args at their CREATE2 addresses, balances equal reserves, and
+        the fork evidence (tools/cl_evidence/test/CaptureMoeClassicReplay.t.sol) shows
+        MoeRouter.getAmountsOut is the largest output each pair accepts (one more wei
+        reverts `Moe: K`) in both directions and across a sequential second swap, and
+        `Moe: OVERFLOW` past uint112.
     upstream:
       repo: "https://github.com/merchant-moe/moe-core"
       ref: "main, src/dex/{MoeFactory,MoePair}.sol @ commit 460bf55b8330f31d31d356634d0129fd78b4fd07"

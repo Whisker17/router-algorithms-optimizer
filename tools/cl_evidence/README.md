@@ -1,4 +1,4 @@
-# `tools/cl_evidence` — independent CL swap evidence (WHI-1428, WHI-1429, WHI-1430, WHI-1431)
+# `tools/cl_evidence` — independent fork swap evidence (WHI-1428, WHI-1429, WHI-1430, WHI-1431, WHI-1432)
 
 Validation-only Foundry project. It generates the offline fixtures in
 `tests/fixtures/concentrated/` that `tests/pools/test_concentrated.py` replays against
@@ -96,3 +96,20 @@ solc-js 0.7.6 and reports `IDENTICAL` for UniswapV3Pool/UniswapV3Factory against
 deployed code outside immutable sites, the pool build's Keccak-256 (= the catalog
 fingerprint) and its creation-code hash (= `POOL_INIT_CODE_HASH`). Details:
 `docs/references/uniswap-v3-fixed-block-replay.md`.
+
+## Merchant Moe Classic v1 fixed-block replay evidence (WHI-1432)
+
+`test/CaptureMoeClassicReplay.t.sol` executes every (case x pair) request of a published
+Moe Classic bundle on a fork at its block with the deployed MoePair clones and MoeRouter:
+router quote, the input transfer (credited amount), a `quote + 1` probe that must revert
+`Moe: K`, the swap itself, the post-swap reserves/balances, a follow-up reverse swap, and
+uint112 overflow probes on the example pair. Output:
+`tests/fixtures/moe_classic/evidence.jsonl.gz`, replayed by
+`tests/snapshot/test_moe_classic.py`. Requests come from `make_classic_replay_requests.py`.
+
+```bash
+tools/cl_evidence/replay_moe_classic.sh tests/fixtures/moe_classic/bundle   # ~40 s
+uv run pytest tests/snapshot/test_moe_classic.py                             # offline replay
+```
+
+Details: `docs/references/moe-classic-fixed-block-replay.md`.

@@ -279,7 +279,12 @@ def test_source_capability_is_exposed_for_cohort_selection(
     """Uniswap v3 is an SOR V3 source (docs/references/uni-sor-port-contract.md §2): the
     catalog exposes it to cohort selection, and the published bundle carries it."""
     sor = CATALOG.sor_protocols()
-    assert sor == {"uniswap_v3": "V3", "agni_v3": "V3", "fusionx_v3": "V3"}
+    assert sor == {
+        "uniswap_v3": "V3",
+        "agni_v3": "V3",
+        "fusionx_v3": "V3",
+        "moe_classic_v1": "V2",  # WHI-1432
+    }
     assert "moe_lb_v2_2" not in sor  # LB never enters the SOR cohort (D-4)
     assert provenance["source_capability"] == {
         "protocol_family": "v3_concentrated_liquidity",

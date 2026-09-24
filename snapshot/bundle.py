@@ -4,17 +4,18 @@
     manifest.json    -- schema version, bundle id/kind, block identity, file list,
                         SHA-256 checksums for every referenced file
     pools.json       -- {"pools": [...]} pool states: constant-product entries (no
-                        `family` key, WHI-1427) and concentrated-liquidity entries
+                        `family` key, WHI-1427; a real-source entry adds `source_key`
+                        and `read_at`, WHI-1432) and concentrated-liquidity entries
                         (`"family": "concentrated"`, WHI-1429) with their collected
                         tick bitmap/tick data and completeness range
     cases.jsonl      -- one Case JSON object per line
     provenance.json  -- optional (real bundles): how the state was read -- source,
                         catalog pins, discovery and completeness evidence
 
-Real (`kind="real"`) state is block-bound: every concentrated pool record carries a
-`read_at` block identity, and the loader rejects any record, or a provenance file,
-whose block differs from the manifest's (docs/DESIGN.md §2.2: "Every state read uses
-that block"; one bundle never mixes blocks).
+Real (`kind="real"`) state is block-bound: every concentrated and real-source
+constant-product pool record carries a `read_at` block identity, and the loader rejects
+any record, or a provenance file, whose block differs from the manifest's
+(docs/DESIGN.md §2.2: "Every state read uses that block"; one bundle never mixes blocks).
 
 `load_bundle` is fail-fast and never falls back to a partial/best-effort read: a bad
 checksum, an unsupported schema version, a negative/zero amount or an unknown key
@@ -43,6 +44,7 @@ from typing import Any, cast
 
 from pools.cl_math import MAX_SQRT_RATIO, MAX_TICK, MIN_SQRT_RATIO, MIN_TICK
 from pools.concentrated import SOURCES as CL_SOURCES
+from pools.constant_product import SOURCES as CP_SOURCES
 from snapshot.models import (
     BlockRef,
     Case,
@@ -214,9 +216,29 @@ def _parse_manifest(raw: Any, where: str) -> dict[str, Any]:
     return cast(dict[str, Any], raw)
 
 
-def _parse_cp_pool(obj: Any, where: str) -> ConstantProductPoolState:
+def _check_read_at(obj: Any, where: str, block: BlockRef) -> None:
+    read_at = obj["read_at"]
+    _require_keys(read_at, {"block_number", "block_hash"}, set(), f"{where}.read_at")
+    if read_at["block_number"] != block.number or str(read_at["block_hash"]).lower() != (
+        block.hash.lower()
+    ):
+        raise BundleError(
+            f"{where}.read_at: state read at block {read_at['block_number']} "
+            f"({read_at['block_hash']}) but the bundle is frozen at block {block.number} "
+            f"({block.hash}); one bundle never mixes blocks"
+        )
+
+
+def _parse_cp_pool(obj: Any, where: str, block: BlockRef) -> ConstantProductPoolState:
+    """A constant-product pool record. A generic (synthetic) record has no
+    `source_key`; a real-source record (WHI-1432) carries `source_key` *and* the block it
+    was read at, and must satisfy that source's migrated invariants: sorted tokens,
+    reserves within the pair's storage width and the source's fixed fee."""
     _require_keys(
-        obj, {"pool_id", "token0", "token1", "reserve0", "reserve1", "fee_bps"}, set(), where
+        obj,
+        {"pool_id", "token0", "token1", "reserve0", "reserve1", "fee_bps"},
+        {"source_key", "read_at"},
+        where,
     )
     pool_id = obj["pool_id"]
     token0 = obj["token0"]
@@ -234,6 +256,27 @@ def _parse_cp_pool(obj: Any, where: str) -> ConstantProductPoolState:
         raise BundleError(f"{where}.fee_bps: must be in [0, 10000), got {fee_bps}")
     reserve0 = _parse_nonneg_int_string(obj["reserve0"], f"{where}.reserve0")
     reserve1 = _parse_nonneg_int_string(obj["reserve1"], f"{where}.reserve1")
+    source_key = obj.get("source_key")
+    if ("read_at" in obj) != (source_key is not None):
+        raise BundleError(f"{where}: a real-source record needs both `source_key` and `read_at`")
+    if source_key is not None:
+        source = CP_SOURCES.get(source_key)
+        if source is None:
+            raise BundleError(f"{where}.source_key: {source_key!r} not in {sorted(CP_SOURCES)}")
+        _check_read_at(obj, where, block)
+        if not token0 < token1:
+            raise BundleError(
+                f"{where}: token0 {token0!r} must sort below token1 {token1!r} "
+                f"({source_key} pairs order their tokens by address)"
+            )
+        limit = (1 << source.reserve_bits) - 1
+        for key, value in (("reserve0", reserve0), ("reserve1", reserve1)):
+            if value > limit:
+                raise BundleError(f"{where}.{key}: {value} exceeds uint{source.reserve_bits}")
+        if fee_bps != source.fee_bps:
+            raise BundleError(
+                f"{where}.fee_bps: {fee_bps} is not {source_key}'s fixed {source.fee_bps}"
+            )
     return ConstantProductPoolState(
         pool_id=pool_id,
         token0=token0,
@@ -241,6 +284,7 @@ def _parse_cp_pool(obj: Any, where: str) -> ConstantProductPoolState:
         reserve0=reserve0,
         reserve1=reserve1,
         fee_bps=fee_bps,
+        source_key=source_key,
     )
 
 
@@ -279,16 +323,7 @@ def _parse_cl_pool(obj: Any, where: str, block: BlockRef) -> ConcentratedPoolSta
     listed word, and nothing lies outside `bitmap_word_range`. A record read at a
     block other than the manifest's is rejected."""
     _require_keys(obj, _CL_REQUIRED_KEYS, set(), where)
-    read_at = obj["read_at"]
-    _require_keys(read_at, {"block_number", "block_hash"}, set(), f"{where}.read_at")
-    if read_at["block_number"] != block.number or str(read_at["block_hash"]).lower() != (
-        block.hash.lower()
-    ):
-        raise BundleError(
-            f"{where}.read_at: state read at block {read_at['block_number']} "
-            f"({read_at['block_hash']}) but the bundle is frozen at block {block.number} "
-            f"({block.hash}); one bundle never mixes blocks"
-        )
+    _check_read_at(obj, where, block)
     pool_id, token0, token1 = obj["pool_id"], obj["token0"], obj["token1"]
     for key, value in (("pool_id", pool_id), ("token0", token0), ("token1", token1)):
         if not isinstance(value, str) or not value:
@@ -423,7 +458,7 @@ def _parse_pool(obj: Any, where: str, block: BlockRef) -> PoolState:
         if obj["family"] != CONCENTRATED_FAMILY:
             raise BundleError(f"{where}.family: unknown pool family {obj['family']!r}")
         return _parse_cl_pool(obj, where, block)
-    return _parse_cp_pool(obj, where)
+    return _parse_cp_pool(obj, where, block)
 
 
 def _parse_pools_file(text: str, where: str, block: BlockRef) -> dict[str, PoolState]:
@@ -538,8 +573,8 @@ def _check_provenance(path: Path, block: BlockRef) -> None:
         )
 
 
-def _cp_pool_to_obj(p: ConstantProductPoolState) -> dict[str, Any]:
-    return {
+def _cp_pool_to_obj(p: ConstantProductPoolState, block: BlockRef) -> dict[str, Any]:
+    obj: dict[str, Any] = {
         "pool_id": p.pool_id,
         "token0": p.token0,
         "token1": p.token1,
@@ -547,6 +582,10 @@ def _cp_pool_to_obj(p: ConstantProductPoolState) -> dict[str, Any]:
         "reserve1": str(p.reserve1),
         "fee_bps": p.fee_bps,
     }
+    if p.source_key is not None:
+        obj["source_key"] = p.source_key
+        obj["read_at"] = {"block_number": block.number, "block_hash": block.hash}
+    return obj
 
 
 def _cl_pool_to_obj(p: ConcentratedPoolState, block: BlockRef) -> dict[str, Any]:
@@ -594,7 +633,7 @@ def _pools_to_json(pools: Sequence[PoolState], block: BlockRef) -> str:
         if isinstance(p, ConcentratedPoolState):
             entries.append(_cl_pool_to_obj(p, block))
         else:
-            entries.append(_cp_pool_to_obj(p))
+            entries.append(_cp_pool_to_obj(p, block))
     return json.dumps({"pools": entries}, indent=2, sort_keys=True) + "\n"
 
 

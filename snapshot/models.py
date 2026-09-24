@@ -12,7 +12,7 @@ never floating point (docs/DESIGN.md §2.12).
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 
 
@@ -37,6 +37,10 @@ class ConstantProductPoolState:
     matching the standard `997/1000` Uniswap V2 constant folded into a configurable
     parameter (docs/DESIGN.md §2.3 requires the protocol's own fee/rounding, not a
     hardcoded 0.3%).
+
+    `source_key` names the admitted real source whose migrated semantics govern the
+    pool (`pools.constant_product.SOURCES`, e.g. `moe_classic_v1`, WHI-1432); `None`
+    is the generic, source-free formula used by the synthetic correctness suite.
     """
 
     pool_id: str
@@ -45,6 +49,7 @@ class ConstantProductPoolState:
     reserve0: int
     reserve1: int
     fee_bps: int
+    source_key: str | None = None
 
     def other_token(self, token: str) -> str:
         if token == self.token0:
@@ -66,23 +71,9 @@ class ConstantProductPoolState:
     ) -> ConstantProductPoolState:
         """Return a *new* state after a swap sending `token_in`; never mutates self."""
         if token_in == self.token0:
-            return ConstantProductPoolState(
-                pool_id=self.pool_id,
-                token0=self.token0,
-                token1=self.token1,
-                reserve0=new_reserve_in,
-                reserve1=new_reserve_out,
-                fee_bps=self.fee_bps,
-            )
+            return replace(self, reserve0=new_reserve_in, reserve1=new_reserve_out)
         if token_in == self.token1:
-            return ConstantProductPoolState(
-                pool_id=self.pool_id,
-                token0=self.token0,
-                token1=self.token1,
-                reserve0=new_reserve_out,
-                reserve1=new_reserve_in,
-                fee_bps=self.fee_bps,
-            )
+            return replace(self, reserve0=new_reserve_out, reserve1=new_reserve_in)
         raise ValueError(f"pool {self.pool_id!r} does not hold token {token_in!r}")
 
 
