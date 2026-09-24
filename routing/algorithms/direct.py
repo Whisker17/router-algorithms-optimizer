@@ -41,7 +41,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
 
     for pool in candidates:
         plan = _plan_for_pool(pool.pool_id, case)
-        evaluation = evaluate(context.bundle, case, plan)
+        evaluation = evaluate(context.bundle, case, plan, context.objective)
         if evaluation.status is not EvalStatus.OK:
             continue
         score = context.objective.score(evaluation)

@@ -45,6 +45,7 @@ class QuoteStatus(StrEnum):
     OK = "ok"
     UNSUPPORTED_TOKEN = "unsupported_token"
     INSUFFICIENT_LIQUIDITY = "insufficient_liquidity"
+    INSUFFICIENT_OUTPUT_AMOUNT = "insufficient_output_amount"
 
 
 @dataclass(frozen=True)
@@ -115,12 +116,20 @@ def quote_exact_in(
 
     amount_out = get_amount_out(amount_in_raw, reserve_in, reserve_out, state.fee_bps)
     if amount_out <= 0:
+        # On-chain this is `UniswapV2Pair: INSUFFICIENT_OUTPUT_AMOUNT`, not
+        # `INSUFFICIENT_LIQUIDITY` -- the pool has real reserves, but this
+        # particular `amount_in` is dust that floors to zero output. Keeping a
+        # distinct status means a report never conflates "this trade is too
+        # small" with "this pool has no liquidity at all".
         return SwapResult(
-            status=QuoteStatus.INSUFFICIENT_LIQUIDITY,
+            status=QuoteStatus.INSUFFICIENT_OUTPUT_AMOUNT,
             amount_in_consumed=0,
             amount_out=0,
             new_state=None,
-            detail=f"pool {state.pool_id!r}: amount_in {amount_in_raw} rounds down to 0 output",
+            detail=(
+                f"pool {state.pool_id!r}: amount_in {amount_in_raw} rounds down to 0 output "
+                "(dust; on-chain UniswapV2Pair: INSUFFICIENT_OUTPUT_AMOUNT)"
+            ),
         )
     if amount_out >= reserve_out:
         # Cannot happen for fee_bps > 0 with the formula above (denominator always

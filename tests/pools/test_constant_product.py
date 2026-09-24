@@ -114,15 +114,15 @@ def test_quote_exact_in_insufficient_liquidity_zero_reserve() -> None:
     assert result.new_state is None
 
 
-def test_quote_exact_in_insufficient_liquidity_rounds_to_zero_output() -> None:
-    # A tiny amount_in against huge reserves rounds down to zero output --
-    # distinct from "empty pool", but still a typed insufficient-liquidity
-    # failure rather than a fabricated zero-output success.
+def test_quote_exact_in_insufficient_output_amount_dust() -> None:
+    # A tiny amount_in against huge reserves rounds down to zero output -- a
+    # distinct, on-chain "INSUFFICIENT_OUTPUT_AMOUNT" (dust) failure, not
+    # "empty pool" (INSUFFICIENT_LIQUIDITY).
     deep_pool = ConstantProductPoolState(
         pool_id="p3", token0="TKA", token1="TKB", reserve0=10**30, reserve1=10**30, fee_bps=30
     )
     result = quote_exact_in(deep_pool, "TKA", 1)
-    assert result.status is QuoteStatus.INSUFFICIENT_LIQUIDITY
+    assert result.status is QuoteStatus.INSUFFICIENT_OUTPUT_AMOUNT
     assert result.amount_out == 0
     assert result.new_state is None
 

@@ -63,14 +63,19 @@ class ObjectiveContext:
         )
 
     def score(self, evaluation: Evaluation) -> int:
-        """Score a *completed* Evaluation for candidate comparison. Only defined
-        for `EvalStatus.OK` plans -- callers must filter failed evaluations
-        before scoring (an invalid plan has no meaningful output to compare)."""
+        """Score a *completed* Evaluation for candidate comparison. Reads the
+        already-computed `estimated_net_output`/`gross_output` fields on the
+        Evaluation itself (populated by `routing.evaluator.evaluate`, which was
+        given this same `ObjectiveContext`) rather than recomputing cost
+        arithmetic here -- this keeps exactly one place that turns an objective
+        into a cost figure. Only defined for `EvalStatus.OK` plans -- callers
+        must filter failed evaluations before scoring (an invalid plan has no
+        meaningful output to compare)."""
         if evaluation.status is not EvalStatus.OK:
             raise ValueError(f"cannot score a non-ok evaluation (status={evaluation.status})")
-        if self.mode == "gross_only":
-            return evaluation.gross_output
-        return evaluation.gross_output - self.fixed_cost
+        if evaluation.estimated_net_output is not None:
+            return evaluation.estimated_net_output
+        return evaluation.gross_output
 
 
 def gross_only() -> ObjectiveContext:

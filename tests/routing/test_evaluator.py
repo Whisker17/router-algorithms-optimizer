@@ -4,6 +4,7 @@ full-fill residual policy, and next-state threading (docs/DESIGN.md §2.5).
 
 from __future__ import annotations
 
+from benchmark.objective import gross_only, synthetic_fixed_cost
 from routing.evaluator import EvalStatus, evaluate
 from routing.plan import ALL_REMAINING, REQUEST_FUND_ID, FundInput, RoutePlan, SwapStep
 from snapshot.models import BlockRef, Case, ConstantProductPoolState, SnapshotBundle
@@ -43,7 +44,7 @@ def test_evaluate_single_step_ok() -> None:
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.OK
     assert evaluation.gross_output == 181  # see tests/pools/test_constant_product.py
     assert evaluation.residuals == {}
@@ -68,7 +69,7 @@ def test_evaluate_explicit_partial_amount_leaves_residual() -> None:
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     # Only 40 of the 100 requested input was routed; the remaining 60 stays in
     # the REQUEST (input-token) fund and is a residual under the v1 full-fill
     # policy (docs/DESIGN.md §2.5).
@@ -91,7 +92,7 @@ def test_evaluate_unknown_pool_is_invalid() -> None:
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.INVALID_PLAN
     assert "unknown pool" in (evaluation.error or "")
 
@@ -110,7 +111,7 @@ def test_evaluate_wrong_token_out_is_invalid() -> None:
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.INVALID_PLAN
     assert "token_out" in (evaluation.error or "")
 
@@ -150,7 +151,7 @@ def test_evaluate_double_spend_input_fund_is_invalid() -> None:
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.INVALID_PLAN
     assert "not available" in (evaluation.error or "")
 
@@ -169,7 +170,7 @@ def test_evaluate_duplicate_output_fund_id_is_invalid() -> None:
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.INVALID_PLAN
     assert "not distinct" in (evaluation.error or "")
 
@@ -191,7 +192,7 @@ def test_evaluate_insufficient_liquidity_is_invalid() -> None:
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.INVALID_PLAN
     assert "insufficient_liquidity" in (evaluation.error or "")
 
@@ -222,7 +223,7 @@ def test_evaluate_two_step_chain_threads_pool_state() -> None:
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.OK
     assert evaluation.route_features == {"hops": 2}
     assert evaluation.gross_output > 0
@@ -254,7 +255,7 @@ def test_evaluate_explicit_zero_input_step_is_deterministic_and_no_pool_call() -
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.OK
     assert evaluation.trace[0].status == "zero_input"
     assert evaluation.trace[0].amount_out == 0
@@ -281,6 +282,73 @@ def test_evaluate_zero_amount_from_unproduced_fund_is_still_rejected() -> None:
             ),
         )
     )
-    evaluation = evaluate(bundle, case, plan)
+    evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.INVALID_PLAN
     assert "not available" in (evaluation.error or "")
+
+
+def test_evaluate_gross_only_objective_never_fabricates_a_cost() -> None:
+    # docs/DESIGN.md §2.9: gross-only is visibly cost-less -- estimated_cost /
+    # estimated_net_output stay None, never a fabricated 0.
+    bundle = _bundle({"pool_a": POOL})
+    case = Case(case_id="c1", token_in="TKA", token_out="TKB", amount_in=100)
+    plan = RoutePlan(
+        steps=(
+            SwapStep(
+                pool_id="pool_a",
+                token_in="TKA",
+                token_out="TKB",
+                inputs=(FundInput(fund_id=REQUEST_FUND_ID, amount=ALL_REMAINING),),
+                output_fund_id="OUT",
+            ),
+        )
+    )
+    objective = gross_only()
+    evaluation = evaluate(bundle, case, plan, objective)
+    assert evaluation.status is EvalStatus.OK
+    assert evaluation.objective_label == objective.label
+    assert evaluation.estimated_cost is None
+    assert evaluation.estimated_net_output is None
+
+
+def test_evaluate_synthetic_fixed_cost_objective_attaches_labeled_estimate() -> None:
+    bundle = _bundle({"pool_a": POOL})
+    case = Case(case_id="c1", token_in="TKA", token_out="TKB", amount_in=100)
+    plan = RoutePlan(
+        steps=(
+            SwapStep(
+                pool_id="pool_a",
+                token_in="TKA",
+                token_out="TKB",
+                inputs=(FundInput(fund_id=REQUEST_FUND_ID, amount=ALL_REMAINING),),
+                output_fund_id="OUT",
+            ),
+        )
+    )
+    objective = synthetic_fixed_cost(50)
+    evaluation = evaluate(bundle, case, plan, objective)
+    assert evaluation.status is EvalStatus.OK
+    assert evaluation.gross_output == 181
+    assert evaluation.estimated_cost == 50
+    assert evaluation.estimated_net_output == 131
+    assert evaluation.objective_label.startswith("SYNTHETIC")
+
+
+def test_evaluate_invalid_plan_never_carries_a_cost_estimate() -> None:
+    bundle = _bundle({"pool_a": POOL})
+    case = Case(case_id="c1", token_in="TKA", token_out="TKB", amount_in=100)
+    plan = RoutePlan(
+        steps=(
+            SwapStep(
+                pool_id="pool_a",
+                token_in="TKA",
+                token_out="TKB",
+                inputs=(FundInput(fund_id=REQUEST_FUND_ID, amount=40),),
+                output_fund_id="OUT",
+            ),
+        )
+    )
+    evaluation = evaluate(bundle, case, plan, synthetic_fixed_cost(50))
+    assert evaluation.status is EvalStatus.INVALID_PLAN
+    assert evaluation.estimated_cost is None
+    assert evaluation.estimated_net_output is None
