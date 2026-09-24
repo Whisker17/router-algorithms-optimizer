@@ -1,0 +1,46 @@
+# Agni v3 fixed-block prepare selection (WHI-1429). Read by
+# `uv run python main.py prepare --source agni --block <n> --output <dir>`.
+#
+# Verified deployment facts (factory/deployer/pool code hashes, fee tiers, collection
+# admission) live in config/protocols.yaml (`agni_v3`); this file only chooses what to
+# collect. Token labels are local aliases; bundles store lowercase addresses only.
+schema_version: 1
+source: agni_v3
+bundle_id_prefix: agni-v3
+tokens:
+  USDC: "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9"  # 6 decimals
+  WMNT: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8"  # 18 decimals
+# Pool universe: the catalog's own example pair, every catalog fee tier looked up
+# through AgniFactory.getPool at the frozen block (not a Dune emitter list).
+pairs:
+  - tokens: [USDC, WMNT]
+    fee_tiers: [500, 2500, 10000]
+    excluded_fee_tiers:
+      - fee: 100
+        reason: >
+          USDC/WMNT 0.01% (0x7b3a4b36b0c5c95142afcd1b883ed055aa166f85, tickSpacing 1)
+          holds under ~150 USDC of depth below the price at block 101057678: a 200 USDC
+          USDC->WMNT swap already needs state beyond 48 bitmap words, and proving real
+          exhaustion would mean walking ~4,500 words to MIN_TICK. The medium/large
+          envelope below cannot be complete for it within collection.max_words_per_direction, so it
+          is declared out of this admission universe instead of truncating the envelope.
+# Reference cases = the declared amount envelope, both directions, small/medium/large
+# (10/500/5,000 USDC; 10/500/5,000 WMNT ~ $6.6/$330/$3,300 at the block). Hand-chosen
+# admission cases, not the stratified empirical corpus (WHI-1436).
+cases:
+  - {case_id: usdc_wmnt_small, token_in: USDC, token_out: WMNT, amount_in: "10000000"}
+  - {case_id: usdc_wmnt_medium, token_in: USDC, token_out: WMNT, amount_in: "500000000"}
+  - {case_id: usdc_wmnt_large, token_in: USDC, token_out: WMNT, amount_in: "5000000000"}
+  - {case_id: wmnt_usdc_small, token_in: WMNT, token_out: USDC, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_usdc_medium, token_in: WMNT, token_out: USDC, amount_in: "500000000000000000000"}
+  - {case_id: wmnt_usdc_large, token_in: WMNT, token_out: USDC, amount_in: "5000000000000000000000"}
+collection:
+  initial_margin_words: 1
+  margin_words: 1
+  max_words_per_direction: 32
+rpc:
+  max_batch_size: 5
+  max_attempts: 8
+  base_delay_seconds: 1.0
+  max_delay_seconds: 16.0
+  timeout_seconds: 30

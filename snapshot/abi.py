@@ -33,6 +33,13 @@ SEL_FEE_AMOUNT_TICK_SPACING = "22afcccb"  # feeAmountTickSpacing(uint24)
 SEL_GET_POOL = "1698ee82"  # getPool(address,address,uint24)
 SEL_POOL_DEPLOYER = "3119049a"  # poolDeployer()
 SEL_OWNER = "8da5cb5b"  # owner()
+# Uniswap-v3-family pool state used by the fixed-block CL collector (WHI-1429)
+SEL_TICKS = "f30dba93"  # ticks(int24)
+SEL_FEE_GROWTH_GLOBAL0_X128 = "f3058399"  # feeGrowthGlobal0X128()
+SEL_FEE_GROWTH_GLOBAL1_X128 = "46141319"  # feeGrowthGlobal1X128()
+SEL_PROTOCOL_FEES = "1ad8b03b"  # protocolFees()
+SEL_MAX_LIQUIDITY_PER_TICK = "70cf754a"  # maxLiquidityPerTick()
+SEL_LM_POOL = "540d4918"  # lmPool()  (PancakeSwap-v3 family: Agni, FusionX)
 
 # Uniswap-v2-family / Merchant Moe Classic v1
 SEL_GET_RESERVES = "0902f1ac"  # getReserves()
@@ -75,6 +82,49 @@ def pad_int16(value: int) -> str:
     if not (-(1 << 15) <= value < (1 << 15)):
         raise ValueError(f"int16 out of range: {value}")
     return format(value & ((1 << 256) - 1), "064x")
+
+
+def pad_int24(value: int) -> str:
+    """ABI-encode an `int24` argument (sign-extended 256-bit two's complement)."""
+    if not (-(1 << 23) <= value < (1 << 23)):
+        raise ValueError(f"int24 out of range: {value}")
+    return format(value & ((1 << 256) - 1), "064x")
+
+
+def decode_words(result_hex: str | None) -> list[int]:
+    """Split a static-tuple return value into its 32-byte words (unsigned). Raises
+    `ValueError` on an empty or non-word-aligned result: a caller decoding a known
+    static tuple must never silently read a short answer as zeros."""
+    if not result_hex or result_hex == "0x":
+        raise ValueError("empty eth_call result")
+    body = result_hex.removeprefix("0x")
+    if len(body) % 64 != 0:
+        raise ValueError(f"eth_call result is not 32-byte aligned ({len(body)} hex chars)")
+    return [int(body[i : i + 64], 16) for i in range(0, len(body), 64)]
+
+
+def to_signed(word: int, bits: int) -> int:
+    """Interpret an ABI word as a sign-extended `int<bits>`; raises if the word is
+    not a valid sign extension (i.e. the value does not fit the declared width)."""
+    value = word - (1 << 256) if word >= 1 << 255 else word
+    if not (-(1 << (bits - 1)) <= value < (1 << (bits - 1))):
+        raise ValueError(f"word {word:#x} is not a valid int{bits}")
+    return value
+
+
+def to_unsigned(word: int, bits: int) -> int:
+    """Check an ABI word fits `uint<bits>` (ABI zero-pads; a dirty high part means
+    the decoder is reading the wrong type)."""
+    if word >= 1 << bits:
+        raise ValueError(f"word {word:#x} does not fit uint{bits}")
+    return word
+
+
+def word_to_address(word: int) -> str:
+    """A 32-byte ABI word holding an `address`, as a lowercase `0x` string."""
+    if word >= 1 << 160:
+        raise ValueError(f"word {word:#x} is not an address")
+    return "0x" + format(word, "040x")
 
 
 def decode_address(result_hex: str | None) -> str | None:
@@ -138,3 +188,46 @@ def code_hash(result_hex: str | None) -> str | None:
     if not result_hex or result_hex == "0x":
         return None
     return keccak256_hex(bytes.fromhex(result_hex.removeprefix("0x")))
+
+
+def push32_immediates(code: bytes) -> list[tuple[int, int]]:
+    """`(offset, value)` of every `PUSH32` immediate in EVM runtime code, found by a
+    proper opcode walk (PUSH1..PUSH32 immediates are skipped, so data bytes are never
+    misread as opcodes). Solidity 0.7.x embeds every `immutable` as a `PUSH32`."""
+    out: list[tuple[int, int]] = []
+    i = 0
+    while i < len(code):
+        op = code[i]
+        if 0x60 <= op <= 0x7F:
+            width = op - 0x5F
+            if width == 32:
+                out.append((i + 1, int.from_bytes(code[i + 1 : i + 33], "big")))
+            i += 1 + width
+        else:
+            i += 1
+    return out
+
+
+def immutable_normalized_code_hash(
+    code: bytes, immutables: dict[str, int]
+) -> tuple[str, dict[str, int]]:
+    """Keccak-256 of runtime `code` after zeroing every `PUSH32` immediate equal to one
+    of the contract's own immutable values (`immutables`, e.g. a pool's
+    factory/token0/token1/fee/tickSpacing/maxLiquidityPerTick read from its getters).
+
+    Every pool a factory deploys runs the same creation code but embeds its own
+    immutables, so its exact code hash is pool-specific; the normalized hash is the
+    same for all of them and differs for any other code. Returns the hash and the
+    number of zeroed sites per immutable name (a name with no site means the value is
+    not embedded where expected, and the normalized hash will not match the pin).
+    Fail-closed by construction: a coincidental match changes the normalized bytes
+    and can only cause a rejection, never an acceptance of different code."""
+    normalized = bytearray(code)
+    hits = {name: 0 for name in immutables}
+    for offset, value in push32_immediates(code):
+        for name, expected in immutables.items():
+            if value == expected:
+                normalized[offset : offset + 32] = bytes(32)
+                hits[name] += 1
+                break
+    return keccak256_hex(bytes(normalized)), hits

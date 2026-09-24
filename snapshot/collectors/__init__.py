@@ -1,25 +1,29 @@
 """Explicit prepare-source dispatcher (docs/DESIGN.md §4.3-style "no dynamic
 plugin discovery"; issue design review finding: "each source collector can
-register itself without requiring Agni's CLI work"). Only `synthetic` is
-registered so far (WHI-1427); each real source ticket adds its own module and one
-entry in `COLLECTORS` here, without touching `main.py` or any other collector.
+register itself without requiring Agni's CLI work"). Each source ticket adds its own
+module and one entry in `COLLECTORS` here, without touching `main.py` or any other
+collector: `synthetic` (WHI-1427, offline) and `agni` (WHI-1429, fixed-block Agni v3
+through the shared `concentrated` CL collector).
 """
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Protocol
 
-from snapshot.collectors import synthetic
+from snapshot.collectors import agni, synthetic
+from snapshot.collectors.base import PrepareError, PrepareRequest
 from snapshot.models import SnapshotBundle
+
+__all__ = ["COLLECTORS", "Collector", "PrepareError", "PrepareRequest", "get_collector"]
 
 
 class Collector(Protocol):
-    def __call__(self, output_dir: Path) -> SnapshotBundle: ...
+    def __call__(self, request: PrepareRequest) -> SnapshotBundle: ...
 
 
 COLLECTORS: dict[str, Collector] = {
     "synthetic": synthetic.collect,
+    "agni": agni.collect,
 }
 
 

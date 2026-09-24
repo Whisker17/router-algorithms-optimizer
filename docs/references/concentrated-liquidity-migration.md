@@ -3,8 +3,8 @@
 Status: **`pools/concentrated.py` + `pools/cl_math.py` implement Exact Input swaps and
 state transitions for `uniswap_v3`, `agni_v3` and `fusionx_v3`; verified offline
 against fork-simulation evidence of the deployed contracts.** Source-specific live
-admission (real collectors, bundle format, fixed-block replay) remains I04/I05/I06
-(WHI-1429/1430/1431).
+admission (real collectors, bundle format, fixed-block replay): Agni done by WHI-1429
+(`docs/references/agni-fixed-block-replay.md`); FusionX/Uniswap remain WHI-1430/1431.
 
 This document is the Solidity-to-Python record DESIGN §2.3 requires: which deployed
 code was migrated, how the three V3-family deployments differ, every Solidity
@@ -158,5 +158,6 @@ bound to be collected — or when the price already sits at the bound (`'SPL'`).
 2. **Agni has no deployed QuoterV2** in the catalog; its evidence is fork simulation only
    (as permitted by DESIGN §2.3), whereas Uniswap/FusionX additionally agree with their
    deployed QuoterV2.
-3. **Bundle format/collectors** for CL state are I04–I06's job; this issue provides the
+3. **Bundle format/collectors** for CL state are I04–I06's job (Agni landed in WHI-1429;
+   the CL bundle record and shared collector are reused by I05/I06); this issue provides the
    state type, the simulator and the evaluator dispatch (`pools.quote.quote_exact_in`).

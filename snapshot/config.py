@@ -92,6 +92,33 @@ class Blocker:
     blocks: tuple[str, ...] = ()
 
 
+KNOWN_POOL_IMMUTABLES = (
+    "factory",
+    "token0",
+    "token1",
+    "fee",
+    "tickSpacing",
+    "maxLiquidityPerTick",
+)
+
+
+@dataclass(frozen=True)
+class ClCollectionConfig:
+    """Fixed-block collection admission for one concentrated-liquidity source
+    (WHI-1429). `admitted` is the per-source switch the shared collector
+    (`snapshot.collectors.concentrated`) refuses to run without: a sibling V3 fork is
+    never collected just because the code is shared. Every pool a factory deploys
+    embeds its own immutables, so non-example pools are verified by
+    `pool_code_normalized_hash` -- the Keccak-256 of the runtime code with every
+    `PUSH32` immediate equal to one of `pool_immutables` (read from the pool's own
+    getters) zeroed (`snapshot.abi.immutable_normalized_code_hash`)."""
+
+    admitted: bool
+    pool_code_normalized_hash: str
+    pool_immutables: tuple[str, ...]
+    verification: str
+
+
 @dataclass(frozen=True)
 class SourceConfig:
     key: str
@@ -105,6 +132,7 @@ class SourceConfig:
     upstream: UpstreamProvenance | None = None
     blockers: tuple[Blocker, ...] = ()
     notes: str = ""
+    cl_collection: ClCollectionConfig | None = None
 
 
 @dataclass(frozen=True)
@@ -177,9 +205,45 @@ def _parse_contract_ref(obj: Any, where: str) -> ContractRef:
     )
 
 
+def _parse_cl_collection(obj: Any, where: str) -> ClCollectionConfig:
+    _require_keys(
+        obj,
+        {"admitted", "pool_code_normalized_hash", "pool_immutables", "verification"},
+        set(),
+        where,
+    )
+    if not isinstance(obj["admitted"], bool):
+        raise ConfigError(f"{where}.admitted: expected a boolean")
+    immutables = obj["pool_immutables"]
+    if not isinstance(immutables, list) or not immutables:
+        raise ConfigError(f"{where}.pool_immutables: expected a non-empty list")
+    unknown = [name for name in immutables if name not in KNOWN_POOL_IMMUTABLES]
+    if unknown or len(set(immutables)) != len(immutables):
+        raise ConfigError(
+            f"{where}.pool_immutables: {immutables!r} must be distinct names from "
+            f"{list(KNOWN_POOL_IMMUTABLES)}"
+        )
+    return ClCollectionConfig(
+        admitted=obj["admitted"],
+        pool_code_normalized_hash=_validate_hash32(
+            obj["pool_code_normalized_hash"], f"{where}.pool_code_normalized_hash"
+        ),
+        pool_immutables=tuple(str(name) for name in immutables),
+        verification=str(obj["verification"]),
+    )
+
+
 def _parse_source(obj: Any) -> SourceConfig:
     required = {"key", "display_name", "protocol_family", "confidence", "contracts"}
-    optional = {"tokens", "pool_fee", "expected_fee_tiers", "upstream", "blockers", "notes"}
+    optional = {
+        "tokens",
+        "pool_fee",
+        "expected_fee_tiers",
+        "upstream",
+        "blockers",
+        "notes",
+        "cl_collection",
+    }
     where = f"sources[{obj.get('key', '?')}]"
     _require_keys(obj, required, optional, where)
 
@@ -228,6 +292,12 @@ def _parse_source(obj: Any) -> SourceConfig:
         _parse_blocker(b, f"{where}.blockers[{i}]") for i, b in enumerate(blockers_obj)
     )
 
+    cl_collection = None
+    if "cl_collection" in obj:
+        if obj["protocol_family"] != "v3_concentrated_liquidity":
+            raise ConfigError(f"{where}.cl_collection: only valid for v3_concentrated_liquidity")
+        cl_collection = _parse_cl_collection(obj["cl_collection"], f"{where}.cl_collection")
+
     return SourceConfig(
         key=str(obj["key"]),
         display_name=str(obj["display_name"]),
@@ -240,6 +310,7 @@ def _parse_source(obj: Any) -> SourceConfig:
         upstream=upstream,
         blockers=blockers,
         notes=str(obj.get("notes", "")),
+        cl_collection=cl_collection,
     )
 
 

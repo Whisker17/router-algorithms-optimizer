@@ -11,7 +11,11 @@ optimizer = true
 via_ir = true
 evm_version = "cancun"
 # Fixtures are streamed as JSON Lines into the Python test-fixture directory.
-fs_permissions = [{ access = "read-write", path = "../../tests/fixtures/concentrated" }]
+fs_permissions = [
+  { access = "read-write", path = "../../tests/fixtures/concentrated" },
+  { access = "read-write", path = "../../tests/fixtures/agni" },
+  { access = "read", path = "requests" },
+]
 
 [lint]
 lint_on_build = false

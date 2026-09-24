@@ -16,3 +16,13 @@ loaded into a typed, validated model at startup.
   checking out a release tag never conflicts with live settings.
 
 No loader code ships with the template — write it when the first config file lands.
+
+## Files
+
+- `protocols.yaml` — verified five-source admission catalog (`snapshot/config.py`); a CL
+  source's `cl_collection` block admits it for fixed-block collection (WHI-1429).
+- `prepare/<source>.yaml` — fixed-block prepare selection for an online collector: pairs
+  and fee tiers, reference cases (the declared amount envelope), tick-walk limits and RPC
+  retry/batch settings (`snapshot/prepare_config.py`). `prepare/agni.yaml` drives
+  `main.py prepare --source agni --block <n>`.
+- `smoke.yaml` — run profile (`benchmark/profile.py`).
