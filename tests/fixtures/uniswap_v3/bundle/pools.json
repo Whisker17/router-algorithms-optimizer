@@ -1,0 +1,803 @@
+{
+  "pools": [
+    {
+      "bitmap_word_range": [
+        54,
+        158
+      ],
+      "family": "concentrated",
+      "fee": 500,
+      "fee_growth_global0_x128": "60994575193779761369243971374605",
+      "fee_growth_global1_x128": "20939398982420761895573572988370742491204290",
+      "fee_protocol": 0,
+      "liquidity": "151455729765230",
+      "lm_pool": null,
+      "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "96944714540064459951850348406585101",
+      "tick": 280360,
+      "tick_bitmap": [
+        {
+          "bitmap": "50216813883093446110686315385661331328818843555712276103168",
+          "word": 106
+        },
+        {
+          "bitmap": "56539106072908298595705377331481835973946589568829701125986860709944754176",
+          "word": 108
+        },
+        {
+          "bitmap": "11692013272871795209149971954978063162312784609280",
+          "word": 109
+        }
+      ],
+      "tick_spacing": 10,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "60383359158718559630723417203327",
+          "fee_growth_outside1_x128": "20284123903340103873390962986145616159987146",
+          "liquidity_gross": "165271906561",
+          "liquidity_net": "165271906561",
+          "tick": 273310
+        },
+        {
+          "fee_growth_outside0_x128": "52491019512050484859373187337778",
+          "fee_growth_outside1_x128": "9129492093345663012142382663347371074708944",
+          "liquidity_gross": "816287904",
+          "liquidity_net": "816287904",
+          "tick": 277170
+        },
+        {
+          "fee_growth_outside0_x128": "60889604215304214616726906999271",
+          "fee_growth_outside1_x128": "20769112498812218581217017046179500181607747",
+          "liquidity_gross": "151280781152603",
+          "liquidity_net": "151280781152603",
+          "tick": 278330
+        },
+        {
+          "fee_growth_outside0_x128": "55913822727564227786532560993631",
+          "fee_growth_outside1_x128": "13215750670386544072884861189852769296481713",
+          "liquidity_gross": "232429084",
+          "liquidity_net": "232429084",
+          "tick": 278930
+        },
+        {
+          "fee_growth_outside0_x128": "86801827336423570516967861653",
+          "fee_growth_outside1_x128": "136133708967128153132938569818210950551762",
+          "liquidity_gross": "151280781152603",
+          "liquidity_net": "-151280781152603",
+          "tick": 280410
+        },
+        {
+          "fee_growth_outside0_x128": "2229683705159258211618484050325",
+          "fee_growth_outside1_x128": "3740654282025480423515887909365791291123155",
+          "liquidity_gross": "1048716988",
+          "liquidity_net": "-1048716988",
+          "tick": 280670
+        }
+      ],
+      "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+      "bitmap_word_range": [
+        15,
+        57
+      ],
+      "family": "concentrated",
+      "fee": 3000,
+      "fee_growth_global0_x128": "33208909717438723867620670791200",
+      "fee_growth_global1_x128": "24300948224615005716516423076287934742855714",
+      "fee_protocol": 0,
+      "liquidity": "11928151678360",
+      "lm_pool": null,
+      "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "97149433685035439489090796679062697",
+      "tick": 280402,
+      "tick_bitmap": [
+        {
+          "bitmap": "85070591730234615865843651857942052864",
+          "word": 16
+        },
+        {
+          "bitmap": "1267650600228229401496703205376",
+          "word": 18
+        }
+      ],
+      "tick_spacing": 60,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "11928151678360",
+          "liquidity_net": "11928151678360",
+          "tick": 253320
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "11928151678360",
+          "liquidity_net": "-11928151678360",
+          "tick": 282480
+        }
+      ],
+      "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+      "bitmap_word_range": [
+        -45,
+        22
+      ],
+      "family": "concentrated",
+      "fee": 500,
+      "fee_growth_global0_x128": "772169484501202473371899864889985340216",
+      "fee_growth_global1_x128": "240144584201705286673457923903040619",
+      "fee_protocol": 0,
+      "liquidity": "493183857437891902",
+      "lm_pool": null,
+      "pool_id": "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "1267071348649011389433193103",
+      "tick": -82717,
+      "tick_bitmap": [
+        {
+          "bitmap": "1267650600228229401496703205376",
+          "word": -32
+        }
+      ],
+      "tick_spacing": 10,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "58958689826728439839257281275753428227",
+          "fee_growth_outside1_x128": "23656604065224500910821601787147200",
+          "liquidity_gross": "492582254716917538",
+          "liquidity_net": "-492582254716917538",
+          "tick": -80920
+        }
+      ],
+      "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "bitmap_word_range": [
+        -58,
+        57
+      ],
+      "family": "concentrated",
+      "fee": 3000,
+      "fee_growth_global0_x128": "475075707358701102527915656719194802356",
+      "fee_growth_global1_x128": "143715958302913876395237567800135630",
+      "fee_protocol": 0,
+      "liquidity": "0",
+      "lm_pool": null,
+      "pool_id": "0x082a6df295d9efeedd2838d154a2bbc255fa0745",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "1537556933683721250996463758",
+      "tick": -78847,
+      "tick_bitmap": [],
+      "tick_spacing": 60,
+      "ticks": [],
+      "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "bitmap_word_range": [
+        -18,
+        -1
+      ],
+      "family": "concentrated",
+      "fee": 10000,
+      "fee_growth_global0_x128": "541489759982282101231642338925781209826",
+      "fee_growth_global1_x128": "150965005321222206993053688554917932",
+      "fee_protocol": 0,
+      "liquidity": "26258575220574845347",
+      "lm_pool": null,
+      "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "1261354940076024770909304397",
+      "tick": -82808,
+      "tick_bitmap": [
+        {
+          "bitmap": "12259964326927121755902520420614582445613914804715520000",
+          "word": -2
+        }
+      ],
+      "tick_spacing": 200,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "403546050013251538180684600675889377520",
+          "fee_growth_outside1_x128": "118455670503977851537202879411960703",
+          "liquidity_gross": "2757315705220675069",
+          "liquidity_net": "2757315705220675069",
+          "tick": -85800
+        },
+        {
+          "fee_growth_outside0_x128": "503925930664484839458103370173327346337",
+          "fee_growth_outside1_x128": "140819936003897794637761593523560743",
+          "liquidity_gross": "2757315705220675069",
+          "liquidity_net": "-2757315705220675069",
+          "tick": -83400
+        },
+        {
+          "fee_growth_outside0_x128": "222882102148238920938098441093922496384",
+          "fee_growth_outside1_x128": "60285084206199659141120204745434858",
+          "liquidity_gross": "26258575220574845347",
+          "liquidity_net": "26258575220574845347",
+          "tick": -83000
+        },
+        {
+          "fee_growth_outside0_x128": "378265772437946606656137708051899526482",
+          "fee_growth_outside1_x128": "114121416375404539231113506470275831",
+          "liquidity_gross": "6905145516946824912",
+          "liquidity_net": "6905145516946824912",
+          "tick": -82200
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "26258575220574845347",
+          "liquidity_net": "-26258575220574845347",
+          "tick": -75800
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "6905145516946824912",
+          "liquidity_net": "-6905145516946824912",
+          "tick": -65800
+        }
+      ],
+      "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "bitmap_word_range": [
+        -58,
+        57
+      ],
+      "family": "concentrated",
+      "fee": 3000,
+      "fee_growth_global0_x128": "144976972732045775551385041751170468363",
+      "fee_growth_global1_x128": "59452902226172460279082846166304400",
+      "fee_protocol": 0,
+      "liquidity": "0",
+      "lm_pool": null,
+      "pool_id": "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "1461056588449685663306654941",
+      "tick": -79868,
+      "tick_bitmap": [],
+      "tick_spacing": 60,
+      "ticks": [],
+      "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "bitmap_word_range": [
+        -3,
+        -1
+      ],
+      "family": "concentrated",
+      "fee": 10000,
+      "fee_growth_global0_x128": "2002349498055917406747453533208258722955",
+      "fee_growth_global1_x128": "613411829904425475439927573841436821",
+      "fee_protocol": 0,
+      "liquidity": "681905487478282608293",
+      "lm_pool": null,
+      "pool_id": "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "1200264075516134841107865444",
+      "tick": -83800,
+      "tick_bitmap": [
+        {
+          "bitmap": "11417992473218945390163147889390630778869645312",
+          "word": -2
+        }
+      ],
+      "tick_spacing": 200,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "1653239201409710899293823236633737301981",
+          "fee_growth_outside1_x128": "536799085057294661840321371592276630",
+          "liquidity_gross": "145215031845399954871",
+          "liquidity_net": "145215031845399954871",
+          "tick": -86800
+        },
+        {
+          "fee_growth_outside0_x128": "1534819331977693439248663749378902549261",
+          "fee_growth_outside1_x128": "516247066422257389228491667975546277",
+          "liquidity_gross": "189632662167005115016",
+          "liquidity_net": "189632662167005115016",
+          "tick": -86400
+        },
+        {
+          "fee_growth_outside0_x128": "1689021170649511174111499222673478114169",
+          "fee_growth_outside1_x128": "544945440407670462100468627767825801",
+          "liquidity_gross": "216993616085280488874",
+          "liquidity_net": "216993616085280488874",
+          "tick": -85600
+        },
+        {
+          "fee_growth_outside0_x128": "1997471946162699984541260691983204697491",
+          "fee_growth_outside1_x128": "612052388165203630777375463684991145",
+          "liquidity_gross": "23978048007630160869",
+          "liquidity_net": "23978048007630160869",
+          "tick": -84200
+        },
+        {
+          "fee_growth_outside0_x128": "1514284521471458597416022248427385019118",
+          "fee_growth_outside1_x128": "481478412223400399361087538197123062",
+          "liquidity_gross": "83082082218762656786",
+          "liquidity_net": "83082082218762656786",
+          "tick": -84000
+        },
+        {
+          "fee_growth_outside0_x128": "1997855035382841371227435814826246052904",
+          "fee_growth_outside1_x128": "612669206755130827394862137868062613",
+          "liquidity_gross": "23004047154204231877",
+          "liquidity_net": "23004047154204231877",
+          "tick": -83800
+        },
+        {
+          "fee_growth_outside0_x128": "2214294166648232368112814132421870858",
+          "fee_growth_outside1_x128": "523621305239487108617768431417155",
+          "liquidity_gross": "216993616085280488874",
+          "liquidity_net": "-216993616085280488874",
+          "tick": -83600
+        },
+        {
+          "fee_growth_outside0_x128": "210650965514125908889652232246711607252",
+          "fee_growth_outside1_x128": "56376298352977126776812124436932714",
+          "liquidity_gross": "86857713724692557082",
+          "liquidity_net": "86857713724692557082",
+          "tick": -83000
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "23004047154204231877",
+          "liquidity_net": "-23004047154204231877",
+          "tick": -82600
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "239766948763066288100",
+          "liquidity_net": "-239766948763066288100",
+          "tick": -82000
+        },
+        {
+          "fee_growth_outside0_x128": "1331265801270298277869661053095616581025",
+          "fee_growth_outside1_x128": "468889225304247607404914463997551493",
+          "liquidity_gross": "42742142175789398161",
+          "liquidity_net": "42742142175789398161",
+          "tick": -81600
+        },
+        {
+          "fee_growth_outside0_x128": "80840020867540131208967476971579822463",
+          "fee_growth_outside1_x128": "24589097421914934447704590020969085",
+          "liquidity_gross": "86857713724692557082",
+          "liquidity_net": "-86857713724692557082",
+          "tick": -81400
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "95080745249338781787",
+          "liquidity_net": "-95080745249338781787",
+          "tick": -81000
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "23978048007630160869",
+          "liquidity_net": "-23978048007630160869",
+          "tick": -77400
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "83082082218762656786",
+          "liquidity_net": "-83082082218762656786",
+          "tick": -75800
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "42742142175789398161",
+          "liquidity_net": "-42742142175789398161",
+          "tick": -71800
+        }
+      ],
+      "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "bitmap_word_range": [
+        -2,
+        6
+      ],
+      "family": "concentrated",
+      "fee": 100,
+      "fee_growth_global0_x128": "175531648934103098601477288890702029",
+      "fee_growth_global1_x128": "197645704536546325329240442195412316",
+      "fee_protocol": 0,
+      "liquidity": "3984809803133137146",
+      "lm_pool": null,
+      "pool_id": "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "82971404024668935368028898777",
+      "tick": 923,
+      "tick_bitmap": [
+        {
+          "bitmap": "748288838400534580052046880997951101376728829788160",
+          "word": 1
+        },
+        {
+          "bitmap": "11972621413014756705924586149611790497021399392059392",
+          "word": 2
+        },
+        {
+          "bitmap": "49039857307708443467467104868809893875799651909875269632",
+          "word": 3
+        },
+        {
+          "bitmap": "10384593717069655257060992658440192",
+          "word": 6
+        }
+      ],
+      "tick_spacing": 1,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "5423929015486070188323952754409111",
+          "fee_growth_outside1_x128": "6129191301338279757379726927935112",
+          "liquidity_gross": "832567385456040560",
+          "liquidity_net": "832567385456040560",
+          "tick": 325
+        },
+        {
+          "fee_growth_outside0_x128": "7551106667674532449352855940678551",
+          "fee_growth_outside1_x128": "8363112702172054927811176992782635",
+          "liquidity_gross": "21082060008650603",
+          "liquidity_net": "21082060008650603",
+          "tick": 392
+        },
+        {
+          "fee_growth_outside0_x128": "10692086565171603534351735392915538",
+          "fee_growth_outside1_x128": "11692762760324543214093898302085485",
+          "liquidity_gross": "832567385456040560",
+          "liquidity_net": "-832567385456040560",
+          "tick": 425
+        },
+        {
+          "fee_growth_outside0_x128": "97301995697830383164430499352368986",
+          "fee_growth_outside1_x128": "104251375528262441692534563836566242",
+          "liquidity_gross": "42096455459649",
+          "liquidity_net": "42096455459649",
+          "tick": 685
+        },
+        {
+          "fee_growth_outside0_x128": "19473857103730650992699602896382204",
+          "fee_growth_outside1_x128": "21695169416273632970417790470354091",
+          "liquidity_gross": "21082060008650603",
+          "liquidity_net": "-21082060008650603",
+          "tick": 953
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "3961239805293056994",
+          "liquidity_net": "-3961239805293056994",
+          "tick": 1649
+        }
+      ],
+      "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "bitmap_word_range": [
+        -58,
+        57
+      ],
+      "family": "concentrated",
+      "fee": 3000,
+      "fee_growth_global0_x128": "256826296920194789868848371692360",
+      "fee_growth_global1_x128": "98589161408438059136192532135812386642016",
+      "fee_protocol": 0,
+      "liquidity": "17476307298948",
+      "lm_pool": null,
+      "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "1467660590077720577792026842520940",
+      "tick": 196546,
+      "tick_bitmap": [
+        {
+          "bitmap": "20769187434139310514121985316880384",
+          "word": 12
+        },
+        {
+          "bitmap": "512",
+          "word": 13
+        }
+      ],
+      "tick_spacing": 60,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "17476307298948",
+          "liquidity_net": "17476307298948",
+          "tick": 191160
+        },
+        {
+          "fee_growth_outside0_x128": "687605397610120401752441310256",
+          "fee_growth_outside1_x128": "343239173037487140643695668741936200168",
+          "liquidity_gross": "17476307298948",
+          "liquidity_net": "-17476307298948",
+          "tick": 200220
+        }
+      ],
+      "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "bitmap_word_range": [
+        2,
+        4
+      ],
+      "family": "concentrated",
+      "fee": 10000,
+      "fee_growth_global0_x128": "571582112691239746464862664730997",
+      "fee_growth_global1_x128": "219276987170024483847858177913371773237418",
+      "fee_protocol": 0,
+      "liquidity": "122193847403555",
+      "lm_pool": null,
+      "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "1465466481500194744969198462636795",
+      "tick": 196516,
+      "tick_bitmap": [
+        {
+          "bitmap": "2170275706706024952311319845608253439454849206402256956900608361627648",
+          "word": 3
+        }
+      ],
+      "tick_spacing": 200,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "23549642162784491433882477178951",
+          "fee_growth_outside1_x128": "9703902539403610595420798465171013351541",
+          "liquidity_gross": "35610532370919",
+          "liquidity_net": "35610532370919",
+          "tick": 190000
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "86583315032636",
+          "liquidity_net": "86583315032636",
+          "tick": 191200
+        },
+        {
+          "fee_growth_outside0_x128": "0",
+          "fee_growth_outside1_x128": "0",
+          "liquidity_gross": "7362143709461",
+          "liquidity_net": "-7362143709461",
+          "tick": 198200
+        },
+        {
+          "fee_growth_outside0_x128": "142273962222985744642721843194177",
+          "fee_growth_outside1_x128": "68147940143263846048607397192398452786100",
+          "liquidity_gross": "35610532370919",
+          "liquidity_net": "-35610532370919",
+          "tick": 199200
+        },
+        {
+          "fee_growth_outside0_x128": "116343821593239945921106613660612",
+          "fee_growth_outside1_x128": "56284962674603856272110784983071336630386",
+          "liquidity_gross": "79221171323175",
+          "liquidity_net": "-79221171323175",
+          "tick": 199600
+        }
+      ],
+      "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "bitmap_word_range": [
+        73,
+        83
+      ],
+      "family": "concentrated",
+      "fee": 500,
+      "fee_growth_global0_x128": "1163319094077738204527098128681711",
+      "fee_growth_global1_x128": "464697794617043408977047617214291484922760",
+      "fee_protocol": 0,
+      "liquidity": "476894378917",
+      "lm_pool": null,
+      "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "1530820763443903739150113754359140",
+      "tick": 197389,
+      "tick_bitmap": [
+        {
+          "bitmap": "14134776518227074636669373161296601815796352321542354612597104960188973056",
+          "word": 74
+        },
+        {
+          "bitmap": "4398046511104",
+          "word": 75
+        }
+      ],
+      "tick_spacing": 10,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "802188957240194032955774953538206",
+          "fee_growth_outside1_x128": "303668639243726155115303009807573174387986",
+          "liquidity_gross": "193540334408631",
+          "liquidity_net": "193540334408631",
+          "tick": 191150
+        },
+        {
+          "fee_growth_outside0_x128": "818509370587317471694877327003511",
+          "fee_growth_outside1_x128": "305662981260281916379482636846245497623881",
+          "liquidity_gross": "193540334408631",
+          "liquidity_net": "-193540334408631",
+          "tick": 191870
+        },
+        {
+          "fee_growth_outside0_x128": "852004610035742574469684434443892",
+          "fee_growth_outside1_x128": "313147014938424805563379693724059098629080",
+          "liquidity_gross": "283560333252",
+          "liquidity_net": "283560333252",
+          "tick": 192420
+        }
+      ],
+      "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "bitmap_word_range": [
+        -58,
+        57
+      ],
+      "family": "concentrated",
+      "fee": 3000,
+      "fee_growth_global0_x128": "391310095681223754632849501037171",
+      "fee_growth_global1_x128": "118312571167054457731229429061114357458273",
+      "fee_protocol": 0,
+      "liquidity": "46241342576605",
+      "lm_pool": null,
+      "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+      "protocol_fees0": "0",
+      "protocol_fees1": "0",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "source_key": "uniswap_v3",
+      "sqrt_price_x96": "1399804098471257515894619330989204",
+      "tick": 195599,
+      "tick_bitmap": [
+        {
+          "bitmap": "276069853871623139993636859111924762762189663829959657547855986543296512",
+          "word": 12
+        }
+      ],
+      "tick_spacing": 60,
+      "ticks": [
+        {
+          "fee_growth_outside0_x128": "162986498288896641059542500822416",
+          "fee_growth_outside1_x128": "37281465678968671343106140743783531999520",
+          "liquidity_gross": "2702023470237",
+          "liquidity_net": "2702023470237",
+          "tick": 194640
+        },
+        {
+          "fee_growth_outside0_x128": "168713167794871145195305713912756",
+          "fee_growth_outside1_x128": "38922570780411301227741225932799060386157",
+          "liquidity_gross": "2702023470237",
+          "liquidity_net": "-2702023470237",
+          "tick": 194700
+        },
+        {
+          "fee_growth_outside0_x128": "220855957568367219549954243908186",
+          "fee_growth_outside1_x128": "54395970165436143777248791122119721230167",
+          "liquidity_gross": "46241342576605",
+          "liquidity_net": "46241342576605",
+          "tick": 195540
+        },
+        {
+          "fee_growth_outside0_x128": "165375687947727035131739760673529",
+          "fee_growth_outside1_x128": "62307956650034659886819771948081932267735",
+          "liquidity_gross": "46241342576605",
+          "liquidity_net": "-46241342576605",
+          "tick": 195600
+        },
+        {
+          "fee_growth_outside0_x128": "23094250320368581117033877089815",
+          "fee_growth_outside1_x128": "10046013458364853014346739367061597543127",
+          "liquidity_gross": "519016876379",
+          "liquidity_net": "519016876379",
+          "tick": 198420
+        },
+        {
+          "fee_growth_outside0_x128": "20240906859424872907854326900212",
+          "fee_growth_outside1_x128": "8903293614168447296697003043162782599964",
+          "liquidity_gross": "519016876379",
+          "liquidity_net": "-519016876379",
+          "tick": 198540
+        }
+      ],
+      "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    }
+  ]
+}

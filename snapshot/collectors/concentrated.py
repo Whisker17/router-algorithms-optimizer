@@ -3,8 +3,8 @@
 Source-parametrized: `collect_for_source(source_key, request)` collects any
 Uniswap-v3-family source whose `config/protocols.yaml` entry carries
 `cl_collection.admitted: true` and whose swap semantics `pools.concentrated.SOURCES`
-has migrated. Today that is `agni_v3` (WHI-1429) and `fusionx_v3` (WHI-1430); sharing
-this code admits nothing else.
+has migrated. Today that is `agni_v3` (WHI-1429), `fusionx_v3` (WHI-1430) and
+`uniswap_v3` (WHI-1431); sharing this code admits nothing else.
 
 The flow (docs/DESIGN.md §2.2, §4.4 Prepare):
 
@@ -14,7 +14,9 @@ The flow (docs/DESIGN.md §2.2, §4.4 Prepare):
    `{"blockHash": h, "requireCanonical": true}` call, so a node can only answer from
    exactly that block; nothing ever reads `latest`, and there is no fallback block.
 2. **Deployment verification.** Factory and pool-deployer code hashes equal the catalog
-   pins and `factory.poolDeployer()` round-trips.
+   pins and `factory.poolDeployer()` round-trips (a source whose factory deploys its
+   own pools -- Uniswap v3, `cl_collection.factory_deploys_pools` -- pins the factory
+   only).
 3. **Discovery.** For each configured pair x fee tier, `factory.getPool` (zero address ->
    recorded omission). Each candidate must: have runtime code whose
    immutable-normalized hash equals `cl_collection.pool_code_normalized_hash` (the
@@ -77,6 +79,7 @@ COLLECTOR = "snapshot.collectors.concentrated"
 DEFAULT_PREPARE_CONFIGS = {
     "agni_v3": Path("config/prepare/agni.yaml"),
     "fusionx_v3": Path("config/prepare/fusionx.yaml"),
+    "uniswap_v3": Path("config/prepare/uniswap_v3.yaml"),
 }
 
 
@@ -293,8 +296,10 @@ class ConcentratedCollector:
         return ref.address.lower()
 
     def _verify_deployment(self) -> dict[str, Any]:
+        assert self.source.cl_collection is not None
         record: dict[str, Any] = {}
-        for role in ("factory", "pool_deployer"):
+        self_deploying = self.source.cl_collection.factory_deploys_pools
+        for role in ("factory",) if self_deploying else ("factory", "pool_deployer"):
             ref = self.source.contracts.get(role)
             if ref is None or ref.code_hash is None:
                 raise PrepareError(
@@ -308,6 +313,11 @@ class ConcentratedCollector:
                     f"{role} {ref.address} code hash {observed} != pinned {ref.code_hash}",
                 )
             record[role] = {"address": ref.address.lower(), "code_hash": observed}
+        if self_deploying:
+            # Uniswap v3: the factory CREATE2-deploys pools itself; pool identity rests
+            # on getPool + pool.factory() + the pool-code fingerprint (_verify_pool).
+            record["pool_deployer"] = "factory"
+            return record
         factory = self._contract("factory")
         deployer = abi.decode_address(
             self._eth_call(
@@ -406,6 +416,7 @@ class ConcentratedCollector:
         )
         try:
             ident = {
+                "original": int(address, 16),  # NoDelegateCall: address(this)
                 "factory": abi.decode_words(words[0])[0],
                 "token0": abi.decode_words(words[1])[0],
                 "token1": abi.decode_words(words[2])[0],
@@ -705,6 +716,10 @@ class ConcentratedCollector:
                 "collection"
             ),
             "rpc_endpoint": self.rpc_label,
+            "source_capability": {
+                "protocol_family": self.source.protocol_family,
+                "sor_protocol": self.source.sor_protocol,
+            },
             "catalog": {
                 **deployment,
                 "pool_code_normalized_hash": self.source.cl_collection.pool_code_normalized_hash,

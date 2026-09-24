@@ -572,8 +572,15 @@ def test_envelope_beyond_word_limit_refuses_publication(chain: FakeChain) -> Non
 
 
 def test_only_admitted_sources_are_collected(chain: FakeChain) -> None:
+    no_record = dataclasses.replace(
+        CATALOG,
+        sources=tuple(
+            dataclasses.replace(s, cl_collection=None) if s.key == "uniswap_v3" else s
+            for s in CATALOG.sources
+        ),
+    )
     with pytest.raises(PrepareError, match="source_not_admitted"):
-        _collector(chain, source_key="uniswap_v3")
+        _collector(chain, catalog=no_record, source_key="uniswap_v3")
     agni = CATALOG.source("agni_v3")
     assert agni.cl_collection is not None
     not_admitted = dataclasses.replace(
@@ -656,4 +663,5 @@ def test_cl_collection_admission_is_explicit_per_source() -> None:
     admitted = [
         s.key for s in CATALOG.sources if s.cl_collection is not None and s.cl_collection.admitted
     ]
-    assert admitted == ["agni_v3", "fusionx_v3"]  # FusionX by WHI-1430; Uniswap v3 not yet
+    # each by its own issue: Uniswap v3 (WHI-1431), Agni (WHI-1429), FusionX (WHI-1430)
+    assert admitted == ["uniswap_v3", "agni_v3", "fusionx_v3"]

@@ -99,7 +99,13 @@ KNOWN_POOL_IMMUTABLES = (
     "fee",
     "tickSpacing",
     "maxLiquidityPerTick",
+    # `NoDelegateCall.original` (Uniswap v3-core): `address(this)` captured at
+    # construction, so its value is the pool's own address (no getter).
+    "original",
 )
+# Uniswap SOR route protocols a source's pools can enter as (docs/references/
+# uni-sor-port-contract.md §2: V3 = Agni/FusionX/Uniswap v3, V2 = Moe Classic; LB none).
+KNOWN_SOR_PROTOCOLS = {"V2", "V3"}
 
 
 @dataclass(frozen=True)
@@ -111,12 +117,17 @@ class ClCollectionConfig:
     embeds its own immutables, so non-example pools are verified by
     `pool_code_normalized_hash` -- the Keccak-256 of the runtime code with every
     `PUSH32` immediate equal to one of `pool_immutables` (read from the pool's own
-    getters) zeroed (`snapshot.abi.immutable_normalized_code_hash`)."""
+    getters) zeroed (`snapshot.abi.immutable_normalized_code_hash`).
+
+    `factory_deploys_pools` (WHI-1431): the factory itself CREATE2-deploys pools
+    (Uniswap v3's `UniswapV3Factory is UniswapV3PoolDeployer`), so there is no separate
+    `pool_deployer` contract to pin or `factory.poolDeployer()` to round-trip."""
 
     admitted: bool
     pool_code_normalized_hash: str
     pool_immutables: tuple[str, ...]
     verification: str
+    factory_deploys_pools: bool = False
 
 
 @dataclass(frozen=True)
@@ -133,6 +144,9 @@ class SourceConfig:
     blockers: tuple[Blocker, ...] = ()
     notes: str = ""
     cl_collection: ClCollectionConfig | None = None
+    # Source capability for cohort selection: the Uniswap SOR route protocol this
+    # source's pools enter the matched V2/V3 cohort as, or None (never SOR-routable).
+    sor_protocol: str | None = None
 
 
 @dataclass(frozen=True)
@@ -147,6 +161,11 @@ class ProtocolCatalog:
             if source.key == key:
                 return source
         raise KeyError(f"no source configured with key {key!r}")
+
+    def sor_protocols(self) -> dict[str, str]:
+        """Source key -> SOR route protocol for every SOR-compatible source: the
+        capability cohort selection uses to form the matched V2/V3 cohort."""
+        return {s.key: s.sor_protocol for s in self.sources if s.sor_protocol is not None}
 
 
 def _parse_network(obj: Any) -> NetworkConfig:
@@ -209,11 +228,12 @@ def _parse_cl_collection(obj: Any, where: str) -> ClCollectionConfig:
     _require_keys(
         obj,
         {"admitted", "pool_code_normalized_hash", "pool_immutables", "verification"},
-        set(),
+        {"factory_deploys_pools"},
         where,
     )
-    if not isinstance(obj["admitted"], bool):
-        raise ConfigError(f"{where}.admitted: expected a boolean")
+    for flag in ("admitted", "factory_deploys_pools"):
+        if not isinstance(obj.get(flag, False), bool):
+            raise ConfigError(f"{where}.{flag}: expected a boolean")
     immutables = obj["pool_immutables"]
     if not isinstance(immutables, list) or not immutables:
         raise ConfigError(f"{where}.pool_immutables: expected a non-empty list")
@@ -230,6 +250,7 @@ def _parse_cl_collection(obj: Any, where: str) -> ClCollectionConfig:
         ),
         pool_immutables=tuple(str(name) for name in immutables),
         verification=str(obj["verification"]),
+        factory_deploys_pools=obj.get("factory_deploys_pools", False),
     )
 
 
@@ -243,6 +264,7 @@ def _parse_source(obj: Any) -> SourceConfig:
         "blockers",
         "notes",
         "cl_collection",
+        "sor_protocol",
     }
     where = f"sources[{obj.get('key', '?')}]"
     _require_keys(obj, required, optional, where)
@@ -297,6 +319,17 @@ def _parse_source(obj: Any) -> SourceConfig:
         if obj["protocol_family"] != "v3_concentrated_liquidity":
             raise ConfigError(f"{where}.cl_collection: only valid for v3_concentrated_liquidity")
         cl_collection = _parse_cl_collection(obj["cl_collection"], f"{where}.cl_collection")
+        if cl_collection.factory_deploys_pools and "pool_deployer" in contracts:
+            raise ConfigError(
+                f"{where}.cl_collection.factory_deploys_pools: contradicts a pinned "
+                "contracts.pool_deployer"
+            )
+
+    sor_protocol = obj.get("sor_protocol")
+    if sor_protocol is not None and sor_protocol not in KNOWN_SOR_PROTOCOLS:
+        raise ConfigError(
+            f"{where}.sor_protocol: {sor_protocol!r} not in {sorted(KNOWN_SOR_PROTOCOLS)}"
+        )
 
     return SourceConfig(
         key=str(obj["key"]),
@@ -311,6 +344,7 @@ def _parse_source(obj: Any) -> SourceConfig:
         blockers=blockers,
         notes=str(obj.get("notes", "")),
         cl_collection=cl_collection,
+        sor_protocol=sor_protocol,
     )
 
 

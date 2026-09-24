@@ -9,7 +9,10 @@ admitted** by WHI-1429 (I04) — shared collector, pool-code normalization, publ
 bundle and fork evidence in `docs/references/agni-fixed-block-replay.md`; **FusionX v3
 is admitted** by WHI-1430 (I05) on its own fingerprint, bundle, fork + QuoterV2
 evidence and an independent local recompile (§3.3, §8) —
-`docs/references/fusionx-fixed-block-replay.md`; I06–I08 are not started.
+`docs/references/fusionx-fixed-block-replay.md`; **Uniswap v3 is admitted** by WHI-1431
+(I06) on its own fingerprint (normalizing v3-core's `NoDelegateCall.original`), bundle,
+fork + QuoterV2 evidence and an independent local recompile (§3.1) —
+`docs/references/uniswap-v3-fixed-block-replay.md`; I07–I08 are not started.
 This document records what was independently verified about each of the five
 DESIGN §1.2 sources on Mantle mainnet (chain id `5000`), what still cannot be
 verified with the access available in this pass, and the exact Solidity→Python
@@ -122,7 +125,7 @@ address entirely.
 | Factory | `0x0d922Fb1Bc191F64970ac40376643808b4B74Df9` |
 | QuoterV2 | `0xdD489C75be1039ec7d843A6aC2Fd658350B067Cf` |
 | TickLens | `0x38EB9e62ABe4d3F70C0e161971F29593b8aE29FF` |
-| Example pool | `0x4cdFc22bF05209de87Ee564746Dc7E5174631d2b` (WMNT/USDT 0.05%) |
+| Example pool | `0x4cdFc22bF05209de87Ee564746Dc7E5174631d2b` (USDT/WMNT 0.05%; token0 = USDT) |
 | Upstream | `Uniswap/v3-core` tag `v1.0.0`, commit `e3589b192d0be27e100cd0daaf6c97204fdb1899` |
 | License | BUSL-1.1 at publication; **Change Date 2023-04-01 already passed** → automatically GPL-2.0-or-later per the LICENSE file at that tag. Treat as GPL-2.0-or-later. |
 
@@ -145,6 +148,17 @@ low-but-nonzero activity the exploratory Dune query recorded (DESIGN §5.1: 16
 emitting contracts, ~$55.9K priced weekly volume). `tick_lens`'s code hash is
 byte-identical to `fusionx_v3.tick_lens` — both run the unmodified upstream
 `TickLens.sol`.
+
+**Local recompilation and fixed-block admission (added by WHI-1431).**
+`tools/cl_evidence/rebuild_uniswap_v3.sh` compiles `Uniswap/v3-core@v1.0.0` with solc
+0.7.6 (solc-js; runs 800, `istanbul`, `bytecodeHash: none`) and the deployed runtime code
+is **byte-identical** outside compiler-reported immutable sites: `UniswapV3Pool`
+22,142/22,142 bytes (27 sites), `UniswapV3Factory` 24,535/24,535 (1 site,
+`NoDelegateCall.original`). The pool's creation-code hash is v3-periphery's canonical
+`POOL_INIT_CODE_HASH` `0xe34f199b…87b8b54`. The factory is its own pool deployer (no
+separate contract; `cl_collection.factory_deploys_pools`). WHI-1431 also corrected this
+catalog's `tokens` order for the example pool (the pool's own `token0()` is USDT). The
+fixed-block universe and evidence are in `uniswap-v3-fixed-block-replay.md`.
 
 **Migration scope (for I03, generic CL math).** `quote_exact_in` for this family
 needs: `UniswapV3Pool.swap` (`contracts/UniswapV3Pool.sol`), `SwapMath.computeSwapStep`,
@@ -379,7 +393,7 @@ matched during verification.
 
 | Source | Confirmed upstream | License | Notes |
 | --- | --- | --- | --- |
-| Uniswap v3 | `Uniswap/v3-core@v1.0.0` | GPL-2.0-or-later | Was BUSL-1.1; Change Date 2023-04-01 already passed. |
+| Uniswap v3 | `Uniswap/v3-core@v1.0.0` | GPL-2.0-or-later | Was BUSL-1.1; Change Date 2023-04-01 already passed. Confirmed via explorer + Uniswap deployments feed + independent local recompile (WHI-1431, §3.1). |
 | Agni v3 | `agni-protocol/contracts@7278c3a` | GPL-2.0-or-later | Confirmed via explorer + first-party repo (this revision). |
 | FusionX v3 | `FusionX-Finance/v3-contracts@7f7406e` | GPL-2.0-or-later | Confirmed via explorer + official docs + package namespace + independent local recompile (WHI-1430, §3.3). |
 | Moe Classic v1 | `merchant-moe/moe-core@460bf55` | GPL-3.0 | Confirmed via first-party repo + independent `forge` bytecode match (this revision). The repo's own deploy-script files, e.g. `script/mantle/Addresses.sol`, are separately MIT-licensed but are not migration-relevant. |

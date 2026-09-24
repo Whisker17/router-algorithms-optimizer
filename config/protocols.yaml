@@ -60,11 +60,23 @@ sources:
         verification: >
           routescan_explorer_verified: UniswapV3Factory, solc v0.7.6+commit.7338295f,
           optimizer runs=800, 33 files, matches Uniswap/v3-core@v1.0.0 exactly (same
-          ContractName, same file layout).
+          ContractName, same file layout). local_recompile_match (WHI-1431,
+          tools/cl_evidence/rebuild_uniswap_v3.sh): solc 0.7.6, runs=800, istanbul,
+          bytecodeHash none (v3-core's own hardhat.config.ts) reproduces all 24535
+          runtime bytes outside the 1 `NoDelegateCall.original` immutable site. There
+          is no separate pool deployer: UniswapV3Factory inherits UniswapV3PoolDeployer
+          and CREATE2-deploys every pool itself (cl_collection.factory_deploys_pools).
       example_pool:
-        address: "0x4cdFc22bF05209de87Ee564746Dc7E5174631d2b" # WMNT/USDT 0.05%
+        address: "0x4cdFc22bF05209de87Ee564746Dc7E5174631d2b" # USDT/WMNT 0.05%
         code_hash: "0x3ca1ddb051776c121bd6e0916ffa297804b2467b059b786e6afe6417560a04e2"
-        verification: "routescan_explorer_verified: UniswapV3Pool, same compiler/settings as factory."
+        verification: >
+          routescan_explorer_verified: UniswapV3Pool, same compiler/settings as
+          factory. local_recompile_match (WHI-1431): the pinned
+          contracts/UniswapV3Pool.sol rebuilds to these 22142 runtime bytes exactly
+          outside the 27 immutable sites; keccak256 of that build equals
+          cl_collection.pool_code_normalized_hash below, and keccak256 of the build's
+          creation code is 0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54,
+          the canonical v3-periphery POOL_INIT_CODE_HASH.
       quoter_v2:
         address: "0xdD489C75be1039ec7d843A6aC2Fd658350B067Cf"
         code_hash: "0xa7f3aac9363bb8acf5b9bbdae738c973127cfc72d9c0ab20afac24cfe3339bcc"
@@ -79,10 +91,13 @@ sources:
           optimizer runs=1000000, evm=istanbul, 9 files. Byte-identical code hash to
           fusionx_v3's tick_lens (both are the unmodified upstream TickLens.sol).
     tokens:
-      token0: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
-      token1: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
+      # WHI-1431 correction: the first pass listed these reversed; the pool's own
+      # token0()/token1() (sorted by address, as every v3 factory orders them) are:
+      token0: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
+      token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
     pool_fee: 500
     expected_fee_tiers: { 100: 1, 500: 10, 3000: 60, 10000: 200 }
+    sor_protocol: V3
     upstream:
       repo: "https://github.com/Uniswap/v3-core"
       ref: "tag v1.0.0, commit e3589b192d0be27e100cd0daaf6c97204fdb1899"
@@ -99,7 +114,31 @@ sources:
         (100->1, 500->10, 3000->60, 10000->200 — unlike both Mantle-native v3-style
         forks below), and a CBOR metadata trailer containing only `solc=0x000706`
         (0.7.6) with no ipfs hash, matching v1.0.0's hardhat.config.ts
-        `metadata.bytecodeHash: "none"` setting.
+        `metadata.bytecodeHash: "none"` setting. WHI-1431 adds an independent
+        local recompile of the pinned tag (factory and pool byte-identical outside
+        immutables, tools/cl_evidence/rebuild_uniswap_v3.sh).
+    # Fixed-block collection admission (WHI-1431), same mechanism as agni_v3/fusionx_v3
+    # below but Uniswap's own evidence: its own pool fingerprint, its own pools.
+    cl_collection:
+      admitted: true
+      factory_deploys_pools: true
+      pool_code_normalized_hash: "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+      pool_immutables: [factory, token0, token1, fee, tickSpacing, maxLiquidityPerTick, original]
+      verification: >
+        Computed 2026-09-25 at the candidate block (101057678) over every non-zero
+        UniswapV3Factory.getPool result for USDT/WMNT, USDC/WMNT, USDC/USDT,
+        WETH/WMNT, WETH/USDT, mETH/WETH and mETH/WMNT (8 pools, including
+        example_pool, whose exact code_hash is pinned above): each is 22142 bytes
+        (not AgniPool's 22964 or FusionXV3Pool's 22718), and zeroing the PUSH32
+        sites equal to its own factory/token0/token1/fee/tickSpacing/
+        maxLiquidityPerTick getters plus its own address (`original`, v3-core's
+        NoDelegateCall immutable, which has no getter; 3/6/6/4/4/3/1 sites for all
+        eight) yields this same hash -- which is also exactly keccak256 of the
+        independent upstream recompile (immutables zero,
+        tools/cl_evidence/rebuild_uniswap_v3.sh). Any other code, including a
+        genuine AgniPool or FusionXV3Pool, fails closed. Uniswap v3 pools have no LM
+        hook (`lmPool` does not exist) and use the uint8 4-bit-denominator
+        `feeProtocol` (pools.concentrated UNISWAP_V3_DENOMINATOR).
 
   - key: agni_v3
     display_name: "Agni Finance v3"
@@ -135,6 +174,7 @@ sources:
       token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
     pool_fee: 500
     expected_fee_tiers: { 100: 1, 500: 10, 2500: 50, 10000: 200 }
+    sor_protocol: V3
     upstream:
       repo: "https://github.com/agni-protocol/contracts"
       ref: "main, core/contracts/{AgniFactory,AgniPool,AgniPoolDeployer}.sol @ commit 7278c3aafba82db83bbb85e5c0f5554f77ec3db4"
@@ -161,8 +201,8 @@ sources:
         it is outside the admitted Exact Input domain.
     # Fixed-block collection admission (WHI-1429). The shared collector
     # (snapshot/collectors/concentrated.py) collects only sources carrying their own
-    # block: agni_v3 here and fusionx_v3 (WHI-1430) below; Uniswap v3 (WHI-1431) adds
-    # its own after its own admission evidence -- sharing the code does not admit it.
+    # block: agni_v3 here, fusionx_v3 (WHI-1430) below and uniswap_v3 (WHI-1431) above,
+    # each on its own admission evidence -- sharing the code does not admit a source.
     cl_collection:
       admitted: true
       pool_code_normalized_hash: "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
@@ -236,6 +276,7 @@ sources:
       token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
     pool_fee: 500
     expected_fee_tiers: { 100: 1, 500: 10, 2500: 50, 10000: 200 }
+    sor_protocol: V3
     upstream:
       repo: "https://github.com/FusionX-Finance/v3-contracts"
       ref: "main, projects/v3-core/contracts/{FusionXV3Factory,FusionXV3Pool,FusionXV3PoolDeployer}.sol @ commit 7f7406e5fbdf610acf0fedac815c29fbca69925a"
