@@ -159,6 +159,25 @@ sources:
         FusionX source below and structurally identical in Agni's) that must be
         explicitly modeled as a no-op (or excluded with a documented reason) since
         it is outside the admitted Exact Input domain.
+    # Fixed-block collection admission (WHI-1429): the only CL source the shared
+    # collector (snapshot/collectors/concentrated.py) may collect today. FusionX
+    # (WHI-1430) and Uniswap v3 (WHI-1431) add their own block after their own
+    # admission evidence; sharing the collector code does not admit them.
+    cl_collection:
+      admitted: true
+      pool_code_normalized_hash: "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
+      pool_immutables: [factory, token0, token1, fee, tickSpacing, maxLiquidityPerTick]
+      verification: >
+        Computed 2026-09-24 at the candidate block (101057678) over all four
+        USDC/WMNT AgniFactory.getPool results (fee 100/500/2500/10000 ->
+        0x7b3a4b36..., 0x1858d52c... [example_pool, whose exact code_hash is pinned
+        above], 0x9cae9b5d..., 0x8e2c009e...): each is 22964 bytes, differs from the
+        example pool only inside PUSH32 immediates, and zeroing the PUSH32 sites
+        equal to its own factory/token0/token1/fee/tickSpacing/maxLiquidityPerTick
+        getters (7/6/6/8/4/3 sites -- identical counts for all four) yields this same
+        hash. Solidity 0.7.6 embeds every `immutable` as a PUSH32, so this is "the
+        verified AgniPool runtime code, instantiated with this pool's own
+        immutables". Any other code fails closed.
 
   - key: fusionx_v3
     display_name: "FusionX v3"

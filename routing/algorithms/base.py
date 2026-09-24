@@ -18,8 +18,8 @@ from snapshot.models import SnapshotBundle
 
 class SolveStatus(StrEnum):
     """The full runner status vocabulary (docs/DESIGN.md §2.10). Not every
-    algorithm produces every value; `direct` (WHI-1427) only ever returns `OK`
-    or `NO_ROUTE`."""
+    algorithm produces every value; `direct` returns `OK`, `NO_ROUTE` or
+    `INCOMPLETE_SNAPSHOT` (a candidate needed uncollected state, WHI-1429)."""
 
     OK = "ok"
     UNSUPPORTED = "unsupported"

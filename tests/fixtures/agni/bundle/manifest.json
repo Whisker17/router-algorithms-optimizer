@@ -1,0 +1,21 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "bundle_id": "agni-v3-101057678-a2195dd2",
+  "checksums": {
+    "cases.jsonl": "959f0398a085706de28827bf966ae20eb4b5ab95ad9b926ab5d876282075935d",
+    "pools.json": "74f5d6d657a23c1148977fa06f9cf91142a8d046202a189c48930afb6873f420",
+    "provenance.json": "7080b08b4230e3cfc09beb6b95cfbfbfe1b5972de162d39168a5c50db225fee8"
+  },
+  "files": {
+    "cases": "cases.jsonl",
+    "pools": "pools.json",
+    "provenance": "provenance.json"
+  },
+  "kind": "real",
+  "schema_version": 1
+}

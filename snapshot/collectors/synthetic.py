@@ -10,9 +10,8 @@ module is the single source of truth for the fixture's contents.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from snapshot.bundle import write_bundle
+from snapshot.collectors.base import PrepareError, PrepareRequest
 from snapshot.models import BlockRef, Case, ConstantProductPoolState, SnapshotBundle
 
 BUNDLE_ID = "synthetic-direct-v1"
@@ -53,9 +52,13 @@ _CASES = [
 ]
 
 
-def collect(output_dir: Path) -> SnapshotBundle:
+def collect(request: PrepareRequest) -> SnapshotBundle:
+    if request.block_number is not None or request.expected_block_hash is not None:
+        raise PrepareError(
+            "invalid_request", "the synthetic source is offline and takes no --block/--block-hash"
+        )
     return write_bundle(
-        output_dir,
+        request.output_dir,
         bundle_id=BUNDLE_ID,
         kind="synthetic",
         block=_BLOCK,

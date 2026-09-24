@@ -4,8 +4,10 @@ Status: **catalog + preflight published (code-hash pinned).** The shared
 concentrated-liquidity math for §3.1–§3.3 (Uniswap v3 / Agni v3 / FusionX v3) is
 migrated and verified against fork evidence by WHI-1428 — see
 `docs/references/concentrated-liquidity-migration.md` (source diff, Solidity-to-Python
-map, LM-hook handling, evidence). Per-source fixed-block admission (I04–I08) is NOT
-started.
+map, LM-hook handling, evidence). Per-source fixed-block admission: **Agni v3 is
+admitted** by WHI-1429 (I04) — shared collector, pool-code normalization, published
+bundle and fork evidence in `docs/references/agni-fixed-block-replay.md`; I05–I08 are
+not started.
 This document records what was independently verified about each of the five
 DESIGN §1.2 sources on Mantle mainnet (chain id `5000`), what still cannot be
 verified with the access available in this pass, and the exact Solidity→Python
@@ -446,6 +448,11 @@ returned `0xfff...ffeff...fff` — **255 of 256 bits set**, i.e. genuinely dense
 real initialized-tick data, confirming the method is RPC-readable on the public
 endpoint at this block. Walking the full envelope for a real corpus is I04/I05's
 job, not this one's (explicitly out of scope: "Full dataset capture").
+
+*Executed for Agni by WHI-1429:* `snapshot/collectors/concentrated.py` performs this
+raw `tickBitmap` + `ticks()` walk with EIP-1898 hash-pinned reads, growing the word
+range until the declared amount envelope fits the migrated simulator
+(`docs/references/agni-fixed-block-replay.md` §1, §3).
 
 **Liquidity Book (Merchant Moe v2.2).** Bins are not bitmap-indexed the same
 way; recovery is via `LBPair.getActiveId()` for the current bin plus

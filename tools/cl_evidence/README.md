@@ -1,4 +1,4 @@
-# `tools/cl_evidence` — independent CL swap evidence (WHI-1428)
+# `tools/cl_evidence` — independent CL swap evidence (WHI-1428, WHI-1429)
 
 Validation-only Foundry project. It generates the offline fixtures in
 `tests/fixtures/concentrated/` that `tests/pools/test_concentrated.py` replays against
@@ -38,3 +38,23 @@ update the catalog (and re-run the preflight) first.
 
 `diff_sources.sh [workdir]` reproduces the deployed-source comparison in the migration
 doc §2 (Routescan verified sources + `Uniswap/v3-core` v1.0.0).
+
+## Agni fixed-block replay evidence (WHI-1429)
+
+`test/CaptureAgniReplay.t.sol` checks a *published bundle* rather than a hand-built
+state: for every (reference case x pool of its pair) request it executes the deployed
+AgniPool swap on a fork at the bundle's own block, and records pre-state scalars, every
+bitmap word of the bundle's collected range, the traversed initialized ticks before and
+after, the swap amounts, the post-state and a follow-up reverse swap. Output:
+`tests/fixtures/agni/evidence.jsonl`, replayed by `tests/snapshot/test_agni.py`.
+
+```bash
+tools/cl_evidence/replay_agni.sh tests/fixtures/agni/bundle   # writes requests/ + evidence
+uv run pytest tests/snapshot/test_agni.py                      # offline replay
+```
+
+`replay_agni.sh` derives the request file (inputs only) with `make_replay_requests.py`
+and refuses a chain other than 5000 or a block whose hash differs from the bundle's.
+The large cases cross several hundred initialized ticks per pool; the first run fetches
+that storage slot by slot through the public RPC (tens of minutes) and is cached by
+Foundry afterwards. Details: `docs/references/agni-fixed-block-replay.md` §4.

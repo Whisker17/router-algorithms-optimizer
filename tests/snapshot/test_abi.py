@@ -22,6 +22,12 @@ SIGNATURES = {
     abi.SEL_GET_POOL: "getPool(address,address,uint24)",
     abi.SEL_POOL_DEPLOYER: "poolDeployer()",
     abi.SEL_OWNER: "owner()",
+    abi.SEL_TICKS: "ticks(int24)",
+    abi.SEL_FEE_GROWTH_GLOBAL0_X128: "feeGrowthGlobal0X128()",
+    abi.SEL_FEE_GROWTH_GLOBAL1_X128: "feeGrowthGlobal1X128()",
+    abi.SEL_PROTOCOL_FEES: "protocolFees()",
+    abi.SEL_MAX_LIQUIDITY_PER_TICK: "maxLiquidityPerTick()",
+    abi.SEL_LM_POOL: "lmPool()",
     abi.SEL_GET_RESERVES: "getReserves()",
     abi.SEL_GET_PAIR: "getPair(address,address)",
     abi.SEL_ALL_PAIRS_LENGTH: "allPairsLength()",
@@ -98,3 +104,45 @@ def test_is_zero_address() -> None:
     assert abi.is_zero_address(None)
     assert abi.is_zero_address("0x" + "00" * 20)
     assert not abi.is_zero_address("0x" + "11" * 20)
+
+
+def test_pad_int24_sign_extends_and_bounds() -> None:
+    assert abi.pad_int24(-1) == "f" * 64
+    assert abi.pad_int24(280457) == format(280457, "064x")
+    with pytest.raises(ValueError):
+        abi.pad_int24(1 << 23)
+
+
+def test_word_decoders_reject_wrong_widths() -> None:
+    assert abi.decode_words("0x" + "00" * 31 + "05" + "ff" * 32) == [5, (1 << 256) - 1]
+    assert abi.to_signed((1 << 256) - 7, 24) == -7
+    with pytest.raises(ValueError):
+        abi.to_signed(1 << 23, 24)
+    with pytest.raises(ValueError):
+        abi.to_unsigned(1 << 128, 128)
+    with pytest.raises(ValueError):
+        abi.decode_words("0x")
+    with pytest.raises(ValueError):
+        abi.decode_words("0x" + "00" * 33)
+
+
+def _push32(value: int) -> bytes:
+    return b"\x7f" + value.to_bytes(32, "big")
+
+
+def test_immutable_normalized_code_hash_ignores_only_the_pools_own_immutables() -> None:
+    # PUSH1 0x7f: the 0x7f is push *data*, and must not start a fake PUSH32.
+    tail = b"\x60\x7f" + b"\x01" * 32 + b"\x00"
+    code_a = _push32(500) + _push32(10) + tail
+    code_b = _push32(2500) + _push32(50) + tail
+    hash_a, hits_a = abi.immutable_normalized_code_hash(code_a, {"fee": 500, "tickSpacing": 10})
+    hash_b, hits_b = abi.immutable_normalized_code_hash(code_b, {"fee": 2500, "tickSpacing": 50})
+    assert hash_a == hash_b
+    assert hits_a == hits_b == {"fee": 1, "tickSpacing": 1}
+    assert abi.keccak256_hex(code_a) != abi.keccak256_hex(code_b)
+    # a real code difference outside the immutables is never normalized away
+    code_c = _push32(500) + _push32(10) + tail + b"\x00"
+    assert abi.immutable_normalized_code_hash(code_c, {"fee": 500, "tickSpacing": 10})[0] != hash_a
+    # claiming the wrong immutable values does not match either
+    assert abi.immutable_normalized_code_hash(code_a, {"fee": 3000, "tickSpacing": 10})[0] != hash_a
+    assert abi.push32_immediates(tail) == []

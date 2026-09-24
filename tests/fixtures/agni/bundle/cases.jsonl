@@ -1,0 +1,6 @@
+{"amount_in": "10000000", "case_id": "usdc_wmnt_small", "token_in": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9", "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"}
+{"amount_in": "500000000", "case_id": "usdc_wmnt_medium", "token_in": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9", "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"}
+{"amount_in": "5000000000", "case_id": "usdc_wmnt_large", "token_in": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9", "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"}
+{"amount_in": "10000000000000000000", "case_id": "wmnt_usdc_small", "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8", "token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9"}
+{"amount_in": "500000000000000000000", "case_id": "wmnt_usdc_medium", "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8", "token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9"}
+{"amount_in": "5000000000000000000000", "case_id": "wmnt_usdc_large", "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8", "token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9"}
