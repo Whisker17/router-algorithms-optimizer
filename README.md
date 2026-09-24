@@ -5,8 +5,7 @@ liquidity snapshot, compare exact-input solvers with a common evaluator, and rep
 quality/latency/cost trade-offs. Uniswap SOR is a required scoped comparator;
 Jupiter/Metis is a separate research challenge.
 
-The spec of record is `docs/DESIGN.md`. Issue design and published tracking mappings are in
-`docs/ISSUE_PLAN.md` and `docs/RELEASE_PLAN.md`.
+The full PRD will live in `docs/DESIGN.md`.
 
 ## Workflow & Development
 
@@ -39,3 +38,26 @@ scripts/agent-dispatch.sh --probe
 ```
 
 Skills inventory lives in `.claude/skills/`. See `AGENTS.md` for detailed agent instructions.
+
+## Locally customized skills
+
+Skills are pinned by `skills-lock.json`; upgrade them deliberately, not per-project.
+
+> ⚠️ **Locally customized skills** — `skills-lock.json` records the *upstream* hash, so it
+> cannot detect these edits and **re-vendoring via `/setup-matt-pocock-skills` will
+> silently overwrite them.** Diff before accepting any skill upgrade to:
+>
+> - `implement/SKILL.md` — three-round review loop + escalation pass; self-merge
+>   authorization; `REVIEWER`/`ESCALATOR` role dispatch; ponytail generation
+>   constraint + shrink pass before review
+> - `code-review/SKILL.md` — `REVIEWER` role dispatch on both axes; Reinvented Wheel
+>   smell on the Standards baseline
+> - `improve-codebase-architecture/`, `codebase-design/DESIGN-IT-TWICE.md`,
+>   `wayfinder/SKILL.md` — `EXPLORER` role dispatch with a documented serial fallback
+> - `ask-matt/SKILL.md` — runtime-neutral compaction wording; implement drives
+>   tdd + ponytail
+> - `orchestrate/` — first-party, not vendored; do not add it to `skills-lock.json`.
+>   Trap registry lives in `docs/TRAPS.md` (skill-local `traps.md` is a pointer).
+>   Verify checks the implementer's rung report.
+> - `ponytail/` — first-party, not vendored; do not add it to `skills-lock.json`.
+>   Generation constraint driven by `/implement`, not a process skill.

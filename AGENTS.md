@@ -11,8 +11,8 @@ quality/latency/cost trade-offs. Uniswap SOR is a required scoped comparator;
 Jupiter/Metis is a separate research challenge.
 
 The full PRD — requirements, architecture, milestones, rejected alternatives, open
-risks — lives in `docs/DESIGN.md`. Read it before making any design or architectural
-decision; do not re-derive parameters or decisions that are already validated there.
+risks — will live in `docs/DESIGN.md`. Read it once landed before making any design or
+architectural decision; do not re-derive parameters or decisions that are already validated there.
 
 ## Status
 
@@ -20,23 +20,15 @@ decision; do not re-derive parameters or decisions that are already validated th
 implemented yet. Update it the moment reality changes instead of leaving stale
 placeholders. Agents must not assume a module exists until its issue lands. -->
 
-Product design is recorded in `docs/DESIGN.md`; its issue design is preserved in
-`docs/ISSUE_PLAN.md`. The owner approved five liquidity sources, Python, one static
-snapshot, Solidity-source-faithful protocol simulation, shared-pool evaluation,
-mandatory Uniswap SOR and a Jupiter/Metis challenge. After interactive fable5 design
-review, Opus 5.5 published 25 Linear issues (WHI-1425–WHI-1449), six milestones and
-42 blocking edges. Parent independent read-back passed; see
-`docs/references/linear-publication-audit.md` for the mapping and evidence.
-
-Real Releases are now bound in pipeline `router-algorithms-optimizer`: 0.1.0 has
-23 issues and 0.2.0 has two. Both are Planned, all issues Todo. G00/WHI-1425 has an
-owner-requested 0.1.0 delivery association only; its governance title/routing remain
-unchanged. See `docs/RELEASE_PLAN.md` for the bounded metadata exception.
-
+Product design and issue decomposition were approved during design review and published
+to Linear (WHI-1425–WHI-1449, six milestones across Planned Releases 0.1.0 and 0.2.0).
 Repository bootstrap is complete (`origin/dev` established; Linear project binding
-configured via WHI-1425). Product implementation has **not** started: source, tests
-and tooling remain template scaffolding; no pool adapters, collectors, algorithms or
-benchmark modules exist yet. Code implementation begins with I01 and I02.
+configured via WHI-1425).
+
+The full PRD and issue/release plans will land in their respective documentation updates.
+Product implementation has **not** started: source, tests and tooling remain template
+scaffolding; no pool adapters, collectors, algorithms or benchmark modules exist yet. Code
+implementation begins with I01 and I02.
 
 ## Build, test, run
 
@@ -145,9 +137,9 @@ create it as a side effect of picking up a ticket.
 4. A PR whose implementation went through `/implement`'s full three-round review loop
    (plus the escalation pass, when round 3 left findings open) is **pre-authorized to
    self-squash-merge** once it reads MERGEABLE/CLEAN and tests + lint pass — no separate
-   human approval. **Exceptions that stop at `In Review` for a human:** changes touching
-   **none** (offline benchmark, no signing keys or production deployment), `release/*` → `main` promotions, and a finished
-   version-integration `release/v*` → `dev`. PRs that skipped the
+   human approval. **Exceptions that stop at `In Review` for a human:** No sensitive-surface
+   exception applies (offline benchmark, no signing keys or production deployment);
+   `release/*` → `main` promotions, and a finished version-integration `release/v*` → `dev`. PRs that skipped the
    review loop also stop at `In Review`. After merging, run the **post-merge cleanup**
    below. **No waiver of these exceptions is in force.** If the owner ever grants
    one for a bounded issue set it must take the shape in `docs/GIT_WORKFLOW.md`

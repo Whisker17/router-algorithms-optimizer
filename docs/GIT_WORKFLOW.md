@@ -275,8 +275,7 @@ implementer. A self-review inside the implementing context does not open the fas
 
 **Exceptions that always stop at `In Review` for a human:**
 
-- Changes touching **none** (defined per-project at setup; e.g. payment
-  flows, auth, production data migrations, key handling — none configured for this offline benchmark)
+- Changes touching sensitive paths (no high-risk paths configured for this offline benchmark: no signing keys, live funds, or production deployment)
 - `release/*` → `main` promotions
 - Finished version-integration `release/v*` → `dev` (the merge-back that
   makes `dev` shippable again)
