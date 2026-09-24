@@ -47,7 +47,7 @@ this has to be a hotfix off `origin/main`, not a release. -->
 ## Test plan
 
 - [ ] Local tests run (`uv run pytest` or the relevant subset)
-- [ ] If this touches {{HIGH_RISK_PATHS}}: verification approach documented (dry-run /
+- [ ] If this touches high-risk paths (none configured): verification approach documented (dry-run /
       staging / mocked)
 - [ ] No new tunable parameters outside `docs/DESIGN.md` §2, or the deviation is
       explained in the Summary

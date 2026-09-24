@@ -34,6 +34,6 @@ whatever state the issue is in.
 
 ## High-risk-path extra caution (this repo)
 
-Treat any issue touching **{{HIGH_RISK_PATHS}}** as **never** `ready-for-agent` by
+Treat any issue touching high-risk paths (**none** configured for this repo) as **never** `ready-for-agent` by
 default — route it to `ready-for-human` unless the issue explicitly says otherwise and a
 human has reviewed the plan first.

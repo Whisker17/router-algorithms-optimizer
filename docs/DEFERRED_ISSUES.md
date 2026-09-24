@@ -17,7 +17,7 @@ area starts from knowledge instead of rediscovery.
   entry stays findable as the code moves.
 
 Severity is the reviewer's judgement at defer time: **High** (correctness/safety, fix
-soon — anything touching {{HIGH_RISK_PATHS}} defaults to at least High), **Medium**
+soon — anything touching high-risk paths defaults to at least High), **Medium**
 (operational/perf, fix when convenient), **Low** (nit/consistency).
 
 ## Entry format

@@ -5,11 +5,14 @@ repository. `CLAUDE.md` is a symlink to this file — edit here only.
 
 ## What this is
 
-{{PROJECT_DESCRIPTION}}
+An offline Python benchmark for Mantle swap-routing algorithms: freeze one real
+liquidity snapshot, compare exact-input solvers with a common evaluator, and report
+quality/latency/cost trade-offs. Uniswap SOR is a required scoped comparator;
+Jupiter/Metis is a separate research challenge.
 
 The full PRD — requirements, architecture, milestones, rejected alternatives, open
-risks — lives in `docs/DESIGN.md`. Read it before making any design or architectural
-decision; do not re-derive parameters or decisions that are already validated there.
+risks — will live in `docs/DESIGN.md`. Read it once landed before making any design or
+architectural decision; do not re-derive parameters or decisions that are already validated there.
 
 ## Status
 
@@ -17,8 +20,15 @@ decision; do not re-derive parameters or decisions that are already validated th
 implemented yet. Update it the moment reality changes instead of leaving stale
 placeholders. Agents must not assume a module exists until its issue lands. -->
 
-Freshly bootstrapped from the project template. `docs/DESIGN.md` is not yet written —
-produce it via `/grill-me` + `/to-spec` before implementing anything.
+Product design and issue decomposition were approved during design review and published
+to Linear (WHI-1425–WHI-1449, six milestones across Planned Releases 0.1.0 and 0.2.0).
+Repository bootstrap is complete (`origin/dev` established; Linear project binding
+configured via WHI-1425).
+
+The full PRD and issue/release plans will land in their respective documentation updates.
+Product implementation has **not** started: source, tests and tooling remain template
+scaffolding; no pool adapters, collectors, algorithms or benchmark modules exist yet. Code
+implementation begins with I01 and I02.
 
 ## Build, test, run
 
@@ -48,9 +58,18 @@ Module layout is fixed by `docs/DESIGN.md` §4.2. Keep this section a short mirr
 that section — one bullet per top-level module, its single responsibility, and the
 load-bearing interfaces other modules may depend on.
 
-<!-- Fill in as DESIGN.md §4.2 lands, e.g.:
-- **`<module>/`** — responsibility; depends only on <interface>.
--->
+Planned layout from `docs/DESIGN.md` §4.2 — **not implemented yet**:
+
+- **`snapshot/`** — verified deployments, frozen bundles/cases and provenance; exposes
+  immutable snapshot and request data.
+- **`pools/`** — exact protocol math and state transitions; exposes `quote_exact_in`.
+- **`routing/`** — funding plans, evaluator and algorithm registry; depends on snapshot
+  data and pool simulation.
+- **`benchmark/`** — cost context, worker budgets and measurements; depends on the
+  solver/evaluator interfaces.
+- **`report/`** — offline CSV/HTML from versioned result records only.
+- **`main.py`** — thin CLI; `config/` holds validated profiles, `tests/` holds behavioral
+  evidence, and `tools/upstream/` is reserved for validation-only reference harnesses.
 
 ## Git workflow (mandatory)
 
@@ -104,23 +123,23 @@ create it as a side effect of picking up a ticket.
 **Then, once the base is resolved:**
 
 1. `git fetch` + create the worktree from the **resolved** base
-   (`fix/{{ISSUE_PREFIX_LOWER}}-NNN-topic` or `feat/{{ISSUE_PREFIX_LOWER}}-NNN-topic`).
+   (`fix/whi-NNN-topic`, `feat/whi-NNN-topic`, or `chore/whi-NNN-topic`).
    Verify immediately — `git merge-base HEAD origin/<resolved-base>` must equal
    `git rev-parse origin/<resolved-base>` — whatever tooling created the worktree.
    *(Runtime aside: Claude Code's `EnterWorktree` defaults to `origin/main`, which
    is right for hotfix and wrong for everything else. The check is what settles
    it.)*
 2. Implement only that issue; tracker state → **`In Progress`**.
-3. `gh pr create --base <resolved-base>` (title/body include `{{ISSUE_PREFIX}}-NNN`
+3. `gh pr create --base <resolved-base>` (title/body include `WHI-NNN`
    **and the resolved base plus the signals it was derived from**); tracker →
    **`In Review`**. Any review finding you intentionally leave unfixed goes in
    `docs/DEFERRED_ISSUES.md` as part of this PR — see that file for the format.
 4. A PR whose implementation went through `/implement`'s full three-round review loop
    (plus the escalation pass, when round 3 left findings open) is **pre-authorized to
    self-squash-merge** once it reads MERGEABLE/CLEAN and tests + lint pass — no separate
-   human approval. **Exceptions that stop at `In Review` for a human:** changes touching
-   **{{HIGH_RISK_PATHS}}**, `release/*` → `main` promotions, and a finished
-   version-integration `release/v*` → `dev`. PRs that skipped the
+   human approval. **Exceptions that stop at `In Review` for a human:** (no sensitive-path
+   exception applies — offline benchmark, no signing keys or production deployment);
+   `release/*` → `main` promotions, and a finished version-integration `release/v*` → `dev`. PRs that skipped the
    review loop also stop at `In Review`. After merging, run the **post-merge cleanup**
    below. **No waiver of these exceptions is in force.** If the owner ever grants
    one for a bounded issue set it must take the shape in `docs/GIT_WORKFLOW.md`
@@ -160,7 +179,7 @@ first push of a freshly cut `release/v*`.
 1. **Squash-merge + drop the remote branch:** `gh pr merge <N> --squash --delete-branch`.
 2. **Remove the worktree:** `git worktree remove <worktree-path>` then
    `git worktree prune`.
-3. **Delete the local branch:** `git branch -D fix/{{ISSUE_PREFIX_LOWER}}-NNN-topic`
+3. **Delete the local branch:** `git branch -D fix/whi-NNN-topic`
    (this fails while the worktree still holds the branch — do step 2 first).
 4. **Fast-forward the resolved base:** `git fetch origin --prune` then
    `git merge --ff-only origin/<resolved-base>` (must fast-forward — if it would
@@ -208,7 +227,7 @@ Full rules: `docs/GIT_WORKFLOW.md`.
 ## Template feedback loop
 
 This repo was bootstrapped from the shared project template
-(`{{TEMPLATE_REPO_URL}}`). When work here surfaces an improvement that belongs to the
+(`git@github.com:Whisker17/code-template.git`). When work here surfaces an improvement that belongs to the
 **template layer** — a workflow rule that bit us, a skills configuration fix, a doc
 convention worth standardizing — tell the user explicitly so they can port it back to
 the template repo (and its `CHANGELOG.md`). Project-specific learnings stay here;
@@ -250,8 +269,8 @@ is just markdown. The load-bearing ones:
 
 ### Issue tracker
 
-Issues and PRDs live in **Linear** (project `{{LINEAR_PROJECT}}`, team
-`{{LINEAR_TEAM}}`). Access is a fallback ladder — MCP tools, else the GraphQL API with
+Issues and PRDs live in **Linear** (project `Mantle Router Algorithm Optimizer`, team
+`Whisker-Personal`). Access is a fallback ladder — MCP tools, else the GraphQL API with
 `LINEAR_API_KEY` — and reaching the tracker is mandatory, not optional: workflow state
 moves in lockstep with the PR. External PRs are not a triage surface. See
 `docs/agents/issue-tracker.md`.
