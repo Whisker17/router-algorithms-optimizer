@@ -1,0 +1,20 @@
+{
+  "pools": [
+    {
+      "fee_bps": 30,
+      "pool_id": "pool_a",
+      "reserve0": "1000000",
+      "reserve1": "3000000",
+      "token0": "TKA",
+      "token1": "TKB"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "pool_b",
+      "reserve0": "2000000",
+      "reserve1": "3000000",
+      "token0": "TKA",
+      "token1": "TKB"
+    }
+  ]
+}
