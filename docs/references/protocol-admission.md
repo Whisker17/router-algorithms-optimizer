@@ -1,6 +1,11 @@
 # Protocol admission catalog — findings (WHI-1426 / I01)
 
-Status: **catalog + preflight published (code-hash pinned), per-source math admission NOT started.**
+Status: **catalog + preflight published (code-hash pinned).** The shared
+concentrated-liquidity math for §3.1–§3.3 (Uniswap v3 / Agni v3 / FusionX v3) is
+migrated and verified against fork evidence by WHI-1428 — see
+`docs/references/concentrated-liquidity-migration.md` (source diff, Solidity-to-Python
+map, LM-hook handling, evidence). Per-source fixed-block admission (I04–I08) is NOT
+started.
 This document records what was independently verified about each of the five
 DESIGN §1.2 sources on Mantle mainnet (chain id `5000`), what still cannot be
 verified with the access available in this pass, and the exact Solidity→Python

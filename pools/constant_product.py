@@ -33,31 +33,12 @@ returns a fresh `ConstantProductPoolState` for the caller to thread forward
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import StrEnum
-
+from pools.result import QuoteStatus, SwapResult
 from snapshot.models import ConstantProductPoolState
 
+__all__ = ["FEE_DENOMINATOR", "QuoteStatus", "SwapResult", "get_amount_out", "quote_exact_in"]
+
 FEE_DENOMINATOR = 10_000
-
-
-class QuoteStatus(StrEnum):
-    OK = "ok"
-    UNSUPPORTED_TOKEN = "unsupported_token"
-    INSUFFICIENT_LIQUIDITY = "insufficient_liquidity"
-    INSUFFICIENT_OUTPUT_AMOUNT = "insufficient_output_amount"
-
-
-@dataclass(frozen=True)
-class SwapResult:
-    """Pure output of one `quote_exact_in` call. `new_state` is `None` unless
-    `status is QuoteStatus.OK` -- a failed quote never claims a state transition."""
-
-    status: QuoteStatus
-    amount_in_consumed: int
-    amount_out: int
-    new_state: ConstantProductPoolState | None
-    detail: str = ""
 
 
 def get_amount_out(amount_in: int, reserve_in: int, reserve_out: int, fee_bps: int) -> int:
@@ -82,7 +63,7 @@ def get_amount_out(amount_in: int, reserve_in: int, reserve_out: int, fee_bps: i
 
 def quote_exact_in(
     state: ConstantProductPoolState, token_in: str, amount_in_raw: int
-) -> SwapResult:
+) -> SwapResult[ConstantProductPoolState]:
     """`quote_exact_in(pool_state, token_in, amount_in_raw) -> SwapResult`
     (docs/DESIGN.md §4.3 load-bearing interface, constant-product specialization).
 

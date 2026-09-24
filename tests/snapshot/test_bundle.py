@@ -85,7 +85,9 @@ def test_write_then_load_round_trip(tmp_path: Path) -> None:
     loaded = load_bundle(out)
     assert loaded.bundle_id == "b1"
     assert loaded.bundle_hash == written.bundle_hash
-    assert loaded.pools["pool_a"].reserve0 == 1000
+    loaded_a = loaded.pools["pool_a"]
+    assert isinstance(loaded_a, ConstantProductPoolState)
+    assert loaded_a.reserve0 == 1000
     assert loaded.cases[0].amount_in == 100
 
 

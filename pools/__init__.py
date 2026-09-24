@@ -1,8 +1,11 @@
 """Verified protocol adapters and pure state transitions (docs/DESIGN.md §4.2).
 
-Only `constant_product` (Uniswap-V2/Merchant-Moe-Classic-style pools) is
-implemented so far; `pools.constant_product.quote_exact_in` is the concrete
-specialization of the `quote_exact_in(state, token_in, amount_in_raw, context) ->
-SwapResult` load-bearing interface (docs/DESIGN.md §4.3). Concentrated-liquidity
-(WHI-1428) and Liquidity Book (WHI-1433) add their own modules alongside this one.
+- `constant_product` -- Uniswap-V2/Merchant-Moe-Classic-style pools (WHI-1427).
+- `concentrated` (+ `cl_math`) -- integer Uniswap-v3-family swap for the admitted
+  `uniswap_v3`/`agni_v3`/`fusionx_v3` sources (WHI-1428).
+- `quote` -- the pool-agnostic `quote_exact_in(state, token_in, amount_in_raw) ->
+  SwapResult` dispatch used by the evaluator (docs/DESIGN.md §4.3); `result` holds the
+  shared `SwapResult`/`QuoteStatus`.
+
+Liquidity Book (WHI-1433) adds its own module alongside these.
 """
