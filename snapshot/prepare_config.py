@@ -1,5 +1,8 @@
-"""Typed, validated loader for concentrated-liquidity prepare configs
-(`config/prepare/<source>.yaml`, WHI-1429).
+"""Typed, validated loaders for fixed-block prepare configs
+(`config/prepare/<source>.yaml`): concentrated-liquidity sources (`ClPrepareConfig`,
+WHI-1429) and constant-product Classic sources (`ClassicPrepareConfig`, WHI-1432:
+declared tokens with their decimals, token pairs, cases and RPC settings -- no fee
+tiers or tick walk).
 
 A prepare config is the *selection* half of a fixed-block collection: which pairs and
 fee tiers to discover through the verified factory, which reference cases define the
@@ -122,6 +125,66 @@ def _resolve_token(value: Any, aliases: dict[str, str], where: str) -> str:
     return _address(value, where)
 
 
+def _parse_cases(
+    cases_obj: Any, aliases: dict[str, str], seen_pairs: set[tuple[str, str]]
+) -> tuple[Case, ...]:
+    if not isinstance(cases_obj, list) or not cases_obj:
+        raise PrepareConfigError("cases: expected a non-empty list")
+    cases: list[Case] = []
+    seen_ids: set[str] = set()
+    for i, entry in enumerate(cases_obj):
+        where = f"cases[{i}]"
+        _require_keys(entry, {"case_id", "token_in", "token_out", "amount_in"}, set(), where)
+        case_id = entry["case_id"]
+        if not isinstance(case_id, str) or not case_id or case_id in seen_ids:
+            raise PrepareConfigError(f"{where}.case_id: expected a unique non-empty string")
+        seen_ids.add(case_id)
+        token_in = _resolve_token(entry["token_in"], aliases, f"{where}.token_in")
+        token_out = _resolve_token(entry["token_out"], aliases, f"{where}.token_out")
+        if token_in == token_out:
+            raise PrepareConfigError(f"{where}: token_in and token_out must differ")
+        if tuple(sorted((token_in, token_out))) not in seen_pairs:
+            raise PrepareConfigError(f"{where}: pair {token_in}/{token_out} is not in `pairs`")
+        amount = entry["amount_in"]
+        if not isinstance(amount, str):
+            raise PrepareConfigError(f"{where}.amount_in: expected a decimal string")
+        try:
+            amount_in = int(amount)
+        except ValueError as exc:
+            raise PrepareConfigError(f"{where}.amount_in: not an integer: {amount!r}") from exc
+        if amount_in <= 0:
+            raise PrepareConfigError(f"{where}.amount_in: must be positive")
+        cases.append(
+            Case(case_id=case_id, token_in=token_in, token_out=token_out, amount_in=amount_in)
+        )
+    return tuple(cases)
+
+
+def _parse_rpc(rpc: Any) -> RpcSettings:
+    _require_keys(
+        rpc,
+        {
+            "max_batch_size",
+            "max_attempts",
+            "base_delay_seconds",
+            "max_delay_seconds",
+            "timeout_seconds",
+        },
+        set(),
+        "rpc",
+    )
+    settings = RpcSettings(
+        max_batch_size=_int(rpc["max_batch_size"], 1, 100, "rpc.max_batch_size"),
+        max_attempts=_int(rpc["max_attempts"], 1, 20, "rpc.max_attempts"),
+        base_delay_seconds=_number(rpc["base_delay_seconds"], 0.0, "rpc.base_delay_seconds"),
+        max_delay_seconds=_number(rpc["max_delay_seconds"], 0.0, "rpc.max_delay_seconds"),
+        timeout_seconds=_number(rpc["timeout_seconds"], 1.0, "rpc.timeout_seconds"),
+    )
+    if settings.max_delay_seconds < settings.base_delay_seconds:
+        raise PrepareConfigError("rpc: max_delay_seconds must be >= base_delay_seconds")
+    return settings
+
+
 def parse_prepare_config(raw: Any, *, source_path: str, sha256: str) -> ClPrepareConfig:
     _require_keys(
         raw,
@@ -204,36 +267,7 @@ def parse_prepare_config(raw: Any, *, source_path: str, sha256: str) -> ClPrepar
             PairSpec(token0=t0, token1=t1, fee_tiers=fee_tiers, excluded_fee_tiers=tuple(excluded))
         )
 
-    cases_obj = raw["cases"]
-    if not isinstance(cases_obj, list) or not cases_obj:
-        raise PrepareConfigError("cases: expected a non-empty list")
-    cases: list[Case] = []
-    seen_ids: set[str] = set()
-    for i, entry in enumerate(cases_obj):
-        where = f"cases[{i}]"
-        _require_keys(entry, {"case_id", "token_in", "token_out", "amount_in"}, set(), where)
-        case_id = entry["case_id"]
-        if not isinstance(case_id, str) or not case_id or case_id in seen_ids:
-            raise PrepareConfigError(f"{where}.case_id: expected a unique non-empty string")
-        seen_ids.add(case_id)
-        token_in = _resolve_token(entry["token_in"], aliases, f"{where}.token_in")
-        token_out = _resolve_token(entry["token_out"], aliases, f"{where}.token_out")
-        if token_in == token_out:
-            raise PrepareConfigError(f"{where}: token_in and token_out must differ")
-        if tuple(sorted((token_in, token_out))) not in seen_pairs:
-            raise PrepareConfigError(f"{where}: pair {token_in}/{token_out} is not in `pairs`")
-        amount = entry["amount_in"]
-        if not isinstance(amount, str):
-            raise PrepareConfigError(f"{where}.amount_in: expected a decimal string")
-        try:
-            amount_in = int(amount)
-        except ValueError as exc:
-            raise PrepareConfigError(f"{where}.amount_in: not an integer: {amount!r}") from exc
-        if amount_in <= 0:
-            raise PrepareConfigError(f"{where}.amount_in: must be positive")
-        cases.append(
-            Case(case_id=case_id, token_in=token_in, token_out=token_out, amount_in=amount_in)
-        )
+    cases = _parse_cases(raw["cases"], aliases, seen_pairs)
 
     coll = raw["collection"]
     _require_keys(
@@ -254,35 +288,14 @@ def parse_prepare_config(raw: Any, *, source_path: str, sha256: str) -> ClPrepar
     if limits.initial_margin_words > limits.max_words_per_direction:
         raise PrepareConfigError("collection: initial_margin_words exceeds max_words_per_direction")
 
-    rpc = raw["rpc"]
-    _require_keys(
-        rpc,
-        {
-            "max_batch_size",
-            "max_attempts",
-            "base_delay_seconds",
-            "max_delay_seconds",
-            "timeout_seconds",
-        },
-        set(),
-        "rpc",
-    )
-    settings = RpcSettings(
-        max_batch_size=_int(rpc["max_batch_size"], 1, 100, "rpc.max_batch_size"),
-        max_attempts=_int(rpc["max_attempts"], 1, 20, "rpc.max_attempts"),
-        base_delay_seconds=_number(rpc["base_delay_seconds"], 0.0, "rpc.base_delay_seconds"),
-        max_delay_seconds=_number(rpc["max_delay_seconds"], 0.0, "rpc.max_delay_seconds"),
-        timeout_seconds=_number(rpc["timeout_seconds"], 1.0, "rpc.timeout_seconds"),
-    )
-    if settings.max_delay_seconds < settings.base_delay_seconds:
-        raise PrepareConfigError("rpc: max_delay_seconds must be >= base_delay_seconds")
+    settings = _parse_rpc(raw["rpc"])
 
     return ClPrepareConfig(
         source_key=source_key,
         bundle_id_prefix=prefix,
         token_labels=labels,
         pairs=tuple(pairs),
-        cases=tuple(cases),
+        cases=cases,
         limits=limits,
         rpc=settings,
         source_path=source_path,
@@ -298,6 +311,152 @@ def load_prepare_config(path: str | Path) -> ClPrepareConfig:
         raise PrepareConfigError(f"{path}: invalid YAML: {exc}") from exc
     try:
         return parse_prepare_config(
+            raw, source_path=str(path), sha256=hashlib.sha256(data).hexdigest()
+        )
+    except PrepareConfigError as exc:
+        raise PrepareConfigError(f"{path}: {exc}") from exc
+
+
+# ---------------------------------------------------------------------------
+# Constant-product (Classic) prepare configs (WHI-1432)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ClassicTokenSpec:
+    """A token the Classic collector may admit. `decimals` is the declared value the
+    token's own `decimals()` must return at the block; only tokens listed here (plain
+    ERC-20 transfer semantics, no fee-on-transfer/rebasing -- confirmed by the fork
+    evidence) can appear in an admitted pair."""
+
+    address: str
+    label: str
+    decimals: int
+
+
+@dataclass(frozen=True)
+class ClassicPairSpec:
+    """One token pair looked up through `factory.getPair`; `excluded` (a written
+    reason) records the lookup as an explicit omission instead of admitting it."""
+
+    token0: str  # sorted: token0 < token1, as MoeFactory.createPair orders them
+    token1: str
+    excluded: str | None = None
+
+
+@dataclass(frozen=True)
+class ClassicPrepareConfig:
+    source_key: str
+    bundle_id_prefix: str
+    tokens: dict[str, ClassicTokenSpec]  # lowercase address -> spec
+    pairs: tuple[ClassicPairSpec, ...]
+    cases: tuple[Case, ...]
+    rpc: RpcSettings
+    source_path: str
+    sha256: str
+
+    @property
+    def token_labels(self) -> dict[str, str]:
+        return {addr: spec.label for addr, spec in self.tokens.items()}
+
+
+def parse_classic_prepare_config(
+    raw: Any, *, source_path: str, sha256: str
+) -> ClassicPrepareConfig:
+    _require_keys(
+        raw,
+        {"schema_version", "source", "bundle_id_prefix", "tokens", "pairs", "cases", "rpc"},
+        set(),
+        "<root>",
+    )
+    if raw["schema_version"] != SUPPORTED_SCHEMA_VERSION:
+        raise PrepareConfigError(
+            f"schema_version: unsupported {raw['schema_version']!r} "
+            f"(expected {SUPPORTED_SCHEMA_VERSION})"
+        )
+    source_key, prefix = raw["source"], raw["bundle_id_prefix"]
+    if not isinstance(source_key, str) or not source_key:
+        raise PrepareConfigError("source: expected a non-empty string")
+    if not isinstance(prefix, str) or not prefix:
+        raise PrepareConfigError("bundle_id_prefix: expected a non-empty string")
+
+    tokens_obj = raw["tokens"]
+    if not isinstance(tokens_obj, dict) or not tokens_obj:
+        raise PrepareConfigError("tokens: expected a non-empty label -> token mapping")
+    aliases: dict[str, str] = {}
+    tokens: dict[str, ClassicTokenSpec] = {}
+    for label, entry in tokens_obj.items():
+        where = f"tokens.{label}"
+        _require_keys(entry, {"address", "decimals"}, set(), where)
+        resolved = _address(entry["address"], f"{where}.address")
+        if resolved in tokens:
+            raise PrepareConfigError(
+                f"tokens: {label!r} and {tokens[resolved].label!r} name the same address {resolved}"
+            )
+        aliases[str(label)] = resolved
+        tokens[resolved] = ClassicTokenSpec(
+            address=resolved,
+            label=str(label),
+            decimals=_int(entry["decimals"], 0, 255, f"{where}.decimals"),
+        )
+
+    pairs_obj = raw["pairs"]
+    if not isinstance(pairs_obj, list) or not pairs_obj:
+        raise PrepareConfigError("pairs: expected a non-empty list")
+    pairs: list[ClassicPairSpec] = []
+    seen_pairs: set[tuple[str, str]] = set()
+    for i, entry in enumerate(pairs_obj):
+        where = f"pairs[{i}]"
+        _require_keys(entry, {"tokens"}, {"excluded"}, where)
+        toks = entry["tokens"]
+        if not isinstance(toks, list) or len(toks) != 2:
+            raise PrepareConfigError(f"{where}.tokens: expected two tokens")
+        ends = []
+        for j, tok in enumerate(toks):
+            if not isinstance(tok, str) or tok not in aliases:
+                raise PrepareConfigError(
+                    f"{where}.tokens[{j}]: {tok!r} is not a declared token label "
+                    f"{sorted(aliases)} (undeclared tokens are unsupported)"
+                )
+            ends.append(aliases[tok])
+        if ends[0] == ends[1]:
+            raise PrepareConfigError(f"{where}.tokens: the two tokens must differ")
+        t0, t1 = sorted(ends)
+        if (t0, t1) in seen_pairs:
+            raise PrepareConfigError(f"{where}: duplicate pair {t0}/{t1}")
+        seen_pairs.add((t0, t1))
+        excluded = entry.get("excluded")
+        if excluded is not None and (not isinstance(excluded, str) or not excluded.strip()):
+            raise PrepareConfigError(f"{where}.excluded: an exclusion needs a written reason")
+        pairs.append(
+            ClassicPairSpec(
+                token0=t0,
+                token1=t1,
+                excluded=None if excluded is None else " ".join(excluded.split()),
+            )
+        )
+    admitted_pairs = {(p.token0, p.token1) for p in pairs if p.excluded is None}
+    cases = _parse_cases(raw["cases"], aliases, admitted_pairs)
+    return ClassicPrepareConfig(
+        source_key=source_key,
+        bundle_id_prefix=prefix,
+        tokens=tokens,
+        pairs=tuple(pairs),
+        cases=cases,
+        rpc=_parse_rpc(raw["rpc"]),
+        source_path=source_path,
+        sha256=sha256,
+    )
+
+
+def load_classic_prepare_config(path: str | Path) -> ClassicPrepareConfig:
+    data = Path(path).read_bytes()
+    try:
+        raw = yaml.safe_load(data)
+    except yaml.YAMLError as exc:
+        raise PrepareConfigError(f"{path}: invalid YAML: {exc}") from exc
+    try:
+        return parse_classic_prepare_config(
             raw, source_path=str(path), sha256=hashlib.sha256(data).hexdigest()
         )
     except PrepareConfigError as exc:

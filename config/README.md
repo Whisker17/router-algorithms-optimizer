@@ -22,11 +22,13 @@ No loader code ships with the template — write it when the first config file l
 - `protocols.yaml` — verified five-source admission catalog (`snapshot/config.py`); a CL
   source's `cl_collection` block admits it for fixed-block collection (WHI-1429), and a
   source's `sor_protocol` (`V2`/`V3`) exposes its SOR route capability to cohort
-  selection (WHI-1431).
+  selection (WHI-1431); a `v2_classic` source's `classic_collection` block (with its
+  fixed `swap_fee_bps`) admits it for fixed-block collection (WHI-1432).
 - `prepare/<source>.yaml` — fixed-block prepare selection for an online collector: pairs
   and fee tiers, reference cases (the declared amount envelope), tick-walk limits and RPC
   retry/batch settings (`snapshot/prepare_config.py`). `prepare/agni.yaml` drives
   `main.py prepare --source agni --block <n>`; `prepare/fusionx.yaml` drives
   `--source fusionx` (WHI-1430); `prepare/uniswap_v3.yaml` drives `--source uniswap_v3`
-  (WHI-1431).
+  (WHI-1431); `prepare/moe_classic.yaml` drives `--source moe_classic` (WHI-1432: declared
+  tokens with decimals and token pairs instead of fee tiers/tick-walk limits).
 - `smoke.yaml` — run profile (`benchmark/profile.py`).

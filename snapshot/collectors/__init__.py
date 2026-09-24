@@ -4,14 +4,15 @@ register itself without requiring Agni's CLI work"). Each source ticket adds its
 module and one entry in `COLLECTORS` here, without touching `main.py` or any other
 collector: `synthetic` (WHI-1427, offline), `agni` (WHI-1429, fixed-block Agni v3),
 `fusionx` (WHI-1430, fixed-block FusionX v3) and `uniswap_v3` (WHI-1431, fixed-block
-Uniswap v3), all through the shared `concentrated` CL collector.
+Uniswap v3), all through the shared `concentrated` CL collector, and `moe_classic`
+(WHI-1432, fixed-block Merchant Moe Classic v1 through the `classic` collector).
 """
 
 from __future__ import annotations
 
 from typing import Protocol
 
-from snapshot.collectors import agni, fusionx, synthetic, uniswap_v3
+from snapshot.collectors import agni, classic, fusionx, synthetic, uniswap_v3
 from snapshot.collectors.base import PrepareError, PrepareRequest
 from snapshot.models import SnapshotBundle
 
@@ -27,6 +28,7 @@ COLLECTORS: dict[str, Collector] = {
     "agni": agni.collect,
     "fusionx": fusionx.collect,
     "uniswap_v3": uniswap_v3.collect,
+    "moe_classic": classic.collect,
 }
 
 

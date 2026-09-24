@@ -1,0 +1,489 @@
+{
+  "admission": [
+    {
+      "case_id": "usdt_wmnt_small",
+      "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_wmnt_small",
+      "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_wmnt_medium",
+      "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_wmnt_large",
+      "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdc_small",
+      "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdc_medium",
+      "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdc_large",
+      "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_small",
+      "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_medium",
+      "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_large",
+      "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_small",
+      "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_medium",
+      "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_large",
+      "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_meth_small",
+      "pool_id": "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_meth_medium",
+      "pool_id": "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_meth_large",
+      "pool_id": "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_small",
+      "pool_id": "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_medium",
+      "pool_id": "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_large",
+      "pool_id": "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_weth_small",
+      "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_weth_medium",
+      "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_weth_large",
+      "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_meth_small",
+      "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_meth_medium",
+      "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_meth_large",
+      "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_meth_small",
+      "pool_id": "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_meth_medium",
+      "pool_id": "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_meth_large",
+      "pool_id": "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdc_small",
+      "pool_id": "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdc_medium",
+      "pool_id": "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdc_large",
+      "pool_id": "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_weth_small",
+      "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_weth_medium",
+      "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_weth_large",
+      "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_small",
+      "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_medium",
+      "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_large",
+      "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_dust",
+      "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+      "status": "insufficient_output_amount"
+    },
+    {
+      "case_id": "usdt_meth_small",
+      "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_meth_medium",
+      "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_meth_large",
+      "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdt_small",
+      "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdt_medium",
+      "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdt_large",
+      "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_weth_small",
+      "pool_id": "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_weth_medium",
+      "pool_id": "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_weth_large",
+      "pool_id": "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdc_small",
+      "pool_id": "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdc_medium",
+      "pool_id": "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdc_large",
+      "pool_id": "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_usdt_small",
+      "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_usdt_medium",
+      "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_usdt_large",
+      "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_usdt_dust",
+      "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+      "status": "insufficient_output_amount"
+    },
+    {
+      "case_id": "usdt_usdc_small",
+      "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_usdc_medium",
+      "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_usdc_large",
+      "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+      "status": "ok"
+    }
+  ],
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "block_verification": "resolved by number, <= finalized head, every state read EIP-1898 pinned to the hash with requireCanonical, header re-read by number and hash after collection",
+  "catalog": {
+    "factory": {
+      "address": "0x5bef015ca9424a7c07b68490616a4c1f094bedec",
+      "code_hash": "0x67d999ab19b15f5b4233f167453abadfc7e580942291af8c395d0b50ab39e6c0"
+    },
+    "pair_implementation": {
+      "address": "0x08477e01a19d44c31e4c11dc2ac86e3bbe69c28b",
+      "code_hash": "0xb7969f45e694a2f22a645a3ce42e240669e09ebbd800925260fa3c3856160d87"
+    },
+    "swap_fee_bps": 30,
+    "upstream": {
+      "license": "GPL-3.0 (SPDX header in src/dex/MoeFactory.sol and MoePair.sol)",
+      "ref": "main, src/dex/{MoeFactory,MoePair}.sol @ commit 460bf55b8330f31d31d356634d0129fd78b4fd07",
+      "repo": "https://github.com/merchant-moe/moe-core"
+    }
+  },
+  "collector": "snapshot.collectors.classic",
+  "discovery": {
+    "admitted": [
+      {
+        "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "pool_id": "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+        "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "pool_id": "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "pool_id": "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      }
+    ],
+    "method": "factory.getPair (both argument orders) over configured token pairs",
+    "omitted": []
+  },
+  "pools": {
+    "0x19a414a6b1743315c731492cb9b7b559d7db9ab7": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1789825450,
+      "code_hash": "0x4855294469640ade58cf2762185a9d8682426a932a5ff90db804497f871837ca",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    },
+    "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1790244522,
+      "code_hash": "0x855c5f66d43f795d83faf9e7df05616d0d7e02f2e21b1a621097dfea0609bd4b",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    },
+    "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1790238242,
+      "code_hash": "0xadc4928b2f12ee7ebad9e081ad3758618a0587d9dd2b0863c4c66d9c81cdb7b0",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    },
+    "0x4a18891de69124d2853a4e27543edb7e2e001179": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1790244442,
+      "code_hash": "0xaa67a3ea65b0ba71dd329dfc3f1a8d916e77c6cd98852d51cae039e92fdcf757",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    },
+    "0x4e7685df06201521f35a182467feefe02c53d847": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1790244446,
+      "code_hash": "0x984b80b03c251d7d850fb6d583101eafbe483cdb31dff9d741ac1b2e52cfa531",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    },
+    "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1790243384,
+      "code_hash": "0x4850a01e2cd97ceeec2a95793e05639b34ab9f9f338f662bcd6c0afeba4a19d4",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    },
+    "0x86e3a987187fed135d6d9c114f1857d8144f01e1": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1789983260,
+      "code_hash": "0xcee23f7de506e86d8feec2581de7af01da846a27de29fc68dd2dfdaa3c03ad9c",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    },
+    "0x8e3a13418743ab1a98434551937ea687e451b589": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1790218680,
+      "code_hash": "0x5e415ad53879dc9a189e0eca3bddbc5239e1972c9c1df0dd0159fab35ea559ff",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    },
+    "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1790244392,
+      "code_hash": "0x3c94348da7afa542fb218fd6cdb778342669fac7f9698214702305fbffbb3d3e",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    },
+    "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175": {
+      "balances_equal_reserves": true,
+      "block_timestamp_last": 1790198232,
+      "code_hash": "0x676c19322d6ddb47ca00c0d4f9b9ad6a9d1f9627f3fbc736867a95a0f2fb07e7",
+      "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+    }
+  },
+  "prepare_config": {
+    "path": "config/prepare/moe_classic.yaml",
+    "sha256": "904793be379eddad0fe525f52e3fe6dab755f4e2e2a2e2ff51e3f35376364be3"
+  },
+  "rpc_endpoint": "https://rpc.mantle.xyz",
+  "schema": "classic-collection/1",
+  "source_capability": {
+    "protocol_family": "v2_classic",
+    "sor_protocol": "V2"
+  },
+  "source_key": "moe_classic_v1",
+  "tokens": {
+    "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": {
+      "decimals": 6,
+      "label": "USDC"
+    },
+    "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": {
+      "decimals": 6,
+      "label": "USDT"
+    },
+    "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": {
+      "decimals": 18,
+      "label": "WMNT"
+    },
+    "0xcda86a272531e8640cd7f1a92c01839911b90bb0": {
+      "decimals": 18,
+      "label": "METH"
+    },
+    "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": {
+      "decimals": 18,
+      "label": "WETH"
+    }
+  }
+}

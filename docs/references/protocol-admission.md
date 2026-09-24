@@ -12,7 +12,10 @@ evidence and an independent local recompile (§3.3, §8) —
 `docs/references/fusionx-fixed-block-replay.md`; **Uniswap v3 is admitted** by WHI-1431
 (I06) on its own fingerprint (normalizing v3-core's `NoDelegateCall.original`), bundle,
 fork + QuoterV2 evidence and an independent local recompile (§3.1) —
-`docs/references/uniswap-v3-fixed-block-replay.md`; I07–I08 are not started.
+`docs/references/uniswap-v3-fixed-block-replay.md`; **Merchant Moe Classic v1 is
+admitted** by WHI-1432 (I07) with its fixed 0.3% fee read from `MoePair.sol`, exact
+clone/CREATE2 pair identity, bundle and fork + MoeRouter evidence (§3.4) —
+`docs/references/moe-classic-fixed-block-replay.md`; I08 is not started.
 This document records what was independently verified about each of the five
 DESIGN §1.2 sources on Mantle mainnet (chain id `5000`), what still cannot be
 verified with the access available in this pass, and the exact Solidity→Python
@@ -322,6 +325,20 @@ deployment via `ImmutableClone`) and `MoePair.getReserves`/`swap` are the
 relevant surface; `MoeRouter.sol` (separately explorer-verified) is
 periphery-only and out of the `quote_exact_in` critical path.
 
+**Fixed-block admission (added by WHI-1432).** `MoePair.swap`'s invariant
+`(balance * 1000 - amountIn * 3)` fixes a **hardcoded 0.3%** input fee — no per-pair
+fee, no setter, and `MoeFactory.feeTo` affects only `mint`/`burn` (`_sendFee`), not
+swaps — and its exact-input maximum is exactly `MoeLibrary.getAmountOut`'s 997/1000
+floor; `_update` reverts `Moe: OVERFLOW` past uint112. Migrated as
+`pools.constant_product.SOURCES["moe_classic_v1"]` (catalog
+`classic_collection.swap_fee_bps: 30`, `sor_protocol: V2`). **Correction:** the example
+pool's code hash is *not* shared by every Moe Classic pair — an `ImmutableClone` embeds
+its `token0 ++ token1` args in the runtime code — so the collector verifies each pair by
+rebuilding its exact clone runtime and CREATE2 address from the pinned implementation.
+Fork evidence at block 101057678 (MoeRouter quote == pair maximum, `quote + 1` reverts
+`Moe: K`, both directions, sequential swaps, dust, overflow) and the ten admitted pairs:
+`docs/references/moe-classic-fixed-block-replay.md`.
+
 ### 3.5 Merchant Moe Liquidity Book v2.2 — confidence: high
 
 | | |
@@ -494,7 +511,9 @@ identified method, per DESIGN's "identify... the method," not as executed
 recovery.
 
 **Classic (Merchant Moe v1).** Trivial: `getReserves()` returns the complete
-state (two reserves + `blockTimestampLast`); already confirmed readable in §3.4.
+state (two reserves + `blockTimestampLast`); already confirmed readable in §3.4. The
+WHI-1432 collector additionally requires both token balances to equal the reserves at
+the block (the pair's next swap would otherwise credit the difference).
 
 ## 7. What the preflight actually rejects
 

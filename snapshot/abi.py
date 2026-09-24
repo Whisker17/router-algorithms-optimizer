@@ -46,6 +46,8 @@ SEL_POOL = "16f0115b"  # pool()  (an LM pool's back-reference to its CL pool)
 SEL_GET_RESERVES = "0902f1ac"  # getReserves()
 SEL_GET_PAIR = "e6a43905"  # getPair(address,address)
 SEL_ALL_PAIRS_LENGTH = "574f2ba3"  # allPairsLength()
+SEL_MOE_PAIR_IMPLEMENTATION = "73f9936d"  # moePairImplementation()  (MoeFactory)
+SEL_IMPLEMENTATION = "5c60da1b"  # implementation()  (MoePair immutable)
 
 # Merchant Moe Liquidity Book v2.2 (LFJ joe-v2)
 SEL_GET_TOKEN_X = "05e8746d"  # getTokenX()
@@ -59,6 +61,7 @@ SEL_GET_LB_PAIR_AT_INDEX = "7daf5d66"  # getLBPairAtIndex(uint256)
 # ERC-20 (best-effort; only used for informational token identification)
 SEL_SYMBOL = "95d89b41"  # symbol()
 SEL_DECIMALS = "313ce567"  # decimals()
+SEL_BALANCE_OF = "70a08231"  # balanceOf(address)
 
 
 def encode_call(selector_hex: str, *args_hex32: str) -> str:

@@ -106,6 +106,9 @@ KNOWN_POOL_IMMUTABLES = (
 # Uniswap SOR route protocols a source's pools can enter as (docs/references/
 # uni-sor-port-contract.md §2: V3 = Agni/FusionX/Uniswap v3, V2 = Moe Classic; LB none).
 KNOWN_SOR_PROTOCOLS = {"V2", "V3"}
+# The only pool family each SOR route protocol can represent (V2 = constant-product
+# `Pair`, V3 = concentrated-liquidity `Pool`).
+_SOR_FAMILY = {"V2": "v2_classic", "V3": "v3_concentrated_liquidity"}
 
 
 @dataclass(frozen=True)
@@ -131,6 +134,19 @@ class ClCollectionConfig:
 
 
 @dataclass(frozen=True)
+class ClassicCollectionConfig:
+    """Fixed-block collection admission for one constant-product (`v2_classic`) source
+    (WHI-1432) -- the Classic counterpart of `ClCollectionConfig`. `swap_fee_bps` is
+    the pair's fixed swap fee as read from the verified source; the collector refuses
+    to run unless it equals the migrated simulator's (`pools.constant_product.SOURCES`),
+    so the catalog fact and the Python semantics can never drift apart silently."""
+
+    admitted: bool
+    swap_fee_bps: int
+    verification: str
+
+
+@dataclass(frozen=True)
 class SourceConfig:
     key: str
     display_name: str
@@ -144,6 +160,7 @@ class SourceConfig:
     blockers: tuple[Blocker, ...] = ()
     notes: str = ""
     cl_collection: ClCollectionConfig | None = None
+    classic_collection: ClassicCollectionConfig | None = None
     # Source capability for cohort selection: the Uniswap SOR route protocol this
     # source's pools enter the matched V2/V3 cohort as, or None (never SOR-routable).
     sor_protocol: str | None = None
@@ -254,6 +271,18 @@ def _parse_cl_collection(obj: Any, where: str) -> ClCollectionConfig:
     )
 
 
+def _parse_classic_collection(obj: Any, where: str) -> ClassicCollectionConfig:
+    _require_keys(obj, {"admitted", "swap_fee_bps", "verification"}, set(), where)
+    if not isinstance(obj["admitted"], bool):
+        raise ConfigError(f"{where}.admitted: expected a boolean")
+    fee = obj["swap_fee_bps"]
+    if not isinstance(fee, int) or isinstance(fee, bool) or not (0 < fee < 10_000):
+        raise ConfigError(f"{where}.swap_fee_bps: expected an int in (0, 10000), got {fee!r}")
+    return ClassicCollectionConfig(
+        admitted=obj["admitted"], swap_fee_bps=fee, verification=str(obj["verification"])
+    )
+
+
 def _parse_source(obj: Any) -> SourceConfig:
     required = {"key", "display_name", "protocol_family", "confidence", "contracts"}
     optional = {
@@ -264,6 +293,7 @@ def _parse_source(obj: Any) -> SourceConfig:
         "blockers",
         "notes",
         "cl_collection",
+        "classic_collection",
         "sor_protocol",
     }
     where = f"sources[{obj.get('key', '?')}]"
@@ -325,10 +355,23 @@ def _parse_source(obj: Any) -> SourceConfig:
                 "contracts.pool_deployer"
             )
 
+    classic_collection = None
+    if "classic_collection" in obj:
+        if obj["protocol_family"] != "v2_classic":
+            raise ConfigError(f"{where}.classic_collection: only valid for v2_classic")
+        classic_collection = _parse_classic_collection(
+            obj["classic_collection"], f"{where}.classic_collection"
+        )
+
     sor_protocol = obj.get("sor_protocol")
     if sor_protocol is not None and sor_protocol not in KNOWN_SOR_PROTOCOLS:
         raise ConfigError(
             f"{where}.sor_protocol: {sor_protocol!r} not in {sorted(KNOWN_SOR_PROTOCOLS)}"
+        )
+    if sor_protocol is not None and _SOR_FAMILY[sor_protocol] != obj["protocol_family"]:
+        raise ConfigError(
+            f"{where}.sor_protocol: {sor_protocol} routes only "
+            f"{_SOR_FAMILY[sor_protocol]} pools, not {obj['protocol_family']}"
         )
 
     return SourceConfig(
@@ -344,6 +387,7 @@ def _parse_source(obj: Any) -> SourceConfig:
         blockers=blockers,
         notes=str(obj.get("notes", "")),
         cl_collection=cl_collection,
+        classic_collection=classic_collection,
         sor_protocol=sor_protocol,
     )
 
