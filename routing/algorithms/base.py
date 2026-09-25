@@ -156,14 +156,24 @@ class Capabilities:
     several routes; `shared_pools`: several routes of one plan may share a physical
     pool and split/merge at intermediate tokens (`incremental_graph`, WHI-1441) -- an
     expanded topology, so its results are reported apart from the capability-matched
-    pool-disjoint comparison (docs/DESIGN.md §2.11)."""
+    pool-disjoint comparison (docs/DESIGN.md §2.11). `protocols`: the SOR route protocols
+    whose pools the algorithm can route through (`uni_sor_port`: `("V2", "V3")`, WHI-1444;
+    other pools never enter its candidates), or `None` for every admitted pool."""
 
     multi_hop: bool
     split: bool
     shared_pools: bool = False
+    protocols: tuple[str, ...] | None = None
 
-    def to_dict(self) -> dict[str, bool]:
-        return {"multi_hop": self.multi_hop, "split": self.split, "shared_pools": self.shared_pools}
+    def to_dict(self) -> dict[str, Any]:
+        out: dict[str, Any] = {
+            "multi_hop": self.multi_hop,
+            "split": self.split,
+            "shared_pools": self.shared_pools,
+        }
+        if self.protocols is not None:
+            out["protocols"] = list(self.protocols)
+        return out
 
 
 SINGLE_POOL = Capabilities(multi_hop=False, split=False)
@@ -196,3 +206,7 @@ class AlgorithmFactory:
     # Profile `graph.*` keys this algorithm requires (docs/DESIGN.md §2.12
     # `graph.chunks`; WHI-1441), validated and handed over exactly like `search_params`.
     graph_params: tuple[str, ...] = ()
+    # Source pin / scope / adapted-provider record of a ported algorithm (docs/DESIGN.md
+    # §2.11: "algorithm/source pins and all deviations"; `uni_sor_port`, WHI-1444),
+    # copied into the run's resolved profile. JSON-serializable; `None` for native ones.
+    provenance: Mapping[str, Any] | None = None

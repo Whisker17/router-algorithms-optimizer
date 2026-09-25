@@ -91,6 +91,7 @@ def build_parser() -> argparse.ArgumentParser:
         ("plan", "Derive cases, prices, envelope and the five prepare configs"),
         ("assemble", "Publish the corpus bundle from the five per-source bundles"),
         ("fixture", "Cut the checked-in regression fixture from the full corpus bundle"),
+        ("cohort", "Cut the matched V2/V3 (sor_compatible) comparison bundle, every case"),
     ):
         sp = corpus_sub.add_parser(name, help=help_text)
         sp.add_argument("--config", default=str(DEFAULT_CORPUS_CONFIG))
@@ -110,6 +111,9 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "fixture":
             sp.add_argument("--bundle", required=True, help="The full corpus bundle")
             sp.add_argument("--selection", default="config/corpus/fixture.yaml")
+            sp.add_argument("--output", required=True)
+        if name == "cohort":
+            sp.add_argument("--bundle", required=True, help="A corpus bundle")
             sp.add_argument("--output", required=True)
 
     validate_p = subparsers.add_parser("validate", help="Validate a bundle directory")
@@ -182,6 +186,19 @@ def _cmd_corpus(args: argparse.Namespace) -> int:
             sql_name, export_name = EXPORT_FILES[args.name]
             export = ingest_export(args.name, args.raw, exports / sql_name, exports / export_name)
             print(f"export {args.name}: {len(export.rows)} row(s), sha256={export.sha256}")
+            return 0
+        if args.corpus_command == "cohort":
+            from snapshot.corpus import sor_cohort_bundle
+
+            full = load_bundle(args.bundle)
+            validate_corpus_bundle(full)
+            bundle = sor_cohort_bundle(full, Path(args.output))
+            validate_corpus_bundle(bundle)
+            print(
+                f"wrote matched V2/V3 cohort {bundle.bundle_id!r}: {len(bundle.pools)} pool(s), "
+                f"{len(bundle.cases)} case(s) at {bundle.source_path}"
+            )
+            print(f"bundle_hash={bundle.bundle_hash}")
             return 0
         if args.corpus_command == "fixture":
             from snapshot.corpus import fixture_selection, subset_corpus_bundle

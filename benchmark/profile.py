@@ -25,6 +25,7 @@ rule; its values join the `search.*` values in `AlgorithmConfig.params`.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -141,6 +142,15 @@ class RunProfile:
                 name: {
                     "capabilities": ALGORITHMS[name].capabilities.to_dict(),
                     "params": dict(self.algorithm_config(ALGORITHMS[name]).params),
+                    **(
+                        {
+                            "provenance": json.loads(
+                                json.dumps(dict(ALGORITHMS[name].provenance or {}))
+                            )
+                        }
+                        if ALGORITHMS[name].provenance is not None
+                        else {}
+                    ),
                 }
                 for name in self.algorithms
                 if name in ALGORITHMS
