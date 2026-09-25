@@ -533,7 +533,7 @@ def test_profile_must_declare_the_hop_bound() -> None:
     resolved = profile.resolved()
     assert resolved["search"] == {"max_hops": 3}
     assert resolved["algorithm_config"]["single_path"] == {
-        "capabilities": {"multi_hop": True, "split": False},
+        "capabilities": {"multi_hop": True, "split": False, "shared_pools": False},
         "params": {"max_hops": 3},
     }
 

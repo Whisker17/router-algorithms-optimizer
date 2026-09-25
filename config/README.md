@@ -52,7 +52,8 @@ No loader code ships with the template — write it when the first config file l
   — a positive divisor of 100); a profile listing an algorithm must declare every
   `search.*` key it requires (`single_path`: `search.max_hops`; `direct_split`:
   `search.max_splits` and `search.percent_step`; `path_split`: all three) — again no
-  built-in default.
+  built-in default. An optional `graph` section holds `graph.chunks` (DESIGN §2.12,
+  integer >= 1), required by `incremental_graph` together with all three `search.*` keys.
 - `corpus_single_path_smoke.yaml` — smoke-scale profile running `direct` and
   `single_path` (`search.max_hops: 3`) once over the frozen corpus (WHI-1438).
 - `corpus_direct_split_smoke.yaml` — smoke-scale profile running `direct` and
@@ -62,3 +63,6 @@ No loader code ships with the template — write it when the first config file l
   `direct_split` and `path_split` (smoke-scale `search.max_hops: 2`,
   `search.max_splits: 4`, `search.percent_step: 5`) once over the frozen corpus under one
   budget (WHI-1440).
+- `corpus_incremental_graph_smoke.yaml` — smoke-scale profile running the four baselines
+  and `incremental_graph` (the same smoke-scale `search.*` values plus `graph.chunks: 20`)
+  once over the frozen corpus under one budget (WHI-1441).

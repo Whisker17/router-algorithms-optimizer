@@ -16,6 +16,11 @@ a positive divisor of 100). It has no defaults either: a profile listing an algo
 must declare every `search.*` key that algorithm requires
 (`AlgorithmFactory.search_params`), and those values reach the algorithm's `prepare`
 as `AlgorithmConfig.params`.
+
+The optional `graph` section (WHI-1441) holds `graph.chunks` (docs/DESIGN.md §2.12:
+explicit per profile, swept alongside percentage granularity), required by
+`incremental_graph` through `AlgorithmFactory.graph_params` under the same no-default
+rule; its values join the `search.*` values in `AlgorithmConfig.params`.
 """
 
 from __future__ import annotations
@@ -110,14 +115,15 @@ class RunProfile:
     measurement: MeasurementSettings
     worker: WorkerSettings
     search: dict[str, int] = field(default_factory=dict)
+    graph: dict[str, int] = field(default_factory=dict)
 
     def algorithm_config(self, factory: AlgorithmFactory) -> AlgorithmConfig:
-        """The `prepare` configuration for `factory`: exactly the `search.*` values it
-        declares it needs (the loader already guaranteed they are present)."""
-        return AlgorithmConfig(
-            name=factory.name,
-            params={key: self.search[key] for key in factory.search_params if key in self.search},
-        )
+        """The `prepare` configuration for `factory`: exactly the `search.*` and
+        `graph.*` values it declares it needs (the loader already guaranteed they are
+        present)."""
+        params = {key: self.search[key] for key in factory.search_params if key in self.search}
+        params.update({key: self.graph[key] for key in factory.graph_params if key in self.graph})
+        return AlgorithmConfig(name=factory.name, params=params)
 
     def resolved(self) -> dict[str, Any]:
         """Every profile value, including inherited defaults (docs/DESIGN.md §2.12:
@@ -130,6 +136,7 @@ class RunProfile:
             "measurement": self.measurement.to_dict(),
             "worker": self.worker.to_dict(),
             "search": dict(self.search),
+            "graph": dict(self.graph),
             "algorithm_config": {
                 name: {
                     "capabilities": ALGORITHMS[name].capabilities.to_dict(),
@@ -238,6 +245,19 @@ def _parse_search(obj: Any, where: str) -> dict[str, int]:
     return search
 
 
+# Every `graph.*` key the loader knows (docs/DESIGN.md §2.12), with its minimum.
+GRAPH_KEYS: dict[str, int] = {"chunks": 1}
+
+
+def _parse_graph(obj: Any, where: str) -> dict[str, int]:
+    _require_keys(obj, set(), set(GRAPH_KEYS), where)
+    return {
+        key: _int_at_least(obj[key], minimum, f"{where}.{key}")
+        for key, minimum in GRAPH_KEYS.items()
+        if key in obj
+    }
+
+
 def parse_profile(raw: Any, source_path: str) -> RunProfile:
     if isinstance(raw, dict) and raw.get("schema_version") == 1:
         raise ProfileError(
@@ -247,7 +267,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
     _require_keys(
         raw,
         {"schema_version", "algorithms", "objective", "budget", "measurement", "worker"},
-        {"search"},
+        {"search", "graph"},
         "<root>",
     )
     if raw["schema_version"] != SUPPORTED_SCHEMA_VERSION:
@@ -269,12 +289,15 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
             )
     objective = _parse_objective(raw["objective"], "objective")
     search = _parse_search(raw["search"], "search") if "search" in raw else {}
+    graph = _parse_graph(raw["graph"], "graph") if "graph" in raw else {}
     for name in algorithms_obj:
-        missing = [key for key in ALGORITHMS[name].search_params if key not in search]
+        factory = ALGORITHMS[name]
+        missing = [f"search.{key}" for key in factory.search_params if key not in search]
+        missing += [f"graph.{key}" for key in factory.graph_params if key not in graph]
         if missing:
             raise ProfileError(
                 f"algorithms: {name!r} requires "
-                + ", ".join(f"search.{key}" for key in missing)
+                + ", ".join(missing)
                 + " to be declared explicitly (no built-in default)"
             )
     return RunProfile(
@@ -286,6 +309,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         measurement=_parse_measurement(raw["measurement"], "measurement"),
         worker=_parse_worker(raw["worker"], "worker"),
         search=search,
+        graph=graph,
     )
 
 
