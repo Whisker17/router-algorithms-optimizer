@@ -3,7 +3,8 @@
 Status: **contract of record for WHI-1443 (I22, harness + goldens) and WHI-1444 (I18,
 Python port).** Written against the pinned upstream source, and checked by calling
 the actual pinned functions in a scratch Node probe (§11). This contract does not
-contain the harness, the goldens or the port.
+contain the harness, the goldens or the port. The harness and goldens landed with
+WHI-1443 (§7.7), and the port with WHI-1444 (§6.1).
 
 Machine-readable pins and hashes: [`uni-sor-source-inventory.json`](uni-sor-source-inventory.json).
 Verbatim notices: [`licenses/`](licenses/). `tests/routing/test_uni_sor_contract.py`
@@ -278,6 +279,71 @@ These are declared, reported, and never counted as parity failures.
   - the upstream-shaped selection (route pool ids, percents, rational amounts,
     cached quotes);
   - the D-1 residual.
+
+### 6.1 As implemented (WHI-1444)
+
+These choices implement §3–§6 without changing any pin or B-/A-/D-/G- item.
+
+- **Module.** `routing/algorithms/uni_sor_port.py` carries the §9.3 notices and cites
+  file:lines and behaviour IDs per translated function. The pure routing core is
+  separate from the benchmark adapter. The parity test calls the core with the golden
+  inputs; `solve` calls it with inputs built from the bundle.
+- **Enumeration shortcuts.** Neither changes the emitted sequence:
+  - candidate pools at each DFS depth come from a per-token index list in the same
+    ascending index order, instead of a scan that rejects non-involved pools;
+  - a path already `max_hops` long is not extended, because every extension would
+    return at the B-R2 check.
+- **Sorts.** B-S2 uses Python's stable `sorted` (permitted by B-S2). B-F1 uses
+  `v8_small_array_sort`, which rejects length ≥ 64. `prepare` rejects
+  `search.max_splits > 63`.
+- **A-1 protocol mapping.** A pool's protocol is its catalog source's `sor_protocol`
+  (`config/protocols.yaml`). `prepare` checks it against the pool-state family and
+  against a corpus bundle's `sor_compatible` cohort. A source-free generic
+  constant-product pool of the synthetic suite is V2. Everything else, including LB,
+  is excluded and counted.
+- **A-2 null rules, as implemented.** An entry is `null` when:
+  - its integer input is 0;
+  - a hop fails;
+  - a hop only partially fills;
+  - an intermediate hop outputs 0 (the next on-chain hop would revert);
+  - on a pure-V2 route, any hop outputs 0.
+
+  Failures are counted by reason (`entry_failures`). Incomplete-snapshot failures are
+  also counted and exemplified (`entries_incomplete`). If no selection exists and some
+  entry was incomplete, the status is `incomplete_snapshot`, not `no_route`.
+- **A-3 under both objective modes.** `gross_only` has no cost. `synthetic_fixed_cost`
+  charges one constant per plan, which cannot reorder complete plans. Every gas score
+  is therefore `(0, 0, 0)`, and the provider is named per case.
+- **Budgets.** A declared `max_quotes` that would cut the quote table short, or a
+  `max_candidates` below the enumerated route count, gives `timeout` (declared
+  truncation) with no selection. A partial table is not SOR's input.
+- **Statuses beyond §6.** `incomplete_snapshot` (above) and `timeout` (budgets). If
+  the adapter's own replay of the plan fails, it returns `invalid_plan` with the plan,
+  and the runner's independent replay decides.
+- **Coverage modes.** Every result records `coverage_mode`:
+  - `matched_cohort` on a bundle with no excluded pools, such as the
+    `main.py corpus cohort` cut: the corpus's `sor_compatible` pools and every case,
+    with `corpus.cohort = sor_compatible` and `subset_of` naming the full bundle;
+  - `full_universe` otherwise, with `excluded_pools` by source.
+- **Result metadata (§6).**
+  - Per case (`search`): `sor_port` (upstream commit and version, contract,
+    `A-*`/`D-*` IDs, gas provider, B-S12 values including `min_splits = 1`),
+    `coverage_mode`, cohort/route/quote counts, the upstream-shaped `selection`
+    (`SwapSelection.to_dict()`, the golden `result` shape), `allocation`,
+    `d1_residual`, `cached_quote`, `evaluated_gross` and `requote_delta`
+    (`evaluated_gross − cached_quote`, D-3).
+  - Per run: `algorithm_config.uni_sor_port.provenance` in the resolved profile, with
+    the pin, npm integrity, port scope and the candidate/quote/gas providers.
+- **Parity evidence.** `tests/routing/test_uni_sor_parity.py` runs every one of the 35
+  goldens with no skips, checking:
+  - routes, the rational grid, the quote list, the diagnostic sorted groups and the
+    pre-D-1 selection, all exact;
+  - D-1 conservation on every selection;
+  - on the two corpus goldens, that the adapter rebuilds every frozen quote row from
+    the bundle and reproduces the golden selection end to end, with the plan passing
+    the independent evaluator;
+  - that two mutations fail at least one golden each: a generic exhaustive split
+    optimizer, and a stable final order in place of V8.
 
 ## 7. Harness contract (I22, `tools/upstream/uni_sor/`)
 

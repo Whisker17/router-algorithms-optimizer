@@ -51,9 +51,10 @@ No loader code ships with the template — write it when the first config file l
   section holds DESIGN §2.12 search parameters (`max_hops`, `max_splits`, `percent_step`
   — a positive divisor of 100); a profile listing an algorithm must declare every
   `search.*` key it requires (`single_path`: `search.max_hops`; `direct_split`:
-  `search.max_splits` and `search.percent_step`; `path_split`: all three) — again no
-  built-in default. An optional `graph` section holds `graph.chunks` (DESIGN §2.12,
-  integer >= 1), required by `incremental_graph` together with all three `search.*` keys.
+  `search.max_splits` and `search.percent_step`; `path_split` and `uni_sor_port`: all
+  three) — again no built-in default. An optional `graph` section holds `graph.chunks`
+  (DESIGN §2.12, integer >= 1), required by `incremental_graph` together with all three
+  `search.*` keys.
 - `corpus_single_path_smoke.yaml` — smoke-scale profile running `direct` and
   `single_path` (`search.max_hops: 3`) once over the frozen corpus (WHI-1438).
 - `corpus_direct_split_smoke.yaml` — smoke-scale profile running `direct` and
@@ -66,3 +67,7 @@ No loader code ships with the template — write it when the first config file l
 - `corpus_incremental_graph_smoke.yaml` — smoke-scale profile running the four baselines
   and `incremental_graph` (the same smoke-scale `search.*` values plus `graph.chunks: 20`)
   once over the frozen corpus under one budget (WHI-1441).
+- `corpus_uni_sor_smoke.yaml` — the same smoke-scale values, running all six mandatory
+  algorithms including `uni_sor_port` (WHI-1444; it needs all three `search.*` keys). It
+  is used once over the matched V2/V3 cohort cut (`main.py corpus cohort`) and once over
+  the full five-source corpus.

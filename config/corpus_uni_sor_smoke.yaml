@@ -1,0 +1,49 @@
+# Corpus smoke profile for `uni_sor_port` vs the five other mandatory algorithms
+# (WHI-1444): one isolated pass per bundle over
+#   - the matched V2/V3 cohort cut (`main.py corpus cohort`, sor_compatible pools only,
+#     every case): every algorithm sees exactly SOR's candidates, so differences are
+#     search quality, not liquidity coverage (docs/DESIGN.md §2.7);
+#   - the full five-source corpus (data/corpus/mantle-5src-101082044): the separately
+#     labeled full-coverage comparison, where the other algorithms may also use LB.
+# See config/README.md and docs/DESIGN.md §2.12.
+#
+# gross-only: no cost model is calibrated yet (docs/DESIGN.md §2.9), so SOR's gas scores
+# are zero (contract A-3) and nothing here is a net-output claim.
+#
+# Every search/graph/budget/measurement/worker value below is SMOKE-SCALE and
+# UNVALIDATED. The `search.*` values repeat config/corpus_incremental_graph_smoke.yaml
+# (`max_hops: 2`, not the §2.12 trial value 3): a 20-case in-process sample of
+# uni_sor_port on the full corpus measured ~1.4 s mean / 5.2 s max per case at 2 hops but
+# ~19 s mean / 67 s max (up to ~65k quotes, large CL swaps) at 3 hops, i.e. about two
+# hours for the corpus. The hop-3 pass is left to the calibrated profiles (I21). SOR's
+# minSplits is fixed at upstream's default 1 (recorded per case).
+schema_version: 2
+algorithms:
+  - direct
+  - single_path
+  - direct_split
+  - path_split
+  - incremental_graph
+  - uni_sor_port
+objective:
+  mode: gross_only
+search:
+  max_hops: 2               # smoke-scale (DESIGN §2.12 trial value is 3; see above)
+  max_splits: 4             # DESIGN §2.12 initial trial value (unvalidated)
+  percent_step: 5           # DESIGN §2.12 initial trial value (unvalidated)
+graph:
+  chunks: 20                # smoke-scale; matches percent_step 5 (unvalidated)
+budget:
+  time_limit_seconds: 120   # hard per-attempt wall clock
+  max_quotes: 100000        # hard per-attempt quote cap; every algorithm stops before it
+  max_candidates: null      # explicitly no candidate cap declared
+measurement:
+  warmup: 0                 # smoke: no discarded attempts
+  repeats: 1                # smoke: one measured attempt per case
+  seed: 1444
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

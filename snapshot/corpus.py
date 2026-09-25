@@ -1583,7 +1583,7 @@ def parse_corpus_document(
             "cohorts",
             "case_metadata",
         },
-        {"subset_of"},
+        {"subset_of", "cohort"},
         "corpus",
     )
     if raw["schema"] != CORPUS_DOC_SCHEMA:
@@ -1607,7 +1607,18 @@ def parse_corpus_document(
             f"corpus: pools of undeclared sources {sorted(represented - set(source_keys), key=str)}"
         )
     missing = set(source_keys) - represented
-    if missing:
+    if raw.get("cohort") is not None:
+        # A matched-cohort cut (`sor_cohort_bundle`, WHI-1444): exactly the sources outside
+        # the named cohort lose their pools, and only in a declared subset.
+        if raw["cohort"] != "sor_compatible" or "subset_of" not in raw:
+            raise CorpusError("corpus.cohort: only a sor_compatible subset may omit sources")
+        outside = set(source_keys) - set(raw["cohorts"]["sor_compatible"]["sources"])
+        if missing != outside:
+            raise CorpusError(
+                f"corpus.cohort: the omitted sources {sorted(missing)} must be exactly the "
+                f"non-SOR sources {sorted(outside)}"
+            )
+    elif missing:
         raise CorpusError(f"corpus: sources {sorted(missing)} have no admitted pool")
     tokens = raw["universe"]["tokens"]
     if sorted(tokens) != sorted(prices.tokens):
@@ -1782,7 +1793,13 @@ def write_plan(
 
 
 def subset_corpus_bundle(
-    bundle: Any, pool_ids: Iterable[str], case_ids: Iterable[str], output_dir: Path
+    bundle: Any,
+    pool_ids: Iterable[str],
+    case_ids: Iterable[str],
+    output_dir: Path,
+    *,
+    id_suffix: str = "fixture",
+    cohort: str | None = None,
 ) -> Any:
     """A representative regression fixture from a full corpus bundle: the same block,
     the chosen pool records unchanged, the chosen cases, and a corpus descriptor whose
@@ -1815,6 +1832,8 @@ def subset_corpus_bundle(
     doc["cohorts"]["full_source"]["pools"] = sorted(keep_pools)
     doc["cohorts"]["sor_compatible"]["pools"] = sorted(p.pool_id for p in sor_pools)
     doc["subset_of"] = {"bundle_id": bundle.bundle_id, "bundle_hash": bundle.bundle_hash}
+    if cohort is not None:
+        doc["cohort"] = cohort
     provenance = json.loads((Path(bundle.source_path) / PROVENANCE_FILE).read_text())
     provenance["subset_of"] = doc["subset_of"]
     for record in provenance["sources"].values():
@@ -1824,7 +1843,7 @@ def subset_corpus_bundle(
     prices_doc = json.loads((Path(bundle.source_path) / "prices.json").read_text())
     return write_bundle(
         output_dir,
-        bundle_id=f"{bundle.bundle_id}-fixture",
+        bundle_id=f"{bundle.bundle_id}-{id_suffix}",
         kind="real",
         block=bundle.block,
         pools=list(keep_pools.values()),
@@ -1832,6 +1851,20 @@ def subset_corpus_bundle(
         provenance=provenance,
         prices=prices_doc,
         corpus=doc,
+    )
+
+
+def sor_cohort_bundle(bundle: Any, output_dir: Path) -> Any:
+    """The matched V2/V3 comparison bundle (docs/DESIGN.md §2.7; WHI-1444): the corpus's
+    `sor_compatible` pools only (no Liquidity Book) and **every** case, so all algorithms
+    share `uni_sor_port`'s candidate universe. Built with `subset_corpus_bundle`, so the
+    pool records are unchanged and the descriptor names the full bundle (`subset_of`)."""
+    if bundle.corpus is None:
+        raise CorpusError("not a corpus bundle")
+    pools = bundle.corpus["cohorts"]["sor_compatible"]["pools"]
+    cases = [c.case_id for c in bundle.cases]
+    return subset_corpus_bundle(
+        bundle, pools, cases, output_dir, id_suffix="sor-cohort", cohort="sor_compatible"
     )
 
 
