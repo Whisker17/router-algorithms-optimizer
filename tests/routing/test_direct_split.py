@@ -482,7 +482,11 @@ def test_solve_is_repeatable_with_one_prepared_config() -> None:
 def test_registered_with_direct_split_capability() -> None:
     factory = ALGORITHMS["direct_split"]
     assert factory is direct_split.FACTORY
-    assert factory.capabilities.to_dict() == {"multi_hop": False, "split": True}
+    assert factory.capabilities.to_dict() == {
+        "multi_hop": False,
+        "split": True,
+        "shared_pools": False,
+    }
     assert factory.search_params == ("max_splits", "percent_step")
 
 
@@ -533,6 +537,7 @@ def test_profile_must_declare_the_grid() -> None:
     assert profile.resolved()["algorithm_config"]["direct_split"]["capabilities"] == {
         "multi_hop": False,
         "split": True,
+        "shared_pools": False,
     }
 
 

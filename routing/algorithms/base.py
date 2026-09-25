@@ -140,8 +140,9 @@ class SolveResult:
 class AlgorithmConfig:
     """The per-algorithm configuration handed to `prepare()`: the validated profile
     `search.*` values the algorithm declared in `AlgorithmFactory.search_params`
-    (e.g. `{"max_hops": 3}` for `single_path`), empty for algorithms that declare
-    none."""
+    (e.g. `{"max_hops": 3}` for `single_path`) plus the `graph.*` values it declared in
+    `AlgorithmFactory.graph_params` (e.g. `{"chunks": 20}`), empty for algorithms that
+    declare none."""
 
     name: str
     params: Mapping[str, Any] = field(default_factory=dict)
@@ -152,13 +153,17 @@ class Capabilities:
     """What plan shapes an algorithm can produce (docs/DESIGN.md §2.6 "Capability"
     column; §2.10: capability declarations determine `unsupported`). `multi_hop`: a
     plan may chain several pools; `split`: a plan may divide the input across
-    several routes."""
+    several routes; `shared_pools`: several routes of one plan may share a physical
+    pool and split/merge at intermediate tokens (`incremental_graph`, WHI-1441) -- an
+    expanded topology, so its results are reported apart from the capability-matched
+    pool-disjoint comparison (docs/DESIGN.md §2.11)."""
 
     multi_hop: bool
     split: bool
+    shared_pools: bool = False
 
     def to_dict(self) -> dict[str, bool]:
-        return {"multi_hop": self.multi_hop, "split": self.split}
+        return {"multi_hop": self.multi_hop, "split": self.split, "shared_pools": self.shared_pools}
 
 
 SINGLE_POOL = Capabilities(multi_hop=False, split=False)
@@ -188,3 +193,6 @@ class AlgorithmFactory:
     # (docs/DESIGN.md §2.12: no invented defaults) and hands them to `prepare` as
     # `AlgorithmConfig.params`.
     search_params: tuple[str, ...] = ()
+    # Profile `graph.*` keys this algorithm requires (docs/DESIGN.md §2.12
+    # `graph.chunks`; WHI-1441), validated and handed over exactly like `search_params`.
+    graph_params: tuple[str, ...] = ()

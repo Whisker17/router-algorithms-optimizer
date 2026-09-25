@@ -338,7 +338,11 @@ def _members_above(neg: list[int], counts: list[int], threshold: int) -> int:
     return counts[k - 1] if k else 0
 
 
-def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+def solve(
+    case: Case, context: SolveContext, budget: Budget, *, cache: QuoteCache | None = None
+) -> SolveResult:
+    """`cache` lets a composing solver (`incremental_graph`) share one per-solve quote
+    memo; the quote budget then counts every miss of that shared cache."""
     prepared = context.prepared
     if not isinstance(prepared, PreparedPathSplit):
         raise TypeError(f"{NAME}.solve needs the PreparedPathSplit returned by prepare()")
@@ -348,7 +352,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
     max_splits = prepared.direct_split.max_splits
     step_pct = prepared.direct_split.percent_step
     n_units = 100 // step_pct
-    cache = QuoteCache(bundle)
+    cache = QuoteCache(bundle) if cache is None else cache
     quiet = dataclasses.replace(context, candidate_sink=None)
 
     # ---- 1. simpler routes: single_path, then direct_split, on the shared cache.

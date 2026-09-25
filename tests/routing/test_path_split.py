@@ -664,7 +664,11 @@ def test_solve_is_repeatable_with_one_prepared_config() -> None:
 def test_registered_with_multi_hop_split_capability() -> None:
     factory = ALGORITHMS["path_split"]
     assert factory is path_split.FACTORY
-    assert factory.capabilities.to_dict() == {"multi_hop": True, "split": True}
+    assert factory.capabilities.to_dict() == {
+        "multi_hop": True,
+        "split": True,
+        "shared_pools": False,
+    }
     assert factory.search_params == ("max_hops", "max_splits", "percent_step")
 
 

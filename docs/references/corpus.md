@@ -215,6 +215,22 @@ median 1156, max 4553). A 12-case in-process sample at `max_hops: 3` measured ~6
 mean / 16.5 s max per case (quote-bound by large CL swaps), so the hop-3 corpus pass is
 left to the calibrated profiles (I21). Not an optimality or net-output claim.
 
+Offline `incremental_graph` smoke (WHI-1441, run `20260925T124031348586Z-620abefa` at
+clean `304acbb`; `config/corpus_incremental_graph_smoke.yaml`, gross-only, the same
+smoke-scale `search.*` values plus `graph.chunks: 20`, one isolated pass of all five
+algorithms in 8 min 10 s wall, no truncation or limit hit in any algorithm):
+`incremental_graph` 397/398 `ok` (the same dust boundary case `no_route` as
+`single_path`/`path_split`); never below `direct`, `single_path`, `direct_split` or
+`path_split` on any case; strictly above all four on 166 cases (median gain over
+`path_split` where better 1.48 bps; over `single_path` 5.58 bps). Returned plans: 145
+`shared_pool` (expanded topology: a physical pool on more than one route), 63
+`disjoint_split`, 189 `single_route`; chosen source `incremental_graph` 166,
+`single_path` 189, `path_split` 32, `direct_split` 10 (its own merged plan was below the
+retained `path_split` result on 5 cases). The merged plan's evaluated gross equalled the
+incremental accounting on all 397 evaluated plans; 16 cases carried a dust chunk. Solve
+time median 0.34 s / p95 1.81 s / max 3.45 s per case, including the embedded
+`path_split` (quotes median 1311, max 5622). Not an optimality or net-output claim.
+
 ## 8. Reproduce
 
 ```bash
