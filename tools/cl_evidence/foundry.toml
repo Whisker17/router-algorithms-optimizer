@@ -17,6 +17,7 @@ fs_permissions = [
   { access = "read-write", path = "../../tests/fixtures/fusionx" },
   { access = "read-write", path = "../../tests/fixtures/uniswap_v3" },
   { access = "read-write", path = "../../tests/fixtures/moe_classic" },
+  { access = "read-write", path = "../../tests/fixtures/liquidity_book" },
   { access = "read", path = "requests" },
 ]
 

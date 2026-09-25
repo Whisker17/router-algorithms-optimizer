@@ -4,9 +4,14 @@ this; family modules stay independent of each other."""
 
 from __future__ import annotations
 
-from pools import concentrated, constant_product
+from pools import concentrated, constant_product, liquidity_book
 from pools.result import SwapResult
-from snapshot.models import ConcentratedPoolState, ConstantProductPoolState, PoolState
+from snapshot.models import (
+    ConcentratedPoolState,
+    ConstantProductPoolState,
+    LiquidityBookPoolState,
+    PoolState,
+)
 
 
 def quote_exact_in(state: PoolState, token_in: str, amount_in_raw: int) -> SwapResult[PoolState]:
@@ -14,4 +19,6 @@ def quote_exact_in(state: PoolState, token_in: str, amount_in_raw: int) -> SwapR
         return constant_product.quote_exact_in(state, token_in, amount_in_raw)
     if isinstance(state, ConcentratedPoolState):
         return concentrated.quote_exact_in(state, token_in, amount_in_raw)
+    if isinstance(state, LiquidityBookPoolState):
+        return liquidity_book.quote_exact_in(state, token_in, amount_in_raw)
     raise TypeError(f"no quote_exact_in for pool state type {type(state).__name__}")

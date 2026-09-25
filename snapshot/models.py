@@ -1,8 +1,8 @@
 """Minimal typed data shared by the offline bundle/case seam (docs/DESIGN.md §§2.1,
 2.2, 2.5, 4.3): the constant-product pool family (`ConstantProductPoolState`,
-WHI-1427), the concentrated-liquidity family (`ConcentratedPoolState`, WHI-1428) and a
-`Case`. LB (WHI-1433) adds its own pool-state type alongside these without changing
-them; `PoolState` is the union every pool-agnostic caller (evaluator, bundle) uses.
+WHI-1427), the concentrated-liquidity family (`ConcentratedPoolState`, WHI-1428),
+the Liquidity Book family (`LiquidityBookPoolState`, WHI-1433) and a `Case`.
+`PoolState` is the union every pool-agnostic caller (evaluator, bundle) uses.
 
 Every dataclass is frozen: a snapshot is immutable input data, never mutated in place
 (docs/DESIGN.md §2.2/§3). Amounts/reserves are plain Python `int` — protocol money is
@@ -152,7 +152,106 @@ class ConcentratedPoolState:
         raise ValueError(f"pool {self.pool_id!r} does not hold token {token!r}")
 
 
-PoolState = ConstantProductPoolState | ConcentratedPoolState
+@dataclass(frozen=True)
+class LBStaticFeeParameters:
+    """`LBPair.getStaticFeeParameters()` (the static half of the packed `_parameters`
+    word, `PairParameterHelper` offsets 0-111): `baseFactor` uint16, `filterPeriod` and
+    `decayPeriod` uint12 (seconds), `reductionFactor` uint14 (basis points),
+    `variableFeeControl` uint24, `protocolShare` uint14 (basis points of the fee, <= 2500),
+    `maxVolatilityAccumulator` uint20."""
+
+    base_factor: int
+    filter_period: int
+    decay_period: int
+    reduction_factor: int
+    variable_fee_control: int
+    protocol_share: int
+    max_volatility_accumulator: int
+
+
+@dataclass(frozen=True)
+class LBVariableFeeParameters:
+    """`LBPair.getVariableFeeParameters()`: `volatilityAccumulator` / `volatilityReference`
+    uint20, `idReference` uint24 and `timeOfLastUpdate` uint40 (unix seconds). These evolve
+    with every swap -- they are pool *state*, not configuration."""
+
+    volatility_accumulator: int
+    volatility_reference: int
+    id_reference: int
+    time_of_last_update: int
+
+
+@dataclass(frozen=True)
+class LiquidityBookPoolState:
+    """One Liquidity Book v2.2 pair's frozen swap state (docs/DESIGN.md §2.2: bins, active
+    bin, static/variable fee parameters and the timestamp-dependent accumulators).
+
+    `token0`/`token1` are the pair's `getTokenX()`/`getTokenY()` -- *not* sorted by
+    address; X is the base token, prices are Y per X. `bin_step` is the clone's immutable
+    `getBinStep()` in basis points. `block_timestamp` is the frozen snapshot time every
+    swap on this state executes at (`block.timestamp`); the fee state itself still evolves
+    within a plan through the returned `new_state`.
+
+    `reserve_x`/`reserve_y` are `getReserves()` (the pair's `_reserves` minus
+    `_protocolFees`); `protocol_fee_x`/`protocol_fee_y` are `getProtocolFees()`.
+
+    `static_fee`/`variable_fee` are `None` when that part of the fee state was not
+    collected; a swap on such a state is an incomplete snapshot, never a default fee.
+
+    Completeness is explicit: `bin_range` is the inclusive id range over which the pair's
+    bin tree (`getNextNonEmptyBin`) was fully walked. `bins` maps every tree member inside
+    that range to its `getBin(id)` reserves `(x, y)`; an id inside the range that is absent
+    is known not to be in the tree (an empty bin), an id outside it is *unknown*. A range
+    reaching `0` / `2**24 - 1` covers that whole side of the book.
+
+    `hooks_parameters` is the raw `getLBHooksParameters()` word (hooks address in the low
+    160 bits, flags above). `swap_hook_implementation` is the implementation the hooks
+    clone delegates to, as resolved by the collector; a swap hook is only simulated when
+    that implementation is admitted as amount-neutral (`pools.liquidity_book.SOURCES`).
+
+    The oracle (`oracleId`, samples) is deliberately not modeled: it is written after
+    the swap loop and never read by swap math (`docs/references/liquidity-book-migration.md`).
+    """
+
+    pool_id: str
+    source_key: str
+    token0: str
+    token1: str
+    bin_step: int
+    block_timestamp: int
+    active_id: int
+    reserve_x: int
+    reserve_y: int
+    protocol_fee_x: int
+    protocol_fee_y: int
+    static_fee: LBStaticFeeParameters | None
+    variable_fee: LBVariableFeeParameters | None
+    bin_range: tuple[int, int]
+    bins: Mapping[int, tuple[int, int]] = field(default_factory=dict)
+    hooks_parameters: int = 0
+    swap_hook_implementation: str | None = None
+
+    def __post_init__(self) -> None:
+        lo, hi = self.bin_range
+        if not (0 <= lo <= hi <= (1 << 24) - 1):
+            raise ValueError(f"pool {self.pool_id!r}: invalid bin_range {self.bin_range}")
+        outside = [i for i in self.bins if not (lo <= i <= hi)]
+        if outside:
+            raise ValueError(
+                f"pool {self.pool_id!r}: bins {sorted(outside)[:5]} lie outside the collected "
+                f"range {self.bin_range}"
+            )
+        object.__setattr__(self, "bins", _freeze_mapping(self.bins))
+
+    def other_token(self, token: str) -> str:
+        if token == self.token0:
+            return self.token1
+        if token == self.token1:
+            return self.token0
+        raise ValueError(f"pool {self.pool_id!r} does not hold token {token!r}")
+
+
+PoolState = ConstantProductPoolState | ConcentratedPoolState | LiquidityBookPoolState
 
 
 @dataclass(frozen=True)
