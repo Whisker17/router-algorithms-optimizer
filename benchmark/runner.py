@@ -48,7 +48,7 @@ import hashlib
 import random
 import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -559,6 +559,9 @@ def run_experiment(
     """Measure every profiled algorithm on every bundle case (see module
     docstring). `order` overrides `profile.measurement.order` (and is recorded);
     `progress` is called after each case record is durably appended."""
+    # The objective every solver and the independent evaluation share, bound to this
+    # bundle (empirical_cost takes its frozen price context; others are unchanged).
+    profile = replace(profile, objective=profile.objective.bind(bundle))
     settings = profile.measurement
     effective_order: CaseOrder = order or settings.order
     cases = ordered_cases(bundle.cases, effective_order, settings.seed)
