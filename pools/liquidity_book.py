@@ -25,9 +25,11 @@ The pair calls it after taking its reentrancy lock and before any swap math, pas
 the input amount; every state-changing `LBPair` entry point is `nonReentrant` or
 access-controlled, so the hook cannot write pair storage, and the rewarder source only
 updates its own / MasterChef accounting (and forwards to an optional `LBHooksExtraRewarder`
-with the same accounting-only `_beforeSwap`). It is modeled as an explicit no-op and counted
+with the same accounting-only `_beforeSwap`). Both are modeled as explicit no-ops and counted
 (`SwapOutcome.hook_calls`) -- only for implementations admitted in `SOURCES`; any other
-hook with a swap flag is `UNSUPPORTED`. The fork evidence executes the live hooks.
+hook with a swap flag, or a rewarder forwarding to an unadmitted swap-flagged extra hook
+(WHI-1434: the collector reads `getExtraHooksParameters()`), is `UNSUPPORTED`. The fork
+evidence executes the live hooks.
 
 `swap` never mutates its input; it returns a fresh `LiquidityBookPoolState`.
 """
@@ -116,6 +118,9 @@ class LBSource:
     # Implementations behind a hooks clone whose swap callbacks are verified not to touch
     # pair state or amounts (see module docstring). Lowercase addresses.
     amount_neutral_swap_hooks: frozenset[str]
+    # Implementations an admitted rewarder may forward `beforeSwap` to (its
+    # `getExtraHooksParameters()` hook), verified the same way. Lowercase addresses.
+    amount_neutral_extra_swap_hooks: frozenset[str] = frozenset()
 
 
 SOURCES: Mapping[str, LBSource] = MappingProxyType(
@@ -128,6 +133,12 @@ SOURCES: Mapping[str, LBSource] = MappingProxyType(
                 # LBHooksRewarder (Routescan-verified, solc 0.8.20 runs 600): beforeSwap ->
                 # _updateAccruedRewardsPerShare (MasterChef.deposit(pid, 0) + own storage).
                 {"0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7"}
+            ),
+            amount_neutral_extra_swap_hooks=frozenset(
+                # LBHooksExtraRewarder (Routescan-verified, solc 0.8.20 runs 600): inherits
+                # LBHooksBaseRewarder._beforeSwap -> _updateAccruedRewardsPerShare (own
+                # storage + pair views only); it forwards to no further hook.
+                {"0x2d4bf9f668e5b7c7fe33c8f116ae190669304676"}
             ),
         ),
     }
@@ -542,7 +553,20 @@ def _swap_hook_calls(state: LiquidityBookPoolState, source: LBSource) -> int:
             f"{hex(state.hooks_parameters & ADDRESS_MASK)} (implementation "
             f"{state.swap_hook_implementation!r}) is not an admitted amount-neutral hook"
         )
-    return bin(flags).count("1")
+    extra_flags = state.extra_hooks_parameters & (BEFORE_SWAP_FLAG | AFTER_SWAP_FLAG)
+    if extra_flags:
+        extra = (state.extra_swap_hook_implementation or "").lower()
+        if (
+            state.extra_hooks_parameters & ADDRESS_MASK == 0
+            or extra not in source.amount_neutral_extra_swap_hooks
+        ):
+            raise UnsupportedState(
+                f"pool {state.pool_id!r}: the swap hook forwards to extra hook "
+                f"{hex(state.extra_hooks_parameters & ADDRESS_MASK)} (implementation "
+                f"{state.extra_swap_hook_implementation!r}), which is not an admitted "
+                "amount-neutral extra hook"
+            )
+    return bin(flags).count("1") + bin(extra_flags).count("1")
 
 
 def swap(state: LiquidityBookPoolState, swap_for_y: bool, amount_in: int) -> SwapOutcome:

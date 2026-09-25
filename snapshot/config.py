@@ -147,6 +147,35 @@ class ClassicCollectionConfig:
 
 
 @dataclass(frozen=True)
+class ApprovedHook:
+    """One hooks-clone implementation an LB pair may run on a swap: `implementation` is
+    the delegatecall target of the hook's `ImmutableClone`, `code_hash` its pinned
+    runtime code hash, `contract` the verified contract name."""
+
+    implementation: str
+    code_hash: str
+    contract: str
+    verification: str
+
+
+@dataclass(frozen=True)
+class LbCollectionConfig:
+    """Fixed-block collection admission for one Liquidity Book source (WHI-1434) -- the
+    LB counterpart of `ClassicCollectionConfig`. `swap_hooks` is the approved list for a
+    pair's `getLBHooksParameters()` hook, `extra_swap_hooks` the approved list for the
+    extra hook an `LBHooksRewarder` forwards `beforeSwap` to
+    (`getExtraHooksParameters()`). A pool whose swap-flagged hook (or extra hook) is not
+    listed is refused; every listed implementation must also be one the simulator
+    admits (`pools.liquidity_book.SOURCES`), so the catalog and the Python semantics
+    cannot drift apart silently."""
+
+    admitted: bool
+    swap_hooks: tuple[ApprovedHook, ...]
+    extra_swap_hooks: tuple[ApprovedHook, ...]
+    verification: str
+
+
+@dataclass(frozen=True)
 class SourceConfig:
     key: str
     display_name: str
@@ -161,6 +190,7 @@ class SourceConfig:
     notes: str = ""
     cl_collection: ClCollectionConfig | None = None
     classic_collection: ClassicCollectionConfig | None = None
+    lb_collection: LbCollectionConfig | None = None
     # Source capability for cohort selection: the Uniswap SOR route protocol this
     # source's pools enter the matched V2/V3 cohort as, or None (never SOR-routable).
     sor_protocol: str | None = None
@@ -283,6 +313,42 @@ def _parse_classic_collection(obj: Any, where: str) -> ClassicCollectionConfig:
     )
 
 
+def _parse_approved_hooks(obj: Any, where: str) -> tuple[ApprovedHook, ...]:
+    if not isinstance(obj, list):
+        raise ConfigError(f"{where}: expected a list")
+    hooks: list[ApprovedHook] = []
+    for i, entry in enumerate(obj):
+        w = f"{where}[{i}]"
+        _require_keys(entry, {"implementation", "code_hash", "contract", "verification"}, set(), w)
+        hooks.append(
+            ApprovedHook(
+                implementation=_validate_address(
+                    entry["implementation"], f"{w}.implementation"
+                ).lower(),
+                code_hash=_validate_hash32(entry["code_hash"], f"{w}.code_hash").lower(),
+                contract=str(entry["contract"]),
+                verification=str(entry["verification"]),
+            )
+        )
+    if len({h.implementation for h in hooks}) != len(hooks):
+        raise ConfigError(f"{where}: duplicate implementation")
+    return tuple(hooks)
+
+
+def _parse_lb_collection(obj: Any, where: str) -> LbCollectionConfig:
+    _require_keys(obj, {"admitted", "swap_hooks", "extra_swap_hooks", "verification"}, set(), where)
+    if not isinstance(obj["admitted"], bool):
+        raise ConfigError(f"{where}.admitted: expected a boolean")
+    return LbCollectionConfig(
+        admitted=obj["admitted"],
+        swap_hooks=_parse_approved_hooks(obj["swap_hooks"], f"{where}.swap_hooks"),
+        extra_swap_hooks=_parse_approved_hooks(
+            obj["extra_swap_hooks"], f"{where}.extra_swap_hooks"
+        ),
+        verification=str(obj["verification"]),
+    )
+
+
 def _parse_source(obj: Any) -> SourceConfig:
     required = {"key", "display_name", "protocol_family", "confidence", "contracts"}
     optional = {
@@ -294,6 +360,7 @@ def _parse_source(obj: Any) -> SourceConfig:
         "notes",
         "cl_collection",
         "classic_collection",
+        "lb_collection",
         "sor_protocol",
     }
     where = f"sources[{obj.get('key', '?')}]"
@@ -363,6 +430,12 @@ def _parse_source(obj: Any) -> SourceConfig:
             obj["classic_collection"], f"{where}.classic_collection"
         )
 
+    lb_collection = None
+    if "lb_collection" in obj:
+        if obj["protocol_family"] != "liquidity_book_v2":
+            raise ConfigError(f"{where}.lb_collection: only valid for liquidity_book_v2")
+        lb_collection = _parse_lb_collection(obj["lb_collection"], f"{where}.lb_collection")
+
     sor_protocol = obj.get("sor_protocol")
     if sor_protocol is not None and sor_protocol not in KNOWN_SOR_PROTOCOLS:
         raise ConfigError(
@@ -388,6 +461,7 @@ def _parse_source(obj: Any) -> SourceConfig:
         notes=str(obj.get("notes", "")),
         cl_collection=cl_collection,
         classic_collection=classic_collection,
+        lb_collection=lb_collection,
         sor_protocol=sor_protocol,
     )
 

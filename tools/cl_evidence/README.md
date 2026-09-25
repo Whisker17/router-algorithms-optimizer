@@ -1,4 +1,4 @@
-# `tools/cl_evidence` — independent fork swap evidence (WHI-1428, WHI-1429, WHI-1430, WHI-1431, WHI-1432, WHI-1433)
+# `tools/cl_evidence` — independent fork swap evidence (WHI-1428, WHI-1429, WHI-1430, WHI-1431, WHI-1432, WHI-1433, WHI-1434)
 
 Validation-only Foundry project. It generates the offline fixtures in
 `tests/fixtures/concentrated/` that `tests/pools/test_concentrated.py` replays against
@@ -134,3 +134,20 @@ uv run pytest tests/pools/test_liquidity_book.py       # offline replay (< 1 s)
 The first real-pair run fetches every bin slot (up to ~3,000 per pair) through the
 public RPC; Foundry caches the fork state. Details:
 `docs/references/liquidity-book-migration.md` §5.
+
+## Merchant Moe Liquidity Book v2.2 fixed-block replay evidence (WHI-1434)
+
+`test/CaptureMoeLBReplay.t.sol` checks a *published* Moe LB bundle on a fork at its block
+with the deployed LBPair clones and their live `LBHooksRewarder` / `LBHooksExtraRewarder`
+hooks: an independent read of every pair's state, hooks and extra hooks, a re-walk of the
+bin tree inside each pair's collected `bin_range`, and for every (case x pair) request the
+executed swap (per-bin `Swap` events, post-state, touched bins) plus a follow-up reverse
+swap through the post-state. Output: `tests/fixtures/moe_lb/evidence.jsonl.gz`, replayed
+by `tests/snapshot/test_moe_lb.py`. Requests come from `make_lb_replay_requests.py`.
+
+```bash
+tools/cl_evidence/replay_moe_lb.sh tests/fixtures/moe_lb/bundle   # ~9 min (warm cache)
+uv run pytest tests/snapshot/test_moe_lb.py                        # offline replay
+```
+
+Details: `docs/references/moe-lb-fixed-block-replay.md`.

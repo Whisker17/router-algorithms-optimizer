@@ -80,20 +80,28 @@ def clone_runtime_code(implementation: str, data: bytes) -> bytes:
     return _CLONE_PREFIX + extra + _CLONE_MIDDLE + impl + _CLONE_SUFFIX + data + extra
 
 
-def clone_address(factory: str, implementation: str, token0: str, token1: str) -> str:
-    """`MoeLibrary.pairFor` / `ImmutableClone.predictDeterministicAddress`: the CREATE2
-    address of the pair `MoeFactory.createPair(token0, token1)` deploys."""
-    data = bytes.fromhex(token0.removeprefix("0x")) + bytes.fromhex(token1.removeprefix("0x"))
+def clone_create2_address(deployer: str, implementation: str, data: bytes, salt: bytes) -> str:
+    """`ImmutableClone.predictDeterministicAddress`: the CREATE2 address
+    `cloneDeterministic(implementation, data, salt)` deploys to from `deployer` (the same
+    library layout in moe-core's lib/dexv2 and lfj-gg/joe-v2 v2.2.0)."""
     runtime = clone_runtime_code(implementation, data)
     creation = b"\x61" + len(runtime).to_bytes(2, "big") + _CLONE_CREATION + runtime
-    salt = bytes.fromhex(abi.keccak256_hex(data)[2:])
     preimage = (
         b"\xff"
-        + bytes.fromhex(factory.removeprefix("0x"))
+        + bytes.fromhex(deployer.removeprefix("0x"))
         + salt
         + bytes.fromhex(abi.keccak256_hex(creation)[2:])
     )
     return "0x" + abi.keccak256_hex(preimage)[-40:]
+
+
+def clone_address(factory: str, implementation: str, token0: str, token1: str) -> str:
+    """`MoeLibrary.pairFor`: the CREATE2 address of the pair
+    `MoeFactory.createPair(token0, token1)` deploys (salt `keccak256(token0 ++ token1)`)."""
+    data = bytes.fromhex(token0.removeprefix("0x")) + bytes.fromhex(token1.removeprefix("0x"))
+    return clone_create2_address(
+        factory, implementation, data, bytes.fromhex(abi.keccak256_hex(data)[2:])
+    )
 
 
 @dataclass(frozen=True)

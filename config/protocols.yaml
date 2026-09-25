@@ -481,6 +481,48 @@ sources:
     tokens:
       token_x: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
       token_y: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
+    # No `sor_protocol`: Uniswap SOR routes V2/V3 pools only (docs/references/
+    # uni-sor-port-contract.md §2), so LB pools never enter the matched SOR cohort and an
+    # LB-only case is `unsupported` for SOR there (D-4).
+    # Fixed-block collection admission (WHI-1434, snapshot/collectors/liquidity_book.py).
+    lb_collection:
+      admitted: true
+      swap_hooks:
+        - implementation: "0xDc0e38cBD08fa532847BAECbF26c8b09eD9008A7"
+          code_hash: "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369"
+          contract: LBHooksRewarder
+          verification: >
+            routescan_explorer_verified: LBHooksRewarder, solc v0.8.20+commit.a1b79de6,
+            optimizer runs=600, evm=paris (16969 runtime bytes, code hash at block
+            101057678). Every hooked admitted pair's getLBHooksParameters() points at a
+            107-byte ImmutableClone of this implementation with args (pair, pid). Its
+            _beforeSwap only runs _updateAccruedRewardsPerShare (MasterChef.deposit(pid,
+            0) + its own storage + pair views) and then forwards to its own
+            _extraHooksParameters; the pair calls it after reading amountsLeft and under
+            its nonReentrant lock, so it cannot change the swap's amounts or pair state
+            (pools.liquidity_book module docstring; WHI-1433 fork evidence runs it live).
+      extra_swap_hooks:
+        - implementation: "0x2D4BF9f668e5B7C7fE33c8F116ae190669304676"
+          code_hash: "0xb98cf49205f9f8cff629c453c08863e145bd13d138b1fd6fda01d1947ba89326"
+          contract: LBHooksExtraRewarder
+          verification: >
+            routescan_explorer_verified: LBHooksExtraRewarder, solc
+            v0.8.20+commit.a1b79de6, optimizer runs=600, evm=paris (11579 runtime bytes,
+            code hash at block 101057678). Reached only through an admitted rewarder's
+            getExtraHooksParameters(): a 115-byte ImmutableClone with args (pair, reward
+            token, parent rewarder). It does not override LBHooksBaseRewarder._beforeSwap
+            (accounting only: its own rewards-per-second and bin accumulators, pair
+            views) and forwards to no further hook. Five of the seven hooked pairs at
+            block 101057678 carry one; the WHI-1434 fork evidence executes them live.
+      verification: >
+        LB pairs are discovered through LBFactory.getAllLBPairs and verified per pair
+        (snapshot/collectors/liquidity_book.py): exact ImmutableClone runtime of
+        pair_implementation with args tokenX ++ tokenY ++ uint16 binStep at the CREATE2
+        address LBFactory.createLBPair deploys it to (lfj-gg/joe-v2 v2.2.0
+        LBFactory.sol:365), getLBPairInformation round trip, getters, declared token
+        decimals, balances equal to the pair's reserves + protocol fees, and approved
+        swap / extra hooks from the lists above. The swap semantics are
+        pools.liquidity_book (WHI-1433).
     upstream:
       repo: "https://github.com/lfj-gg/joe-v2"
       ref: "tag v2.2.0, commit 1297c3822f0605e643155c35948959c0a0d05e17 (LBFactory.sol, LBPair.sol -- see pair_implementation.verification for the required optimizer-runs=300 override)"

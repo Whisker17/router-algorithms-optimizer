@@ -31,15 +31,6 @@ soon — anything touching high-risk paths defaults to at least High), **Medium*
 
 ## Open
 
-- **The LB pool model does not see an `LBHooksRewarder`'s extra swap hook** (Medium,
-  WHI-1433 → WHI-1434). `pools/liquidity_book.py::_swap_hook_calls` admits a swap hook by
-  the pair's hooks-clone implementation only; the rewarder forwards `beforeSwap` to its
-  own `_extraHooksParameters` (at block 101057678: an `LBHooksExtraRewarder` clone of
-  `0x2D4BF9f668e5B7C7fE33c8F116ae190669304676` for two of the three hooked pairs). Output
-  neutrality holds for any hook (`LBPair.swap` reads `amountsLeft` before the hook and is
-  `nonReentrant`), but an unadmitted extra hook could revert the swap. Deferred because
-  the address lives in rewarder storage, which the WHI-1434 collector reads; fix: collect
-  `getExtraHooksParameters()` + its implementation and fail closed unless admitted.
 - **A temporary `release/v*` cut is only distinguishable from a live integration branch
   by its open PR into `main`** (Medium, version-routed-PRs port).
   `docs/GIT_WORKFLOW.md` § Fan-out (the live-branch query) — between pushing a fresh cut
@@ -60,4 +51,16 @@ soon — anything touching high-risk paths defaults to at least High), **Medium*
 
 ## Resolved
 
-_(none yet)_
+- **The LB pool model does not see an `LBHooksRewarder`'s extra swap hook** (Medium,
+  WHI-1433 → resolved in WHI-1434). `pools/liquidity_book.py::_swap_hook_calls` admitted a
+  swap hook by the pair's hooks-clone implementation only, while the rewarder forwards
+  `beforeSwap` to its own `_extraHooksParameters`. Fixed: the LB collector
+  (`snapshot/collectors/liquidity_book.py::LBCollector._verify_hooks`) reads the pair's
+  `getLBHooksParameters()` and the rewarder's `getExtraHooksParameters()`, verifies each
+  clone's implementation against the catalog's approved `lb_collection.swap_hooks` /
+  `extra_swap_hooks` (pinned code hashes, clone args and `getLBPair()` /
+  `getParentRewarder()` bound to the pair and rewarder), records addresses and code hashes
+  in provenance and refuses anything else (`unsupported_hook`); the state carries
+  `extra_hooks_parameters` / `extra_swap_hook_implementation`, and the pool model returns
+  `UNSUPPORTED` for an unadmitted swap-flagged extra hook
+  (`LBSource.amount_neutral_extra_swap_hooks`).

@@ -3,9 +3,8 @@
 Status: **`pools/liquidity_book.py` implements Merchant Moe LB v2.2 `LBPair.swap` (exact
 input, both directions, multi-bin traversal, evolving volatility-accumulator fee state)
 and is verified offline against fork-simulation evidence of the deployed contracts.**
-Real bin-snapshot collection, bundle serialization and admission of LB pools into a
-published corpus are WHI-1434 (I09); until then `snapshot/bundle.py` refuses to
-serialize a `LiquidityBookPoolState`.
+Real bin-snapshot collection, bundle serialization and fixed-block admission of LB pools
+landed with WHI-1434 (I09): `docs/references/moe-lb-fixed-block-replay.md`.
 
 This is the Solidity-to-Python record DESIGN §2.3 requires: the deployed code that was
 migrated, every function/storage field on the swap path and its Python counterpart,
@@ -67,6 +66,7 @@ fork's revert data.
 | `_bins[id]` | `bins[id] = (x, y)` | yes, only traversed bins; others shared unchanged |
 | `_tree` | keys of `bins` within `bin_range` | no (swap never changes membership) |
 | `_hooksParameters` | `hooks_parameters` (+ collector-resolved `swap_hook_implementation`) | no |
+| rewarder `_extraHooksParameters` (hook storage, WHI-1434) | `extra_hooks_parameters` (+ collector-resolved `extra_swap_hook_implementation`) | no |
 | immutables `tokenX`, `tokenY`, `binStep` | `token0`, `token1`, `bin_step` | no |
 | `block.timestamp` | `block_timestamp` (frozen per snapshot) | no |
 
@@ -93,8 +93,13 @@ an `LBHooksExtraRewarder` clone (implementation
 What a hook *can* do is revert. The model therefore simulates a swap hook only when the
 clone's implementation is in `SOURCES["moe_lb_v2_2"].amount_neutral_swap_hooks`; any
 other swap-flagged hook (or a flag with a zero hooks address) is `UNSUPPORTED`. The
-extra-rewarder hop is not checked by the pool model because it is rewarder storage, not
-pair state; the collector must read it (see `docs/DEFERRED_ISSUES.md`, WHI-1434).
+extra-rewarder hop lives in rewarder storage, not pair state: since WHI-1434 the collector
+reads the rewarder's `getExtraHooksParameters()`, admits it only against the catalog's
+approved `lb_collection.extra_swap_hooks` (pinned implementation code hash, clone bound to
+the pair and rewarder) and stores it in the state, and the model returns `UNSUPPORTED`
+unless a swap-flagged extra hook's implementation is in
+`SOURCES["moe_lb_v2_2"].amount_neutral_extra_swap_hooks` (the deferred item is resolved,
+`docs/DEFERRED_ISSUES.md`).
 
 ## 4. Exclusions (not migrated)
 
@@ -122,10 +127,10 @@ the pair's own views.
 
 | File | Pair | binStep | Tree bins | Swaps (ok) | Max bins in one swap |
 | --- | --- | --- | --- | --- | --- |
-| `real_wmnt_usdt_15` | `0xf6C9020c…aE2415` (catalog example, hooked) | 15 | 3081 | 20 (16) | 1346 |
+| `real_wmnt_usdt_15` | `0xf6C9020c…aE2415` (catalog example, hooked + extra rewarder) | 15 | 3081 | 20 (16) | 1346 |
 | `real_wmnt_usdt_25` | `0x365722f1…B7C00F` (no hooks) | 25 | 463 | 20 (16) | 210 |
 | `real_usdc_usdt_1` | `0x48C1A89a…CddFEc` (hooked + extra rewarder) | 1 | 176 | 20 (16) | 87 |
-| `real_weth_wmnt_10` | `0x1606C79b…CfBefA2` (hooked + extra rewarder; enters the swap in the decay branch) | 10 | 1398 | 20 (16) | 253 |
+| `real_weth_wmnt_10` | `0x1606C79b…CfBefA2` (hooked, no extra rewarder; enters the swap in the decay branch) | 10 | 1398 | 20 (16) | 253 |
 | `controlled` | 4 pairs created through the deployed LBFactory with mock tokens: sparse bins across tree words and a level-1 boundary; dense bins with max protocol share and `vm.warp` over every `updateReferences` branch and edge; irregular reserves with exact drains, drain−1 and a dust grid; a bin at `MAX_LIQUIDITY_PER_BIN` | 1/10/25/1 | 124 | 68 (63) | 13 |
 
 Real sequences: both directions, round trips, the same input twice at one timestamp

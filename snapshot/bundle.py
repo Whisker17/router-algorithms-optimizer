@@ -7,13 +7,15 @@
                         `family` key, WHI-1427; a real-source entry adds `source_key`
                         and `read_at`, WHI-1432) and concentrated-liquidity entries
                         (`"family": "concentrated"`, WHI-1429) with their collected
-                        tick bitmap/tick data and completeness range
+                        tick bitmap/tick data and completeness range, and Liquidity
+                        Book entries (`"family": "liquidity_book"`, WHI-1434) with
+                        their collected bins, fee state and completeness range
     cases.jsonl      -- one Case JSON object per line
     provenance.json  -- optional (real bundles): how the state was read -- source,
                         catalog pins, discovery and completeness evidence
 
-Real (`kind="real"`) state is block-bound: every concentrated and real-source
-constant-product pool record carries a `read_at` block identity, and the loader rejects
+Real (`kind="real"`) state is block-bound: every concentrated, Liquidity Book and
+real-source constant-product pool record carries a `read_at` block identity, and the loader rejects
 any record, or a provenance file, whose block differs from the manifest's
 (docs/DESIGN.md §2.2: "Every state read uses that block"; one bundle never mixes blocks).
 
@@ -34,6 +36,7 @@ pass").
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 import os
@@ -45,11 +48,15 @@ from typing import Any, cast
 from pools.cl_math import MAX_SQRT_RATIO, MAX_TICK, MIN_SQRT_RATIO, MIN_TICK
 from pools.concentrated import SOURCES as CL_SOURCES
 from pools.constant_product import SOURCES as CP_SOURCES
+from pools.liquidity_book import SOURCES as LB_SOURCES
 from snapshot.models import (
     BlockRef,
     Case,
     ConcentratedPoolState,
     ConstantProductPoolState,
+    LBStaticFeeParameters,
+    LBVariableFeeParameters,
+    LiquidityBookPoolState,
     PoolState,
     SnapshotBundle,
     TickInfo,
@@ -68,6 +75,8 @@ CONCENTRATED_FAMILY = "concentrated"
 # Concentrated-liquidity source keys the loader accepts: exactly the simulator's
 # migrated semantics (collection admission is a separate, per-source catalog switch).
 KNOWN_CONCENTRATED_SOURCES = frozenset(CL_SOURCES)
+LIQUIDITY_BOOK_FAMILY = "liquidity_book"
+_U24 = (1 << 24) - 1
 
 _U128 = (1 << 128) - 1
 _U256 = (1 << 256) - 1
@@ -453,11 +462,161 @@ def _parse_cl_pool(obj: Any, where: str, block: BlockRef) -> ConcentratedPoolSta
     )
 
 
+_LB_REQUIRED_KEYS = {
+    "family",
+    "pool_id",
+    "source_key",
+    "token0",
+    "token1",
+    "bin_step",
+    "block_timestamp",
+    "active_id",
+    "reserve_x",
+    "reserve_y",
+    "protocol_fee_x",
+    "protocol_fee_y",
+    "static_fee",
+    "variable_fee",
+    "bin_range",
+    "bins",
+    "hooks_parameters",
+    "swap_hook_implementation",
+    "extra_hooks_parameters",
+    "extra_swap_hook_implementation",
+    "read_at",
+}
+# LBStaticFeeParameters / LBVariableFeeParameters fields and their packed widths
+# (PairParameterHelper): a value wider than its slot cannot come from the contract.
+_LB_STATIC_BITS = {
+    "base_factor": 16,
+    "filter_period": 12,
+    "decay_period": 12,
+    "reduction_factor": 14,
+    "variable_fee_control": 24,
+    "protocol_share": 14,
+    "max_volatility_accumulator": 20,
+}
+_LB_VARIABLE_BITS = {
+    "volatility_accumulator": 20,
+    "volatility_reference": 20,
+    "id_reference": 24,
+    "time_of_last_update": 40,
+}
+
+
+def _parse_fields(obj: Any, bits: dict[str, int], where: str) -> dict[str, int]:
+    _require_keys(obj, set(bits), set(), where)
+    return {k: _parse_json_int(obj[k], 0, (1 << b) - 1, f"{where}.{k}") for k, b in bits.items()}
+
+
+def _parse_word(value: Any, where: str) -> int:
+    if not isinstance(value, str) or not value.startswith("0x") or len(value) != 66:
+        raise BundleError(f"{where}: expected a 32-byte 0x-word, got {value!r}")
+    return int(_validate_hash32(value, where), 16)
+
+
+def _parse_optional_address(value: Any, where: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.startswith("0x") or len(value) != 42:
+        raise BundleError(f"{where}: expected a 0x-address or null, got {value!r}")
+    return value
+
+
+def _parse_lb_pool(obj: Any, where: str, block: BlockRef) -> LiquidityBookPoolState:
+    """A Liquidity Book pool record (WHI-1434). Beyond per-field width checks, the swap
+    executes at the manifest block's timestamp, the active bin lies inside the walked
+    `bin_range`, every listed bin is a non-empty tree member inside it, and a range that
+    covers the whole id space must account for the pair's whole reserves (the bins of the
+    tree sum to `getReserves()`)."""
+    _require_keys(obj, _LB_REQUIRED_KEYS, set(), where)
+    _check_read_at(obj, where, block)
+    pool_id, token0, token1 = obj["pool_id"], obj["token0"], obj["token1"]
+    for key, value in (("pool_id", pool_id), ("token0", token0), ("token1", token1)):
+        if not isinstance(value, str) or not value:
+            raise BundleError(f"{where}.{key}: expected a non-empty string")
+    if token0 == token1:
+        raise BundleError(f"{where}: token0 and token1 must differ, both are {token0!r}")
+    source_key = obj["source_key"]
+    if source_key not in LB_SOURCES:
+        raise BundleError(f"{where}.source_key: {source_key!r} not in {sorted(LB_SOURCES)}")
+    timestamp = _parse_json_int(
+        obj["block_timestamp"], 0, (1 << 40) - 1, f"{where}.block_timestamp"
+    )
+    if timestamp != block.timestamp:
+        raise BundleError(
+            f"{where}.block_timestamp: {timestamp} is not the bundle block's timestamp "
+            f"{block.timestamp}"
+        )
+    word_range = obj["bin_range"]
+    if not (isinstance(word_range, list) and len(word_range) == 2):
+        raise BundleError(f"{where}.bin_range: expected [lo, hi]")
+    lo = _parse_json_int(word_range[0], 0, _U24, f"{where}.bin_range[0]")
+    hi = _parse_json_int(word_range[1], lo, _U24, f"{where}.bin_range[1]")
+    active_id = _parse_json_int(obj["active_id"], lo, hi, f"{where}.active_id")
+    if not isinstance(obj["bins"], list):
+        raise BundleError(f"{where}.bins: expected a list")
+    bins: dict[int, tuple[int, int]] = {}
+    for i, entry in enumerate(obj["bins"]):
+        w = f"{where}.bins[{i}]"
+        _require_keys(entry, {"id", "x", "y"}, set(), w)
+        bin_id = _parse_json_int(entry["id"], lo, hi, f"{w}.id")
+        if bin_id in bins:
+            raise BundleError(f"{w}: duplicate bin {bin_id}")
+        x = _parse_bounded_uint(entry["x"], _U128, f"{w}.x")
+        y = _parse_bounded_uint(entry["y"], _U128, f"{w}.y")
+        if x == 0 and y == 0:
+            raise BundleError(f"{w}: bin {bin_id} is empty, so it is not a bin-tree member")
+        bins[bin_id] = (x, y)
+    reserves = {
+        k: _parse_bounded_uint(obj[k], _U128, f"{where}.{k}")
+        for k in ("reserve_x", "reserve_y", "protocol_fee_x", "protocol_fee_y")
+    }
+    if (lo, hi) == (0, _U24):
+        total = (sum(b[0] for b in bins.values()), sum(b[1] for b in bins.values()))
+        if total != (reserves["reserve_x"], reserves["reserve_y"]):
+            raise BundleError(
+                f"{where}.bins: the whole tree holds {total}, but the pair's reserves are "
+                f"{(reserves['reserve_x'], reserves['reserve_y'])}"
+            )
+    bin_step = _parse_json_int(obj["bin_step"], 1, (1 << 16) - 1, f"{where}.bin_step")
+    return LiquidityBookPoolState(
+        pool_id=pool_id,
+        source_key=source_key,
+        token0=token0,
+        token1=token1,
+        bin_step=bin_step,
+        block_timestamp=timestamp,
+        active_id=active_id,
+        static_fee=LBStaticFeeParameters(
+            **_parse_fields(obj["static_fee"], _LB_STATIC_BITS, f"{where}.static_fee")
+        ),
+        variable_fee=LBVariableFeeParameters(
+            **_parse_fields(obj["variable_fee"], _LB_VARIABLE_BITS, f"{where}.variable_fee")
+        ),
+        bin_range=(lo, hi),
+        bins=bins,
+        hooks_parameters=_parse_word(obj["hooks_parameters"], f"{where}.hooks_parameters"),
+        swap_hook_implementation=_parse_optional_address(
+            obj["swap_hook_implementation"], f"{where}.swap_hook_implementation"
+        ),
+        extra_hooks_parameters=_parse_word(
+            obj["extra_hooks_parameters"], f"{where}.extra_hooks_parameters"
+        ),
+        extra_swap_hook_implementation=_parse_optional_address(
+            obj["extra_swap_hook_implementation"], f"{where}.extra_swap_hook_implementation"
+        ),
+        **reserves,
+    )
+
+
 def _parse_pool(obj: Any, where: str, block: BlockRef) -> PoolState:
     if isinstance(obj, dict) and "family" in obj:
-        if obj["family"] != CONCENTRATED_FAMILY:
-            raise BundleError(f"{where}.family: unknown pool family {obj['family']!r}")
-        return _parse_cl_pool(obj, where, block)
+        if obj["family"] == CONCENTRATED_FAMILY:
+            return _parse_cl_pool(obj, where, block)
+        if obj["family"] == LIQUIDITY_BOOK_FAMILY:
+            return _parse_lb_pool(obj, where, block)
+        raise BundleError(f"{where}.family: unknown pool family {obj['family']!r}")
     return _parse_cp_pool(obj, where, block)
 
 
@@ -627,15 +786,44 @@ def _cl_pool_to_obj(p: ConcentratedPoolState, block: BlockRef) -> dict[str, Any]
     }
 
 
+def _lb_pool_to_obj(p: LiquidityBookPoolState, block: BlockRef) -> dict[str, Any]:
+    if p.static_fee is None or p.variable_fee is None:
+        raise BundleError(f"pool {p.pool_id!r}: an LB state without its fee state is incomplete")
+    lo, hi = p.bin_range
+    return {
+        "family": LIQUIDITY_BOOK_FAMILY,
+        "pool_id": p.pool_id,
+        "source_key": p.source_key,
+        "token0": p.token0,
+        "token1": p.token1,
+        "bin_step": p.bin_step,
+        "block_timestamp": p.block_timestamp,
+        "active_id": p.active_id,
+        "reserve_x": str(p.reserve_x),
+        "reserve_y": str(p.reserve_y),
+        "protocol_fee_x": str(p.protocol_fee_x),
+        "protocol_fee_y": str(p.protocol_fee_y),
+        "static_fee": dataclasses.asdict(p.static_fee),
+        "variable_fee": dataclasses.asdict(p.variable_fee),
+        "bin_range": [lo, hi],
+        "bins": [{"id": i, "x": str(x), "y": str(y)} for i, (x, y) in sorted(p.bins.items())],
+        "hooks_parameters": f"0x{p.hooks_parameters:064x}",
+        "swap_hook_implementation": p.swap_hook_implementation,
+        "extra_hooks_parameters": f"0x{p.extra_hooks_parameters:064x}",
+        "extra_swap_hook_implementation": p.extra_swap_hook_implementation,
+        "read_at": {"block_number": block.number, "block_hash": block.hash},
+    }
+
+
 def _pools_to_json(pools: Sequence[PoolState], block: BlockRef) -> str:
     entries: list[dict[str, Any]] = []
     for p in pools:
         if isinstance(p, ConcentratedPoolState):
             entries.append(_cl_pool_to_obj(p, block))
-        elif isinstance(p, ConstantProductPoolState):
+        elif isinstance(p, LiquidityBookPoolState):
+            entries.append(_lb_pool_to_obj(p, block))
+        else:
             entries.append(_cp_pool_to_obj(p, block))
-        else:  # LiquidityBookPoolState bundle records arrive with the LB collector (WHI-1434)
-            raise BundleError(f"pool {p.pool_id!r}: {type(p).__name__} is not serializable yet")
     return json.dumps({"pools": entries}, indent=2, sort_keys=True) + "\n"
 
 

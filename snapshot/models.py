@@ -208,6 +208,10 @@ class LiquidityBookPoolState:
     160 bits, flags above). `swap_hook_implementation` is the implementation the hooks
     clone delegates to, as resolved by the collector; a swap hook is only simulated when
     that implementation is admitted as amount-neutral (`pools.liquidity_book.SOURCES`).
+    An admitted `LBHooksRewarder` forwards `beforeSwap` to its own extra hook:
+    `extra_hooks_parameters` is the rewarder's raw `getExtraHooksParameters()` word (0 =
+    none) and `extra_swap_hook_implementation` the implementation that clone delegates to
+    (WHI-1434); a swap-flagged extra hook is simulated only when admitted too.
 
     The oracle (`oracleId`, samples) is deliberately not modeled: it is written after
     the swap loop and never read by swap math (`docs/references/liquidity-book-migration.md`).
@@ -230,6 +234,8 @@ class LiquidityBookPoolState:
     bins: Mapping[int, tuple[int, int]] = field(default_factory=dict)
     hooks_parameters: int = 0
     swap_hook_implementation: str | None = None
+    extra_hooks_parameters: int = 0
+    extra_swap_hook_implementation: str | None = None
 
     def __post_init__(self) -> None:
         lo, hi = self.bin_range
