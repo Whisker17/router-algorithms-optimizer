@@ -632,8 +632,10 @@ def _pools_to_json(pools: Sequence[PoolState], block: BlockRef) -> str:
     for p in pools:
         if isinstance(p, ConcentratedPoolState):
             entries.append(_cl_pool_to_obj(p, block))
-        else:
+        elif isinstance(p, ConstantProductPoolState):
             entries.append(_cp_pool_to_obj(p, block))
+        else:  # LiquidityBookPoolState bundle records arrive with the LB collector (WHI-1434)
+            raise BundleError(f"pool {p.pool_id!r}: {type(p).__name__} is not serializable yet")
     return json.dumps({"pools": entries}, indent=2, sort_keys=True) + "\n"
 
 
