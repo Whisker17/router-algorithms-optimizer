@@ -1,28 +1,22 @@
 """Explicit algorithm registry (docs/DESIGN.md §4.3: "Do not build dynamic plugin
 discovery: an explicit name-to-factory mapping is sufficient."). Only `direct`
 (WHI-1427) is registered so far; each further mandatory algorithm (docs/DESIGN.md
-§2.6) adds one entry here.
+§2.6) adds one `AlgorithmFactory` entry here.
 """
 
 from __future__ import annotations
 
-from typing import Protocol
-
 from routing.algorithms import direct
-from routing.algorithms.base import Budget, SolveContext, SolveResult
-from snapshot.models import Case
+from routing.algorithms.base import AlgorithmFactory, SolveFn
 
+__all__ = ["ALGORITHMS", "SolveFn", "get_algorithm"]
 
-class SolveFn(Protocol):
-    def __call__(self, case: Case, context: SolveContext, budget: Budget) -> SolveResult: ...
-
-
-ALGORITHMS: dict[str, SolveFn] = {
-    direct.NAME: direct.solve,
+ALGORITHMS: dict[str, AlgorithmFactory] = {
+    direct.NAME: direct.FACTORY,
 }
 
 
-def get_algorithm(name: str) -> SolveFn:
+def get_algorithm(name: str) -> AlgorithmFactory:
     try:
         return ALGORITHMS[name]
     except KeyError as exc:
