@@ -9,6 +9,8 @@ finite chunk grid, no optimality claim (§2.6).
 percentage granularity at calibration) and, for the retained simpler candidates and
 the candidate path set, `search.max_hops`, `search.max_splits` and
 `search.percent_step` (validated by `path_split.prepare`). No built-in defaults.
+`search.max_splits` bounds only the embedded `path_split`; the incremental plan's
+number of distinct routes is bounded by `graph.chunks`.
 
 **Chunks.** Chunk `k` of `K` is `floor(A*k/K) - floor(A*(k-1)/K)`, so the chunks sum
 to the input exactly for every amount (a nondivisible input fully allocates); a
