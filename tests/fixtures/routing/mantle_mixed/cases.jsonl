@@ -1,0 +1,4 @@
+{"amount_in": "141738611", "case_id": "usdt_wmnt_evidence_split", "token_in": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae", "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"}
+{"amount_in": "492056989929539649993", "case_id": "wmnt_usdt_evidence_split", "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8", "token_out": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"}
+{"amount_in": "1000000", "case_id": "usdc_wmnt_small", "token_in": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9", "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"}
+{"amount_in": "1000000", "case_id": "usdc_usdt_small", "token_in": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9", "token_out": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"}

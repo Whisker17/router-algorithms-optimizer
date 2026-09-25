@@ -1,0 +1,19 @@
+{
+  "block": {
+    "chain_id": 0,
+    "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "number": 0,
+    "timestamp": 0
+  },
+  "bundle_id": "routing-cpmm-graph-v1",
+  "checksums": {
+    "cases.jsonl": "66761ed5529ad27910726691edf4d5d9da9926fce99cc20ffb1de12fc8314128",
+    "pools.json": "e5bc20b2d8ea8eddac106cdbd178df11680a9fbb103b742fa218eae70da11fbc"
+  },
+  "files": {
+    "cases": "cases.jsonl",
+    "pools": "pools.json"
+  },
+  "kind": "synthetic",
+  "schema_version": 1
+}

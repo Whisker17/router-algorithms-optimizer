@@ -1,0 +1,37 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "composed_from": {
+    "moe_classic": {
+      "bundle_hash": "a81b63a9179d725299228ecc232154444999b1c6b2f3e031a1283c2948e08341",
+      "bundle_id": "moe-classic-101057678-a2195dd2",
+      "pools": [
+        "0x4e7685df06201521f35a182467feefe02c53d847",
+        "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+        "0x8e3a13418743ab1a98434551937ea687e451b589"
+      ]
+    },
+    "moe_lb": {
+      "bundle_hash": "b62b04aa23079c3203babeb3be584af9d1d3974f3b8f324f979141983c120e4e",
+      "bundle_id": "moe-lb-101057678-a2195dd2",
+      "pools": [
+        "0x365722f12ceb2063286a268b03c654df81b7c00f",
+        "0xf6c9020c9e915808481757779edb53daceae2415",
+        "0x48c1a89af1102cad358549e9bb16ae5f96cddfec"
+      ]
+    },
+    "uniswap_v3": {
+      "bundle_hash": "4c83d2b54af4e4e5729bf0f6bceb22124d14d82e1d1d448b13f5260bed6fb198",
+      "bundle_id": "uniswap-v3-101057678-a2195dd2",
+      "pools": [
+        "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+        "0x086f766b336dfb0f705dc030db01993b22d81266"
+      ]
+    }
+  },
+  "purpose": "routing correctness fixture (WHI-1435): unchanged pool states of published per-source bundles at one common block; cases are evidence-amount correctness cases, not an empirical corpus"
+}

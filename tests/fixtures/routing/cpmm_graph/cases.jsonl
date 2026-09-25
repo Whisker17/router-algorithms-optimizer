@@ -1,0 +1,4 @@
+{"amount_in": "150000000", "case_id": "a_b_large", "token_in": "TKA", "token_out": "TKB"}
+{"amount_in": "1000000", "case_id": "a_b_small", "token_in": "TKA", "token_out": "TKB"}
+{"amount_in": "10000000", "case_id": "a_d_multi_hop", "token_in": "TKA", "token_out": "TKD"}
+{"amount_in": "3", "case_id": "a_b_dust", "token_in": "TKA", "token_out": "TKB"}

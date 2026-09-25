@@ -48,7 +48,16 @@ def test_evaluate_single_step_ok() -> None:
     assert evaluation.status is EvalStatus.OK
     assert evaluation.gross_output == 181  # see tests/pools/test_constant_product.py
     assert evaluation.residuals == {}
-    assert evaluation.route_features == {"hops": 1}
+    assert evaluation.route_features == {
+        "hops": 1,
+        "distinct_pools": 1,
+        "merge_steps": 0,
+        "split_funds": 0,
+        "pool_calls": 1,
+        "pool_calls_constant_product": 1,
+        "zero_input_steps": 0,
+        "repeated_pool_calls": 0,
+    }
     next_a = evaluation.next_states["pool_a"]
     assert isinstance(next_a, ConstantProductPoolState)
     assert next_a.reserve0 == 1100
@@ -227,7 +236,7 @@ def test_evaluate_two_step_chain_threads_pool_state() -> None:
     )
     evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.OK
-    assert evaluation.route_features == {"hops": 2}
+    assert evaluation.route_features["hops"] == evaluation.route_features["pool_calls"] == 2
     assert evaluation.gross_output > 0
     assert set(evaluation.next_states) == {"pool_a", "pool_b"}
 
