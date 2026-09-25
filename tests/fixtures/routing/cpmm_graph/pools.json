@@ -1,0 +1,76 @@
+{
+  "pools": [
+    {
+      "fee_bps": 30,
+      "pool_id": "ab_1",
+      "reserve0": "200000000",
+      "reserve1": "200000000",
+      "token0": "TKA",
+      "token1": "TKB"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "ac_1",
+      "reserve0": "1000000000",
+      "reserve1": "1000000",
+      "token0": "TKA",
+      "token1": "TKC"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "ac_2",
+      "reserve0": "500000000",
+      "reserve1": "500000",
+      "token0": "TKA",
+      "token1": "TKC"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "cb_1",
+      "reserve0": "1000000",
+      "reserve1": "1000000000",
+      "token0": "TKC",
+      "token1": "TKB"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "cb_2",
+      "reserve0": "400000",
+      "reserve1": "420000000",
+      "token0": "TKC",
+      "token1": "TKB"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "cd_1",
+      "reserve0": "1000000",
+      "reserve1": "2000000",
+      "token0": "TKC",
+      "token1": "TKD"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "db_1",
+      "reserve0": "2000000",
+      "reserve1": "1000000000",
+      "token0": "TKD",
+      "token1": "TKB"
+    },
+    {
+      "fee_bps": 5,
+      "pool_id": "db_2",
+      "reserve0": "1000000",
+      "reserve1": "480000000",
+      "token0": "TKD",
+      "token1": "TKB"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "ab_dry",
+      "reserve0": "0",
+      "reserve1": "1000000",
+      "token0": "TKA",
+      "token1": "TKB"
+    }
+  ]
+}

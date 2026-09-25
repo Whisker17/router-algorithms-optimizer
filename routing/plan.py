@@ -1,11 +1,12 @@
 """Plan types: `RoutePlan`/`SwapStep` (docs/DESIGN.md §2.5).
 
 This is experimental data describing a sequence of pool swaps and how funds flow
-between them -- not an EVM instruction format. Only the shapes the single-step
-`direct` algorithm needs are populated so far (one step, one input reference); the
-`inputs` tuple and `ALL_REMAINING` sentinel already match the general multi-input
-shape §2.5 describes so later multi-hop/split algorithms (WHI-1435 and friends)
-extend this module instead of replacing it.
+between them -- not an EVM instruction format. The request amount starts in the
+`REQUEST` fund; several steps referencing one fund split it, one step referencing
+several same-token funds merges them into a single swap, and every step records its
+output under a new fund id that later steps consume (multi-hop). Several steps may
+name the same physical pool; each later use sees the state the earlier one left.
+`routing.evaluator.evaluate` defines the exact rules (docs/DESIGN.md §2.5, WHI-1435).
 """
 
 from __future__ import annotations
@@ -23,7 +24,10 @@ REQUEST_FUND_ID = "REQUEST"
 @dataclass(frozen=True)
 class FundInput:
     """One reference to a fund entering a step. `amount` is either an explicit
-    positive integer or the `ALL_REMAINING` sentinel (docs/DESIGN.md §2.5)."""
+    non-negative integer or the `ALL_REMAINING` sentinel -- the fund's whole balance at
+    that point of the replay, which is how an integer remainder gets its explicit final
+    allocation (docs/DESIGN.md §2.5). A step whose references total zero is a
+    deterministic zero-output step that makes no pool call."""
 
     fund_id: str
     amount: int | Literal["ALL_REMAINING"]
