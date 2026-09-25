@@ -130,7 +130,11 @@ def _new_quotes_needed(
     return len(path) - k - (1 if cache.cached(nxt.pool_id, nxt.token_in, amount) else 0)
 
 
-def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+def solve(
+    case: Case, context: SolveContext, budget: Budget, *, cache: QuoteCache | None = None
+) -> SolveResult:
+    """`cache` lets a composing solver (`path_split`) share one per-solve quote memo;
+    the quote budget then counts every miss of that shared cache."""
     prepared = context.prepared
     if not isinstance(prepared, PreparedSinglePath):
         raise TypeError(f"{NAME}.solve needs the PreparedSinglePath returned by prepare()")
@@ -138,7 +142,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
     bundle = context.bundle
     max_hops = prepared.max_hops
 
-    cache = QuoteCache(bundle)
+    cache = QuoteCache(bundle) if cache is None else cache
     prefix_out: dict[Path, int] = {}  # evaluated prefix -> its integer output amount
     dead: dict[Path, str] = {}  # prefix whose last quote failed -> its quote status
 

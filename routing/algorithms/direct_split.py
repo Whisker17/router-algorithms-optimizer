@@ -154,7 +154,11 @@ class _BudgetExhausted(Exception):
     pass
 
 
-def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+def solve(
+    case: Case, context: SolveContext, budget: Budget, *, cache: QuoteCache | None = None
+) -> SolveResult:
+    """`cache` lets a composing solver (`path_split`) share one per-solve quote memo;
+    the quote budget then counts every miss of that shared cache."""
     prepared = context.prepared
     if not isinstance(prepared, PreparedDirectSplit):
         raise TypeError(f"{NAME}.solve needs the PreparedDirectSplit returned by prepare()")
@@ -165,7 +169,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
     pool_ids = tuple(p.pool_id for p in pools)
     max_legs = min(prepared.max_splits, len(pools))
 
-    cache = QuoteCache(bundle)
+    cache = QuoteCache(bundle) if cache is None else cache
     outputs: dict[tuple[int, int], int | None] = {}  # (pool, amount) -> output, None = failed
     failures: dict[str, int] = {}
     incomplete: list[str] = []
