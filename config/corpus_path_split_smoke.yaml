@@ -7,10 +7,13 @@
 # gross-only: no cost model is calibrated yet (docs/DESIGN.md §2.9), so nothing here
 # is a net-output claim.
 #
-# Every budget/measurement/worker value below is SMOKE-SCALE and UNVALIDATED -- sized
-# so the 3-hop, 5%-grid, 4-leg search completes without truncation on this corpus
-# (observed on a sample: at most ~30k executed quotes and ~16 s per case). They are not
-# universal defaults; the calibrated daily/full profiles (docs/ISSUE_PLAN.md I21)
+# Every search/budget/measurement/worker value below is SMOKE-SCALE and UNVALIDATED.
+# `max_hops: 2` (not the DESIGN §2.12 trial value 3) keeps the whole four-algorithm pass
+# well under 30 minutes without any truncation: at 3 hops a 12-case sample measured
+# ~6.7 s mean / 16.5 s max per path_split case (up to ~52k executed quotes, dominated
+# by large concentrated-liquidity swaps crossing many ticks), i.e. roughly an hour for
+# the corpus; at 2 hops the same sample took ~0.5 s mean. They are not universal
+# defaults; the calibrated daily/full profiles (docs/ISSUE_PLAN.md I21)
 # declare their own values measured on the reference machine (DESIGN §2.12).
 schema_version: 2
 algorithms:
@@ -21,7 +24,7 @@ algorithms:
 objective:
   mode: gross_only
 search:
-  max_hops: 3               # DESIGN §2.12 initial trial value (unvalidated)
+  max_hops: 2               # smoke-scale (DESIGN §2.12 trial value is 3; see above)
   max_splits: 4             # DESIGN §2.12 initial trial value (unvalidated)
   percent_step: 5           # DESIGN §2.12 initial trial value (unvalidated)
 budget:

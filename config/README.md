@@ -59,5 +59,6 @@ No loader code ships with the template — write it when the first config file l
   `direct_split` (`search.max_splits: 4`, `search.percent_step: 5`) once over the frozen
   corpus (WHI-1439).
 - `corpus_path_split_smoke.yaml` — smoke-scale profile running `direct`, `single_path`,
-  `direct_split` and `path_split` (`search.max_hops: 3`, `search.max_splits: 4`,
-  `search.percent_step: 5`) once over the frozen corpus under one budget (WHI-1440).
+  `direct_split` and `path_split` (smoke-scale `search.max_hops: 2`,
+  `search.max_splits: 4`, `search.percent_step: 5`) once over the frozen corpus under one
+  budget (WHI-1440).
