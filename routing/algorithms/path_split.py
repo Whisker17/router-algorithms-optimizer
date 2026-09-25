@@ -47,10 +47,13 @@ quote is executed at most once per solve and the final replays are memo hits):
    is only added if its pool set is disjoint from every chosen leg (`paths_conflict`);
    each size's list is scanned best-first and cut as soon as gross plus a knapsack
    bound (the best kept value per size, pool conflicts ignored) cannot beat the
-   incumbent of any reachable leg count. It returns the gross-best allocation of every
-   leg count `m = 2..max_splits` over the kept table, valued at the floored grid
-   amounts; the final leg's integer remainder (< `m` raw units) is added by the
-   re-evaluation, so a finalist's evaluated gross is never below its search value.
+   incumbent of any reachable leg count. It returns, for every leg count
+   `m = 2..max_splits`, the gross-best `m`-leg allocation of the kept table **if** it
+   strictly beats the gross of every allocation with fewer legs (a split must pay for
+   itself in gross; otherwise the proof that no better `m`-leg allocation exists would
+   dominate the solve time), valued at the floored grid amounts; the final leg's
+   integer remainder (< `m` raw units) is added by the re-evaluation, so a finalist's
+   evaluated gross is never below its search value.
    Because each pruned entry is strictly beaten by a feasible swap, the kept table
    loses no gross-best allocation of the grid (floored values) under the assumption
    above.
@@ -186,9 +189,10 @@ def _branch_and_bound(
     counters: dict[str, int],
 ) -> None:
     """Exact search over pool-disjoint allocations of the kept table: fills `best[m]`
-    with the gross-best `m`-leg allocation (floored grid values) for every reachable
-    `m`. Legs are chosen with nonincreasing grid size, and within one size in the
-    size's value-descending list order, so each leg set is visited once. Each size's
+    with the gross-best `m`-leg allocation (floored grid values) for every `m` whose
+    best strictly beats every allocation with fewer legs. Legs are chosen with
+    nonincreasing grid size, and within one size in the size's value-descending list
+    order, so each leg set is visited once. Each size's
     list is scanned best-first and the scan stops as soon as gross plus a knapsack
     bound (the best kept value per size, sizes capped by the current one, pool
     conflicts ignored) cannot beat any reachable leg count's incumbent. A path whose
@@ -213,12 +217,17 @@ def _branch_and_bound(
                 ]
                 ub[c][k][r] = max(vals) if vals else None
 
+    def beats(gross: int, m: int) -> bool:
+        """An `m`-leg allocation is only worth keeping if its gross strictly beats every
+        allocation found with at most `m` legs (a split must pay for itself)."""
+        return all(gross > best[k][0] for k in range(1, m + 1) if k in best)
+
     def promising(gross: int, k: int, rest: int, cap: int) -> bool:
         if rest == 0:
-            return k not in best or gross > best[k][0]
+            return beats(gross, k)
         for m in range(k + 1, max_splits + 1):
             bound = ub[cap][m - k][rest]
-            if bound is not None and (m not in best or gross + bound > best[m][0]):
+            if bound is not None and beats(gross + bound, m):
                 return True
         return False
 
@@ -233,7 +242,7 @@ def _branch_and_bound(
         counters["nodes"] += 1
         r = n_units - used
         if r == 0:
-            if len(legs) not in best or gross > best[len(legs)][0]:
+            if beats(gross, len(legs)):
                 best[len(legs)] = (gross, legs)
             return
         legs_left = max_splits - len(legs)
@@ -468,8 +477,8 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             # ---- 5. re-evaluate the multi-leg finalists as complete plans.
             evaluated = 0
             for m in sorted(bb_best):
-                if m < 2:
-                    continue
+                if m < 2 or any(bb_best[k][0] >= bb_best[m][0] for k in bb_best if k < m):
+                    continue  # a split that does not pay for itself (found before a better one)
                 if budget.max_candidates is not None and evaluated >= budget.max_candidates:
                     truncated_by = truncated_by or "max_candidates"
                     own_truncated += 1
