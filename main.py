@@ -1,6 +1,11 @@
-"""CLI entrypoint: `prepare`, `validate`, `run` (docs/DESIGN.md §4.4 core flows,
-§4.2 "thin CLI"). `report` and protocol-verification subcommands land with their
-owning modules; `snapshot.preflight` remains the standalone online-admission tool.
+"""CLI entrypoint: `prepare`, `validate`, `run`, `report` (docs/DESIGN.md §4.4 core
+flows, §4.2 "thin CLI"). Protocol-verification subcommands land with their owning
+modules; `snapshot.preflight` remains the standalone online-admission tool.
+
+`report RUN_DIR [RUN_DIR ...]` (WHI-1446) writes an offline `report.html` plus CSV
+summaries from saved run records only (`report.render`); each run is its own cohort
+section, so a matched V2/V3 cohort run and a full-coverage run can sit side by side
+without being pooled.
 
 `corpus sql|ingest|plan|assemble` (WHI-1436) prepares the frozen five-source corpus:
 the Dune SQL is printed (queries run through the operator's Dune access, never from
@@ -168,7 +173,65 @@ def build_parser() -> argparse.ArgumentParser:
     order_p.add_argument("run_a")
     order_p.add_argument("run_b")
 
+    report_p = subparsers.add_parser(
+        "report", help="Render an offline HTML/CSV report from saved run records"
+    )
+    report_p.add_argument("runs", nargs="+", help="Run directories (each its own cohort)")
+    report_p.add_argument(
+        "--output", default=None, help="Report directory (default data/reports/<run id>)"
+    )
+    report_p.add_argument(
+        "--bundle",
+        action="append",
+        default=[],
+        help="Frozen bundle for case labels; used only when it hashes to a run's bundle_hash "
+        "(default: each run's own --bundle from its replay command)",
+    )
+    report_p.add_argument("--min-samples", type=int, default=30)
+    report_p.add_argument(
+        "--allow-incomplete",
+        action="store_true",
+        help="Report an interrupted/running run (unrecorded cases shown as missing)",
+    )
+
     return parser
+
+
+def _cmd_report(args: argparse.Namespace) -> int:
+    import shlex
+
+    from benchmark.results import load_manifest
+    from report.aggregate import ReportInputError
+    from report.render import render_report
+
+    if args.min_samples < 1:
+        print("report failed: --min-samples must be >= 1", file=sys.stderr)
+        return 1
+    command = ["uv", "run", "python", "main.py", "report", *args.runs]
+    if args.output is not None:
+        command += ["--output", args.output]
+    for bundle in args.bundle:
+        command += ["--bundle", bundle]
+    command += ["--min-samples", str(args.min_samples)]
+    if args.allow_incomplete:
+        command.append("--allow-incomplete")
+    try:
+        manifests = [load_manifest(r, allow_incomplete=args.allow_incomplete) for r in args.runs]
+        paths = render_report(
+            manifests,
+            args.output,
+            bundle_dirs=args.bundle,
+            min_samples=args.min_samples,
+            report_command=shlex.join(command),
+            repo_root=Path(__file__).resolve().parent,
+        )
+    except (ResultError, ReportInputError, OSError) as exc:
+        print(f"report failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"wrote {paths.html}")
+    for name, path in paths.csv.items():
+        print(f"wrote {path} ({name})")
+    return 0
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -438,6 +501,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_run(args)
     if args.command == "order-check":
         return _cmd_order_check(args)
+    if args.command == "report":
+        return _cmd_report(args)
     raise AssertionError(f"unreachable: unknown command {args.command!r}")  # pragma: no cover
 
 
