@@ -229,14 +229,11 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
 
     # 2. Every pool at every smaller grid size, largest first. Non-final legs only
     #    ever use these floored amounts; a zero amount is never a leg.
-    table: dict[tuple[int, int], int] = {}
     if max_legs > 1:
         for u in range(units - 1, 0, -1):
-            amount = amount_in * u // units
-            for i in range(len(pools)):
-                out = try_sample(i, amount) if amount > 0 else None
-                if out is not None:
-                    table[(i, u)] = out
+            if amount_in * u // units > 0:
+                for i in range(len(pools)):
+                    try_sample(i, amount_in * u // units)
 
     # 3. Exact DP over the table. A state (non-final legs, units used, residue) is
     #    reached from pools before the current one; the current pool either closes the
@@ -262,7 +259,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             if legs_used + 1 >= max_legs:
                 continue
             for u in range(1, units - used):
-                out = table.get((j, u))
+                out = outputs.get((j, amount_in * u // units))
                 transitions += 1
                 if out is None:
                     continue
