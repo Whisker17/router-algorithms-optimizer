@@ -231,6 +231,59 @@ incremental accounting on all 397 evaluated plans; 16 cases carried a dust chunk
 time median 0.34 s / p95 1.81 s / max 3.45 s per case, including the embedded
 `path_split` (quotes median 1311, max 5622). Not an optimality or net-output claim.
 
+Offline `uni_sor_port` smoke (WHI-1444). Setup:
+
+- **Runs:** two runs at clean `0cb6dd9` with `config/corpus_uni_sor_smoke.yaml`, which
+  runs all six algorithms. Both are gross-only, so SOR's gas scores are zero (A-3).
+  Settings are the smoke-scale `max_hops: 2`, `max_splits: 4`, `percent_step: 5` and
+  `chunks: 20`, with SOR `min_splits: 1`. Each run is one isolated pass. The two runs
+  ran concurrently, taking 17.7 and 18.3 min wall.
+- **Matched V2/V3 cohort:** run `20260925T132310214641Z-9535a67c`. Its bundle
+  `mantle-5src-101082044-091b0759-sor-cohort` (hash `7a4341dd…`) was cut by
+  `main.py corpus cohort` and holds the 98 `sor_compatible` pools and all 398 cases.
+- **Full five-source corpus:** run `20260925T132310221710Z-15669090`.
+- **Limits:** no truncation and no limit hit in any algorithm.
+
+Results:
+
+- **`uni_sor_port` statuses:** 396/398 `ok` in both runs. The 2 `no_route` cases are the
+  dust/round-below boundary cases `bnd-1bdd88-78c1b0-*`, where every quote entry is
+  null (B-S10). There are 0 `unsupported` cases, because every case is reachable in the
+  cohort at this block.
+- **Its plans are identical on the two bundles** (398/398): selection, status and gross
+  output all match. The full-universe run records `coverage_mode: full_universe` with 45
+  LB pools excluded.
+- **Selected splits:** 227 single-route, 66 two-way, 24 three-way and 79 four-way.
+  Routes by protocol: 668 V3, 34 V2 and 45 mixed.
+- **D-1 residual:** nonzero on 137 cases (1 unit on 80, 2 on 39, 3 on 18).
+- **D-3:** the runner's re-quote equals the solver's replay on all 396. On 79 cases the
+  re-quote exceeds upstream's cached quote because of the residual. It is never below
+  the cached quote.
+- **Solve time:** median 0.67 s, p95 4.9 s, max 13.4 s. Quotes: median 1,267, max 5,221.
+
+Paired against SOR on the matched cohort (both `ok`):
+
+| Algorithm | SOR better | Equal | SOR worse | Only SOR succeeds |
+| --- | --- | --- | --- | --- |
+| `direct` | 187 (median 28.5 bps) | 161 | 0 | 48 |
+| `single_path` | 169 (median 5.96 bps) | 227 | 0 | — |
+| `direct_split` | 181 (median 18.0 bps) | 166 | 1 | 48 |
+| `path_split` | 12 (gains ≤ 0.1 bps) | 350 | 34 (median 0.1 bps, max 1.02) | — |
+| `incremental_graph` | 2 | 247 | 147 (median 1.89 bps, max 39.5) | — |
+
+- The one `direct_split` loss (`emp-78c1b0-deadde-large-1`, 1.02 bps) comes from SOR's
+  greedy BFS: it chooses 55/15/15/15, where the exact grid DP finds 45/20/20/15.
+- `incremental_graph` is an expanded, shared-pool topology. It is not a matched
+  capability.
+
+On the full universe the other algorithms may also use LB, so this is coverage gain,
+not search quality:
+
+- SOR is worse than `path_split` on 169 cases (median 2.4 bps) and never better.
+- There is one case where only the others succeed.
+
+None of this is an optimality or net-output claim.
+
 ## 8. Reproduce
 
 ```bash
@@ -262,6 +315,9 @@ tools/cl_evidence/capture_corpus_tokens.sh data/corpus/mantle-5src-101082044/bun
 uv run python main.py corpus fixture --bundle data/corpus/mantle-5src-101082044/bundle \
   --output tests/fixtures/corpus/bundle
 uv run pytest tests/snapshot/test_corpus.py
+# 5. matched V2/V3 comparison bundle (sor_compatible pools, every case; WHI-1444)
+uv run python main.py corpus cohort --bundle data/corpus/mantle-5src-101082044/bundle \
+  --output data/corpus/mantle-5src-101082044/sor_cohort
 ```
 
 `plan` refuses SQL files that drift from the config; `assemble` re-derives the plan from

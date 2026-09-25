@@ -359,3 +359,13 @@ def test_matched_cohort_bundle_shares_sor_candidates_for_every_algorithm(tmp_pat
         parse_corpus_document(
             doc, block=cut.block, pools=cut.pools, cases=cut.cases, prices=cut.prices
         )
+
+
+def test_recorded_pin_agrees_with_the_source_inventory() -> None:
+    import json
+
+    inv = json.loads((REPO / "docs/references/uni-sor-source-inventory.json").read_text())
+    assert sor.UPSTREAM["commit"] == inv["upstream"]["commit"]
+    assert sor.UPSTREAM["version"] == inv["upstream"]["package_version"]
+    assert sor.UPSTREAM["npm_integrity"] == inv["npm_artifact"]["integrity"]
+    assert sor.CONTRACT == inv["contract"]
