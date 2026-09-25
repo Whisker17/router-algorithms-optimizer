@@ -47,4 +47,4 @@ pythonpath = ["."]
 python_version = "3.12"
 strict = true
 # Mirror the wheel packages list once modules land:
-files = ["main.py", "snapshot", "pools", "routing", "benchmark", "tests", "tools/upstream/uni_sor/author_inputs.py"]
+files = ["main.py", "snapshot", "pools", "routing", "benchmark", "report", "tests", "tools/upstream/uni_sor/author_inputs.py"]
