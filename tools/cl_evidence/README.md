@@ -1,4 +1,4 @@
-# `tools/cl_evidence` — independent fork swap evidence (WHI-1428, WHI-1429, WHI-1430, WHI-1431, WHI-1432, WHI-1433, WHI-1434)
+# `tools/cl_evidence` — independent fork swap evidence (WHI-1428, WHI-1429, WHI-1430, WHI-1431, WHI-1432, WHI-1433, WHI-1434, WHI-1436)
 
 Validation-only Foundry project. It generates the offline fixtures in
 `tests/fixtures/concentrated/` that `tests/pools/test_concentrated.py` replays against
@@ -151,3 +151,17 @@ uv run pytest tests/snapshot/test_moe_lb.py                        # offline rep
 ```
 
 Details: `docs/references/moe-lb-fixed-block-replay.md`.
+
+## Corpus token semantics (WHI-1436)
+
+`test/CaptureCorpusTokens.t.sol` forks the corpus block and, for every universe token of
+a published corpus bundle, transfers a tenth of an admitted pool's balance to a fresh
+address and back with the deployed token bytecode, recording both balance deltas of both
+transfers and `totalSupply`. Output: `tests/fixtures/corpus/token_transfers.jsonl`, checked
+offline by `tests/snapshot/test_corpus.py` (every token must move exactly and keep its
+supply).
+
+```bash
+tools/cl_evidence/capture_corpus_tokens.sh data/corpus/mantle-5src-101082044/bundle
+uv run pytest tests/snapshot/test_corpus.py
+```

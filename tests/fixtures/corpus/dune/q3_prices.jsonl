@@ -1,0 +1,9 @@
+{"columns": ["token", "price_timestamp", "price", "decimals", "symbol", "source"], "execution_id": "01M3BGWAD5MSW779Z7JZ6R9X4P", "export": "prices", "query_id": 8832131, "row_count": 8, "sql_sha256": "860d4835fa52f0d97aff6b9eba913fbad4f04b0c32ff0f9cbb3fde40ecfcc2dd"}
+{"decimals": 6, "price": 0.999718, "price_timestamp": 1790294340, "source": "coinpaprika", "symbol": "USDC", "token": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9"}
+{"decimals": 18, "price": 0.06138980477081803, "price_timestamp": 1790294340, "source": "dex.trades", "symbol": "CATI", "token": "0x1bdd8878252daddd3af2ba30628813271294edc0"}
+{"decimals": 6, "price": 0.999436, "price_timestamp": 1790294340, "source": "coinpaprika", "symbol": "USDT", "token": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"}
+{"decimals": 6, "price": 0.9990376510332882, "price_timestamp": 1790294340, "source": "dex.trades", "symbol": "USDT0", "token": "0x779ded0c9e1022225f8e0630b35a9b54be713736"}
+{"decimals": 18, "price": 0.677247, "price_timestamp": 1790294340, "source": "coinpaprika", "symbol": "WMNT", "token": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"}
+{"decimals": 8, "price": 84212.65, "price_timestamp": 1790294340, "source": "coinpaprika", "symbol": "FBTC", "token": "0xc96de26018a54d51c097160568752c4e3bd6c364"}
+{"decimals": 18, "price": 2953.29, "price_timestamp": 1790294340, "source": "coinpaprika", "symbol": "mETH", "token": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"}
+{"decimals": 18, "price": 2687.8, "price_timestamp": 1790294340, "source": "coinpaprika", "symbol": "WETH", "token": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"}

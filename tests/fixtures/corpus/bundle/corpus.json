@@ -1,0 +1,3542 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+    "number": 101082044,
+    "timestamp": 1790294400
+  },
+  "boundary": [
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "1",
+        "pool_id": "0x2be6ecf2750d1c4d284ad5604b62392b3ea611dd"
+      },
+      "token_in": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "1475467254941",
+        "pool_id": "0xc0729cde19741de280b230d650f0fdad2ad79d09"
+      },
+      "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "45375060153204934",
+        "pool_id": "0x78b54c2bc2c5ad8f744915d481e5caaff0c6c8c2"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "1",
+        "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      },
+      "token_in": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "491683233255108203",
+        "pool_id": "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "2",
+        "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      },
+      "token_in": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+      "token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "2",
+        "pool_id": "0x802b5d2b69808a2758fa25175e7a2ce551718b6d"
+      },
+      "token_in": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "339492623",
+        "pool_id": "0xff60fb8f429870ce4109aef3a4b7b33acb90b01b"
+      },
+      "token_in": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "1",
+        "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847"
+      },
+      "token_in": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "1450177186548",
+        "pool_id": "0xd145db1dfc3fcd2e999b47f3a02c85bd7750ed09"
+      },
+      "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token_out": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "38726016743300081347",
+        "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "3937",
+        "pool_id": "0x928981fe5a4c005a126662d2bd84fbf139b51876"
+      },
+      "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "322681121920541325",
+        "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "1",
+        "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179"
+      },
+      "token_in": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+      "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "27957696",
+        "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "1",
+        "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6"
+      },
+      "token_in": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "1718281811546477896",
+        "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "1438778825494",
+        "pool_id": "0x064d4c6e06711eaff5a9e2a19e750ee8b94159ab"
+      },
+      "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "845",
+        "pool_id": "0x9608fecddbeea59cff57f61353f6654962500566"
+      },
+      "token_in": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "token_out": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "2",
+        "pool_id": "0x9608fecddbeea59cff57f61353f6654962500566"
+      },
+      "token_in": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+      "token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "1",
+        "pool_id": "0x69a707d8deb5423865d84b46b2915bb72f2844d0"
+      },
+      "token_in": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "2",
+        "pool_id": "0x69a707d8deb5423865d84b46b2915bb72f2844d0"
+      },
+      "token_in": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "3",
+        "pool_id": "0x0d290c8e7f3ffa5267de4b1f9f6f6d8d578624ac"
+      },
+      "token_in": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "2",
+        "pool_id": "0x0d290c8e7f3ffa5267de4b1f9f6f6d8d578624ac"
+      },
+      "token_in": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "token_out": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "2162019",
+        "pool_id": "0x8f99892c84d4e4af62082ebafb7d0d033938d26e"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "2",
+        "pool_id": "0x16867d00d45347a2ded25b8cdb7022b3171d4ae0"
+      },
+      "token_in": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token_out": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "2266197",
+        "pool_id": "0x8f99892c84d4e4af62082ebafb7d0d033938d26e"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "2",
+        "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589"
+      },
+      "token_in": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "349824769",
+        "pool_id": "0xefe8bfd40352b9c14b64c06f5e699b3d46ca4ffc"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "1",
+        "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6"
+      },
+      "token_in": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "deepest_exhausted_pool": {
+        "fill_capacity": "55396826419506520",
+        "pool_id": "0xc522a2108fb700952d42acec956d332f1856d7f9"
+      },
+      "smallest_positive_output_input": {
+        "amount_in": "338884541",
+        "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6"
+      },
+      "token_in": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "token_out": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "12",
+        "pool_id": "0x7c88dd67138291d38f0fea2889e4a341cd8983b1"
+      },
+      "token_in": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+      "token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+      "deepest_exhausted_pool": null,
+      "smallest_positive_output_input": {
+        "amount_in": "1",
+        "pool_id": "0x7c88dd67138291d38f0fea2889e4a341cd8983b1"
+      },
+      "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token_out": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+    }
+  ],
+  "case_metadata": {
+    "bnd-09bc4e-779ded-dust": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "9.99718E-7",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "dust",
+        "pool_id": null
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-779ded-09bc4e-dust": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "9.990376510332882E-7",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "dust",
+        "pool_id": null
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-779ded-78c1b0-dust": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "9.990376510332882E-7",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "dust",
+        "pool_id": null
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-78c1b0-779ded-dust": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "6.77247E-19",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "dust",
+        "pool_id": null
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-78c1b0-779ded-round_at": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "9.99255772007027427E-7",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "round_at",
+        "pool_id": "0xc0729cde19741de280b230d650f0fdad2ad79d09"
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-78c1b0-779ded-round_below": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "9.9925577200635018E-7",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "round_below",
+        "pool_id": "0xc0729cde19741de280b230d650f0fdad2ad79d09"
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-cda86a-deadde-dust": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "2.95329E-15",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "dust",
+        "pool_id": null
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-cda86a-deadde-liq_above": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "134.00571139985860248615",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "liq_above",
+        "pool_id": "0x78b54c2bc2c5ad8f744915d481e5caaff0c6c8c2"
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-cda86a-deadde-liq_at": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "134.00571139985859953286",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "liq_at",
+        "pool_id": "0x78b54c2bc2c5ad8f744915d481e5caaff0c6c8c2"
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-deadde-cda86a-dust": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "2.6878E-15",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "dust",
+        "pool_id": null
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-deadde-cda86a-liq_above": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "1321.5461943430798307112",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "liq_above",
+        "pool_id": "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "bnd-deadde-cda86a-liq_at": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "boundary",
+      "notional_usd": "1321.5461943430798280234",
+      "origin": "state_derived_boundary",
+      "selection": {
+        "kind": "liq_at",
+        "pool_id": "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "boundary"
+    },
+    "emp-09bc4e-779ded-large-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1578.17918293189",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 750,
+        "leg": {
+          "block_number": 100848991,
+          "block_time": "2026-09-19 14:31:34.000 UTC",
+          "dune_amount_usd": 1577.8034703353999,
+          "evt_index": 9,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x98757f6f5a23aa07087547dbf685794f23ba32d4ba4168886331531b1e0513ab"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 148,
+        "stratum_max_raw": "10499277449",
+        "stratum_min_raw": "65102538",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-09bc4e-779ded-large-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "83.10874172383",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 638,
+        "leg": {
+          "block_number": 100514783,
+          "block_time": "2026-09-11 20:51:18.000 UTC",
+          "dune_amount_usd": 83.11007183879,
+          "evt_index": 12,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x3a81c3202058d52a9e67997b4bdce3751323ea9c16098296cdaf73f38027a2e1"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 148,
+        "stratum_max_raw": "10499277449",
+        "stratum_min_raw": "65102538",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "large"
+    },
+    "emp-09bc4e-779ded-large-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "2976.318889317664",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 755,
+        "leg": {
+          "block_number": 101056348,
+          "block_time": "2026-09-24 09:43:28.000 UTC",
+          "dune_amount_usd": 2977.33707750688,
+          "evt_index": 12,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x3e28e293aa31106133767cc0652c0b5e540adddfecb95c857e07a91b094ba718"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 148,
+        "stratum_max_raw": "10499277449",
+        "stratum_min_raw": "65102538",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-09bc4e-779ded-large-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "6502.225384212822",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 762,
+        "leg": {
+          "block_number": 100810750,
+          "block_time": "2026-09-18 17:16:52.000 UTC",
+          "dune_amount_usd": 6500.853027652203,
+          "evt_index": 27,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x3635415c52dbe2da710e0c9ce8ea99be163cd0edbf4a3b5521b24691a0a58337"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 148,
+        "stratum_max_raw": "10499277449",
+        "stratum_min_raw": "65102538",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-09bc4e-779ded-low-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1.388772255752",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 56,
+        "leg": {
+          "block_number": 101057866,
+          "block_time": "2026-09-24 10:34:04.000 UTC",
+          "dune_amount_usd": 1.389116768424,
+          "evt_index": 3,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x4109dbb2535e5b34c3c0ea44bc02479e8f7620a8e65d5c89e86efc46a7875d27"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 273,
+        "stratum_max_raw": "7490076",
+        "stratum_min_raw": "829118",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-09bc4e-779ded-low-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "4.826072663612",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 214,
+        "leg": {
+          "block_number": 100478179,
+          "block_time": "2026-09-11 00:31:10.000 UTC",
+          "dune_amount_usd": 4.828790508954,
+          "evt_index": 34,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x1d046d73551e2eac38d72ace3a31317a2480009962ac108fcf2f819e7cd30061"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 273,
+        "stratum_max_raw": "7490076",
+        "stratum_min_raw": "829118",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "low"
+    },
+    "emp-09bc4e-779ded-low-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "7.337417264666",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 308,
+        "leg": {
+          "block_number": 100761037,
+          "block_time": "2026-09-17 13:39:46.000 UTC",
+          "dune_amount_usd": 7.338334700541,
+          "evt_index": 21,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x6c9ccb9eed3639081c121c5a152a56787e78b87f6d6adf32cb4c73008ce64cd6"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 273,
+        "stratum_max_raw": "7490076",
+        "stratum_min_raw": "829118",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-09bc4e-779ded-low-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "4.30223142851",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 192,
+        "leg": {
+          "block_number": 101021462,
+          "block_time": "2026-09-23 14:20:36.000 UTC",
+          "dune_amount_usd": 4.302795179805,
+          "evt_index": 19,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x54357adf50448e6a087881484bed4da681357af08cd73d5f64c0dc134d060240"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 273,
+        "stratum_max_raw": "7490076",
+        "stratum_min_raw": "829118",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-09bc4e-779ded-medium-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "10.019091819124",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 407,
+        "leg": {
+          "block_number": 100676834,
+          "block_time": "2026-09-15 14:53:00.000 UTC",
+          "dune_amount_usd": 10.022629556177998,
+          "evt_index": 9,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x925d7a8442f081a93eff6579fc7ec63a7973da4113a7649f35ee7f90e971203b"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 311,
+        "stratum_max_raw": "64842186",
+        "stratum_min_raw": "7500000",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-09bc4e-779ded-medium-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "10.01902883689",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 406,
+        "leg": {
+          "block_number": 101057983,
+          "block_time": "2026-09-24 10:37:58.000 UTC",
+          "dune_amount_usd": 10.023408387524999,
+          "evt_index": 5,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "moe_lb_v2_2",
+          "tx_hash": "0xe87ce8052cd5a4eb2014ea0eb4b09d4a1e1b518fcbf40583efa79e683b296e18"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 311,
+        "stratum_max_raw": "64842186",
+        "stratum_min_raw": "7500000",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-09bc4e-779ded-medium-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "10.03534423465",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 416,
+        "leg": {
+          "block_number": 101056897,
+          "block_time": "2026-09-24 10:01:46.000 UTC",
+          "dune_amount_usd": 10.039038283050001,
+          "evt_index": 6,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "moe_lb_v2_2",
+          "tx_hash": "0xe73ef87c761e72338771bac74735a2ff56e35ea18cda52e2e0cda2637c20f876"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 311,
+        "stratum_max_raw": "64842186",
+        "stratum_min_raw": "7500000",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "medium"
+    },
+    "emp-09bc4e-779ded-medium-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "19.57387361061",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 530,
+        "leg": {
+          "block_number": 100954225,
+          "block_time": "2026-09-22 00:59:22.000 UTC",
+          "dune_amount_usd": 19.572718426305002,
+          "evt_index": 10,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0xb9646c1fd719a264704762dd98ea3437eb5e7b046add3bf548bbc1b47e430253"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 311,
+        "stratum_max_raw": "64842186",
+        "stratum_min_raw": "7500000",
+        "unit": "pair",
+        "unit_legs": 778
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-779ded-09bc4e-large-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "35.7750717329190178964106",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1279,
+        "leg": {
+          "block_number": 100895645,
+          "block_time": "2026-09-20 16:26:42.000 UTC",
+          "dune_amount_usd": 35.767787818022995,
+          "evt_index": 14,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "agni_v3",
+          "tx_hash": "0xca89415b66668e518efec8d9a31fed391e45888b8cb08fec3708dd7429cebea4"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 300,
+        "stratum_max_raw": "4000773552",
+        "stratum_min_raw": "33423171",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-779ded-09bc4e-large-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "99.5388386282346825528804",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1374,
+        "leg": {
+          "block_number": 100656498,
+          "block_time": "2026-09-15 03:35:08.000 UTC",
+          "dune_amount_usd": 99.611633031936,
+          "evt_index": 8,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "agni_v3",
+          "tx_hash": "0x05a94f7061eddeea1213ca7120dc93dd2cf4e0d3a46692c3e3961028bc2232ab"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 300,
+        "stratum_max_raw": "4000773552",
+        "stratum_min_raw": "33423171",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-779ded-09bc4e-large-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "36.7581347719122838180926",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1281,
+        "leg": {
+          "block_number": 100494313,
+          "block_time": "2026-09-11 09:28:58.000 UTC",
+          "dune_amount_usd": 36.794680400664,
+          "evt_index": 11,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "moe_lb_v2_2",
+          "tx_hash": "0x68d3197cd50412aaa751e1b6463f3b0412b5a855a9b3978c132b48768dee94f2"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 300,
+        "stratum_max_raw": "4000773552",
+        "stratum_min_raw": "33423171",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-779ded-09bc4e-large-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "110.7991678236574557138036",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1390,
+        "leg": {
+          "block_number": 100614981,
+          "block_time": "2026-09-14 04:31:14.000 UTC",
+          "dune_amount_usd": 110.88792927913602,
+          "evt_index": 11,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "moe_lb_v2_2",
+          "tx_hash": "0x1cb4c23d5b5bc511febbd9a7e92d1a6fc7036ab4536d81972d39543f10bc64b3"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 300,
+        "stratum_max_raw": "4000773552",
+        "stratum_min_raw": "33423171",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "large"
+    },
+    "emp-779ded-09bc4e-low-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "3.1668984028553208963018",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 305,
+        "leg": {
+          "block_number": 100499969,
+          "block_time": "2026-09-11 12:37:30.000 UTC",
+          "dune_amount_usd": 3.171377083488,
+          "evt_index": 10,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "agni_v3",
+          "tx_hash": "0x85cc85fad65fb01953b0d6b6642208d894bb5c0525898a67cbb887a4c734a4ec"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 553,
+        "stratum_max_raw": "5989024",
+        "stratum_min_raw": "1519175",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-779ded-09bc4e-low-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "3.8142368372941523849502",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 391,
+        "leg": {
+          "block_number": 100960255,
+          "block_time": "2026-09-22 04:20:22.000 UTC",
+          "dune_amount_usd": 3.815380150891,
+          "evt_index": 19,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "moe_lb_v2_2",
+          "tx_hash": "0x424704fb201900a7fa8bd12b3598e3bd3e1637f5fb066fda3f7e2f9a6527673a"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 553,
+        "stratum_max_raw": "5989024",
+        "stratum_min_raw": "1519175",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-779ded-09bc4e-low-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "2.0065841057404269155994",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 150,
+        "leg": {
+          "block_number": 101053422,
+          "block_time": "2026-09-24 08:05:56.000 UTC",
+          "dune_amount_usd": 2.007663928775,
+          "evt_index": 5,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "agni_v3",
+          "tx_hash": "0x38fbb2196c425167a3b8013da3e1196cf8e29f955b7af75a644b7bf85024f346"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 553,
+        "stratum_max_raw": "5989024",
+        "stratum_min_raw": "1519175",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "low"
+    },
+    "emp-779ded-09bc4e-low-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "5.7032491970727267787326",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 618,
+        "leg": {
+          "block_number": 100919163,
+          "block_time": "2026-09-21 05:30:38.000 UTC",
+          "dune_amount_usd": 5.7033242232229995,
+          "evt_index": 4,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "agni_v3",
+          "tx_hash": "0xa440db46e8bcc485c6f27427a4daab78eaa4456e02873b129d3815c0b61734ce"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 553,
+        "stratum_max_raw": "5989024",
+        "stratum_min_raw": "1519175",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-779ded-09bc4e-medium-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "9.3933486129624358718154",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 845,
+        "leg": {
+          "block_number": 100796132,
+          "block_time": "2026-09-18 09:09:36.000 UTC",
+          "dune_amount_usd": 9.39305226951,
+          "evt_index": 3,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "agni_v3",
+          "tx_hash": "0x7c189bc08a1b7bf9222144584da98ad15e464f353e0bf7ecd631f17442c93b36"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 632,
+        "stratum_max_raw": "33336323",
+        "stratum_min_raw": "5993607",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "medium"
+    },
+    "emp-779ded-09bc4e-medium-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "8.5195553170509358470084",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 791,
+        "leg": {
+          "block_number": 100702091,
+          "block_time": "2026-09-16 04:54:54.000 UTC",
+          "dune_amount_usd": 8.523227847378,
+          "evt_index": 44,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "agni_v3",
+          "tx_hash": "0xbca40e6b7cb58da347bcd0bbdc7eb6aeca6a71928399cf658f84d32b5fad3354"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 632,
+        "stratum_max_raw": "33336323",
+        "stratum_min_raw": "5993607",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-779ded-09bc4e-medium-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "9.9903765103328820",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 900,
+        "leg": {
+          "block_number": 101024841,
+          "block_time": "2026-09-23 16:13:14.000 UTC",
+          "dune_amount_usd": 9.996578222024,
+          "evt_index": 8,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "agni_v3",
+          "tx_hash": "0x89a762f2dcbe4b06942c2bc01525106cc171fe306e3396f74de62e5a790d6791"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 632,
+        "stratum_max_raw": "33336323",
+        "stratum_min_raw": "5993607",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-779ded-09bc4e-medium-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "18.329558576602710762363",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1116,
+        "leg": {
+          "block_number": 100646801,
+          "block_time": "2026-09-14 22:11:54.000 UTC",
+          "dune_amount_usd": 18.340706707104,
+          "evt_index": 12,
+          "leg_token_out": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+          "source_key": "agni_v3",
+          "tx_hash": "0xa1ab0ca294b17984cb0539830c81ea73d007b22c0136a01e0ae4162560acb8ea"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 632,
+        "stratum_max_raw": "33336323",
+        "stratum_min_raw": "5993607",
+        "unit": "pair",
+        "unit_legs": 1579
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-779ded-78c1b0-large-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1395.5472069045171077634528",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5991,
+        "leg": {
+          "block_number": 101072142,
+          "block_time": "2026-09-24 18:29:56.000 UTC",
+          "dune_amount_usd": 1386.7787358599667,
+          "evt_index": 2,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0x288cbe98846d9d417c2ec61323c3955fc84d158f657c9f1f80ec2e3d59830d4f"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 1290,
+        "stratum_max_raw": "6036660000",
+        "stratum_min_raw": "1202825694",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-779ded-78c1b0-large-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1218.885876519673601292",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5460,
+        "leg": {
+          "block_number": 101053396,
+          "block_time": "2026-09-24 08:05:04.000 UTC",
+          "dune_amount_usd": 1219.2081032398103,
+          "evt_index": 3,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0x974f3bcfa02ea8c0bfa65f2e2baa6e5ac64d065099d190c8b6b86e085d0991ef"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 1290,
+        "stratum_max_raw": "6036660000",
+        "stratum_min_raw": "1202825694",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "large"
+    },
+    "emp-779ded-78c1b0-large-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1330.971831811878510106185",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5769,
+        "leg": {
+          "block_number": 100934954,
+          "block_time": "2026-09-21 14:17:00.000 UTC",
+          "dune_amount_usd": 1328.3332678741467,
+          "evt_index": 2,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0xfc8a01d17d412d8051d93fb331a4134162b304640092bdc76359cb042307e57d"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 1290,
+        "stratum_max_raw": "6036660000",
+        "stratum_min_raw": "1202825694",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-779ded-78c1b0-large-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1852.585448946598639434",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 6188,
+        "leg": {
+          "block_number": 101026744,
+          "block_time": "2026-09-23 17:16:40.000 UTC",
+          "dune_amount_usd": 1851.467127729509,
+          "evt_index": 3,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0x0c0b5a5117e58efb5d47e6ca052d900ad1e8685fc3d390099fb3714dd7fbca23"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 1290,
+        "stratum_max_raw": "6036660000",
+        "stratum_min_raw": "1202825694",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-779ded-78c1b0-low-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "5.0413607782842464807394",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 909,
+        "leg": {
+          "block_number": 101056096,
+          "block_time": "2026-09-24 09:35:04.000 UTC",
+          "dune_amount_usd": 5.04869648614544,
+          "evt_index": 30,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0xcf3e5f7282c6095aba62da723166fe8fccb68c26b7bbb604791e4cc618931242"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 2376,
+        "stratum_max_raw": "402400000",
+        "stratum_min_raw": "1216850",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-779ded-78c1b0-low-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "89.3157532807336636325898",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1524,
+        "leg": {
+          "block_number": 101063196,
+          "block_time": "2026-09-24 13:31:44.000 UTC",
+          "dune_amount_usd": 89.44596926977304,
+          "evt_index": 16,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "moe_lb_v2_2",
+          "tx_hash": "0x074d454111698a26e2bd1b820e51fe7a64ef5244c844c7aa64e8dda0aef203f2"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 2376,
+        "stratum_max_raw": "402400000",
+        "stratum_min_raw": "1216850",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "low"
+    },
+    "emp-779ded-78c1b0-low-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "313.687832047942161918",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2281,
+        "leg": {
+          "block_number": 100811614,
+          "block_time": "2026-09-18 17:45:40.000 UTC",
+          "dune_amount_usd": 312.9895504785259,
+          "evt_index": 3,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0x3da6aaa91e97ac24d8bee3bf795ce46574b5c702d08e6b536c70d73462d312c8"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 2376,
+        "stratum_max_raw": "402400000",
+        "stratum_min_raw": "1216850",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-779ded-78c1b0-low-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "49.946892358597498725441",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1415,
+        "leg": {
+          "block_number": 100894893,
+          "block_time": "2026-09-20 16:01:38.000 UTC",
+          "dune_amount_usd": 49.76659192053701,
+          "evt_index": 47,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0xd71820b7c9287108685662931c70bf183144c22b496b56c8788bee374a2ca79b"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 2376,
+        "stratum_max_raw": "402400000",
+        "stratum_min_raw": "1216850",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-779ded-78c1b0-medium-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1199.6843748648891041545764",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5420,
+        "leg": {
+          "block_number": 101053865,
+          "block_time": "2026-09-24 08:20:42.000 UTC",
+          "dune_amount_usd": 1198.6055418645442,
+          "evt_index": 3,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0xfb489b8ddd0b968325d7da419e38cf792687f83f57e9e4225c4f126191520efc"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 2715,
+        "stratum_max_raw": "1202617641",
+        "stratum_min_raw": "402450000",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-779ded-78c1b0-medium-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "560.4894479808831113418228",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 3362,
+        "leg": {
+          "block_number": 100673629,
+          "block_time": "2026-09-15 13:06:10.000 UTC",
+          "dune_amount_usd": 559.864,
+          "evt_index": 6,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0xf99f85347872a766dd32e3f6b9839f3504b6c89ff567889236fe8aaca9d5e6d5"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 2715,
+        "stratum_max_raw": "1202617641",
+        "stratum_min_raw": "402450000",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-779ded-78c1b0-medium-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1184.8397892975153436189194",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5274,
+        "leg": {
+          "block_number": 100729851,
+          "block_time": "2026-09-16 20:20:14.000 UTC",
+          "dune_amount_usd": 1184.5775753638463,
+          "evt_index": 2,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0x377593082ccfe04c50326da287a1d03983f97e395987d903337b2241bc32f5b9"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 2715,
+        "stratum_max_raw": "1202617641",
+        "stratum_min_raw": "402450000",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-779ded-78c1b0-medium-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1193.3459355312141106717074",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5375,
+        "leg": {
+          "block_number": 100672198,
+          "block_time": "2026-09-15 12:18:28.000 UTC",
+          "dune_amount_usd": 1192.4860190672186,
+          "evt_index": 2,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0xbe4184afade3db082ce9c953913c9253ec40300b909b2337fe9c4c0d2648385f"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 2715,
+        "stratum_max_raw": "1202617641",
+        "stratum_min_raw": "402450000",
+        "unit": "pair",
+        "unit_legs": 6788
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "medium"
+    },
+    "emp-78c1b0-779ded-large-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "2807.079621791908012176266598",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5693,
+        "leg": {
+          "block_number": 100962381,
+          "block_time": "2026-09-22 05:31:14.000 UTC",
+          "dune_amount_usd": 2650.0524050281774,
+          "evt_index": 5,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "moe_lb_v2_2",
+          "tx_hash": "0xa9b2df85148735d2d56209f1c40f831e97ec71dd4cb424bc1e1f2706b9f37cfb"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 1183,
+        "stratum_max_raw": "10401180000000000000000",
+        "stratum_min_raw": "2063739940969568534528",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-78c1b0-779ded-large-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "2900.120999224595286342500352",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5907,
+        "leg": {
+          "block_number": 100668129,
+          "block_time": "2026-09-15 10:02:50.000 UTC",
+          "dune_amount_usd": 2391.341815027585,
+          "evt_index": 2,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x5f781611f22d188f0ff82d99dd3330a0f7ac163f04acc4ad8f7d7f013f0e4310"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 1183,
+        "stratum_max_raw": "10401180000000000000000",
+        "stratum_min_raw": "2063739940969568534528",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-78c1b0-779ded-large-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1473.438041561125183977160704",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5245,
+        "leg": {
+          "block_number": 100680767,
+          "block_time": "2026-09-15 17:04:06.000 UTC",
+          "dune_amount_usd": 1192.4729940034588,
+          "evt_index": 2,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x5fa71fec2f7ae1ef828e44d3be51264084ee6334abc9689d6fb363ebefbe781c"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 1183,
+        "stratum_max_raw": "10401180000000000000000",
+        "stratum_min_raw": "2063739940969568534528",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "large"
+    },
+    "emp-78c1b0-779ded-large-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "3397.5450249",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 5999,
+        "leg": {
+          "block_number": 100664777,
+          "block_time": "2026-09-15 08:11:06.000 UTC",
+          "dune_amount_usd": 2797.0661017,
+          "evt_index": 3,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x0e113b00493eadf8c312a1790a7e441a76c8a80c44db130602ad6a810eea34c8"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 1183,
+        "stratum_max_raw": "10401180000000000000000",
+        "stratum_min_raw": "2063739940969568534528",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-78c1b0-779ded-low-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "3.179625287582421413265408",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1301,
+        "leg": {
+          "block_number": 100585255,
+          "block_time": "2026-09-13 12:00:22.000 UTC",
+          "dune_amount_usd": 2.6233092917913674,
+          "evt_index": 31,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x0111d82e68909b8daa74a301541f107da8dfbe4a16e472e808aaee614a660230"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 2179,
+        "stratum_max_raw": "47151835781745459200",
+        "stratum_min_raw": "1",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "low"
+    },
+    "emp-78c1b0-779ded-low-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "31.770051601294936613833563",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2488,
+        "leg": {
+          "block_number": 101052920,
+          "block_time": "2026-09-24 07:49:12.000 UTC",
+          "dune_amount_usd": 31.230626807440867,
+          "evt_index": 11,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "moe_lb_v2_2",
+          "tx_hash": "0x2d1336d5528eb7486f2bea0e3aafdc54b6322a3a2d1294520358567ef612f543"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 2179,
+        "stratum_max_raw": "47151835781745459200",
+        "stratum_min_raw": "1",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-78c1b0-779ded-low-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "4.814085577279517129905494",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1564,
+        "leg": {
+          "block_number": 100997070,
+          "block_time": "2026-09-23 00:47:32.000 UTC",
+          "dune_amount_usd": 4.804268993105318,
+          "evt_index": 14,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0xc943a57f77fdca5ccf8d80fd87d27eea2026de378eb496994b19229184c17da7"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 2179,
+        "stratum_max_raw": "47151835781745459200",
+        "stratum_min_raw": "1",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-78c1b0-779ded-low-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "5.390375811910492392552663",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1659,
+        "leg": {
+          "block_number": 100929123,
+          "block_time": "2026-09-21 11:02:38.000 UTC",
+          "dune_amount_usd": 5.022348213165974,
+          "evt_index": 3,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "moe_lb_v2_2",
+          "tx_hash": "0x85c66236a4760e377a7ef708bd7f03f0af8d3f1b92a12aad8e03a1ff8cc02bd6"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 2179,
+        "stratum_max_raw": "47151835781745459200",
+        "stratum_min_raw": "1",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-78c1b0-779ded-medium-1": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "67.41409300921838020119",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2641,
+        "leg": {
+          "block_number": 100660502,
+          "block_time": "2026-09-15 05:48:36.000 UTC",
+          "dune_amount_usd": 57.82686566957737,
+          "evt_index": 5,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0xeda54fb34b63dbbf8569ac496f498d4cd04cd209c44486ab45e846a1666dae42"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 2490,
+        "stratum_max_raw": "2063437963042427611539",
+        "stratum_min_raw": "47366956280843118062",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-78c1b0-779ded-medium-2": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "677.247000",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 3393,
+        "leg": {
+          "block_number": 101061439,
+          "block_time": "2026-09-24 12:33:10.000 UTC",
+          "dune_amount_usd": 675.277,
+          "evt_index": 23,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x16b8aca434fd5ef2a4c5ebda2c0d35d5c79b750601c3ad3a5147692c6e2989fc"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 2490,
+        "stratum_max_raw": "2063437963042427611539",
+        "stratum_min_raw": "47366956280843118062",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "medium"
+    },
+    "emp-78c1b0-779ded-medium-3": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "541.797600",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 3185,
+        "leg": {
+          "block_number": 100804706,
+          "block_time": "2026-09-18 13:55:24.000 UTC",
+          "dune_amount_usd": 476.7536,
+          "evt_index": 10,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0xa2765ddfd5e6666aebd8d6d61cd49211d8ddb1e6a08af0bbc72233ae74e08728"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 2490,
+        "stratum_max_raw": "2063437963042427611539",
+        "stratum_min_raw": "47366956280843118062",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-78c1b0-779ded-medium-4": {
+      "direct_pools": 4,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "677.247000",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 4341,
+        "leg": {
+          "block_number": 100532626,
+          "block_time": "2026-09-12 06:46:04.000 UTC",
+          "dune_amount_usd": 582.804,
+          "evt_index": 6,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0xc46bb3056a980aef551e69b1a7c1f772a039ea09f949bc34554e33913c8b21a0"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 2490,
+        "stratum_max_raw": "2063437963042427611539",
+        "stratum_min_raw": "47366956280843118062",
+        "unit": "pair",
+        "unit_legs": 6226
+      },
+      "sor_direct_pools": 2,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-cda86a-deadde-large-1": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "2689.7088675",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 4092,
+        "leg": {
+          "block_number": 100499858,
+          "block_time": "2026-09-11 12:33:48.000 UTC",
+          "dune_amount_usd": 2460.0864080950178,
+          "evt_index": 17,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0xb86ee718f24b2f65eed813ae64f94aee9dbde84a2622cd18de55890bae88d261"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 818,
+        "stratum_max_raw": "1480130000000000000",
+        "stratum_min_raw": "335020000000000000",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-cda86a-deadde-large-2": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "2392.8146238",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 3863,
+        "leg": {
+          "block_number": 101063200,
+          "block_time": "2026-09-24 13:31:52.000 UTC",
+          "dune_amount_usd": 2370.326455216113,
+          "evt_index": 3,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0x49bf08ffb03a07596eb1ebc651371509d1a4cb49a04e9ec5e1440995d85cba41"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 818,
+        "stratum_max_raw": "1480130000000000000",
+        "stratum_min_raw": "335020000000000000",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-cda86a-deadde-large-3": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "2352.6203469",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 3672,
+        "leg": {
+          "block_number": 100847239,
+          "block_time": "2026-09-19 13:33:10.000 UTC",
+          "dune_amount_usd": 2304.656232228144,
+          "evt_index": 10,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0x986496fa49d0a7e7941e8c36038c01aae73921cde66ce92e5ca861fb3602d127"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 818,
+        "stratum_max_raw": "1480130000000000000",
+        "stratum_min_raw": "335020000000000000",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "large"
+    },
+    "emp-cda86a-deadde-large-4": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "3089.2004058",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 4186,
+        "leg": {
+          "block_number": 101047929,
+          "block_time": "2026-09-24 05:02:50.000 UTC",
+          "dune_amount_usd": 3083.14866997594,
+          "evt_index": 11,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0x7c8780e732829eded5ea9b29bdbab47caaa2f2899bed52dce639739c413f3107"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 818,
+        "stratum_max_raw": "1480130000000000000",
+        "stratum_min_raw": "335020000000000000",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-cda86a-deadde-low-1": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "134.9062872",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1064,
+        "leg": {
+          "block_number": 100943489,
+          "block_time": "2026-09-21 19:01:30.000 UTC",
+          "dune_amount_usd": 138.33098364009876,
+          "evt_index": 2,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0xf9c5f6b33b7d2e9036646a76f3506e032f6c78a97920b7bbad168cf314b58beb"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1508,
+        "stratum_max_raw": "66260000000000000",
+        "stratum_min_raw": "1755912703550461",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-cda86a-deadde-low-2": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "164.4687201",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1282,
+        "leg": {
+          "block_number": 100962808,
+          "block_time": "2026-09-22 05:45:28.000 UTC",
+          "dune_amount_usd": 167.17811087723948,
+          "evt_index": 5,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0x7fe5812a9578dd95e28021deb1e05d410c80236b70ee5dd389d5619cb9b713f8"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1508,
+        "stratum_max_raw": "66260000000000000",
+        "stratum_min_raw": "1755912703550461",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-cda86a-deadde-low-3": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "135.260682",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1068,
+        "leg": {
+          "block_number": 100970256,
+          "block_time": "2026-09-22 09:53:44.000 UTC",
+          "dune_amount_usd": 138.04505145979883,
+          "evt_index": 7,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0x3ec2c6ac7acd3e8431837a1d83ddaf200c31d60d1b912cde404c108bc883ebf6"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1508,
+        "stratum_max_raw": "66260000000000000",
+        "stratum_min_raw": "1755912703550461",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "low"
+    },
+    "emp-cda86a-deadde-low-4": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "137.4461166",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1100,
+        "leg": {
+          "block_number": 100673241,
+          "block_time": "2026-09-15 12:53:14.000 UTC",
+          "dune_amount_usd": 126.74757312281679,
+          "evt_index": 2,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0x2c57c47c158ee89c0c734aeeb1e98e5f8635ab3bce95a8526129a7ce6f519543"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1508,
+        "stratum_max_raw": "66260000000000000",
+        "stratum_min_raw": "1755912703550461",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-cda86a-deadde-medium-1": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "323.5329195",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2612,
+        "leg": {
+          "block_number": 100501888,
+          "block_time": "2026-09-11 13:41:28.000 UTC",
+          "dune_amount_usd": 300.8629797855868,
+          "evt_index": 22,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0x29a0f181487acdfa7a1d172107975c1fcce3f9eb106da5a4d0eb663fff90aeac"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1723,
+        "stratum_max_raw": "334030000000000000",
+        "stratum_min_raw": "66330000000000000",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "medium"
+    },
+    "emp-cda86a-deadde-medium-2": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "307.9100154",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2540,
+        "leg": {
+          "block_number": 101053060,
+          "block_time": "2026-09-24 07:53:52.000 UTC",
+          "dune_amount_usd": 308.9574127477737,
+          "evt_index": 2,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0xccce0a3631e559499f7cdce6fd1c0bfd288883218471ca72cd6b5e439774a32d"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1723,
+        "stratum_max_raw": "334030000000000000",
+        "stratum_min_raw": "66330000000000000",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-cda86a-deadde-medium-3": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "234.1663641",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2076,
+        "leg": {
+          "block_number": 100982780,
+          "block_time": "2026-09-22 16:51:12.000 UTC",
+          "dune_amount_usd": 238.6738798088524,
+          "evt_index": 9,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0xda05d3333b8b216e0f2b9f4ae0b9e29ccc4f463dbff8169767db89d374892c60"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1723,
+        "stratum_max_raw": "334030000000000000",
+        "stratum_min_raw": "66330000000000000",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-cda86a-deadde-medium-4": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "485.0778825",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 3056,
+        "leg": {
+          "block_number": 100942003,
+          "block_time": "2026-09-21 18:11:58.000 UTC",
+          "dune_amount_usd": 495.6506868084908,
+          "evt_index": 2,
+          "leg_token_out": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+          "source_key": "agni_v3",
+          "tx_hash": "0xc42ee4af7e9a72dd8576676b94351be224bdb761f8d7ee6fb16874ed8df1a444"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1723,
+        "stratum_max_raw": "334030000000000000",
+        "stratum_min_raw": "66330000000000000",
+        "unit": "pair",
+        "unit_legs": 4308
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-deadde-cda86a-large-1": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "4835.540346",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2851,
+        "leg": {
+          "block_number": 100646151,
+          "block_time": "2026-09-14 21:50:14.000 UTC",
+          "dune_amount_usd": 4594.374094119516,
+          "evt_index": 2,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x3245a8fbb98523cb825b1d64b5cd3c6a283978765cead7238abe23e3c4cd2f55"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 567,
+        "stratum_max_raw": "6985092154757939487",
+        "stratum_min_raw": "525437034736995381",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-deadde-cda86a-large-2": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "2112.449532",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2705,
+        "leg": {
+          "block_number": 100871290,
+          "block_time": "2026-09-20 02:54:52.000 UTC",
+          "dune_amount_usd": 2038.024966814003,
+          "evt_index": 2,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x938bf064b9e5936fa13d805cf0bebf2e8beb7de1fdd69bb91b42d5622afc8245"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 567,
+        "stratum_max_raw": "6985092154757939487",
+        "stratum_min_raw": "525437034736995381",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "large"
+    },
+    "emp-deadde-cda86a-large-3": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "8027.78665",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2902,
+        "leg": {
+          "block_number": 100659813,
+          "block_time": "2026-09-15 05:25:38.000 UTC",
+          "dune_amount_usd": 7422.862532236069,
+          "evt_index": 19,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x0817d55e3d101df0a9d21ff18455add8fd27c758818dbc9fd065801391b8e12e"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 567,
+        "stratum_max_raw": "6985092154757939487",
+        "stratum_min_raw": "525437034736995381",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-deadde-cda86a-large-4": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "2703.953678",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2791,
+        "leg": {
+          "block_number": 101011578,
+          "block_time": "2026-09-23 08:51:08.000 UTC",
+          "dune_amount_usd": 2756.8352161152284,
+          "evt_index": 2,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x1bb7cf0c0e2d425bb17de96883f00373b722be35df965c374a5b86f7e912611c"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 567,
+        "stratum_max_raw": "6985092154757939487",
+        "stratum_min_raw": "525437034736995381",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "emp-deadde-cda86a-low-1": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "73.618842",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 720,
+        "leg": {
+          "block_number": 100870719,
+          "block_time": "2026-09-20 02:35:50.000 UTC",
+          "dune_amount_usd": 71.50241526790298,
+          "evt_index": 5,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x7b7806d8f0cb4b6e6b39425ba632dbcdc305c4b8f6c29b68f8c45f4a2eb7b931"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1043,
+        "stratum_max_raw": "56330000000000000",
+        "stratum_min_raw": "1602470494180931",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "low"
+    },
+    "emp-deadde-cda86a-low-2": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "100.711866",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 850,
+        "leg": {
+          "block_number": 101040393,
+          "block_time": "2026-09-24 00:51:38.000 UTC",
+          "dune_amount_usd": 100.53973924840861,
+          "evt_index": 2,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x2ffbfca8cbae4411e6bc1db13ced06fcd5b50805e8b02a73ddd9bddf95bea1b4"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1043,
+        "stratum_max_raw": "56330000000000000",
+        "stratum_min_raw": "1602470494180931",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-deadde-cda86a-low-3": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "62.437594",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 642,
+        "leg": {
+          "block_number": 100809845,
+          "block_time": "2026-09-18 16:46:42.000 UTC",
+          "dune_amount_usd": 60.31843099929211,
+          "evt_index": 2,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x7f0e2781e179e54834674323db023fd9e9c12cd2c8043ba6f67e524c33a93e29"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1043,
+        "stratum_max_raw": "56330000000000000",
+        "stratum_min_raw": "1602470494180931",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-deadde-cda86a-low-4": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "52.358344",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 531,
+        "leg": {
+          "block_number": 101070601,
+          "block_time": "2026-09-24 17:38:34.000 UTC",
+          "dune_amount_usd": 52.20626560771883,
+          "evt_index": 12,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x98e807beebb0928c8dbe972800a4b43495b7e10859056c06bde3a97921ddf855"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1043,
+        "stratum_max_raw": "56330000000000000",
+        "stratum_min_raw": "1602470494180931",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "emp-deadde-cda86a-medium-1": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "743.069188",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2032,
+        "leg": {
+          "block_number": 100878008,
+          "block_time": "2026-09-20 06:38:48.000 UTC",
+          "dune_amount_usd": 712.7132066365247,
+          "evt_index": 2,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x153c2fc05476a608c5a29474641598d932d151d36ab491bad0cffecbfef014ab"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1192,
+        "stratum_max_raw": "524820000000000000",
+        "stratum_min_raw": "56620000000000000",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-deadde-cda86a-medium-2": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "1116.189584",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2268,
+        "leg": {
+          "block_number": 100736136,
+          "block_time": "2026-09-16 23:49:44.000 UTC",
+          "dune_amount_usd": 1000.8926356073159,
+          "evt_index": 2,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0xc48518baad6eb1745c955db03782192fad1e70e7cbe2433962dd0cbb5d6cd2c9"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1192,
+        "stratum_max_raw": "524820000000000000",
+        "stratum_min_raw": "56620000000000000",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "medium"
+    },
+    "emp-deadde-cda86a-medium-3": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "194.8655",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1336,
+        "leg": {
+          "block_number": 101026520,
+          "block_time": "2026-09-23 17:09:12.000 UTC",
+          "dune_amount_usd": 192.474871610921,
+          "evt_index": 2,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0x476f5960954723c62683da2abf88f4e5295af1cf32563a6b59e78eb7cc4c367f"
+        },
+        "sample_rank": 3,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1192,
+        "stratum_max_raw": "524820000000000000",
+        "stratum_min_raw": "56620000000000000",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "emp-deadde-cda86a-medium-4": {
+      "direct_pools": 9,
+      "full_source_reachable": true,
+      "group": "activity_pair",
+      "notional_usd": "220.184576",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1420,
+        "leg": {
+          "block_number": 100870984,
+          "block_time": "2026-09-20 02:44:40.000 UTC",
+          "dune_amount_usd": 213.56022471560973,
+          "evt_index": 35,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0xf124f7e83160b798946230a364c6dc563dc6b311b287b1d6f5bbfa873a99d300"
+        },
+        "sample_rank": 4,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1192,
+        "stratum_max_raw": "524820000000000000",
+        "stratum_min_raw": "56620000000000000",
+        "unit": "pair",
+        "unit_legs": 2980
+      },
+      "sor_direct_pools": 7,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "nod-09bc4e-c96de2-large-1": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "16.741520559474",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 3179,
+        "leg": {
+          "block_number": 100785090,
+          "block_time": "2026-09-18 03:01:32.000 UTC",
+          "dune_amount_usd": 16.777697329285544,
+          "evt_index": 11,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "fusionx_v3",
+          "tx_hash": "0x02b3b91c6c72e815d98fd84a624965fcbf106db8f0b6a1ee9a914ea881257af2"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 733,
+        "stratum_max_raw": "1749875000",
+        "stratum_min_raw": "14915372",
+        "unit": "token",
+        "unit_legs": 3857
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "large"
+    },
+    "nod-09bc4e-c96de2-large-2": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "16.282909924154",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 3168,
+        "leg": {
+          "block_number": 100812456,
+          "block_time": "2026-09-18 18:13:44.000 UTC",
+          "dune_amount_usd": 16.328532922209714,
+          "evt_index": 26,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0xce24ec39d0d6a070025850d22b66aec235026e213f894cc44d1b5623b2bae8a6"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 733,
+        "stratum_max_raw": "1749875000",
+        "stratum_min_raw": "14915372",
+        "unit": "token",
+        "unit_legs": 3857
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "nod-09bc4e-c96de2-low-1": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "1.388772255752",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 722,
+        "leg": {
+          "block_number": 101057866,
+          "block_time": "2026-09-24 10:34:04.000 UTC",
+          "dune_amount_usd": 1.389116768424,
+          "evt_index": 3,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x4109dbb2535e5b34c3c0ea44bc02479e8f7620a8e65d5c89e86efc46a7875d27"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1350,
+        "stratum_max_raw": "3403747",
+        "stratum_min_raw": "214220",
+        "unit": "token",
+        "unit_legs": 3857
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "nod-09bc4e-c96de2-low-2": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "2.123222082478",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1040,
+        "leg": {
+          "block_number": 100737825,
+          "block_time": "2026-09-17 00:46:02.000 UTC",
+          "dune_amount_usd": 2.1370390839914974,
+          "evt_index": 9,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "fusionx_v3",
+          "tx_hash": "0x24f038d11230f61bb7e2feb1c59ed8d935a6cde9781b494e88a12d4a66b15edc"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 1350,
+        "stratum_max_raw": "3403747",
+        "stratum_min_raw": "214220",
+        "unit": "token",
+        "unit_legs": 3857
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "low"
+    },
+    "nod-09bc4e-c96de2-medium-1": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "3.631576606518",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1617,
+        "leg": {
+          "block_number": 100634633,
+          "block_time": "2026-09-14 15:26:18.000 UTC",
+          "dune_amount_usd": 3.5736354431225625,
+          "evt_index": 13,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "moe_classic_v1",
+          "tx_hash": "0xe98c5c3d63750e42a355b6fadde58c9d87e2042552a329b9731e82b10bcf3640"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1543,
+        "stratum_max_raw": "14910257",
+        "stratum_min_raw": "3405850",
+        "unit": "token",
+        "unit_legs": 3857
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    },
+    "nod-09bc4e-c96de2-medium-2": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "5.06851527551",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 2037,
+        "leg": {
+          "block_number": 100873530,
+          "block_time": "2026-09-20 04:09:32.000 UTC",
+          "dune_amount_usd": 5.074924972124813,
+          "evt_index": 8,
+          "leg_token_out": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+          "source_key": "agni_v3",
+          "tx_hash": "0xb1fd75d2b42c8e178d5d2de63fb0679dc79231e4b251c1b06c6dd7b83a990002"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 1543,
+        "stratum_max_raw": "14910257",
+        "stratum_min_raw": "3405850",
+        "unit": "token",
+        "unit_legs": 3857
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "medium"
+    },
+    "nod-c96de2-09bc4e-large-1": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "842.1265",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 1069,
+        "leg": {
+          "block_number": 100683909,
+          "block_time": "2026-09-15 18:48:50.000 UTC",
+          "dune_amount_usd": 761.007,
+          "evt_index": 13,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0xe87db15e222a41cd6b55175447522552c335ab79e6214a667103bda571cf2467"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 209,
+        "stratum_max_raw": "1000000",
+        "stratum_min_raw": "1000000",
+        "unit": "token",
+        "unit_legs": 1103
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "large"
+    },
+    "nod-c96de2-09bc4e-large-2": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "842.1265",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 986,
+        "leg": {
+          "block_number": 100676478,
+          "block_time": "2026-09-15 14:41:08.000 UTC",
+          "dune_amount_usd": 763.7355,
+          "evt_index": 5,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0xa3eceac424c9ccd5566797d0adec89a8fdccf4ec4528b8f91a2485fce99366cb"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.8,
+          0.99
+        ],
+        "stratum_legs": 209,
+        "stratum_max_raw": "1000000",
+        "stratum_min_raw": "1000000",
+        "unit": "token",
+        "unit_legs": 1103
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "large"
+    },
+    "nod-c96de2-09bc4e-low-1": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "214.8997351555",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 196,
+        "leg": {
+          "block_number": 100501888,
+          "block_time": "2026-09-11 13:41:28.000 UTC",
+          "dune_amount_usd": 197.81577230005905,
+          "evt_index": 10,
+          "leg_token_out": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "source_key": "agni_v3",
+          "tx_hash": "0xcdb64eb0bd1960a4d7eead56c063670b91d1e51f854f77079c617c8644186dc1"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 386,
+        "stratum_max_raw": "411400",
+        "stratum_min_raw": "5000",
+        "unit": "token",
+        "unit_legs": 1103
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "low"
+    },
+    "nod-c96de2-09bc4e-low-2": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "346.4508421",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 437,
+        "leg": {
+          "block_number": 100728032,
+          "block_time": "2026-09-16 19:19:36.000 UTC",
+          "dune_amount_usd": 312.35512087999996,
+          "evt_index": 42,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x3b5870160475c0179662620ce3751b50d0b3fbcc0d0ae1ee183f89588710fc45"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.05,
+          0.4
+        ],
+        "stratum_legs": 386,
+        "stratum_max_raw": "411400",
+        "stratum_min_raw": "5000",
+        "unit": "token",
+        "unit_legs": 1103
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "low"
+    },
+    "nod-c96de2-09bc4e-medium-1": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "346.70348005",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 494,
+        "leg": {
+          "block_number": 100726685,
+          "block_time": "2026-09-16 18:34:42.000 UTC",
+          "dune_amount_usd": 312.4152514,
+          "evt_index": 3,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0x1a6d8d5b185c82d4ce29f0ee8be39254767bffb727a2f6faffd01ae234b9fff6"
+        },
+        "sample_rank": 1,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 441,
+        "stratum_max_raw": "1000000",
+        "stratum_min_raw": "411400",
+        "unit": "token",
+        "unit_legs": 1103
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "tuning",
+      "stratum": "medium"
+    },
+    "nod-c96de2-09bc4e-medium-2": {
+      "direct_pools": 0,
+      "full_source_reachable": true,
+      "group": "no_direct_pool_pair",
+      "notional_usd": "545.61375935",
+      "origin": "leg_derived",
+      "selection": {
+        "amount_rank": 634,
+        "leg": {
+          "block_number": 100912592,
+          "block_time": "2026-09-21 01:51:36.000 UTC",
+          "dune_amount_usd": 528.36018235,
+          "evt_index": 69,
+          "leg_token_out": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+          "source_key": "agni_v3",
+          "tx_hash": "0xc42eeaeb0ef5f77c315f39daa663143abe6c1e200fe81a5bcef56b56436e709d"
+        },
+        "sample_rank": 2,
+        "stratum_band": [
+          0.4,
+          0.8
+        ],
+        "stratum_legs": 441,
+        "stratum_max_raw": "1000000",
+        "stratum_min_raw": "411400",
+        "unit": "token",
+        "unit_legs": 1103
+      },
+      "sor_direct_pools": 0,
+      "sor_reachable": true,
+      "split": "report",
+      "stratum": "medium"
+    }
+  },
+  "cohorts": {
+    "full_source": {
+      "description": "all five sources' admitted pools; every case",
+      "pools": [
+        "0x03beafc0d25bb553fca274301832419c05269987",
+        "0x1bc31bd8746ef8c8a623d37f9d44166bbc31309f",
+        "0x283fdeeac018e403a9274fbdec3c570dd3157e68",
+        "0x2be6ecf2750d1c4d284ad5604b62392b3ea611dd",
+        "0x368b148052a1a775dbe70e56d04474e54c694cac",
+        "0x36f66548cda219c6fc037037cee063b9f28b13ef",
+        "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+        "0x451368c461f9f4a70c434576b31ed5f258e765f5",
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4",
+        "0x69a707d8deb5423865d84b46b2915bb72f2844d0",
+        "0x78b54c2bc2c5ad8f744915d481e5caaff0c6c8c2",
+        "0x81ce5b3acf2ddfd28013a28edd90fa4b1f61430d",
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4",
+        "0x8fb12e957edbefd0105857fef675d621c8629a71",
+        "0x94d692afff21e045691971a20df4a9adb482ddf6",
+        "0x9608fecddbeea59cff57f61353f6654962500566",
+        "0xc0729cde19741de280b230d650f0fdad2ad79d09"
+      ],
+      "sources": [
+        "agni_v3",
+        "fusionx_v3",
+        "uniswap_v3",
+        "moe_classic_v1",
+        "moe_lb_v2_2"
+      ]
+    },
+    "sor_compatible": {
+      "description": "pools whose source has a Uniswap SOR protocol (V2/V3; Liquidity Book has none); a case unreachable in this pool graph is `unsupported` for SOR, never `no_route`",
+      "pools": [
+        "0x283fdeeac018e403a9274fbdec3c570dd3157e68",
+        "0x2be6ecf2750d1c4d284ad5604b62392b3ea611dd",
+        "0x36f66548cda219c6fc037037cee063b9f28b13ef",
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4",
+        "0x69a707d8deb5423865d84b46b2915bb72f2844d0",
+        "0x78b54c2bc2c5ad8f744915d481e5caaff0c6c8c2",
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4",
+        "0x8fb12e957edbefd0105857fef675d621c8629a71",
+        "0x94d692afff21e045691971a20df4a9adb482ddf6",
+        "0x9608fecddbeea59cff57f61353f6654962500566"
+      ],
+      "sources": [
+        "agni_v3",
+        "fusionx_v3",
+        "uniswap_v3",
+        "moe_classic_v1"
+      ]
+    }
+  },
+  "config": {
+    "path": "config/corpus.yaml",
+    "sha256": "f9dc82d213a09c1aacb32a93d6d5e586e6c4f43a1b6c98056e6e4e52cdd1c0c4"
+  },
+  "corpus_id": "mantle-5src-101082044",
+  "envelope": {
+    "amount_in": {
+      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": "16060102249",
+      "0x1bdd8878252daddd3af2ba30628813271294edc0": "261534848659953747035686",
+      "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": "16064633754",
+      "0x779ded0c9e1022225f8e0630b35a9b54be713736": "16071039249",
+      "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": "23707116162936122271491",
+      "0xc96de26018a54d51c097160568752c4e3bd6c364": "19065513",
+      "0xcda86a272531e8640cd7f1a92c01839911b90bb0": "5436504136065201860",
+      "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": "5973500000000000000"
+    },
+    "check": {
+      "0x03beafc0d25bb553fca274301832419c05269987": {
+        "one_for_zero": "insufficient_liquidity",
+        "zero_for_one": "insufficient_liquidity"
+      },
+      "0x1bc31bd8746ef8c8a623d37f9d44166bbc31309f": {
+        "one_for_zero": "insufficient_liquidity",
+        "zero_for_one": "insufficient_liquidity"
+      },
+      "0x283fdeeac018e403a9274fbdec3c570dd3157e68": {
+        "one_for_zero": "insufficient_liquidity",
+        "zero_for_one": "insufficient_liquidity"
+      },
+      "0x2be6ecf2750d1c4d284ad5604b62392b3ea611dd": {
+        "one_for_zero": "insufficient_output_amount",
+        "zero_for_one": "ok"
+      },
+      "0x368b148052a1a775dbe70e56d04474e54c694cac": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0x36f66548cda219c6fc037037cee063b9f28b13ef": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0x3b6c029e6409f2868769871f9ed6825b15bdca15": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0x451368c461f9f4a70c434576b31ed5f258e765f5": {
+        "one_for_zero": "insufficient_liquidity",
+        "zero_for_one": "insufficient_liquidity"
+      },
+      "0x48ef5640e71001cac842f5627a0bfec1ef09deb7": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4": {
+        "one_for_zero": "insufficient_liquidity",
+        "zero_for_one": "ok"
+      },
+      "0x69a707d8deb5423865d84b46b2915bb72f2844d0": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0x78b54c2bc2c5ad8f744915d481e5caaff0c6c8c2": {
+        "one_for_zero": "insufficient_liquidity",
+        "zero_for_one": "insufficient_liquidity"
+      },
+      "0x81ce5b3acf2ddfd28013a28edd90fa4b1f61430d": {
+        "one_for_zero": "insufficient_liquidity",
+        "zero_for_one": "insufficient_liquidity"
+      },
+      "0x86e3a987187fed135d6d9c114f1857d8144f01e1": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0x8fb12e957edbefd0105857fef675d621c8629a71": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0x94d692afff21e045691971a20df4a9adb482ddf6": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0x9608fecddbeea59cff57f61353f6654962500566": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      },
+      "0xc0729cde19741de280b230d650f0fdad2ad79d09": {
+        "one_for_zero": "ok",
+        "zero_for_one": "ok"
+      }
+    },
+    "envelope_usd": "16055.57330",
+    "max_case_notional_usd": "8027.78665",
+    "rule": "E(token) = ceil(2 x max case notional USD / price(token)) raw units, both directions of every admitted pool"
+  },
+  "exclusions": {
+    "pools": [],
+    "rule": {
+      "id": "envelope-unprovable-within-read-bound",
+      "max_bins_per_direction": 5000,
+      "max_bitmap_words_per_direction": 8192,
+      "text": "a discovered pool is excluded iff proving the corpus envelope in one direction (the envelope swap fits the collected state, or real exhaustion is proven) needs more than the declared read bound; the bound lets every concentrated pool be walked to MIN_TICK/MAX_TICK, so thinness alone never excludes a pool; a source left without an admitted pool blocks publication"
+    }
+  },
+  "origin": {
+    "leg_derived": "pair and raw amount taken from one historical swap leg (dex.trades row) in the window; a leg is not a reconstructed user order and its endpoints were not reconstructed",
+    "reconstructed_orders": false,
+    "state_derived_boundary": "amount derived from the frozen pool state (rounding / liquidity boundary of a direct pool); not an empirical trade, report separately from empirical strata"
+  },
+  "schema": "corpus/1",
+  "sources": [
+    {
+      "collector": "agni",
+      "sor_protocol": "V3",
+      "source_key": "agni_v3"
+    },
+    {
+      "collector": "fusionx",
+      "sor_protocol": "V3",
+      "source_key": "fusionx_v3"
+    },
+    {
+      "collector": "uniswap_v3",
+      "sor_protocol": "V3",
+      "source_key": "uniswap_v3"
+    },
+    {
+      "collector": "moe_classic",
+      "sor_protocol": "V2",
+      "source_key": "moe_classic_v1"
+    },
+    {
+      "collector": "moe_lb",
+      "sor_protocol": null,
+      "source_key": "moe_lb_v2_2"
+    }
+  ],
+  "splits": {
+    "counts": {
+      "report": 72,
+      "tuning": 24
+    },
+    "rule": "within every (token_in, token_out, stratum) cell the 1 case(s) with the smallest sha256(seed|case_id) are `tuning`, the rest `report`; boundary cases are `report`"
+  },
+  "strata": {
+    "bands": {
+      "large": [
+        0.8,
+        0.99
+      ],
+      "low": [
+        0.05,
+        0.4
+      ],
+      "medium": [
+        0.4,
+        0.8
+      ]
+    },
+    "boundary": "state-derived dust / rounding / liquidity-edge cases",
+    "definition": "rank-based raw input amount bands per sampling unit (one direction of an activity pair, or every leg selling a token for no-direct-pool pairs)",
+    "no_direct_samples_per_stratum": 2,
+    "samples_per_stratum": 4,
+    "seed": "WHI-1436/corpus/v1"
+  },
+  "subset_of": {
+    "bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "bundle_id": "mantle-5src-101082044-091b0759"
+  },
+  "universe": {
+    "activity_pairs": [
+      {
+        "distinct_txs": 12184,
+        "token_a": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+        "token_b": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "distinct_txs": 7065,
+        "token_a": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token_b": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "distinct_txs": 6829,
+        "token_a": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+        "token_b": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "distinct_txs": 5683,
+        "token_a": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token_b": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "distinct_txs": 4410,
+        "token_a": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_b": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "distinct_txs": 3057,
+        "token_a": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token_b": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "distinct_txs": 2315,
+        "token_a": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+        "token_b": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+      },
+      {
+        "distinct_txs": 2290,
+        "token_a": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token_b": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+      },
+      {
+        "distinct_txs": 1652,
+        "token_a": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token_b": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+      },
+      {
+        "distinct_txs": 1323,
+        "token_a": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token_b": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "distinct_txs": 929,
+        "token_a": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token_b": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "distinct_txs": 924,
+        "token_a": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+        "token_b": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      }
+    ],
+    "labels": {
+      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": "USDC",
+      "0x1bdd8878252daddd3af2ba30628813271294edc0": "CATI",
+      "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": "USDT",
+      "0x779ded0c9e1022225f8e0630b35a9b54be713736": "USDT0",
+      "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": "WMNT",
+      "0xc96de26018a54d51c097160568752c4e3bd6c364": "FBTC",
+      "0xcda86a272531e8640cd7f1a92c01839911b90bb0": "METH",
+      "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": "WETH"
+    },
+    "no_direct_pool_pairs": [
+      {
+        "token_a": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token_b": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+      },
+      {
+        "token_a": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+        "token_b": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "token_a": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token_b": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+      },
+      {
+        "token_a": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+        "token_b": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+      }
+    ],
+    "no_direct_rule": "up to 4 universe pairs with no admitted pool on any source at the block, ranked by the smaller token distinct-tx count (ties: addresses)",
+    "rule": "top 12 unordered token pairs (by address) by distinct transactions over the five sources in the window, >= 100 each; the token universe is exactly their tokens",
+    "tokens": [
+      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "0x1bdd8878252daddd3af2ba30628813271294edc0",
+      "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "0xc96de26018a54d51c097160568752c4e3bd6c364",
+      "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    ]
+  }
+}

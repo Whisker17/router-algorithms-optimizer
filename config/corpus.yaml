@@ -1,0 +1,97 @@
+# Five-source frozen corpus definition (WHI-1436 / I11). Read by snapshot/corpus.py
+# (`uv run python main.py corpus ...`); the reproducible recipe is
+# docs/references/corpus.md.
+#
+# Everything here is either a declared rule parameter or a frozen value that preparation
+# evidence selected (docs/DESIGN.md §2.12: "`corpus.window_start/end`, pairs, amount
+# strata, seed: explicit frozen values selected by preparation evidence -- not silently
+# inferred at run time"). Nothing is recomputed from `now`.
+schema_version: 1
+corpus_id: mantle-5src-101082044
+
+# ONE common block for all five sources (docs/DESIGN.md §2.2). Chosen as the first
+# Mantle block at/after 2026-09-25T00:00:00Z; at selection time (2026-09-25T05:21Z) the
+# public RPC's finalized head was 101090943, so it is ~8,900 blocks below finality.
+# Every collector re-resolves it by number, requires this exact hash and that it is
+# <= the finalized head, pins every read to the hash, and re-reads the header afterwards.
+snapshot:
+  chain_id: 5000
+  block_number: 101082044
+  block_hash: "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4"
+  block_timestamp: 1790294400  # 2026-09-25T00:00:00Z
+
+# The five core sources (docs/DESIGN.md §1.2) with their registered collectors and the
+# Dune `dex.trades` (project, version) labels whose legs describe historical activity.
+# Dune labels only rank activity; pool identity always comes from each collector's
+# verified factory discovery at the block (§2.2: never classify a pool by Dune name).
+sources:
+  - {source_key: agni_v3, collector: agni, dune_project: agni, dune_version: "3"}
+  - {source_key: fusionx_v3, collector: fusionx, dune_project: fusionx, dune_version: "3"}
+  - {source_key: uniswap_v3, collector: uniswap_v3, dune_project: uniswap, dune_version: "3"}
+  - {source_key: moe_classic_v1, collector: moe_classic, dune_project: merchant_moe, dune_version: "1"}
+  - {source_key: moe_lb_v2_2, collector: moe_lb, dune_project: merchant_moe, dune_version: "2.2"}
+
+# Historical activity window: absolute UTC boundaries, [start, end), end == the snapshot
+# block timestamp (never later). Partition filters bound every Dune scan.
+dune:
+  window_start: "2026-09-11 00:00:00"
+  window_end: "2026-09-25 00:00:00"
+  block_months: ["2026-09-01"]
+  performance: medium
+
+selection:
+  seed: "WHI-1436/corpus/v1"
+  # Activity pairs: unordered token pairs (by address, never by symbol), ranked by
+  # distinct transactions over the five sources in the window (ties: token addresses).
+  activity_pairs:
+    top_n: 12
+    min_distinct_txs: 100
+  # Amount strata per (token_in -> token_out) direction: quantile bands of the historical
+  # raw input amounts of that direction's legs. The extreme tails are left to the
+  # boundary cases below. A direction with fewer legs than `min_legs` is not stratified.
+  strata:
+    low: [0.05, 0.40]
+    medium: [0.40, 0.80]
+    large: [0.80, 0.99]
+  min_legs: 30
+  samples_per_stratum: 4
+  # Pairs without any admitted direct pool at the block (discovered at the block, not
+  # guessed): up to `max_pairs` universe token pairs, ranked by the smaller of the two
+  # tokens' distinct-tx activity; their amounts are sampled from the input token's own
+  # legs (all counterparties), `samples_per_stratum` per stratum.
+  no_direct_pairs:
+    max_pairs: 4
+    samples_per_stratum: 2
+  # Tuning vs reporting: within every (direction, stratum) cell the case with the
+  # smallest seeded hash is `tuning`; the rest are `report`. Boundary cases are `report`.
+  tuning_per_cell: 1
+
+# Per-token amount envelope every admitted pool must cover in both directions (DESIGN
+# §2.2: "Collect sufficient initialized ticks/bins to evaluate the declared amount
+# envelope in both directions"). E(token) = multiplier x (the largest case notional in
+# USD at the frozen price context), converted to raw units of that token and rounded up.
+# The multiplier leaves room for multi-hop intermediates whose pool price differs from
+# the frozen reference price.
+envelope:
+  multiplier: 2
+
+# ONE general, source-agnostic exclusion rule for pools whose envelope cannot be proven
+# (replaces the per-source, ad-hoc `excluded_fee_tiers` entries of the admission-stage
+# prepare configs). A discovered pool is excluded -- recorded in provenance with this
+# rule id, the direction, the envelope amount and the bound -- iff proving the envelope
+# (the swap fits the collected state, or real exhaustion is proven) needs more than the
+# declared read bound in one direction. The bounds are chosen so that a concentrated
+# pool can always be walked to MIN_TICK/MAX_TICK (every tick spacing), i.e. the rule
+# never removes a pool merely for being thin. A source left with no admitted pool is
+# incomplete and blocks publication; it is never silently dropped.
+exclusion_rule:
+  id: envelope-unprovable-within-read-bound
+  max_bitmap_words_per_direction: 8192
+  max_bins_per_direction: 5000
+
+# Frozen price context (snapshot/prices.py schema): Dune `prices.minute`, the latest
+# minute at or before the snapshot timestamp within `max_staleness_seconds`. A token
+# without such a row is recorded as missing (never zero).
+prices:
+  table: prices.minute
+  max_staleness_seconds: 3600

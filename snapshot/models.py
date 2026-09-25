@@ -14,6 +14,10 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from types import MappingProxyType
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from snapshot.prices import PriceContext
 
 
 @dataclass(frozen=True)
@@ -285,6 +289,11 @@ class SnapshotBundle:
     cases: tuple[Case, ...]
     bundle_hash: str
     source_path: str
+    # WHI-1436 corpus bundles: the frozen price context (`prices.json`,
+    # snapshot.prices) and the corpus descriptor (`corpus.json`: case metadata --
+    # stratum, origin, split -- cohorts, envelope, exclusions). None for other bundles.
+    prices: PriceContext | None = None
+    corpus: Mapping[str, Any] | None = None
 
     def pools_for_pair(self, token_a: str, token_b: str) -> tuple[PoolState, ...]:
         """All admitted pools directly connecting `token_a` and `token_b`, in a

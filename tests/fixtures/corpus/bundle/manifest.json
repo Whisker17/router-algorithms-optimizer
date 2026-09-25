@@ -1,0 +1,25 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+    "number": 101082044,
+    "timestamp": 1790294400
+  },
+  "bundle_id": "mantle-5src-101082044-091b0759-fixture",
+  "checksums": {
+    "cases.jsonl": "d9cbff4e609e9d14965f7a0bb048973a8805519d203cd1529952f595e0188605",
+    "corpus.json": "9acc068f1639037de33ab56200e9b29b6d3063b14448ba2e811f53e54de9620e",
+    "pools.json": "455b3c43a02f4a41be7ed8fd699b268cff0efc72a5dedb933969bbfd07114f43",
+    "prices.json": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd",
+    "provenance.json": "1289b6f1780843d5f413846af5d12196f4ece1d7cb3239e5513c539ae625c755"
+  },
+  "files": {
+    "cases": "cases.jsonl",
+    "corpus": "corpus.json",
+    "pools": "pools.json",
+    "prices": "prices.json",
+    "provenance": "provenance.json"
+  },
+  "kind": "real",
+  "schema_version": 1
+}

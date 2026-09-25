@@ -1,0 +1,4071 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+    "number": 101082044,
+    "timestamp": 1790294400
+  },
+  "block_verification": "each of the five collectors resolved the block by number, required the corpus hash, required <= the finalized head, pinned every read to the hash with requireCanonical and re-read the header afterwards; every pool record carries read_at == this block",
+  "config": {
+    "path": "config/corpus.yaml",
+    "sha256": "f9dc82d213a09c1aacb32a93d6d5e586e6c4f43a1b6c98056e6e4e52cdd1c0c4"
+  },
+  "corpus_id": "mantle-5src-101082044",
+  "exports": {
+    "activity": {
+      "dune_url": "https://dune.com/queries/8832124",
+      "execution_id": "01M3BGP1M8V2TTJX143WBWGBVF",
+      "export_sha256": "1c331cfeac72d8ab72339bb868ffc9a6a96760502b936c51e06e2c1ec77ad157",
+      "query_id": 8832124,
+      "rows": 84,
+      "sql_sha256": "95f5b6e46eb44b9c63e972b37793c83c35354c95ca938f13efde8b8149cd276b"
+    },
+    "prices": {
+      "dune_url": "https://dune.com/queries/8832131",
+      "execution_id": "01M3BGWAD5MSW779Z7JZ6R9X4P",
+      "export_sha256": "a2ec67676ad7b742af8cb4c127c5043d75be310136f2677704b84cca0b64f3a3",
+      "query_id": 8832131,
+      "rows": 8,
+      "sql_sha256": "860d4835fa52f0d97aff6b9eba913fbad4f04b0c32ff0f9cbb3fde40ecfcc2dd"
+    },
+    "strata": {
+      "dune_url": "https://dune.com/queries/8832129",
+      "execution_id": "01M3BGTCFHDNCV5Q8AKD37W1N3",
+      "export_sha256": "3aefe160dd94ea3f34b01624464758ce18707baf9827cbdfcc6f572ba53ff91e",
+      "query_id": 8832129,
+      "rows": 336,
+      "sql_sha256": "d0445aa4ba77701a572a9f15ce03a8d18b3769dbdfbec76a2f7de89cfd07d5c7"
+    }
+  },
+  "schema": "corpus-provenance/1",
+  "sources": {
+    "agni_v3": {
+      "bundle_hash": "31ddaf7cb8c12b98614ab7a3e3e3da5462019fc1ff632bc3c28cb354b0c18fe7",
+      "bundle_id": "mantle-5src-101082044-agni_v3-101082044-091b0759",
+      "collector": "agni",
+      "pools": 45,
+      "provenance": {
+        "block": {
+          "chain_id": 5000,
+          "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+          "number": 101082044,
+          "timestamp": 1790294400
+        },
+        "block_verification": "resolved by number, <= finalized head, every state read EIP-1898 pinned to the hash with requireCanonical, header re-read by number and hash after collection",
+        "catalog": {
+          "factory": {
+            "address": "0x25780dc8fc3cfbd75f33bfdab65e969b603b2035",
+            "code_hash": "0x2ae0e620e5883be43cb47e869bbdf3aba25f9744ed5b837a6cc5f4056ada6147"
+          },
+          "pool_code_normalized_hash": "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f",
+          "pool_deployer": {
+            "address": "0xe9827b4ebeb9ae41fc57efdddd79edddc2ea4d03",
+            "code_hash": "0xd42f50af5ca343c25c4b6648c664db0a51412b44a9ecc386868d0e5d1396fc03"
+          },
+          "pool_immutables": [
+            "factory",
+            "token0",
+            "token1",
+            "fee",
+            "tickSpacing",
+            "maxLiquidityPerTick"
+          ],
+          "upstream": {
+            "license": "GPL-2.0-or-later (SPDX header in AgniPool.sol/AgniFactory.sol)",
+            "ref": "main, core/contracts/{AgniFactory,AgniPool,AgniPoolDeployer}.sol @ commit 7278c3aafba82db83bbb85e5c0f5554f77ec3db4",
+            "repo": "https://github.com/agni-protocol/contracts"
+          }
+        },
+        "collector": "snapshot.collectors.concentrated",
+        "discovery": {
+          "admitted": [
+            {
+              "fee": 100,
+              "pool_id": "0x6488f911c6cd86c289aa319c5a826dcf8f1ca065",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x6844209ce498ab6f02f1e5702c1f5c82ef564134",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x8f99892c84d4e4af62082ebafb7d0d033938d26e",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0xb1ab8372d62bf35e655477568bdb72f32b13738f",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x36f66548cda219c6fc037037cee063b9f28b13ef",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x7b3a4b36b0c5c95142afcd1b883ed055aa166f85",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x1858d52cf57c07a018171d7a1e68dc081f17144f",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x9cae9b5d0ee7e78dfd7e42fd995d4974d6907242",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x8e2c009e45420d2b36bc15315f9de8ceca2cc724",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x9055d14b6b658a3aa00e5835118fb93f8ba111df",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xc81f612980db7a9e5e16c52450f391698f6584cc",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x540631a747f47112afc1667bdeaa4265ba52a7b5",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x2bd0f40c241eabd326545a6467bb2da88bb46181",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xee12e312878b74b2c17d80516128d7868f80365b",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0xd34292f7585ac5a518c5ceb2d674d1423ad0569f",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0xe1dc93d69439a924baaeaf9e64f4ae7be0af738a",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x0d290c8e7f3ffa5267de4b1f9f6f6d8d578624ac",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0xd145db1dfc3fcd2e999b47f3a02c85bd7750ed09",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xd08c50f7e69e9aeb2867deff4a8053d9a855e26a",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x328cfb13c66065240b58bff0ae1ce798fe314ec1",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0xcb893a28933a89b5c4ee3d02ca37524d3d0bfc97",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x472518ba31df00ec321fdd17fc950906b939ce2e",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xc339b7139785bbcaf45c728c2969eafe47ba06ca",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x551d49f0a9c3d5293293e12f36b210e0124dd4e7",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0xd372cd4acfcd646f9332b26c7b6bfa4777d90451",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x628f7131cf43e88ebe3921ae78c4ba0c31872bd4",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x425732f412f2a922156cf3c135a516c18f977cc1",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x46e15789bd1eeb975551ea12f3eb74ae9409eb99",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x8fb12e957edbefd0105857fef675d621c8629a71",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x9608fecddbeea59cff57f61353f6654962500566",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x802b5d2b69808a2758fa25175e7a2ce551718b6d",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xf082cc72f471ec0b370da43c022d39984f34cca3",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0xf1cb3c3d093ce656cb2ac3f082f72fd88050e431",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x813d7f24df644550f824141bcdd8cb1cb0642d06",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x4b96994181cb694f506bdf24a218fe7af64147cb",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x3812a474e1b7610d05a947bb0940210a2d0f6823",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x928981fe5a4c005a126662d2bd84fbf139b51876",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x54169896d28dec0ffabe3b16f90f71323774949f",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x9ec313ff05946b6f3860a99b470625abba7eb0a2",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x9d5d4064a808ba865957b1d04b20a84175dcc16d",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xa86d79c99979fb414896a802882fb1d78c1d58fe",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x651c9d1f9da787688225f49d63ad1623ba89a8d5",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x94d692afff21e045691971a20df4a9adb482ddf6",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x78b54c2bc2c5ad8f744915d481e5caaff0c6c8c2",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            }
+          ],
+          "method": "factory.getPool over configured pairs x catalog fee tiers",
+          "omitted": [
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            }
+          ]
+        },
+        "exclusions": {
+          "pools": [],
+          "rule": "envelope-unprovable-within-read-bound"
+        },
+        "pools": {
+          "0x36f66548cda219c6fc037037cee063b9f28b13ef": {
+            "code_hash": "0xd3c27bdab0f9eb0da7227eaa921916220fac36ff68e7ee2891e7fdeefe49530d",
+            "completeness": {
+              "bitmap_word_range": [
+                -1,
+                1
+              ],
+              "envelope": {
+                "one_for_zero": {
+                  "amount_in": "16071039249",
+                  "end_tick": 3,
+                  "end_word": 0,
+                  "status": "ok"
+                },
+                "zero_for_one": {
+                  "amount_in": "16060102249",
+                  "end_tick": 0,
+                  "end_word": 0,
+                  "status": "ok"
+                }
+              },
+              "initialized_ticks": 2,
+              "limits": {
+                "initial_margin_words": 1,
+                "margin_words": 1,
+                "max_words_per_direction": 8192,
+                "walk_chunk_words": 64
+              },
+              "tick_range": [
+                -256,
+                511
+              ]
+            },
+            "immutable_sites": {
+              "factory": 7,
+              "fee": 8,
+              "maxLiquidityPerTick": 3,
+              "tickSpacing": 4,
+              "token0": 6,
+              "token1": 6
+            },
+            "lm_pool": "0x0000000000000000000000000000000000000000",
+            "max_liquidity_per_tick": "191757530477355301479181766273477",
+            "normalized_code_hash": "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
+          },
+          "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4": {
+            "code_hash": "0x727c450f248569181dab1a0ec41831c55ac7ba40c03267fcae6570fbf45a509d",
+            "completeness": {
+              "bitmap_word_range": [
+                -129,
+                346
+              ],
+              "envelope": {
+                "one_for_zero": {
+                  "amount_in": "5973500000000000000",
+                  "status": "insufficient_liquidity"
+                },
+                "zero_for_one": {
+                  "amount_in": "5436504136065201860",
+                  "end_tick": -183483,
+                  "end_word": -72,
+                  "status": "ok"
+                }
+              },
+              "initialized_ticks": 17,
+              "limits": {
+                "initial_margin_words": 1,
+                "margin_words": 1,
+                "max_words_per_direction": 8192,
+                "walk_chunk_words": 64
+              },
+              "tick_range": [
+                -330240,
+                888319
+              ]
+            },
+            "immutable_sites": {
+              "factory": 7,
+              "fee": 8,
+              "maxLiquidityPerTick": 3,
+              "tickSpacing": 4,
+              "token0": 6,
+              "token1": 6
+            },
+            "lm_pool": "0x0000000000000000000000000000000000000000",
+            "max_liquidity_per_tick": "1917569901783203986719870431555990",
+            "normalized_code_hash": "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
+          },
+          "0x78b54c2bc2c5ad8f744915d481e5caaff0c6c8c2": {
+            "code_hash": "0x1f30a8ae9f093d06735d145a6630cfba6ed12df552cc271f55324ea344a30054",
+            "completeness": {
+              "bitmap_word_range": [
+                -70,
+                69
+              ],
+              "envelope": {
+                "one_for_zero": {
+                  "amount_in": "5973500000000000000",
+                  "status": "insufficient_liquidity"
+                },
+                "zero_for_one": {
+                  "amount_in": "5436504136065201860",
+                  "status": "insufficient_liquidity"
+                }
+              },
+              "initialized_ticks": 7,
+              "limits": {
+                "initial_margin_words": 1,
+                "margin_words": 1,
+                "max_words_per_direction": 8192,
+                "walk_chunk_words": 64
+              },
+              "tick_range": [
+                -896000,
+                895999
+              ]
+            },
+            "immutable_sites": {
+              "factory": 7,
+              "fee": 8,
+              "maxLiquidityPerTick": 3,
+              "tickSpacing": 4,
+              "token0": 6,
+              "token1": 6
+            },
+            "lm_pool": "0x0000000000000000000000000000000000000000",
+            "max_liquidity_per_tick": "9587849508916019933599352157779950",
+            "normalized_code_hash": "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
+          },
+          "0x8fb12e957edbefd0105857fef675d621c8629a71": {
+            "code_hash": "0x2754d036371ba3e843d91891b5da64f3cdfaaaf8afe2721b52e719a6ff02383a",
+            "completeness": {
+              "bitmap_word_range": [
+                20,
+                22
+              ],
+              "envelope": {
+                "one_for_zero": {
+                  "amount_in": "23707116162936122271491",
+                  "end_tick": 280241,
+                  "end_word": 21,
+                  "status": "ok"
+                },
+                "zero_for_one": {
+                  "amount_in": "16071039249",
+                  "end_tick": 280152,
+                  "end_word": 21,
+                  "status": "ok"
+                }
+              },
+              "initialized_ticks": 5,
+              "limits": {
+                "initial_margin_words": 1,
+                "margin_words": 1,
+                "max_words_per_direction": 8192,
+                "walk_chunk_words": 64
+              },
+              "tick_range": [
+                256000,
+                294399
+              ]
+            },
+            "immutable_sites": {
+              "factory": 7,
+              "fee": 8,
+              "maxLiquidityPerTick": 3,
+              "tickSpacing": 4,
+              "token0": 6,
+              "token1": 6
+            },
+            "lm_pool": "0x0000000000000000000000000000000000000000",
+            "max_liquidity_per_tick": "9587849508916019933599352157779950",
+            "normalized_code_hash": "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
+          },
+          "0x94d692afff21e045691971a20df4a9adb482ddf6": {
+            "code_hash": "0x8f7192198135a7b430c8bca5fab233e5f90e28f1d26302b8ed63f8ca6c715bac",
+            "completeness": {
+              "bitmap_word_range": [
+                2,
+                4
+              ],
+              "envelope": {
+                "one_for_zero": {
+                  "amount_in": "5973500000000000000",
+                  "end_tick": 949,
+                  "end_word": 3,
+                  "status": "ok"
+                },
+                "zero_for_one": {
+                  "amount_in": "5436504136065201860",
+                  "end_tick": 946,
+                  "end_word": 3,
+                  "status": "ok"
+                }
+              },
+              "initialized_ticks": 11,
+              "limits": {
+                "initial_margin_words": 1,
+                "margin_words": 1,
+                "max_words_per_direction": 8192,
+                "walk_chunk_words": 64
+              },
+              "tick_range": [
+                512,
+                1279
+              ]
+            },
+            "immutable_sites": {
+              "factory": 7,
+              "fee": 8,
+              "maxLiquidityPerTick": 3,
+              "tickSpacing": 4,
+              "token0": 6,
+              "token1": 6
+            },
+            "lm_pool": "0x0000000000000000000000000000000000000000",
+            "max_liquidity_per_tick": "191757530477355301479181766273477",
+            "normalized_code_hash": "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
+          },
+          "0x9608fecddbeea59cff57f61353f6654962500566": {
+            "code_hash": "0xccc880d755bc3f0ba40a97e62c1ec938c9a709caafcbd9837edd9c98d1ec666b",
+            "completeness": {
+              "bitmap_word_range": [
+                -7,
+                -5
+              ],
+              "envelope": {
+                "one_for_zero": {
+                  "amount_in": "19065513",
+                  "end_tick": -67267,
+                  "end_word": -6,
+                  "status": "ok"
+                },
+                "zero_for_one": {
+                  "amount_in": "16071039249",
+                  "end_tick": -67455,
+                  "end_word": -6,
+                  "status": "ok"
+                }
+              },
+              "initialized_ticks": 3,
+              "limits": {
+                "initial_margin_words": 1,
+                "margin_words": 1,
+                "max_words_per_direction": 8192,
+                "walk_chunk_words": 64
+              },
+              "tick_range": [
+                -89600,
+                -51201
+              ]
+            },
+            "immutable_sites": {
+              "factory": 7,
+              "fee": 8,
+              "maxLiquidityPerTick": 3,
+              "tickSpacing": 4,
+              "token0": 6,
+              "token1": 6
+            },
+            "lm_pool": "0x0000000000000000000000000000000000000000",
+            "max_liquidity_per_tick": "9587849508916019933599352157779950",
+            "normalized_code_hash": "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
+          }
+        },
+        "prepare_config": {
+          "path": "config/corpus/prepare/agni.yaml",
+          "sha256": "d8357a71210486bd85356597e271c08f888fa98ac7e2c8321ec72305ee8efe3a"
+        },
+        "read_batching": {
+          "address": "0xca11bde05977b3631167028862be2a173976ca11",
+          "chunk": 100,
+          "code_hash": "0x8ec8aa5d07a37e47597b3a254f5cbf39fa2080526ae34db3a564fffed82b99ad",
+          "direct_cross_check": true,
+          "method": "aggregate3, allowFailure=true, per-sub-call success checked"
+        },
+        "rpc_endpoint": "https://rpc.mantle.xyz",
+        "schema": "cl-collection/1",
+        "source_capability": {
+          "protocol_family": "v3_concentrated_liquidity",
+          "sor_protocol": "V3"
+        },
+        "source_key": "agni_v3",
+        "token_labels": {
+          "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": "USDC",
+          "0x1bdd8878252daddd3af2ba30628813271294edc0": "CATI",
+          "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": "USDT",
+          "0x779ded0c9e1022225f8e0630b35a9b54be713736": "USDT0",
+          "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": "WMNT",
+          "0xc96de26018a54d51c097160568752c4e3bd6c364": "FBTC",
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0": "METH",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": "WETH"
+        }
+      },
+      "sor_protocol": "V3"
+    },
+    "fusionx_v3": {
+      "bundle_hash": "333871286a4fbd6811844f5a03c7e77fa47a0ccd67f78a77ecec519e6b396685",
+      "bundle_id": "mantle-5src-101082044-fusionx_v3-101082044-091b0759",
+      "collector": "fusionx",
+      "pools": 26,
+      "provenance": {
+        "block": {
+          "chain_id": 5000,
+          "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+          "number": 101082044,
+          "timestamp": 1790294400
+        },
+        "block_verification": "resolved by number, <= finalized head, every state read EIP-1898 pinned to the hash with requireCanonical, header re-read by number and hash after collection",
+        "catalog": {
+          "factory": {
+            "address": "0x530d2766d1988cc1c000c8b7d00334c14b69ad71",
+            "code_hash": "0x701e4c703248a80761e6e105efd8e30e64bd0cad8ed817e24588203884894c57"
+          },
+          "pool_code_normalized_hash": "0x7ba898ca845dddf5aa6085d74a3a186d0f25ee3fd9c1f276346a653b242bf293",
+          "pool_deployer": {
+            "address": "0x8790c2c3ba67223d83c8fcf2a5e3c650059987b4",
+            "code_hash": "0x13e05651129765463ff6a98f3f68e9c56d99a0793d290aa00938a9b469001d1e"
+          },
+          "pool_immutables": [
+            "factory",
+            "token0",
+            "token1",
+            "fee",
+            "tickSpacing",
+            "maxLiquidityPerTick"
+          ],
+          "upstream": {
+            "license": "GPL-2.0-or-later (SPDX header in FusionXV3Factory.sol)",
+            "ref": "main, projects/v3-core/contracts/{FusionXV3Factory,FusionXV3Pool,FusionXV3PoolDeployer}.sol @ commit 7f7406e5fbdf610acf0fedac815c29fbca69925a",
+            "repo": "https://github.com/FusionX-Finance/v3-contracts"
+          }
+        },
+        "collector": "snapshot.collectors.concentrated",
+        "discovery": {
+          "admitted": [
+            {
+              "fee": 100,
+              "pool_id": "0x16867d00d45347a2ded25b8cdb7022b3171d4ae0",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xa123bb698ed70b64a2f2184f17b2add501dde7b0",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0xb083d0a9679b79033de5e44e928153d903d6dcfe",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0xf494ba958514759b4dd8b6e0254b8d7a32212bcf",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x064d4c6e06711eaff5a9e2a19e750ee8b94159ab",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xe87e42ff34d6baaf619eb91dd957e4ec45226894",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0xaaecd138ad9cd20c13f1593a41bf3941940ec41e",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0xf231e1ca10bae443f176f907352ac575a056c843",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0xc78ccab2e91185d16722be8ce8a4e9f7f7288023",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x01845ec86909006758de0d57957d88da10bf5809",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x7415a4ba496dea52202771fb6a477933c28cfa1f",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x4a313244ccddd402ef8c3b2c0bcbbd31782a5f88",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0xed3ee32bdcf51632707f130af827fd849929570e",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0xe39688f2036261241e08951b69f9a4812a1e0402",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xc522a2108fb700952d42acec956d332f1856d7f9",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0xefe8bfd40352b9c14b64c06f5e699b3d46ca4ffc",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xa125af1a4704044501fe12ca9567ef1550e430e8",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0xc3e2f59ee3ea98bbc62455786d1470db0e7902d9",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0x11456b1622f2bdbbe54380b1f17d9ef71ad4e555",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x5566904fb1987923ae3f0d3b6bdba7a597d7a9b5",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x47453cb250f705211e7a0de2f9c5d94cfecc8abd",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": "0xd3d3127d9654f806370da592eb292ea0a347f0e3",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x6c7604c157507a0aaea90f2928ca44cc1d60cd81",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x283fdeeac018e403a9274fbdec3c570dd3157e68",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            }
+          ],
+          "method": "factory.getPool over configured pairs x catalog fee tiers",
+          "omitted": [
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 2500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            }
+          ]
+        },
+        "exclusions": {
+          "pools": [],
+          "rule": "envelope-unprovable-within-read-bound"
+        },
+        "pools": {
+          "0x283fdeeac018e403a9274fbdec3c570dd3157e68": {
+            "code_hash": "0xb97340c5464439e42beff819f67430fd045378335c58028f95de3e8b2601ec44",
+            "completeness": {
+              "bitmap_word_range": [
+                -347,
+                347
+              ],
+              "envelope": {
+                "one_for_zero": {
+                  "amount_in": "5973500000000000000",
+                  "status": "insufficient_liquidity"
+                },
+                "zero_for_one": {
+                  "amount_in": "5436504136065201860",
+                  "status": "insufficient_liquidity"
+                }
+              },
+              "initialized_ticks": 4,
+              "limits": {
+                "initial_margin_words": 1,
+                "margin_words": 1,
+                "max_words_per_direction": 8192,
+                "walk_chunk_words": 64
+              },
+              "tick_range": [
+                -888320,
+                890879
+              ]
+            },
+            "immutable_sites": {
+              "factory": 7,
+              "fee": 8,
+              "maxLiquidityPerTick": 3,
+              "tickSpacing": 4,
+              "token0": 6,
+              "token1": 6
+            },
+            "lm_pool": "0x0000000000000000000000000000000000000000",
+            "max_liquidity_per_tick": "1917569901783203986719870431555990",
+            "normalized_code_hash": "0x7ba898ca845dddf5aa6085d74a3a186d0f25ee3fd9c1f276346a653b242bf293"
+          },
+          "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4": {
+            "code_hash": "0x1499504cded36f8cd6884c0cf77447694d935d016252116bcbac3baf5f1f9c3b",
+            "completeness": {
+              "bitmap_word_range": [
+                -958,
+                964
+              ],
+              "envelope": {
+                "one_for_zero": {
+                  "amount_in": "5973500000000000000",
+                  "end_tick": 232625,
+                  "end_word": 908,
+                  "status": "ok"
+                },
+                "zero_for_one": {
+                  "amount_in": "5436504136065201860",
+                  "end_tick": -230043,
+                  "end_word": -899,
+                  "status": "ok"
+                }
+              },
+              "initialized_ticks": 90,
+              "limits": {
+                "initial_margin_words": 1,
+                "margin_words": 1,
+                "max_words_per_direction": 8192,
+                "walk_chunk_words": 64
+              },
+              "tick_range": [
+                -245248,
+                247039
+              ]
+            },
+            "immutable_sites": {
+              "factory": 7,
+              "fee": 8,
+              "maxLiquidityPerTick": 3,
+              "tickSpacing": 4,
+              "token0": 6,
+              "token1": 6
+            },
+            "lm_pool": "0xcf666d189e194861ae7f05933bb7a8cfea5defc2",
+            "lm_pool_identity": {
+              "code_hash": "0xe24433945e08ba4e0dad3215eef9564584a1e86510af8dd3ff827584d39bf1d5",
+              "modeled_as": "no-op hook (accumulateReward, crossLmTick)",
+              "pool": "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+            },
+            "max_liquidity_per_tick": "191757530477355301479181766273477",
+            "normalized_code_hash": "0x7ba898ca845dddf5aa6085d74a3a186d0f25ee3fd9c1f276346a653b242bf293"
+          }
+        },
+        "prepare_config": {
+          "path": "config/corpus/prepare/fusionx.yaml",
+          "sha256": "74be47a422a6568168c917530837858f824679492a31238e0e79529aa741f24f"
+        },
+        "read_batching": {
+          "address": "0xca11bde05977b3631167028862be2a173976ca11",
+          "chunk": 100,
+          "code_hash": "0x8ec8aa5d07a37e47597b3a254f5cbf39fa2080526ae34db3a564fffed82b99ad",
+          "direct_cross_check": true,
+          "method": "aggregate3, allowFailure=true, per-sub-call success checked"
+        },
+        "rpc_endpoint": "https://rpc.mantle.xyz",
+        "schema": "cl-collection/1",
+        "source_capability": {
+          "protocol_family": "v3_concentrated_liquidity",
+          "sor_protocol": "V3"
+        },
+        "source_key": "fusionx_v3",
+        "token_labels": {
+          "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": "USDC",
+          "0x1bdd8878252daddd3af2ba30628813271294edc0": "CATI",
+          "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": "USDT",
+          "0x779ded0c9e1022225f8e0630b35a9b54be713736": "USDT0",
+          "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": "WMNT",
+          "0xc96de26018a54d51c097160568752c4e3bd6c364": "FBTC",
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0": "METH",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": "WETH"
+        }
+      },
+      "sor_protocol": "V3"
+    },
+    "moe_classic_v1": {
+      "bundle_hash": "8f77ccb0af6b1f30f85edbfbf26aa1ffe5210448c954ac3231ee04cb1b8bee33",
+      "bundle_id": "mantle-5src-101082044-moe_classic_v1-101082044-091b0759",
+      "collector": "moe_classic",
+      "pools": 14,
+      "provenance": {
+        "block": {
+          "chain_id": 5000,
+          "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+          "number": 101082044,
+          "timestamp": 1790294400
+        },
+        "block_verification": "resolved by number, <= finalized head, every state read EIP-1898 pinned to the hash with requireCanonical, header re-read by number and hash after collection",
+        "catalog": {
+          "factory": {
+            "address": "0x5bef015ca9424a7c07b68490616a4c1f094bedec",
+            "code_hash": "0x67d999ab19b15f5b4233f167453abadfc7e580942291af8c395d0b50ab39e6c0"
+          },
+          "pair_implementation": {
+            "address": "0x08477e01a19d44c31e4c11dc2ac86e3bbe69c28b",
+            "code_hash": "0xb7969f45e694a2f22a645a3ce42e240669e09ebbd800925260fa3c3856160d87"
+          },
+          "swap_fee_bps": 30,
+          "upstream": {
+            "license": "GPL-3.0 (SPDX header in src/dex/MoeFactory.sol and MoePair.sol)",
+            "ref": "main, src/dex/{MoeFactory,MoePair}.sol @ commit 460bf55b8330f31d31d356634d0129fd78b4fd07",
+            "repo": "https://github.com/merchant-moe/moe-core"
+          }
+        },
+        "collector": "snapshot.collectors.classic",
+        "discovery": {
+          "admitted": [
+            {
+              "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "pool_id": "0x69a707d8deb5423865d84b46b2915bb72f2844d0",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "pool_id": "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "pool_id": "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "pool_id": "0x7c88dd67138291d38f0fea2889e4a341cd8983b1",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "pool_id": "0x2be6ecf2750d1c4d284ad5604b62392b3ea611dd",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "pool_id": "0xe9bc0589974b779661a1c4ceda5b0bee8d9ceda5",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "pool_id": "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            }
+          ],
+          "method": "factory.getPair (both argument orders) over configured token pairs",
+          "omitted": [
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "pool_id": null,
+              "reason": "factory.getPair returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            }
+          ]
+        },
+        "pools": {
+          "0x2be6ecf2750d1c4d284ad5604b62392b3ea611dd": {
+            "balances_equal_reserves": true,
+            "block_timestamp_last": 1780182342,
+            "code_hash": "0x9023057278d47fe1181b5a70a40620248fc50beb90c7d42d22de83cfd1071721",
+            "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+          },
+          "0x69a707d8deb5423865d84b46b2915bb72f2844d0": {
+            "balances_equal_reserves": true,
+            "block_timestamp_last": 1789138368,
+            "code_hash": "0x6a1a3b6a12100e5807c5e040de75e4714bdb5ef4e7ae743aab6b4493faf7f499",
+            "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+          },
+          "0x86e3a987187fed135d6d9c114f1857d8144f01e1": {
+            "balances_equal_reserves": true,
+            "block_timestamp_last": 1789983260,
+            "code_hash": "0xcee23f7de506e86d8feec2581de7af01da846a27de29fc68dd2dfdaa3c03ad9c",
+            "identity": "runtime code == ImmutableClone(pair_implementation, token0 ++ token1); address == CREATE2(factory, keccak256(token0 ++ token1)); token0/token1/factory/implementation getters agree"
+          }
+        },
+        "prepare_config": {
+          "path": "config/corpus/prepare/moe_classic.yaml",
+          "sha256": "ec003623f9f16764e0aaa2264eb0c3fe1ecb1d23957099fdbc7851ddf02c6e5e"
+        },
+        "read_batching": {
+          "address": "0xca11bde05977b3631167028862be2a173976ca11",
+          "chunk": 100,
+          "code_hash": "0x8ec8aa5d07a37e47597b3a254f5cbf39fa2080526ae34db3a564fffed82b99ad",
+          "direct_cross_check": true,
+          "method": "aggregate3, allowFailure=true, per-sub-call success checked"
+        },
+        "rpc_endpoint": "https://rpc.mantle.xyz",
+        "schema": "classic-collection/1",
+        "source_capability": {
+          "protocol_family": "v2_classic",
+          "sor_protocol": "V2"
+        },
+        "source_key": "moe_classic_v1",
+        "tokens": {
+          "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": {
+            "decimals": 6,
+            "label": "USDC"
+          },
+          "0x1bdd8878252daddd3af2ba30628813271294edc0": {
+            "decimals": 18,
+            "label": "CATI"
+          },
+          "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": {
+            "decimals": 6,
+            "label": "USDT"
+          },
+          "0x779ded0c9e1022225f8e0630b35a9b54be713736": {
+            "decimals": 6,
+            "label": "USDT0"
+          },
+          "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": {
+            "decimals": 18,
+            "label": "WMNT"
+          },
+          "0xc96de26018a54d51c097160568752c4e3bd6c364": {
+            "decimals": 8,
+            "label": "FBTC"
+          },
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0": {
+            "decimals": 18,
+            "label": "METH"
+          },
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": {
+            "decimals": 18,
+            "label": "WETH"
+          }
+        }
+      },
+      "sor_protocol": "V2"
+    },
+    "moe_lb_v2_2": {
+      "bundle_hash": "41df44f878c239d478f99ad4ba0c78bdaa8ad8f6b2346df3e88cfa7bc62c9a05",
+      "bundle_id": "mantle-5src-101082044-moe_lb_v2_2-101082044-091b0759",
+      "collector": "moe_lb",
+      "pools": 45,
+      "provenance": {
+        "block": {
+          "chain_id": 5000,
+          "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+          "number": 101082044,
+          "timestamp": 1790294400
+        },
+        "block_verification": "resolved by number, <= finalized head, every state read EIP-1898 pinned to the hash with requireCanonical, header re-read by number and hash after collection",
+        "catalog": {
+          "approved_extra_swap_hooks": [
+            "0x2d4bf9f668e5b7c7fe33c8f116ae190669304676"
+          ],
+          "approved_swap_hooks": [
+            "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7"
+          ],
+          "factory": {
+            "address": "0xa6630671775c4ea2743840f9a5016dcf2a104054",
+            "code_hash": "0x24760bc3bcdceb37006bed0ee363ff2f93f79242e14c19dcd135d606cad3d249"
+          },
+          "pair_implementation": {
+            "address": "0xf6863db7323aac43fe8aef0b3ef63aa6b32ddb3b",
+            "code_hash": "0x4b7e74d0e7b8738bc0a95199fdfb27a3e8bb7578d034e5ff15034f0158be508a"
+          },
+          "upstream": {
+            "license": "MIT (repo-root LICENSE at the pinned tag; per-file SPDX headers agree)",
+            "ref": "tag v2.2.0, commit 1297c3822f0605e643155c35948959c0a0d05e17 (LBFactory.sol, LBPair.sol -- see pair_implementation.verification for the required optimizer-runs=300 override)",
+            "repo": "https://github.com/lfj-gg/joe-v2"
+          }
+        },
+        "collector": "snapshot.collectors.liquidity_book",
+        "discovery": {
+          "admitted": [
+            {
+              "bin_step": 1,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+              "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c",
+              "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 1,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0x368b148052a1a775dbe70e56d04474e54c694cac",
+              "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x1bc31bd8746ef8c8a623d37f9d44166bbc31309f",
+              "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xa1c653c415db1c00dfd04ee26e624f959a0ed52f",
+              "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 50,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x29350f5442f1335ee5bb7f9ea9d623bdd171d679",
+              "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x4258119119557b43d61742132e6d446d7932d0cc",
+              "token_x": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xac6a7f9bcb8e497b1c27e22484c08964e86be6fc",
+              "token_x": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 50,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x7d70b8a5d675002a212feced447b87ac978f3ac0",
+              "token_x": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 1,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0xfc9d88653e2988b0e6525f1f521c974a25c88566",
+              "token_x": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 15,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0xf6c9020c9e915808481757779edb53daceae2415",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0x365722f12ceb2063286a268b03c654df81b7c00f",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 50,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x4ee4ecb066eccf47c0231a5d27066dc56a4f6ad2",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x616bef777161cb6219ad20599aff8c943ffea952",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 20,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x35db358ccb1e9ff11d49fc7789949b3421b98931",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xfc7d250769bbe6d8088f0615719cbcf6b1bdc4c2",
+              "token_x": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 50,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x01691d6f16551e92754d1eff939a7d57e399e478",
+              "token_x": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 10,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0x3f0047606dcad6177c13742f1854fc8c999cd2b6",
+              "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x813dc86f31e83c0372ae523e851076df767472e1",
+              "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x37ce36db1d4da489e4c95ead59d9018ccdb21698",
+              "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 10,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 50,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0xc0729cde19741de280b230d650f0fdad2ad79d09",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0x03beafc0d25bb553fca274301832419c05269987",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x81ce5b3acf2ddfd28013a28edd90fa4b1f61430d",
+              "token_x": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 10,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0x16c382c154dcf71e0110ee0c2b83f5982cb0c58c",
+              "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0xff60fb8f429870ce4109aef3a4b7b33acb90b01b",
+              "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 10,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0xa8e84f6eaf172c8e3cd5c53c760fce54b29e161b",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0x0680d0cda11093d6e5f66cbb14b9339cfe505616",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xc5a93b4df056e425a577b145bd06766d02223830",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xe19bae75f02042de137fa6951fdba50411de3bf3",
+              "token_x": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 50,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x0888b5571c97336c9d2b7ea323ffbf3871f54d22",
+              "token_x": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x7c995553be7c52eba887a639ea78e41671c9d34a",
+              "token_x": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 10,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0xf59c79b91877c2b5909e703117beab9b4b5df0d6",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xdc39d7a23d52309b45be6e13c4b7948c78ce854f",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x96069f55d86daa102011f366628dedfa4425909a",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "bin_step": 50,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x118e6794a2f8b2368304ab7bd5c426dcec06ec80",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "bin_step": 10,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+              "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token_y": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xfcc3654088dc6b42ca181430d294a0dc44df477e",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 50,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x2adc49c5c0eeda219b7bb24016c0cfcca0992294",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0xc53883b7a5271455cb155d5d4457fd3b2ba8367b",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "bin_step": 25,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x3880233e78966eb13a9c2881d5f162d646633178",
+              "token_x": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "bin_step": 2,
+              "created_by_owner": true,
+              "ignored_for_routing": false,
+              "pool_id": "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+              "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token_y": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "bin_step": 100,
+              "created_by_owner": false,
+              "ignored_for_routing": false,
+              "pool_id": "0x451368c461f9f4a70c434576b31ed5f258e765f5",
+              "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+              "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            }
+          ],
+          "method": "factory.getAllLBPairs over configured token pairs (every bin step)",
+          "omitted": [
+            {
+              "bin_step": null,
+              "pool_id": null,
+              "reason": "factory.getAllLBPairs returned no pair",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "bin_step": null,
+              "pool_id": null,
+              "reason": "factory.getAllLBPairs returned no pair",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "bin_step": null,
+              "pool_id": null,
+              "reason": "factory.getAllLBPairs returned no pair",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "bin_step": null,
+              "pool_id": null,
+              "reason": "factory.getAllLBPairs returned no pair",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "bin_step": null,
+              "pool_id": null,
+              "reason": "factory.getAllLBPairs returned no pair",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "bin_step": null,
+              "pool_id": null,
+              "reason": "factory.getAllLBPairs returned no pair",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "bin_step": null,
+              "pool_id": null,
+              "reason": "factory.getAllLBPairs returned no pair",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "bin_step": null,
+              "pool_id": null,
+              "reason": "factory.getAllLBPairs returned no pair",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "bin_step": null,
+              "pool_id": null,
+              "reason": "factory.getAllLBPairs returned no pair",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            }
+          ]
+        },
+        "exclusions": {
+          "pools": [],
+          "rule": "envelope-unprovable-within-read-bound"
+        },
+        "pools": {
+          "0x03beafc0d25bb553fca274301832419c05269987": {
+            "balances_equal_reserves_plus_protocol_fees": true,
+            "code_hash": "0x2d6366b9371b3a4795391da21cf7e9c78363ff4aff4fd5270f91cd0f2b5e574a",
+            "completeness": {
+              "bin_range": [
+                0,
+                16777215
+              ],
+              "envelope": {
+                "x_to_y": {
+                  "amount_in": "23707116162936122271491",
+                  "status": "insufficient_liquidity"
+                },
+                "y_to_x": {
+                  "amount_in": "16071039249",
+                  "status": "insufficient_liquidity"
+                }
+              },
+              "limits": {
+                "margin_bins": 4,
+                "max_bins_per_direction": 5000,
+                "walk_chunk_bins": 16
+              },
+              "tree_bins": 212,
+              "walk": {
+                "above": {
+                  "bins_walked": 91,
+                  "reached_end": true
+                },
+                "below": {
+                  "bins_walked": 120,
+                  "reached_end": true
+                }
+              }
+            },
+            "hooks": {
+              "address": "0x2bc6d5e9e434f64f075d8f2300aff4d8104fe44a",
+              "clone_args": "0x03beafc0d25bb553fca274301832419c05269987000000000000000000000000000000000000000000000000000000000000003c",
+              "code_hash": "0xc0b9bd34a4643205642624c3d4bbe9d43d7016932c51e9ce1d90620ecb113a8b",
+              "contract": "LBHooksRewarder",
+              "extra": null,
+              "extra_hooks_parameters": "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+              "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+              "parameters": "0x0000000000000000000001512bc6d5e9e434f64f075d8f2300aff4d8104fe44a"
+            },
+            "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+          },
+          "0x1bc31bd8746ef8c8a623d37f9d44166bbc31309f": {
+            "balances_equal_reserves_plus_protocol_fees": true,
+            "code_hash": "0x2520255b42bdfacba49fc325a998fd0d854510ce883dfcdd541a42936256be26",
+            "completeness": {
+              "bin_range": [
+                0,
+                16777215
+              ],
+              "envelope": {
+                "x_to_y": {
+                  "amount_in": "16060102249",
+                  "status": "insufficient_liquidity"
+                },
+                "y_to_x": {
+                  "amount_in": "16071039249",
+                  "status": "insufficient_liquidity"
+                }
+              },
+              "limits": {
+                "margin_bins": 4,
+                "max_bins_per_direction": 5000,
+                "walk_chunk_bins": 16
+              },
+              "tree_bins": 0,
+              "walk": {
+                "above": {
+                  "bins_walked": 0,
+                  "reached_end": true
+                },
+                "below": {
+                  "bins_walked": 0,
+                  "reached_end": true
+                }
+              }
+            },
+            "hooks": null,
+            "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+          },
+          "0x368b148052a1a775dbe70e56d04474e54c694cac": {
+            "balances_equal_reserves_plus_protocol_fees": true,
+            "code_hash": "0x113fcf97474039dd82e8381c628f983dea737a18ec689017ddaff87e624d0f7f",
+            "completeness": {
+              "bin_range": [
+                8388595,
+                8388615
+              ],
+              "envelope": {
+                "x_to_y": {
+                  "amount_in": "16060102249",
+                  "end_active_id": 8388610,
+                  "status": "ok"
+                },
+                "y_to_x": {
+                  "amount_in": "16071039249",
+                  "end_active_id": 8388611,
+                  "status": "ok"
+                }
+              },
+              "limits": {
+                "margin_bins": 4,
+                "max_bins_per_direction": 5000,
+                "walk_chunk_bins": 16
+              },
+              "tree_bins": 21,
+              "walk": {
+                "above": {
+                  "bins_walked": 4,
+                  "reached_end": false
+                },
+                "below": {
+                  "bins_walked": 16,
+                  "reached_end": false
+                }
+              }
+            },
+            "hooks": {
+              "address": "0xda84fe8b6789959320955c39cecdd2ff1217a0cd",
+              "clone_args": "0x368b148052a1a775dbe70e56d04474e54c694cac000000000000000000000000000000000000000000000000000000000000003f",
+              "code_hash": "0xe36400225bef3bba1d450dba51ad858697d6ec7418e112319a03fabad98f214c",
+              "contract": "LBHooksRewarder",
+              "extra": null,
+              "extra_hooks_parameters": "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+              "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+              "parameters": "0x000000000000000000000151da84fe8b6789959320955c39cecdd2ff1217a0cd"
+            },
+            "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+          },
+          "0x3b6c029e6409f2868769871f9ed6825b15bdca15": {
+            "balances_equal_reserves_plus_protocol_fees": true,
+            "code_hash": "0x55fbdc0c47782861335440912b1af5b83fa83872061a1621cb3b9082c5ecd91b",
+            "completeness": {
+              "bin_range": [
+                8389066,
+                8389098
+              ],
+              "envelope": {
+                "x_to_y": {
+                  "amount_in": "5436504136065201860",
+                  "end_active_id": 8389080,
+                  "status": "ok"
+                },
+                "y_to_x": {
+                  "amount_in": "5973500000000000000",
+                  "end_active_id": 8389089,
+                  "status": "ok"
+                }
+              },
+              "limits": {
+                "margin_bins": 4,
+                "max_bins_per_direction": 5000,
+                "walk_chunk_bins": 16
+              },
+              "tree_bins": 33,
+              "walk": {
+                "above": {
+                  "bins_walked": 16,
+                  "reached_end": false
+                },
+                "below": {
+                  "bins_walked": 16,
+                  "reached_end": false
+                }
+              }
+            },
+            "hooks": {
+              "address": "0x06f5e7cae14d6ef1e7b3c7dd5d8539344a0627b4",
+              "clone_args": "0x3b6c029e6409f2868769871f9ed6825b15bdca15000000000000000000000000000000000000000000000000000000000000001f",
+              "code_hash": "0xdc48debf8621b851b0b2370d143d95c182ab7d147a2258edde852793829781e1",
+              "contract": "LBHooksRewarder",
+              "extra": {
+                "address": "0x87580eb54a65da7ff8614807a88e43ffc306ed9d",
+                "clone_args": "0x3b6c029e6409f2868769871f9ed6825b15bdca15000000000000000000000000000000000000000006f5e7cae14d6ef1e7b3c7dd5d8539344a0627b4",
+                "code_hash": "0xdfc85b8a5bed4db62461ab36b75edac3b62f14e77cc7d33bea4e4be6b7f17fe9",
+                "contract": "LBHooksExtraRewarder",
+                "implementation": "0x2d4bf9f668e5b7c7fe33c8f116ae190669304676",
+                "implementation_code_hash": "0xb98cf49205f9f8cff629c453c08863e145bd13d138b1fd6fda01d1947ba89326"
+              },
+              "extra_hooks_parameters": "0x00000000000000000000015187580eb54a65da7ff8614807a88e43ffc306ed9d",
+              "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+              "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+              "parameters": "0x00000000000000000000015106f5e7cae14d6ef1e7b3c7dd5d8539344a0627b4"
+            },
+            "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+          },
+          "0x451368c461f9f4a70c434576b31ed5f258e765f5": {
+            "balances_equal_reserves_plus_protocol_fees": true,
+            "code_hash": "0x226d8f41a09fd95ceeaef85f5bccb34a14526db2ce5c63604af351f0b547db74",
+            "completeness": {
+              "bin_range": [
+                0,
+                16777215
+              ],
+              "envelope": {
+                "x_to_y": {
+                  "amount_in": "5973500000000000000",
+                  "status": "insufficient_liquidity"
+                },
+                "y_to_x": {
+                  "amount_in": "5436504136065201860",
+                  "status": "insufficient_liquidity"
+                }
+              },
+              "limits": {
+                "margin_bins": 4,
+                "max_bins_per_direction": 5000,
+                "walk_chunk_bins": 16
+              },
+              "tree_bins": 0,
+              "walk": {
+                "above": {
+                  "bins_walked": 0,
+                  "reached_end": true
+                },
+                "below": {
+                  "bins_walked": 0,
+                  "reached_end": true
+                }
+              }
+            },
+            "hooks": null,
+            "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+          },
+          "0x81ce5b3acf2ddfd28013a28edd90fa4b1f61430d": {
+            "balances_equal_reserves_plus_protocol_fees": true,
+            "code_hash": "0x8ccc35451d9d5b12f2b383cf1b1498eb294a9e7b81c978c7cd2b26a0bd1d3011",
+            "completeness": {
+              "bin_range": [
+                0,
+                16777215
+              ],
+              "envelope": {
+                "x_to_y": {
+                  "amount_in": "19065513",
+                  "status": "insufficient_liquidity"
+                },
+                "y_to_x": {
+                  "amount_in": "16071039249",
+                  "status": "insufficient_liquidity"
+                }
+              },
+              "limits": {
+                "margin_bins": 4,
+                "max_bins_per_direction": 5000,
+                "walk_chunk_bins": 16
+              },
+              "tree_bins": 0,
+              "walk": {
+                "above": {
+                  "bins_walked": 0,
+                  "reached_end": true
+                },
+                "below": {
+                  "bins_walked": 0,
+                  "reached_end": true
+                }
+              }
+            },
+            "hooks": null,
+            "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+          },
+          "0xc0729cde19741de280b230d650f0fdad2ad79d09": {
+            "balances_equal_reserves_plus_protocol_fees": true,
+            "code_hash": "0x5c7645e51a63c658124840f90c08b4963af259af13e24e85734eba216665c8e6",
+            "completeness": {
+              "bin_range": [
+                8377371,
+                8377403
+              ],
+              "envelope": {
+                "x_to_y": {
+                  "amount_in": "23707116162936122271491",
+                  "end_active_id": 8377382,
+                  "status": "ok"
+                },
+                "y_to_x": {
+                  "amount_in": "16071039249",
+                  "end_active_id": 8377391,
+                  "status": "ok"
+                }
+              },
+              "limits": {
+                "margin_bins": 4,
+                "max_bins_per_direction": 5000,
+                "walk_chunk_bins": 16
+              },
+              "tree_bins": 33,
+              "walk": {
+                "above": {
+                  "bins_walked": 16,
+                  "reached_end": false
+                },
+                "below": {
+                  "bins_walked": 16,
+                  "reached_end": false
+                }
+              }
+            },
+            "hooks": {
+              "address": "0x06a673d78d4f18ed72c7903e9799682ff2d74a90",
+              "clone_args": "0xc0729cde19741de280b230d650f0fdad2ad79d09000000000000000000000000000000000000000000000000000000000000003b",
+              "code_hash": "0x296b789b8b23d541caab65e03a6b6c9da821aa6d9a5c8082da32256e9f3d3c4f",
+              "contract": "LBHooksRewarder",
+              "extra": null,
+              "extra_hooks_parameters": "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+              "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+              "parameters": "0x00000000000000000000015106a673d78d4f18ed72c7903e9799682ff2d74a90"
+            },
+            "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+          }
+        },
+        "prepare_config": {
+          "path": "config/corpus/prepare/moe_lb.yaml",
+          "sha256": "b3a27f930ac07045d36968e1ff6e8abb7b131e37a4917b9b66695429551b8eac"
+        },
+        "read_batching": {
+          "address": "0xca11bde05977b3631167028862be2a173976ca11",
+          "chunk": 100,
+          "code_hash": "0x8ec8aa5d07a37e47597b3a254f5cbf39fa2080526ae34db3a564fffed82b99ad",
+          "direct_cross_check": true,
+          "method": "aggregate3, allowFailure=true, per-sub-call success checked"
+        },
+        "rpc_endpoint": "https://rpc.mantle.xyz",
+        "schema": "lb-collection/1",
+        "source_capability": {
+          "protocol_family": "liquidity_book_v2",
+          "sor_protocol": null
+        },
+        "source_key": "moe_lb_v2_2",
+        "tokens": {
+          "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": {
+            "decimals": 6,
+            "label": "USDC"
+          },
+          "0x1bdd8878252daddd3af2ba30628813271294edc0": {
+            "decimals": 18,
+            "label": "CATI"
+          },
+          "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": {
+            "decimals": 6,
+            "label": "USDT"
+          },
+          "0x779ded0c9e1022225f8e0630b35a9b54be713736": {
+            "decimals": 6,
+            "label": "USDT0"
+          },
+          "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": {
+            "decimals": 18,
+            "label": "WMNT"
+          },
+          "0xc96de26018a54d51c097160568752c4e3bd6c364": {
+            "decimals": 8,
+            "label": "FBTC"
+          },
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0": {
+            "decimals": 18,
+            "label": "METH"
+          },
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": {
+            "decimals": 18,
+            "label": "WETH"
+          }
+        }
+      },
+      "sor_protocol": null
+    },
+    "uniswap_v3": {
+      "bundle_hash": "f93a6024cd4d26bf17458d75f6861520fe8f7fc34cde70cfc360aaed486fe5fa",
+      "bundle_id": "mantle-5src-101082044-uniswap_v3-101082044-091b0759",
+      "collector": "uniswap_v3",
+      "pools": 13,
+      "provenance": {
+        "block": {
+          "chain_id": 5000,
+          "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+          "number": 101082044,
+          "timestamp": 1790294400
+        },
+        "block_verification": "resolved by number, <= finalized head, every state read EIP-1898 pinned to the hash with requireCanonical, header re-read by number and hash after collection",
+        "catalog": {
+          "factory": {
+            "address": "0x0d922fb1bc191f64970ac40376643808b4b74df9",
+            "code_hash": "0xde76db50667744def5d2fd1edc36bb8396bfd3d764f99f480e94ef2c4417ec93"
+          },
+          "pool_code_normalized_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca",
+          "pool_deployer": "factory",
+          "pool_immutables": [
+            "factory",
+            "token0",
+            "token1",
+            "fee",
+            "tickSpacing",
+            "maxLiquidityPerTick",
+            "original"
+          ],
+          "upstream": {
+            "license": "BUSL-1.1 at publication, Change Date 2023-04-01 (already passed) -> automatically GPL-2.0-or-later since that date per the LICENSE file at the pinned tag; treat as GPL-2.0-or-later for this 2026 migration.\n",
+            "ref": "tag v1.0.0, commit e3589b192d0be27e100cd0daaf6c97204fdb1899",
+            "repo": "https://github.com/Uniswap/v3-core"
+          }
+        },
+        "collector": "snapshot.collectors.concentrated",
+        "discovery": {
+          "admitted": [
+            {
+              "fee": 100,
+              "pool_id": "0x8cfee38ab8b8f4bc2ff662e8cc8bdfb0439c9d2c",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 3000,
+              "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 3000,
+              "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 3000,
+              "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 3000,
+              "pool_id": "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 3000,
+              "pool_id": "0x082a6df295d9efeedd2838d154a2bbc255fa0745",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            }
+          ],
+          "method": "factory.getPool over configured pairs x catalog fee tiers",
+          "omitted": [
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x1bdd8878252daddd3af2ba30628813271294edc0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x1bdd8878252daddd3af2ba30628813271294edc0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x779ded0c9e1022225f8e0630b35a9b54be713736"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xc96de26018a54d51c097160568752c4e3bd6c364"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+            },
+            {
+              "fee": 100,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xc96de26018a54d51c097160568752c4e3bd6c364",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 500,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 3000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            },
+            {
+              "fee": 10000,
+              "pool_id": null,
+              "reason": "factory.getPool returned the zero address",
+              "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+              "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+            }
+          ]
+        },
+        "exclusions": {
+          "pools": [],
+          "rule": "envelope-unprovable-within-read-bound"
+        },
+        "pools": {
+          "0x48ef5640e71001cac842f5627a0bfec1ef09deb7": {
+            "code_hash": "0x736874a2a654cb9a70ac29f5d2748c3d49b6e174f7dcd379d9eee66c4889fc3d",
+            "completeness": {
+              "bitmap_word_range": [
+                -1086,
+                964
+              ],
+              "envelope": {
+                "one_for_zero": {
+                  "amount_in": "5973500000000000000",
+                  "end_tick": 233665,
+                  "end_word": 912,
+                  "status": "ok"
+                },
+                "zero_for_one": {
+                  "amount_in": "5436504136065201860",
+                  "end_tick": -269732,
+                  "end_word": -1054,
+                  "status": "ok"
+                }
+              },
+              "initialized_ticks": 9,
+              "limits": {
+                "initial_margin_words": 1,
+                "margin_words": 1,
+                "max_words_per_direction": 8192,
+                "walk_chunk_words": 64
+              },
+              "tick_range": [
+                -278016,
+                247039
+              ]
+            },
+            "immutable_sites": {
+              "factory": 3,
+              "fee": 4,
+              "maxLiquidityPerTick": 3,
+              "original": 1,
+              "tickSpacing": 4,
+              "token0": 6,
+              "token1": 6
+            },
+            "lm_pool": null,
+            "max_liquidity_per_tick": "191757530477355301479181766273477",
+            "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+          }
+        },
+        "prepare_config": {
+          "path": "config/corpus/prepare/uniswap_v3.yaml",
+          "sha256": "c91b5a2185ffbab9db3e11c211727b8fbf8a7a542ef5ecf64f73bc48e83cbbc6"
+        },
+        "read_batching": {
+          "address": "0xca11bde05977b3631167028862be2a173976ca11",
+          "chunk": 100,
+          "code_hash": "0x8ec8aa5d07a37e47597b3a254f5cbf39fa2080526ae34db3a564fffed82b99ad",
+          "direct_cross_check": true,
+          "method": "aggregate3, allowFailure=true, per-sub-call success checked"
+        },
+        "rpc_endpoint": "https://rpc.mantle.xyz",
+        "schema": "cl-collection/1",
+        "source_capability": {
+          "protocol_family": "v3_concentrated_liquidity",
+          "sor_protocol": "V3"
+        },
+        "source_key": "uniswap_v3",
+        "token_labels": {
+          "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": "USDC",
+          "0x1bdd8878252daddd3af2ba30628813271294edc0": "CATI",
+          "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": "USDT",
+          "0x779ded0c9e1022225f8e0630b35a9b54be713736": "USDT0",
+          "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": "WMNT",
+          "0xc96de26018a54d51c097160568752c4e3bd6c364": "FBTC",
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0": "METH",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": "WETH"
+        }
+      },
+      "sor_protocol": "V3"
+    }
+  },
+  "subset_of": {
+    "bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "bundle_id": "mantle-5src-101082044-091b0759"
+  }
+}

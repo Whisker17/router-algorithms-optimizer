@@ -31,6 +31,16 @@ soon — anything touching high-risk paths defaults to at least High), **Medium*
 
 ## Open
 
+- **The LB collector walks a book one non-empty bin per RPC round trip** (Medium, WHI-1436).
+  `snapshot/collectors/liquidity_book.py::LBCollector._walk` — `getNextNonEmptyBin` answers
+  are sequential per side, so a wide book costs one request per bin even with Multicall3
+  (WMNT/USDT bin step 15 alone took ~3,080 round trips; the whole LB corpus collection ~42
+  min). Deferred: the corpus completed within its declared bound and its bundle is frozen.
+  Fix options: read `getBin` over contiguous id ranges in one `aggregate3` (a bin is a tree
+  member iff it is non-empty), or stop a side once the collected bins account for the
+  pair's whole reserve of that side's token (bins above the active id hold only X, below
+  only Y) and record the range as complete; either needs its own equivalence tests against
+  a full walk.
 - **A temporary `release/v*` cut is only distinguishable from a live integration branch
   by its open PR into `main`** (Medium, version-routed-PRs port).
   `docs/GIT_WORKFLOW.md` § Fan-out (the live-branch query) — between pushing a fresh cut

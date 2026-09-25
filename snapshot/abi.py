@@ -72,6 +72,9 @@ SEL_GET_LB_PAIR = "5f9c01b1"  # getLBPair()
 SEL_GET_EXTRA_HOOKS_PARAMETERS = "c7d12e88"  # getExtraHooksParameters()
 SEL_GET_PARENT_REWARDER = "20e1bba7"  # getParentRewarder()
 
+# Multicall3 (deterministic deployment 0xcA11bde05977b3631167028862bE2a173976CA11; WHI-1436)
+SEL_AGGREGATE3 = "82ad56cb"  # aggregate3((address,bool,bytes)[])
+
 # ERC-20 (best-effort; only used for informational token identification)
 SEL_SYMBOL = "95d89b41"  # symbol()
 SEL_DECIMALS = "313ce567"  # decimals()
@@ -249,3 +252,63 @@ def immutable_normalized_code_hash(
                 hits[name] += 1
                 break
     return keccak256_hex(bytes(normalized)), hits
+
+
+# --- Multicall3.aggregate3 (WHI-1436) -----------------------------------------------
+# The only dynamic ABI types this module encodes: `(address target, bool allowFailure,
+# bytes callData)[]` in and `(bool success, bytes returnData)[]` out, per the Solidity
+# ABI head/tail layout.
+
+
+def _word(value: int) -> str:
+    return f"{value:064x}"
+
+
+def encode_aggregate3(calls: list[tuple[str, str]], *, allow_failure: bool = True) -> str:
+    """`aggregate3` calldata for `(target, calldata_hex)` sub-calls."""
+    elems: list[str] = []
+    for target, data in calls:
+        payload = data.removeprefix("0x")
+        if len(payload) % 2:
+            raise ValueError(f"odd-length calldata for {target}")
+        n = len(payload) // 2
+        padded = payload + "0" * ((-len(payload)) % 64)
+        elems.append(
+            pad_address(target) + _word(1 if allow_failure else 0) + _word(0x60) + _word(n) + padded
+        )
+    offsets: list[str] = []
+    cursor = 32 * len(elems)
+    for elem in elems:
+        offsets.append(_word(cursor))
+        cursor += len(elem) // 2
+    return (
+        "0x" + SEL_AGGREGATE3 + _word(0x20) + _word(len(elems)) + "".join(offsets) + "".join(elems)
+    )
+
+
+def decode_aggregate3(result_hex: str, expected: int) -> list[tuple[bool, str]]:
+    """`(bool success, bytes returnData)[]` -> `[(success, "0x" + returnData)]`."""
+    raw = bytes.fromhex(result_hex.removeprefix("0x"))
+
+    def word(at: int) -> int:
+        if at + 32 > len(raw):
+            raise ValueError("aggregate3 result truncated")
+        return int.from_bytes(raw[at : at + 32], "big")
+
+    base = word(0)
+    count = word(base)
+    if count != expected:
+        raise ValueError(f"aggregate3 returned {count} result(s), expected {expected}")
+    heads = base + 32
+    out: list[tuple[bool, str]] = []
+    for i in range(count):
+        elem = heads + word(heads + 32 * i)
+        success = word(elem)
+        if success not in (0, 1):
+            raise ValueError(f"aggregate3 result {i}: success word {success}")
+        data_at = elem + word(elem + 32)
+        n = word(data_at)
+        if data_at + 32 + n > len(raw):
+            raise ValueError(f"aggregate3 result {i}: returnData truncated")
+        out.append((success == 1, "0x" + raw[data_at + 32 : data_at + 32 + n].hex()))
+    return out

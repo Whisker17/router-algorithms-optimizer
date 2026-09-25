@@ -91,11 +91,16 @@ class CollectionLimits:
     swap needs, and after each direction is covered adds `margin_words` beyond the
     word the largest swap ends in. More than `max_words_per_direction` words on one
     side of the current word is `incomplete_snapshot`: publication is refused rather
-    than the envelope silently truncated."""
+    than the envelope silently truncated -- unless `exclusion_rule` (WHI-1436: the
+    corpus's one declared, source-agnostic rule id) is set, in which case that pool is
+    excluded with the rule id and the bound recorded in provenance. `walk_chunk_words`
+    (default 1) is how many words one extension step reads."""
 
     initial_margin_words: int
     margin_words: int
     max_words_per_direction: int
+    walk_chunk_words: int = 1
+    exclusion_rule: str | None = None
 
 
 @dataclass(frozen=True)
@@ -105,6 +110,7 @@ class RpcSettings:
     base_delay_seconds: float
     max_delay_seconds: float
     timeout_seconds: float
+    use_multicall3: bool = False  # WHI-1436: batch pinned reads via the catalog's Multicall3
 
 
 @dataclass(frozen=True)
@@ -161,6 +167,14 @@ def _parse_cases(
     return tuple(cases)
 
 
+def _exclusion_rule(value: Any) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise PrepareConfigError("collection.exclusion_rule: expected a non-empty rule id")
+    return value
+
+
 def _parse_rpc(rpc: Any) -> RpcSettings:
     _require_keys(
         rpc,
@@ -171,15 +185,19 @@ def _parse_rpc(rpc: Any) -> RpcSettings:
             "max_delay_seconds",
             "timeout_seconds",
         },
-        set(),
+        {"use_multicall3"},
         "rpc",
     )
+    use_multicall3 = rpc.get("use_multicall3", False)
+    if not isinstance(use_multicall3, bool):
+        raise PrepareConfigError("rpc.use_multicall3: expected a boolean")
     settings = RpcSettings(
         max_batch_size=_int(rpc["max_batch_size"], 1, 100, "rpc.max_batch_size"),
         max_attempts=_int(rpc["max_attempts"], 1, 20, "rpc.max_attempts"),
         base_delay_seconds=_number(rpc["base_delay_seconds"], 0.0, "rpc.base_delay_seconds"),
         max_delay_seconds=_number(rpc["max_delay_seconds"], 0.0, "rpc.max_delay_seconds"),
         timeout_seconds=_number(rpc["timeout_seconds"], 1.0, "rpc.timeout_seconds"),
+        use_multicall3=use_multicall3,
     )
     if settings.max_delay_seconds < settings.base_delay_seconds:
         raise PrepareConfigError("rpc: max_delay_seconds must be >= base_delay_seconds")
@@ -274,7 +292,7 @@ def parse_prepare_config(raw: Any, *, source_path: str, sha256: str) -> ClPrepar
     _require_keys(
         coll,
         {"initial_margin_words", "margin_words", "max_words_per_direction"},
-        set(),
+        {"walk_chunk_words", "exclusion_rule"},
         "collection",
     )
     limits = CollectionLimits(
@@ -283,8 +301,12 @@ def parse_prepare_config(raw: Any, *, source_path: str, sha256: str) -> ClPrepar
         ),
         margin_words=_int(coll["margin_words"], 0, 64, "collection.margin_words"),
         max_words_per_direction=_int(
-            coll["max_words_per_direction"], 1, 4096, "collection.max_words_per_direction"
+            coll["max_words_per_direction"], 1, 1 << 15, "collection.max_words_per_direction"
         ),
+        walk_chunk_words=_int(
+            coll.get("walk_chunk_words", 1), 1, 4096, "collection.walk_chunk_words"
+        ),
+        exclusion_rule=_exclusion_rule(coll.get("exclusion_rule")),
     )
     if limits.initial_margin_words > limits.max_words_per_direction:
         raise PrepareConfigError("collection: initial_margin_words exceeds max_words_per_direction")
@@ -504,6 +526,7 @@ class BinWalkLimits:
     walk_chunk_bins: int
     margin_bins: int
     max_bins_per_direction: int
+    exclusion_rule: str | None = None  # WHI-1436: exclude (with this rule id) not refuse
 
 
 @dataclass(frozen=True)
@@ -570,7 +593,10 @@ def parse_lb_prepare_config(raw: Any, *, source_path: str, sha256: str) -> LBPre
     cases = _parse_cases(raw["cases"], aliases, seen_pairs)
     coll = raw["collection"]
     _require_keys(
-        coll, {"walk_chunk_bins", "margin_bins", "max_bins_per_direction"}, set(), "collection"
+        coll,
+        {"walk_chunk_bins", "margin_bins", "max_bins_per_direction"},
+        {"exclusion_rule"},
+        "collection",
     )
     limits = BinWalkLimits(
         walk_chunk_bins=_int(coll["walk_chunk_bins"], 1, 1024, "collection.walk_chunk_bins"),
@@ -578,6 +604,7 @@ def parse_lb_prepare_config(raw: Any, *, source_path: str, sha256: str) -> LBPre
         max_bins_per_direction=_int(
             coll["max_bins_per_direction"], 1, 100_000, "collection.max_bins_per_direction"
         ),
+        exclusion_rule=_exclusion_rule(coll.get("exclusion_rule")),
     )
     return LBPrepareConfig(
         source_key=source_key,

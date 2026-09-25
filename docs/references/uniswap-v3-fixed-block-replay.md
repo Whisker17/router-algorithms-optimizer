@@ -122,6 +122,10 @@ are therefore kept, not dropped.
 and provenance: proving exhaustion from its current word (-1) would walk 3,465 words per
 direction, far beyond the declared bound, so its envelope genuinely cannot be complete.
 The pair has no other Uniswap pool and carries no cases.
+*Update (WHI-1436):* the corpus replaces per-config exclusions with one declared,
+source-agnostic rule and walks thin pools to MIN_TICK/MAX_TICK; at block 101082044 this
+pool is admitted and proven exhausted (`docs/references/corpus.md` §5). The exclusion
+here remains only because this provisional-block fixture is reproduced from this config.
 
 **Reference cases** (the declared envelope, `config/prepare/uniswap_v3.yaml`): both
 directions of the eight pairs with a pool, small/medium/large scaled to each pair's depth
