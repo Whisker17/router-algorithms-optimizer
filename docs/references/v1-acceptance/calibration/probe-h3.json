@@ -1,0 +1,227 @@
+[
+ {
+  "algorithm": "direct",
+  "at_best": 19,
+  "budget": {
+   "max_candidates": null,
+   "max_quotes": null,
+   "time_limit_seconds": 1800.0
+  },
+  "compared": 72,
+  "limit_hits": {},
+  "params": {},
+  "quotes": {
+   "max": 16.0,
+   "p50": 3.0,
+   "p95": 16.0
+  },
+  "run_id": "20260925T151109272576Z-4224ecdc",
+  "scheduled": 96,
+  "shortfall_bps": {
+   "max": 259.6037334389982,
+   "mean": 24.302107107614543,
+   "p50": 7.245126858299999,
+   "p95": 88.17646554535996
+  },
+  "solve_seconds": {
+   "max": 0.023238833,
+   "p50": 0.0002075,
+   "p95": 0.012138166,
+   "total": 0.222735206
+  },
+  "statuses": {
+   "no_route": 24,
+   "ok": 72
+  }
+ },
+ {
+  "algorithm": "single_path",
+  "at_best": 26,
+  "budget": {
+   "max_candidates": null,
+   "max_quotes": null,
+   "time_limit_seconds": 1800.0
+  },
+  "compared": 96,
+  "limit_hits": {},
+  "params": {
+   "max_hops": 3
+  },
+  "quotes": {
+   "max": 6482.0,
+   "p50": 2960.0,
+   "p95": 5498.0
+  },
+  "run_id": "20260925T151109272576Z-4224ecdc",
+  "scheduled": 96,
+  "shortfall_bps": {
+   "max": 61.36116840809074,
+   "mean": 10.074630947432572,
+   "p50": 5.900401074169015,
+   "p95": 36.3237992767956
+  },
+  "solve_seconds": {
+   "max": 5.040187209,
+   "p50": 1.187326125,
+   "p95": 4.719811584,
+   "total": 165.339638701
+  },
+  "statuses": {
+   "ok": 96
+  }
+ },
+ {
+  "algorithm": "direct_split",
+  "at_best": 21,
+  "budget": {
+   "max_candidates": null,
+   "max_quotes": null,
+   "time_limit_seconds": 1800.0
+  },
+  "compared": 72,
+  "limit_hits": {},
+  "params": {
+   "max_splits": 4,
+   "percent_step": 5
+  },
+  "quotes": {
+   "max": 987.0,
+   "p50": 79.0,
+   "p95": 853.0
+  },
+  "run_id": "20260925T151109272576Z-4224ecdc",
+  "scheduled": 96,
+  "shortfall_bps": {
+   "max": 124.03280424400924,
+   "mean": 19.57440238401166,
+   "p50": 7.245126858299999,
+   "p95": 87.68130763508854
+  },
+  "solve_seconds": {
+   "max": 1.370175333,
+   "p50": 0.001754459,
+   "p95": 0.733939167,
+   "total": 9.83348575
+  },
+  "statuses": {
+   "no_route": 24,
+   "ok": 72
+  }
+ },
+ {
+  "algorithm": "path_split",
+  "at_best": 38,
+  "budget": {
+   "max_candidates": null,
+   "max_quotes": null,
+   "time_limit_seconds": 1800.0
+  },
+  "compared": 96,
+  "limit_hits": {},
+  "params": {
+   "max_hops": 3,
+   "max_splits": 4,
+   "percent_step": 5
+  },
+  "quotes": {
+   "max": 30790.0,
+   "p50": 15840.0,
+   "p95": 28369.0
+  },
+  "run_id": "20260925T151109272576Z-4224ecdc",
+  "scheduled": 96,
+  "shortfall_bps": {
+   "max": 20.03332779942375,
+   "mean": 3.596913796496209,
+   "p50": 1.1680937608356823,
+   "p95": 19.16331111783664
+  },
+  "solve_seconds": {
+   "max": 19.350958084,
+   "p50": 4.770398958,
+   "p95": 11.527899667,
+   "total": 506.089848964
+  },
+  "statuses": {
+   "ok": 96
+  }
+ },
+ {
+  "algorithm": "incremental_graph",
+  "at_best": 96,
+  "budget": {
+   "max_candidates": null,
+   "max_quotes": null,
+   "time_limit_seconds": 1800.0
+  },
+  "compared": 96,
+  "limit_hits": {},
+  "params": {
+   "chunks": 20,
+   "max_hops": 3,
+   "max_splits": 4,
+   "percent_step": 5
+  },
+  "quotes": {
+   "max": 41783.0,
+   "p50": 19911.0,
+   "p95": 35373.0
+  },
+  "run_id": "20260925T151109272576Z-4224ecdc",
+  "scheduled": 96,
+  "shortfall_bps": {
+   "max": 0.0,
+   "mean": 0.0,
+   "p50": 0.0,
+   "p95": 0.0
+  },
+  "solve_seconds": {
+   "max": 24.30366575,
+   "p50": 6.479184625,
+   "p95": 19.575812708,
+   "total": 693.229752752
+  },
+  "statuses": {
+   "ok": 96
+  }
+ },
+ {
+  "algorithm": "uni_sor_port",
+  "at_best": 27,
+  "budget": {
+   "max_candidates": null,
+   "max_quotes": null,
+   "time_limit_seconds": 1800.0
+  },
+  "compared": 94,
+  "limit_hits": {},
+  "params": {
+   "max_hops": 3,
+   "max_splits": 4,
+   "percent_step": 5
+  },
+  "quotes": {
+   "max": 82724.0,
+   "p50": 22203.0,
+   "p95": 65957.0
+  },
+  "run_id": "20260925T151109272576Z-2ee19002",
+  "scheduled": 96,
+  "shortfall_bps": {
+   "max": 55.42894121730289,
+   "mean": 7.354684054718788,
+   "p50": 4.379204741849969,
+   "p95": 25.36037894243832
+  },
+  "solve_seconds": {
+   "max": 77.851180542,
+   "p50": 10.882019709,
+   "p95": 65.817669667,
+   "total": 2105.737120126
+  },
+  "statuses": {
+   "invalid_plan": 2,
+   "ok": 94
+  }
+ }
+]
