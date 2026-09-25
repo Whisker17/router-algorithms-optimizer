@@ -817,20 +817,13 @@ class _BudgetExhausted(Exception):
     pass
 
 
-def _route_edges(route: SorRoute) -> tuple[Edge, ...]:
-    return tuple(
-        Edge(p.pool_id, route.token_path[i], route.token_path[i + 1])
-        for i, p in enumerate(route.pools)
-    )
-
-
 def _plan_legs(route: SorRoute, bundle: SnapshotBundle) -> tuple[Edge, ...]:
     """The route's edges in the bundle's own token spelling (the port lowercases)."""
     edges = []
-    for edge in _route_edges(route):
-        state = bundle.pools[edge.pool_id]
-        t_in = state.token0 if state.token0.lower() == edge.token_in else state.token1
-        edges.append(Edge(edge.pool_id, t_in, state.other_token(t_in)))
+    for i, pool in enumerate(route.pools):
+        state = bundle.pools[pool.pool_id]
+        t_in = state.token0 if state.token0.lower() == route.token_path[i] else state.token1
+        edges.append(Edge(pool.pool_id, t_in, state.other_token(t_in)))
     return tuple(edges)
 
 
