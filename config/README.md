@@ -47,4 +47,9 @@ No loader code ships with the template — write it when the first config file l
   may be an explicit `null`), `measurement` (`warmup`, `repeats`, `seed`, `order`
   `fixed|reverse|shuffle`, `memory_pass`) and `worker` (`start_method` `spawn|forkserver`,
   `scope` `algorithm|case`, `prepare_time_limit_seconds`). The smoke values are
-  smoke-scale and unvalidated; calibrated profiles are I21's job.
+  smoke-scale and unvalidated; calibrated profiles are I21's job. An optional `search`
+  section holds DESIGN §2.12 search parameters (`max_hops` so far, WHI-1438); a profile
+  listing an algorithm must declare every `search.*` key it requires (`single_path`:
+  `search.max_hops`) — again no built-in default.
+- `corpus_single_path_smoke.yaml` — smoke-scale profile running `direct` and
+  `single_path` (`search.max_hops: 3`) once over the frozen corpus (WHI-1438).
