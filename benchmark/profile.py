@@ -9,18 +9,24 @@ values calibrated on the reference machine -- no invented universal defaults"). 
 count limit may be `null` only by writing `null` explicitly ("no cap declared"); the
 per-case time limit is always a positive number. Schema 1 profiles (no measurement
 sections) are rejected with a pointer to the new keys.
+
+The optional `search` section (WHI-1438) holds the docs/DESIGN.md §2.12 search
+parameters (`search.max_hops` so far). It has no defaults either: a profile listing an
+algorithm must declare every `search.*` key that algorithm requires
+(`AlgorithmFactory.search_params`), and those values reach the algorithm's `prepare`
+as `AlgorithmConfig.params`.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
 import yaml
 
 from benchmark.objective import ObjectiveContext, gross_only, synthetic_fixed_cost
-from routing.algorithms.base import Budget
+from routing.algorithms.base import AlgorithmConfig, AlgorithmFactory, Budget
 from routing.algorithms.registry import ALGORITHMS
 
 SUPPORTED_SCHEMA_VERSION = 2
@@ -102,6 +108,15 @@ class RunProfile:
     budget: Budget
     measurement: MeasurementSettings
     worker: WorkerSettings
+    search: dict[str, int] = field(default_factory=dict)
+
+    def algorithm_config(self, factory: AlgorithmFactory) -> AlgorithmConfig:
+        """The `prepare` configuration for `factory`: exactly the `search.*` values it
+        declares it needs (the loader already guaranteed they are present)."""
+        return AlgorithmConfig(
+            name=factory.name,
+            params={key: self.search[key] for key in factory.search_params if key in self.search},
+        )
 
     def resolved(self) -> dict[str, Any]:
         """Every profile value, including inherited defaults (docs/DESIGN.md §2.12:
@@ -113,6 +128,15 @@ class RunProfile:
             "budget": self.budget.to_dict(),
             "measurement": self.measurement.to_dict(),
             "worker": self.worker.to_dict(),
+            "search": dict(self.search),
+            "algorithm_config": {
+                name: {
+                    "capabilities": ALGORITHMS[name].capabilities.to_dict(),
+                    "params": dict(self.algorithm_config(ALGORITHMS[name]).params),
+                }
+                for name in self.algorithms
+                if name in ALGORITHMS
+            },
         }
 
 
@@ -196,6 +220,20 @@ def _parse_objective(obj: Any, where: str) -> ObjectiveContext:
     raise ProfileError(f"{where}.mode: unknown objective mode {mode!r}")
 
 
+# Every `search.*` key the loader knows (docs/DESIGN.md §2.12), with its minimum.
+# Later algorithm issues add `max_splits` / `percent_step` here.
+SEARCH_KEYS: dict[str, int] = {"max_hops": 1}
+
+
+def _parse_search(obj: Any, where: str) -> dict[str, int]:
+    _require_keys(obj, set(), set(SEARCH_KEYS), where)
+    return {
+        key: _int_at_least(obj[key], minimum, f"{where}.{key}")
+        for key, minimum in SEARCH_KEYS.items()
+        if key in obj
+    }
+
+
 def parse_profile(raw: Any, source_path: str) -> RunProfile:
     if isinstance(raw, dict) and raw.get("schema_version") == 1:
         raise ProfileError(
@@ -205,7 +243,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
     _require_keys(
         raw,
         {"schema_version", "algorithms", "objective", "budget", "measurement", "worker"},
-        set(),
+        {"search"},
         "<root>",
     )
     if raw["schema_version"] != SUPPORTED_SCHEMA_VERSION:
@@ -226,6 +264,15 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
                 f"algorithms: unknown algorithm {name!r}; registered: {sorted(ALGORITHMS)}"
             )
     objective = _parse_objective(raw["objective"], "objective")
+    search = _parse_search(raw["search"], "search") if "search" in raw else {}
+    for name in algorithms_obj:
+        missing = [key for key in ALGORITHMS[name].search_params if key not in search]
+        if missing:
+            raise ProfileError(
+                f"algorithms: {name!r} requires "
+                + ", ".join(f"search.{key}" for key in missing)
+                + " to be declared explicitly (no built-in default)"
+            )
     return RunProfile(
         schema_version=raw["schema_version"],
         algorithms=tuple(algorithms_obj),
@@ -234,6 +281,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         budget=_parse_budget(raw["budget"], "budget"),
         measurement=_parse_measurement(raw["measurement"], "measurement"),
         worker=_parse_worker(raw["worker"], "worker"),
+        search=search,
     )
 
 

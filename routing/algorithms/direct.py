@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from pools.result import QuoteStatus
 from routing.algorithms.base import (
+    SINGLE_POOL,
     AlgorithmFactory,
     Budget,
     SolveContext,
@@ -110,4 +111,4 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
     )
 
 
-FACTORY = AlgorithmFactory(name=NAME, solve=solve)
+FACTORY = AlgorithmFactory(name=NAME, solve=solve, capabilities=SINGLE_POOL)

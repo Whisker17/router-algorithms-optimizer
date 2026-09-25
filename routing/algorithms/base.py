@@ -29,6 +29,9 @@ class SolveStatus(StrEnum):
     algorithm produces every value; `direct` returns `OK`, `NO_ROUTE` or
     `INCOMPLETE_SNAPSHOT` (a candidate needed uncollected state, WHI-1429). The
     runner itself assigns `TIMEOUT` (a hard time/quote limit cut the search off),
+    and a solver may return `TIMEOUT` itself when its own cooperative budget
+    accounting stopped the search before any complete route was found (e.g.
+    `single_path`: a truncated search is never evidence of `NO_ROUTE`);
     `ALGORITHM_ERROR` (the solver raised, crashed its worker or returned garbage),
     `INVALID_PLAN` (the independent evaluation rejected a submitted plan) and
     `CANCELLED` (the run was interrupted before the case finished)."""
@@ -113,6 +116,11 @@ class SolveResult:
     # (e.g. `Budget.max_candidates`) -- declared truncation, visible in results.
     candidates_truncated: int = 0
     error: str | None = None
+    # Algorithm-specific, deterministic search counters (e.g. `single_path`: hop
+    # bound, paths enumerated/evaluated/pruned/truncated, which limit truncated the
+    # search, quotes executed vs. memoized). JSON-serializable values only; recorded
+    # verbatim as `search` in the run's per-case record.
+    search_stats: Mapping[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -124,17 +132,36 @@ class SolveResult:
             "candidates_considered": self.candidates_considered,
             "candidates_truncated": self.candidates_truncated,
             "error": self.error,
+            "search": dict(self.search_stats),
         }
 
 
 @dataclass(frozen=True)
 class AlgorithmConfig:
-    """The per-algorithm configuration handed to `prepare()`. Profiles do not
-    declare algorithm-specific parameters yet, so `params` is empty for every
-    registered algorithm; later algorithm issues add validated keys."""
+    """The per-algorithm configuration handed to `prepare()`: the validated profile
+    `search.*` values the algorithm declared in `AlgorithmFactory.search_params`
+    (e.g. `{"max_hops": 3}` for `single_path`), empty for algorithms that declare
+    none."""
 
     name: str
     params: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class Capabilities:
+    """What plan shapes an algorithm can produce (docs/DESIGN.md §2.6 "Capability"
+    column; §2.10: capability declarations determine `unsupported`). `multi_hop`: a
+    plan may chain several pools; `split`: a plan may divide the input across
+    several routes."""
+
+    multi_hop: bool
+    split: bool
+
+    def to_dict(self) -> dict[str, bool]:
+        return {"multi_hop": self.multi_hop, "split": self.split}
+
+
+SINGLE_POOL = Capabilities(multi_hop=False, split=False)
 
 
 class SolveFn(Protocol):
@@ -155,3 +182,9 @@ class AlgorithmFactory:
     name: str
     solve: SolveFn
     prepare: PrepareFn | None = None
+    capabilities: Capabilities = SINGLE_POOL
+    # Profile `search.*` keys this algorithm requires. The profile loader rejects a
+    # profile that lists the algorithm without declaring every one of them
+    # (docs/DESIGN.md §2.12: no invented defaults) and hands them to `prepare` as
+    # `AlgorithmConfig.params`.
+    search_params: tuple[str, ...] = ()

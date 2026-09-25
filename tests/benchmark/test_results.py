@@ -121,6 +121,10 @@ def test_save_run_records_resolved_profile_values(tmp_path: Path) -> None:
             "scope": "algorithm",
             "prepare_time_limit_seconds": 5.0,
         },
+        "search": {},
+        "algorithm_config": {
+            "direct": {"capabilities": {"multi_hop": False, "split": False}, "params": {}}
+        },
     }
 
 

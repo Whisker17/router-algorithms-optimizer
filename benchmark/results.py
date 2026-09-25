@@ -110,6 +110,10 @@ class CaseRecord:
     limit_hit: str | None = None
     last_valid_candidate: Mapping[str, Any] | None = None
     measurement: Mapping[str, Any] = field(default_factory=dict)
+    # The solver's own deterministic search counters (`SolveResult.search_stats`,
+    # e.g. `single_path` hop bound / truncation / memoized quotes); empty when the
+    # solver declares none or never returned.
+    search: Mapping[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -120,6 +124,7 @@ class CaseRecord:
             "score": _opt_str(self.score),
             "candidates_considered": self.candidates_considered,
             "candidates_truncated": self.candidates_truncated,
+            "search": dict(self.search),
             "quotes": {"attempted": self.quotes_attempted, "counted": self.quotes_counted},
             "limit_hit": self.limit_hit,
             "error": self.error,
