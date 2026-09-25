@@ -51,9 +51,14 @@ No loader code ships with the template — write it when the first config file l
   section holds DESIGN §2.12 search parameters (`max_hops`, `max_splits`, `percent_step`
   — a positive divisor of 100); a profile listing an algorithm must declare every
   `search.*` key it requires (`single_path`: `search.max_hops`; `direct_split`:
-  `search.max_splits` and `search.percent_step`) — again no built-in default.
+  `search.max_splits` and `search.percent_step`; `path_split`: all three) — again no
+  built-in default.
 - `corpus_single_path_smoke.yaml` — smoke-scale profile running `direct` and
   `single_path` (`search.max_hops: 3`) once over the frozen corpus (WHI-1438).
 - `corpus_direct_split_smoke.yaml` — smoke-scale profile running `direct` and
   `direct_split` (`search.max_splits: 4`, `search.percent_step: 5`) once over the frozen
   corpus (WHI-1439).
+- `corpus_path_split_smoke.yaml` — smoke-scale profile running `direct`, `single_path`,
+  `direct_split` and `path_split` (smoke-scale `search.max_hops: 2`,
+  `search.max_splits: 4`, `search.percent_step: 5`) once over the frozen corpus under one
+  budget (WHI-1440).
