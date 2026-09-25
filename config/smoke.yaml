@@ -1,12 +1,32 @@
-# Smoke profile (WHI-1427): the smallest run configuration that exercises the
-# offline synthetic bundle end-to-end. See config/README.md for the general
-# YAML-config convention and docs/DESIGN.md §2.12 for the parameter table.
+# Smoke profile (WHI-1427; measured-run sections WHI-1437): the smallest run
+# configuration that exercises the offline synthetic bundle end-to-end. See
+# config/README.md for the YAML-config convention and docs/DESIGN.md §2.12 for the
+# parameter table.
 #
 # gross-only is the only objective mode with empirical standing before a real
 # cost model is calibrated (docs/DESIGN.md §2.9) -- this profile never claims a
 # net-output result.
-schema_version: 1
+#
+# Every budget/measurement/worker value below is SMOKE-SCALE and UNVALIDATED: chosen
+# only so the two-case synthetic fixture runs in a few seconds. They are not
+# universal defaults; the calibrated daily/full profiles (docs/ISSUE_PLAN.md I21)
+# declare their own values measured on the reference machine (DESIGN §2.12).
+schema_version: 2
 algorithms:
   - direct
 objective:
   mode: gross_only
+budget:
+  time_limit_seconds: 10    # hard per-attempt wall clock; the worker is killed after it
+  max_quotes: 64            # hard per-attempt quote cap (metered in the worker)
+  max_candidates: null      # explicitly no candidate cap declared
+measurement:
+  warmup: 1                 # discarded attempts per case
+  repeats: 3                # measured latency samples per case
+  seed: 1437                # per-case solver seeds and the `shuffle` order
+  order: fixed              # bundle order; `reverse`/`shuffle` are leak checks
+  memory_pass: true         # separate tracemalloc pass -> memory.jsonl
+worker:
+  start_method: spawn       # clean interpreter per worker (fork is not offered)
+  scope: algorithm          # one prepared worker per algorithm, replaced on failure
+  prepare_time_limit_seconds: 60   # start-up + prepare(bundle, config)

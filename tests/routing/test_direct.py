@@ -105,3 +105,29 @@ def test_direct_respects_max_candidates_budget() -> None:
     assert result.candidates_considered == 1
     assert result.plan is not None
     assert result.plan.steps[0].pool_id == "pool_a"
+
+
+def test_direct_declares_truncation_by_max_candidates_and_max_quotes() -> None:
+    bundle = _bundle({"pool_a": POOL_BETTER, "pool_b": POOL_WORSE})
+    case = Case(case_id="c1", token_in="TKA", token_out="TKB", amount_in=100_000)
+    context = SolveContext(bundle=bundle, objective=gross_only())
+    for budget in (Budget(max_candidates=1), Budget(max_quotes=1)):
+        result = solve(case, context, budget)
+        assert result.candidates_considered == 1
+        assert result.candidates_truncated == 1
+    untruncated = solve(case, context, Budget(max_candidates=5, max_quotes=5))
+    assert untruncated.candidates_truncated == 0
+
+
+def test_direct_reports_each_new_best_candidate() -> None:
+    bundle = _bundle({"pool_b": POOL_WORSE, "pool_a": POOL_BETTER})
+    case = Case(case_id="c1", token_in="TKA", token_out="TKB", amount_in=100_000)
+    seen: list[str] = []
+    context = SolveContext(
+        bundle=bundle,
+        objective=gross_only(),
+        candidate_sink=lambda plan: seen.append(plan.steps[0].pool_id),
+    )
+    result = solve(case, context, Budget())
+    assert seen == ["pool_b", "pool_a"]  # worse first (admitted order), then the better one
+    assert result.plan is not None and result.plan.steps[0].pool_id == "pool_a"

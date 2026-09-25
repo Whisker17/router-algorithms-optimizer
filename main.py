@@ -9,6 +9,11 @@ the envelope and the five prepare configs, and -- after `prepare --source <each>
 run at the corpus block -- `assemble` publishes the one corpus bundle. `plan` and
 `assemble` read only local files.
 
+`run` measures every profiled algorithm in isolated worker processes under the
+profile's declared budget (WHI-1437, `benchmark.runner`); `run --order reverse|shuffle`
+plus `order-check RUN_A RUN_B` is the state-leak check. SIGTERM/Ctrl-C finalize the run
+as `interrupted` with every unfinished case recorded as `cancelled` (exit code 130).
+
 `validate` and `run` are always offline: they read only the bundle directory
 (docs/DESIGN.md §4.5: "Ordinary offline commands require no RPC/Dune access").
 `prepare --source synthetic` is offline too. `prepare --source agni --block N` is the
@@ -21,11 +26,13 @@ must not require a private RPC credential").
 from __future__ import annotations
 
 import argparse
+import signal
 import sys
 from pathlib import Path
 
 from benchmark.profile import ProfileError, load_profile
-from benchmark.runner import run_experiment
+from benchmark.results import ResultError
+from benchmark.runner import RunInterrupted, compare_runs, run_experiment
 from snapshot.bundle import BundleError, load_bundle
 from snapshot.collectors import PrepareError, PrepareRequest, get_collector
 from snapshot.collectors.base import DEFAULT_CATALOG_PATH, DEFAULT_RPC_CACHE_DIR
@@ -114,6 +121,19 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--bundle", required=True)
     run_p.add_argument("--profile", required=True)
     run_p.add_argument("--results-dir", default=DEFAULT_RESULTS_DIR)
+    run_p.add_argument(
+        "--order",
+        choices=["fixed", "reverse", "shuffle"],
+        default=None,
+        help="Override the profile's case order (state-leak checks); recorded in the run",
+    )
+
+    order_p = subparsers.add_parser(
+        "order-check",
+        help="Compare two complete runs' deterministic outputs (e.g. fixed vs reverse order)",
+    )
+    order_p.add_argument("run_a")
+    order_p.add_argument("run_b")
 
     return parser
 
@@ -239,16 +259,50 @@ def _cmd_run(args: argparse.Namespace) -> int:
         f"uv run python main.py run --bundle {args.bundle} --profile {args.profile} "
         f"--results-dir {args.results_dir}"
     )
-    manifest = run_experiment(
-        bundle,
-        profile,
-        results_dir=args.results_dir,
-        replay_command=replay_command,
-    )
+    if args.order is not None:
+        replay_command += f" --order {args.order}"
+
+    def _terminate(signum: int, frame: object) -> None:
+        raise KeyboardInterrupt(f"signal {signum}")
+
+    previous = signal.signal(signal.SIGTERM, _terminate)
+    try:
+        manifest = run_experiment(
+            bundle,
+            profile,
+            results_dir=args.results_dir,
+            replay_command=replay_command,
+            order=args.order,
+        )
+    except RunInterrupted as exc:
+        print(
+            f"run {exc.manifest.run_id!r} INTERRUPTED; {exc.manifest.case_count} record(s) "
+            f"(unfinished cases recorded as cancelled) in {exc.manifest.run_dir}",
+            file=sys.stderr,
+        )
+        return 130
+    finally:
+        signal.signal(signal.SIGTERM, previous)
     print(f"run {manifest.run_id!r} saved to {manifest.run_dir}")
     print(f"objective: {manifest.objective_label}")
     print(f"cases: {manifest.case_count}")
+    print(f"statuses: {manifest.status_counts}")
     print(f"replay: {manifest.replay_command}")
+    return 0
+
+
+def _cmd_order_check(args: argparse.Namespace) -> int:
+    try:
+        mismatches = compare_runs(args.run_a, args.run_b)
+    except ResultError as exc:
+        print(f"order-check failed: {exc}", file=sys.stderr)
+        return 1
+    if mismatches:
+        print(f"{len(mismatches)} order-dependent result(s) -- possible state leakage:")
+        for line in mismatches:
+            print(f"  {line}")
+        return 1
+    print("no order-dependent results: deterministic outputs agree")
     return 0
 
 
@@ -262,6 +316,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_validate(args)
     if args.command == "run":
         return _cmd_run(args)
+    if args.command == "order-check":
+        return _cmd_order_check(args)
     raise AssertionError(f"unreachable: unknown command {args.command!r}")  # pragma: no cover
 
 

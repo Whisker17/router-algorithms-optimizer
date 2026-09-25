@@ -9,12 +9,24 @@ bitmap words) makes the whole solve `incomplete_snapshot`, never a silent skip: 
 pool might have been the best one, so no "best direct pool" claim is possible
 (docs/DESIGN.md §2.2: state-range exhaustion "is not equivalent to exhausted real
 liquidity").
+
+Budgets (WHI-1437): every candidate costs at most one quote (a one-step plan), so
+`direct` evaluates at most `min(max_candidates, max_quotes)` pools in admitted order
+and reports the rest as declared truncation (`candidates_truncated`). A truncated
+`no_route` only means no *evaluated* pool worked. Each new best plan is published via
+`SolveContext.report_candidate`.
 """
 
 from __future__ import annotations
 
 from pools.result import QuoteStatus
-from routing.algorithms.base import Budget, SolveContext, SolveResult, SolveStatus
+from routing.algorithms.base import (
+    AlgorithmFactory,
+    Budget,
+    SolveContext,
+    SolveResult,
+    SolveStatus,
+)
 from routing.evaluator import EvalStatus, Evaluation, evaluate
 from routing.plan import ALL_REMAINING, REQUEST_FUND_ID, FundInput, RoutePlan, SwapStep
 from snapshot.models import Case
@@ -39,9 +51,10 @@ def _plan_for_pool(pool_id: str, case: Case) -> RoutePlan:
 
 
 def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
-    candidates = context.bundle.pools_for_pair(case.token_in, case.token_out)
-    if budget.max_candidates is not None:
-        candidates = candidates[: budget.max_candidates]
+    admitted = context.bundle.pools_for_pair(case.token_in, case.token_out)
+    caps = [c for c in (budget.max_candidates, budget.max_quotes) if c is not None]
+    candidates = admitted[: min(caps)] if caps else admitted
+    truncated = len(admitted) - len(candidates)
 
     best_plan: RoutePlan | None = None
     best_evaluation: Evaluation | None = None
@@ -58,6 +71,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
         score = context.objective.score(evaluation)
         if best_score is None or score > best_score:
             best_plan, best_evaluation, best_score = plan, evaluation, score
+            context.report_candidate(plan)
 
     if incomplete:
         return SolveResult(
@@ -65,6 +79,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             algorithm=NAME,
             status=SolveStatus.INCOMPLETE_SNAPSHOT,
             candidates_considered=len(candidates),
+            candidates_truncated=truncated,
             error="candidate pool state is incomplete for this amount: " + "; ".join(incomplete),
         )
 
@@ -74,10 +89,12 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             algorithm=NAME,
             status=SolveStatus.NO_ROUTE,
             candidates_considered=len(candidates),
+            candidates_truncated=truncated,
             error=(
                 f"no admitted direct pool for {case.token_in}/{case.token_out}"
-                if not candidates
+                if not admitted
                 else "no admitted direct pool produced a valid route"
+                + (f" ({truncated} candidate(s) truncated by the budget)" if truncated else "")
             ),
         )
 
@@ -89,4 +106,8 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
         evaluation=best_evaluation,
         score=best_score,
         candidates_considered=len(candidates),
+        candidates_truncated=truncated,
     )
+
+
+FACTORY = AlgorithmFactory(name=NAME, solve=solve)
