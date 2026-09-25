@@ -11,8 +11,9 @@ per-case time limit is always a positive number. Schema 1 profiles (no measureme
 sections) are rejected with a pointer to the new keys.
 
 The optional `search` section (WHI-1438) holds the docs/DESIGN.md §2.12 search
-parameters (`search.max_hops` so far). It has no defaults either: a profile listing an
-algorithm must declare every `search.*` key that algorithm requires
+parameters (`search.max_hops`, `search.max_splits`, `search.percent_step` -- the last
+a positive divisor of 100). It has no defaults either: a profile listing an algorithm
+must declare every `search.*` key that algorithm requires
 (`AlgorithmFactory.search_params`), and those values reach the algorithm's `prepare`
 as `AlgorithmConfig.params`.
 """
@@ -221,17 +222,20 @@ def _parse_objective(obj: Any, where: str) -> ObjectiveContext:
 
 
 # Every `search.*` key the loader knows (docs/DESIGN.md §2.12), with its minimum.
-# Later algorithm issues add `max_splits` / `percent_step` here.
-SEARCH_KEYS: dict[str, int] = {"max_hops": 1}
+SEARCH_KEYS: dict[str, int] = {"max_hops": 1, "max_splits": 1, "percent_step": 1}
 
 
 def _parse_search(obj: Any, where: str) -> dict[str, int]:
     _require_keys(obj, set(), set(SEARCH_KEYS), where)
-    return {
+    search = {
         key: _int_at_least(obj[key], minimum, f"{where}.{key}")
         for key, minimum in SEARCH_KEYS.items()
         if key in obj
     }
+    step = search.get("percent_step")
+    if step is not None and (step > 100 or 100 % step):
+        raise ProfileError(f"{where}.percent_step: must be a positive divisor of 100, got {step}")
+    return search
 
 
 def parse_profile(raw: Any, source_path: str) -> RunProfile:
