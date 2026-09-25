@@ -154,5 +154,9 @@ instead of silently choosing among the rest (the missing pool could have been be
 2. The Agni example pair is shallow; stratified empirical cases and additional pairs are
    WHI-1436's job. The explicit per-tier exclusion is the only way this collector drops a
    discovered pool.
+   *Update (WHI-1436):* the corpus replaces per-config exclusions with one declared,
+   source-agnostic rule and walks thin pools to MIN_TICK/MAX_TICK; at block 101082044
+   this pool is admitted (`docs/references/corpus.md` §5). The exclusion here remains
+   only because this provisional-block fixture is reproduced from this config.
 3. LM-hook reverts remain unmodeled (all three admitted pools have `lmPool == 0` at this
    block, recorded in provenance).

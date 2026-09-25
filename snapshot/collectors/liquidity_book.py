@@ -143,6 +143,7 @@ class _Pair:
     hi: int = 0
     walked: dict[str, int] = field(default_factory=lambda: {"below": 0, "above": 0})
     envelope: dict[str, dict[str, Any]] = field(default_factory=dict)
+    excluded: dict[str, Any] | None = None  # WHI-1436: set when the exclusion rule applies
 
     def done(self, side: str) -> bool:
         return self.lo == 0 if side == "below" else self.hi == UINT24_MAX
@@ -214,6 +215,7 @@ class LBCollector(FixedBlockReader):
             block_number=block_number,
             expected_block_hash=expected_block_hash,
             rpc_label=rpc_label,
+            use_multicall3=config.rpc.use_multicall3,
         )
 
     def _pinned(self, role: str) -> tuple[str, str]:
@@ -614,15 +616,36 @@ class LBCollector(FixedBlockReader):
         remaining = {k: n for k, n in tasks.items() if n > 0 and not self._pairs[k[0]].done(k[1])}
         while remaining:
             calls: list[tuple[str, str]] = []
-            for address, side in remaining:
+            for address, side in list(remaining):
                 pair = self._pairs[address]
                 if pair.walked[side] >= limit:
-                    raise PrepareError(
-                        "incomplete_snapshot",
+                    message = (
                         f"pair {address}: the declared envelope needs more than {limit} bins "
-                        f"{side} the active bin {pair.active_id}; refusing to publish a "
-                        "truncated envelope",
+                        f"{side} the active bin {pair.active_id}"
                     )
+                    rule = self.config.limits.exclusion_rule
+                    if rule is None:
+                        raise PrepareError(
+                            "incomplete_snapshot",
+                            f"{message}; refusing to publish a truncated envelope",
+                        )
+                    pair.excluded = {
+                        "pool_id": address,
+                        "token_x": pair.token_x,
+                        "token_y": pair.token_y,
+                        "bin_step": pair.bin_step,
+                        "rule": rule,
+                        "direction": "x_to_y" if side == "below" else "y_to_x",
+                        "bound": {"max_bins_per_direction": limit},
+                        "reason": f"excluded by rule {rule}: {message}",
+                    }
+                    for key in [k for k in remaining if k[0] == address]:
+                        del remaining[key]
+                    continue
+            if not remaining:
+                break
+            for address, side in remaining:
+                pair = self._pairs[address]
                 below = side == "below"
                 frontier = pair.lo if below else pair.hi
                 calls.append(
@@ -692,6 +715,8 @@ class LBCollector(FixedBlockReader):
         while True:
             tasks: dict[tuple[str, str], int] = {}
             for pair, swap_for_y in open_:
+                if pair.excluded is not None:
+                    continue
                 side = "below" if swap_for_y else "above"
                 direction = "x_to_y" if swap_for_y else "y_to_x"
                 token_in = pair.token_x if swap_for_y else pair.token_y
@@ -801,6 +826,18 @@ class LBCollector(FixedBlockReader):
         tokens = self._verify_tokens(pairs)
         self._pairs = {p.address: p for p in pairs}
         self._cover_envelopes(pairs)
+        excluded = [p.excluded for p in pairs if p.excluded is not None]
+        for p in pairs:
+            if p.excluded is not None:
+                p.envelope.clear()
+                omitted.append(p.excluded)
+        pairs = [p for p in pairs if p.excluded is None]
+        if not pairs:
+            raise PrepareError(
+                "incomplete_snapshot",
+                "every discovered pair was excluded; a source without an admitted pool is "
+                "incomplete and cannot be published",
+            )
         for pair in pairs:
             self._check_totals(pair)
         states = {p.address: p.state(self.source.key, block.timestamp) for p in pairs}
@@ -825,6 +862,12 @@ class LBCollector(FixedBlockReader):
                 "collection"
             ),
             "rpc_endpoint": self.rpc_label,
+            **({} if self.multicall_record is None else {"read_batching": self.multicall_record}),
+            **(
+                {}
+                if self.config.limits.exclusion_rule is None
+                else {"exclusions": {"rule": self.config.limits.exclusion_rule, "pools": excluded}}
+            ),
             "source_capability": {
                 "protocol_family": self.source.protocol_family,
                 "sor_protocol": self.source.sor_protocol,

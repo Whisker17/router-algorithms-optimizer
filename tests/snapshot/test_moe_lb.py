@@ -1003,6 +1003,29 @@ def test_envelope_beyond_the_walk_bound_is_incomplete_not_truncated(
     assert list(tmp_path.iterdir()) == []
 
 
+def test_exclusion_rule_omits_an_unprovable_pair_instead_of_refusing(
+    chain: FakeLBChain,
+) -> None:
+    """WHI-1436: under the corpus's declared rule, a pair whose envelope needs more bins
+    than the bound is excluded and recorded (rule id, direction, bound), not truncated."""
+    config = load_lb_prepare_config(PREPARE_CONFIG)
+    rule = "envelope-unprovable-within-read-bound"
+    tight = dataclasses.replace(
+        config,
+        limits=dataclasses.replace(config.limits, max_bins_per_direction=8, exclusion_rule=rule),
+    )
+    collected = _collector(chain, tight).collect()
+    excluded = collected.provenance["exclusions"]["pools"]
+    assert excluded and collected.provenance["exclusions"]["rule"] == rule
+    kept = {p.pool_id for p in collected.pools}
+    for record in excluded:
+        assert record["pool_id"] not in kept and record["rule"] == rule
+        assert record["bound"] == {"max_bins_per_direction": 8}
+        assert record in collected.provenance["discovery"]["omitted"]
+        assert record["pool_id"] not in collected.provenance["pools"]
+    assert kept
+
+
 def test_exclusions_are_reasoned_omissions(chain: FakeLBChain) -> None:
     config = load_lb_prepare_config(PREPARE_CONFIG)
     usdt_wmnt = next(p for p in config.pairs if {p.token0, p.token1} == {USDT, WMNT})

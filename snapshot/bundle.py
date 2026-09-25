@@ -70,6 +70,9 @@ MANIFEST_FILE = "manifest.json"
 POOLS_FILE = "pools.json"
 CASES_FILE = "cases.jsonl"
 PROVENANCE_FILE = "provenance.json"
+PRICES_FILE = "prices.json"  # WHI-1436: frozen price context (snapshot.prices schema)
+CORPUS_FILE = "corpus.json"  # WHI-1436: corpus descriptor (snapshot.corpus schema)
+OPTIONAL_FILES = {"provenance": PROVENANCE_FILE, "prices": PRICES_FILE, "corpus": CORPUS_FILE}
 
 CONCENTRATED_FAMILY = "concentrated"
 # Concentrated-liquidity source keys the loader accepts: exactly the simulator's
@@ -193,16 +196,22 @@ def _parse_manifest(raw: Any, where: str) -> dict[str, Any]:
         raise BundleError(f"{where}.kind: {raw['kind']!r} not in {sorted(KNOWN_KINDS)}")
 
     files_obj = raw["files"]
-    _require_keys(files_obj, {"pools", "cases"}, {"provenance"}, f"{where}.files")
+    _require_keys(files_obj, {"pools", "cases"}, set(OPTIONAL_FILES), f"{where}.files")
     if files_obj["pools"] != POOLS_FILE or files_obj["cases"] != CASES_FILE:
         raise BundleError(
             f"{where}.files: expected {{'pools': {POOLS_FILE!r}, 'cases': {CASES_FILE!r}}}, "
             f"got {files_obj!r}"
         )
-    if "provenance" in files_obj and files_obj["provenance"] != PROVENANCE_FILE:
+    for key, name in OPTIONAL_FILES.items():
+        if key in files_obj and files_obj[key] != name:
+            raise BundleError(f"{where}.files.{key}: expected {name!r}, got {files_obj[key]!r}")
+    if ("prices" in files_obj or "corpus" in files_obj) and not {
+        "prices",
+        "corpus",
+        "provenance",
+    } <= files_obj.keys():
         raise BundleError(
-            f"{where}.files.provenance: expected {PROVENANCE_FILE!r}, "
-            f"got {files_obj['provenance']!r}"
+            f"{where}.files: a corpus bundle lists prices, corpus and provenance together"
         )
 
     checksums_obj = raw["checksums"]
@@ -688,6 +697,14 @@ def load_bundle(path: str | Path) -> SnapshotBundle:
         raise BundleError(f"{manifest_path}: invalid JSON: {exc}") from exc
     manifest = _parse_manifest(manifest_raw, str(manifest_path))
 
+    # Checksum completeness: nothing in the bundle directory escapes the manifest.
+    listed = {MANIFEST_FILE, *manifest["checksums"]}
+    unlisted = sorted(p.name for p in bundle_dir.iterdir() if p.name not in listed)
+    if unlisted:
+        raise BundleError(
+            f"{bundle_dir}: {unlisted} not covered by the manifest checksums; a bundle "
+            "directory holds exactly its checksummed files"
+        )
     for filename, expected_digest in manifest["checksums"].items():
         file_path = bundle_dir / filename
         if not file_path.is_file():
@@ -705,6 +722,10 @@ def load_bundle(path: str | Path) -> SnapshotBundle:
     if "provenance" in manifest["files"]:
         _check_provenance(bundle_dir / PROVENANCE_FILE, block)
     cases = _parse_cases_file((bundle_dir / CASES_FILE).read_text(), str(bundle_dir / CASES_FILE))
+    prices = None
+    corpus = None
+    if "corpus" in manifest["files"]:
+        prices, corpus = _load_corpus_files(bundle_dir, manifest, block, pools, cases)
 
     return SnapshotBundle(
         bundle_id=manifest["bundle_id"],
@@ -715,7 +736,43 @@ def load_bundle(path: str | Path) -> SnapshotBundle:
         cases=cases,
         bundle_hash=sha256_bytes(manifest_bytes),
         source_path=str(bundle_dir),
+        prices=prices,
+        corpus=corpus,
     )
+
+
+def _load_corpus_files(
+    bundle_dir: Path,
+    manifest: dict[str, Any],
+    block: BlockRef,
+    pools: dict[str, PoolState],
+    cases: tuple[Case, ...],
+) -> tuple[Any, dict[str, Any]]:
+    """Structural validation of a corpus bundle's `prices.json` / `corpus.json` (WHI-1436)
+    against the manifest block, pools and cases. The deep, state-dependent checks (the
+    envelope quotes) are `snapshot.corpus.validate_corpus_bundle`."""
+    from snapshot.corpus import CorpusError, parse_corpus_document
+    from snapshot.prices import PriceError, parse_price_context
+
+    def read(name: str) -> Any:
+        try:
+            return json.loads((bundle_dir / name).read_text())
+        except json.JSONDecodeError as exc:
+            raise BundleError(f"{bundle_dir / name}: invalid JSON: {exc}") from exc
+
+    try:
+        prices = parse_price_context(
+            read(PRICES_FILE), block=(block.number, block.hash, block.timestamp)
+        )
+    except PriceError as exc:
+        raise BundleError(f"{bundle_dir / PRICES_FILE}: {exc}") from exc
+    try:
+        corpus = parse_corpus_document(
+            read(CORPUS_FILE), block=block, pools=pools, cases=cases, prices=prices
+        )
+    except CorpusError as exc:
+        raise BundleError(f"{bundle_dir / CORPUS_FILE}: {exc}") from exc
+    return prices, corpus
 
 
 def _check_provenance(path: Path, block: BlockRef) -> None:
@@ -852,6 +909,8 @@ def write_bundle(
     pools: Sequence[PoolState],
     cases: Sequence[Case],
     provenance: dict[str, Any] | None = None,
+    prices: dict[str, Any] | None = None,
+    corpus: dict[str, Any] | None = None,
 ) -> SnapshotBundle:
     """Write, self-validate and atomically publish a bundle directory.
 
@@ -876,6 +935,14 @@ def write_bundle(
         provenance_text = json.dumps(provenance, indent=2, sort_keys=True) + "\n"
         checksums[PROVENANCE_FILE] = sha256_bytes(provenance_text.encode("utf-8"))
         files["provenance"] = PROVENANCE_FILE
+    extra_texts: dict[str, str] = {}
+    for key, doc in (("prices", prices), ("corpus", corpus)):
+        if doc is None:
+            continue
+        name = OPTIONAL_FILES[key]
+        extra_texts[name] = json.dumps(doc, indent=2, sort_keys=True) + "\n"
+        checksums[name] = sha256_bytes(extra_texts[name].encode("utf-8"))
+        files[key] = name
     manifest = {
         "schema_version": SUPPORTED_SCHEMA_VERSION,
         "bundle_id": bundle_id,
@@ -899,6 +966,8 @@ def write_bundle(
         (tmp_dir / CASES_FILE).write_text(cases_text)
         if provenance_text is not None:
             (tmp_dir / PROVENANCE_FILE).write_text(provenance_text)
+        for name, text in extra_texts.items():
+            (tmp_dir / name).write_text(text)
         # Self-validate before publishing: a bundle only becomes visible at
         # `output_dir` once it round-trips through the same loader every reader uses.
         bundle = load_bundle(tmp_dir)
@@ -915,6 +984,8 @@ def write_bundle(
         cases=bundle.cases,
         bundle_hash=bundle.bundle_hash,
         source_path=str(output_dir),
+        prices=bundle.prices,
+        corpus=bundle.corpus,
     )
 
 

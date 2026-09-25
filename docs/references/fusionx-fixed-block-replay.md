@@ -157,3 +157,7 @@ QuoterV2 agrees on output and post-price for all 18 requests (its
    code hash are recorded; a changed hook is visible in provenance).
 3. One pair; stratified cases and more pairs are WHI-1436's job. The 0.01% tier is the
    only declared exclusion.
+   *Update (WHI-1436):* the corpus replaces per-config exclusions with one declared,
+   source-agnostic rule and walks thin pools to MIN_TICK/MAX_TICK; at block 101082044
+   this pool is admitted (`docs/references/corpus.md` §5). The exclusion here remains
+   only because this provisional-block fixture is reproduced from this config.

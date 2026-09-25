@@ -165,6 +165,7 @@ class ClassicCollector(FixedBlockReader):
             block_number=block_number,
             expected_block_hash=expected_block_hash,
             rpc_label=rpc_label,
+            use_multicall3=config.rpc.use_multicall3,
         )
 
     def _pinned(self, role: str) -> tuple[str, str]:
@@ -422,6 +423,7 @@ class ClassicCollector(FixedBlockReader):
                 "collection"
             ),
             "rpc_endpoint": self.rpc_label,
+            **({} if self.multicall_record is None else {"read_batching": self.multicall_record}),
             "source_capability": {
                 "protocol_family": self.source.protocol_family,
                 "sor_protocol": self.source.sor_protocol,

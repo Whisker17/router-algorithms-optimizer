@@ -54,10 +54,22 @@ KNOWN_CONFIDENCE_LEVELS = {"high", "moderate", "low", "unmatched"}
 
 
 @dataclass(frozen=True)
+class Multicall3Config:
+    """The chain's Multicall3 deployment (WHI-1436): an optional read-batching helper
+    whose exact runtime code hash is pinned; a reader using it re-verifies the code at
+    the frozen block before trusting a single aggregated result."""
+
+    address: str
+    code_hash: str
+    verification: str
+
+
+@dataclass(frozen=True)
 class NetworkConfig:
     name: str
     chain_id: int
     default_rpc_url: str
+    multicall3: Multicall3Config | None = None
 
 
 @dataclass(frozen=True)
@@ -216,13 +228,25 @@ class ProtocolCatalog:
 
 
 def _parse_network(obj: Any) -> NetworkConfig:
-    _require_keys(obj, {"name", "chain_id", "default_rpc_url"}, set(), "network")
+    _require_keys(obj, {"name", "chain_id", "default_rpc_url"}, {"multicall3"}, "network")
     if not isinstance(obj["chain_id"], int) or isinstance(obj["chain_id"], bool):
         raise ConfigError(f"network.chain_id: expected int, got {obj['chain_id']!r}")
     if not str(obj["default_rpc_url"]).startswith(("http://", "https://")):
         raise ConfigError("network.default_rpc_url: must be an http(s) URL")
+    multicall3 = None
+    if "multicall3" in obj:
+        mc = obj["multicall3"]
+        _require_keys(mc, {"address", "code_hash", "verification"}, set(), "network.multicall3")
+        multicall3 = Multicall3Config(
+            address=_validate_address(mc["address"], "network.multicall3.address").lower(),
+            code_hash=_validate_hash32(mc["code_hash"], "network.multicall3.code_hash").lower(),
+            verification=str(mc["verification"]),
+        )
     return NetworkConfig(
-        name=str(obj["name"]), chain_id=obj["chain_id"], default_rpc_url=str(obj["default_rpc_url"])
+        name=str(obj["name"]),
+        chain_id=obj["chain_id"],
+        default_rpc_url=str(obj["default_rpc_url"]),
+        multicall3=multicall3,
     )
 
 

@@ -54,6 +54,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from pools.cl_math import MAX_TICK, MIN_TICK
 from pools.concentrated import SOURCES as SIMULATED_SOURCES
 from pools.concentrated import ProtocolFeeRule, quote_exact_in
 from pools.result import QuoteStatus
@@ -80,6 +81,16 @@ def _floor_word(tick: int, spacing: int) -> int:
     """`TickBitmap.position(tick / tickSpacing)` word index, with Solidity's
     round-toward-negative-infinity compression (`nextInitializedTickWithinOneWord`)."""
     return (tick // spacing) >> 8
+
+
+class _EnvelopeExcluded(Exception):
+    """A pool whose envelope cannot be proven within the read bound, under a configured
+    exclusion rule (WHI-1436): the pool is omitted with this record instead of refusing
+    the whole collection."""
+
+    def __init__(self, record: dict[str, Any]) -> None:
+        super().__init__(record["reason"])
+        self.record = record
 
 
 @dataclass
@@ -173,6 +184,7 @@ class ConcentratedCollector(FixedBlockReader):
             block_number=block_number,
             expected_block_hash=expected_block_hash,
             rpc_label=rpc_label,
+            use_multicall3=config.rpc.use_multicall3,
         )
 
     # -- 2. deployment -------------------------------------------------------
@@ -500,25 +512,52 @@ class ConcentratedCollector(FixedBlockReader):
                 pool.envelope[direction] = {"amount_in": None, "status": "no_reference_case"}
                 continue
             amount = max(amounts)
+            min_word = _floor_word(MIN_TICK, pool.spacing)
+            max_word = _floor_word(MAX_TICK, pool.spacing)
             while True:
                 result = quote_exact_in(pool.state(self.source.key), token_in, amount)
                 if result.status is not QuoteStatus.INCOMPLETE_SNAPSHOT:
                     break
                 side = center - pool.word_lo if zero_for_one else pool.word_hi - center
-                if side >= limits.max_words_per_direction:
-                    raise PrepareError(
-                        "incomplete_snapshot",
+                edge = pool.word_lo <= min_word if zero_for_one else pool.word_hi >= max_word
+                if side >= limits.max_words_per_direction or edge:
+                    message = (
                         f"pool {pool.address}: a {direction} swap of {amount} (largest reference "
                         f"case) still needs state beyond {limits.max_words_per_direction} bitmap "
-                        f"words from the current word {center} ({result.detail}); refusing to "
-                        "publish a truncated envelope",
+                        f"words from the current word {center} ({result.detail})"
                     )
+                    if limits.exclusion_rule is not None and not edge:
+                        raise _EnvelopeExcluded(
+                            {
+                                "pool_id": pool.address,
+                                "token0": pool.token0,
+                                "token1": pool.token1,
+                                "fee": pool.fee,
+                                "rule": limits.exclusion_rule,
+                                "direction": direction,
+                                "envelope_amount_in": str(amount),
+                                "bound": {
+                                    "max_bitmap_words_per_direction": (
+                                        limits.max_words_per_direction
+                                    )
+                                },
+                                "reason": f"excluded by rule {limits.exclusion_rule}: {message}",
+                            }
+                        )
+                    raise PrepareError(
+                        "incomplete_snapshot",
+                        f"{message}; refusing to publish a truncated envelope",
+                    )
+                step = limits.walk_chunk_words
                 if zero_for_one:
-                    pool.word_lo -= 1
-                    self._read_words(pool, [pool.word_lo])
+                    lo = max(pool.word_lo - step, center - limits.max_words_per_direction, min_word)
+                    new = list(range(lo, pool.word_lo))
+                    pool.word_lo = lo
                 else:
-                    pool.word_hi += 1
-                    self._read_words(pool, [pool.word_hi])
+                    hi = min(pool.word_hi + step, center + limits.max_words_per_direction, max_word)
+                    new = list(range(pool.word_hi + 1, hi + 1))
+                    pool.word_hi = hi
+                self._read_words(pool, new)
             if result.status not in (QuoteStatus.OK, QuoteStatus.INSUFFICIENT_LIQUIDITY):
                 raise PrepareError(
                     "admission_failed",
@@ -581,9 +620,24 @@ class ConcentratedCollector(FixedBlockReader):
         pools, omitted = self._discover()
         if not pools:
             raise PrepareError("admission_failed", "discovery admitted no pool")
+        excluded: list[dict[str, Any]] = []
+        kept: list[_Pool] = []
         for pool in pools:
             self._read_scalars(pool)
-            self._cover_envelope(pool)
+            try:
+                self._cover_envelope(pool)
+            except _EnvelopeExcluded as exc:
+                excluded.append(exc.record)
+                continue
+            kept.append(pool)
+        pools = kept
+        omitted.extend(excluded)
+        if not pools:
+            raise PrepareError(
+                "incomplete_snapshot",
+                "every discovered pool was excluded; a source without an admitted pool is "
+                "incomplete and cannot be published",
+            )
         states = {p.address: p.state(self.source.key) for p in pools}
         admission = self._admission(states)
         self._reverify_block(block)
@@ -606,6 +660,12 @@ class ConcentratedCollector(FixedBlockReader):
                 "collection"
             ),
             "rpc_endpoint": self.rpc_label,
+            **({} if self.multicall_record is None else {"read_batching": self.multicall_record}),
+            **(
+                {}
+                if self.config.limits.exclusion_rule is None
+                else {"exclusions": {"rule": self.config.limits.exclusion_rule, "pools": excluded}}
+            ),
             "source_capability": {
                 "protocol_family": self.source.protocol_family,
                 "sor_protocol": self.source.sor_protocol,
@@ -657,6 +717,7 @@ class ConcentratedCollector(FixedBlockReader):
                             "initial_margin_words": self.config.limits.initial_margin_words,
                             "margin_words": self.config.limits.margin_words,
                             "max_words_per_direction": self.config.limits.max_words_per_direction,
+                            "walk_chunk_words": self.config.limits.walk_chunk_words,
                         },
                         "envelope": p.envelope,
                     },
