@@ -203,13 +203,14 @@ Offline `direct` replay (smoke profile, gross-only): 288/288 activity cases `ok`
 boundary cases `ok` (1 `no_route`), 48/48 no-direct cases `no_route` (as expected for a
 single-pool baseline); no `incomplete_snapshot`.
 
-Offline `path_split` smoke (WHI-1440; `config/corpus_path_split_smoke.yaml`, gross-only,
-smoke-scale `max_hops: 2`, `max_splits: 4`, `percent_step: 5`, one isolated pass, no
-truncation or limit hit in any algorithm): `path_split` 397/398 `ok` (1 dust boundary
+Offline `path_split` smoke (WHI-1440, run `20260925T121556471411Z-b5322f59` at `cc33bcd`;
+`config/corpus_path_split_smoke.yaml`, gross-only, smoke-scale `max_hops: 2`,
+`max_splits: 4`, `percent_step: 5`, one isolated pass, no truncation or limit hit in any
+algorithm): `path_split` 397/398 `ok` (1 dust boundary
 case `no_route`: every path fails); never below `direct`, `single_path` or
 `direct_split` on any case; strictly above both `single_path` and `direct_split` on 179
 cases (chosen legs: 1 x208, 2 x56, 3 x46, 4 x87); median gain over `single_path` where
-better 4.8 bps. Solve time median 0.38 s / p95 1.77 s / max 3.17 s per case (quotes
+better 4.8 bps. Solve time median 0.30 s / p95 1.62 s / max 2.26 s per case (quotes
 median 1156, max 4553). A 12-case in-process sample at `max_hops: 3` measured ~6.7 s
 mean / 16.5 s max per case (quote-bound by large CL swaps), so the hop-3 corpus pass is
 left to the calibrated profiles (I21). Not an optimality or net-output claim.
