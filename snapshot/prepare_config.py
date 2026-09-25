@@ -1,8 +1,9 @@
 """Typed, validated loaders for fixed-block prepare configs
 (`config/prepare/<source>.yaml`): concentrated-liquidity sources (`ClPrepareConfig`,
-WHI-1429) and constant-product Classic sources (`ClassicPrepareConfig`, WHI-1432:
+WHI-1429), constant-product Classic sources (`ClassicPrepareConfig`, WHI-1432:
 declared tokens with their decimals, token pairs, cases and RPC settings -- no fee
-tiers or tick walk).
+tiers or tick walk) and Liquidity Book sources (`LBPrepareConfig`, WHI-1434: declared
+tokens, token pairs with reasoned bin-step exclusions, cases and bin-walk bounds).
 
 A prepare config is the *selection* half of a fixed-block collection: which pairs and
 fee tiers to discover through the verified factory, which reference cases define the
@@ -360,6 +361,52 @@ class ClassicPrepareConfig:
         return {addr: spec.label for addr, spec in self.tokens.items()}
 
 
+def _parse_declared_tokens(tokens_obj: Any) -> tuple[dict[str, str], dict[str, ClassicTokenSpec]]:
+    """`label -> {address, decimals}` into (label -> address, address -> spec)."""
+    if not isinstance(tokens_obj, dict) or not tokens_obj:
+        raise PrepareConfigError("tokens: expected a non-empty label -> token mapping")
+    aliases: dict[str, str] = {}
+    tokens: dict[str, ClassicTokenSpec] = {}
+    for label, entry in tokens_obj.items():
+        where = f"tokens.{label}"
+        _require_keys(entry, {"address", "decimals"}, set(), where)
+        resolved = _address(entry["address"], f"{where}.address")
+        if resolved in tokens:
+            raise PrepareConfigError(
+                f"tokens: {label!r} and {tokens[resolved].label!r} name the same address {resolved}"
+            )
+        aliases[str(label)] = resolved
+        tokens[resolved] = ClassicTokenSpec(
+            address=resolved,
+            label=str(label),
+            decimals=_int(entry["decimals"], 0, 255, f"{where}.decimals"),
+        )
+    return aliases, tokens
+
+
+def _declared_pair(
+    toks: Any, aliases: dict[str, str], seen_pairs: set[tuple[str, str]], where: str
+) -> tuple[str, str]:
+    """Two declared token labels -> the address-sorted pair (recorded in `seen_pairs`)."""
+    if not isinstance(toks, list) or len(toks) != 2:
+        raise PrepareConfigError(f"{where}.tokens: expected two tokens")
+    ends = []
+    for j, tok in enumerate(toks):
+        if not isinstance(tok, str) or tok not in aliases:
+            raise PrepareConfigError(
+                f"{where}.tokens[{j}]: {tok!r} is not a declared token label "
+                f"{sorted(aliases)} (undeclared tokens are unsupported)"
+            )
+        ends.append(aliases[tok])
+    if ends[0] == ends[1]:
+        raise PrepareConfigError(f"{where}.tokens: the two tokens must differ")
+    t0, t1 = sorted(ends)
+    if (t0, t1) in seen_pairs:
+        raise PrepareConfigError(f"{where}: duplicate pair {t0}/{t1}")
+    seen_pairs.add((t0, t1))
+    return t0, t1
+
+
 def parse_classic_prepare_config(
     raw: Any, *, source_path: str, sha256: str
 ) -> ClassicPrepareConfig:
@@ -380,26 +427,7 @@ def parse_classic_prepare_config(
     if not isinstance(prefix, str) or not prefix:
         raise PrepareConfigError("bundle_id_prefix: expected a non-empty string")
 
-    tokens_obj = raw["tokens"]
-    if not isinstance(tokens_obj, dict) or not tokens_obj:
-        raise PrepareConfigError("tokens: expected a non-empty label -> token mapping")
-    aliases: dict[str, str] = {}
-    tokens: dict[str, ClassicTokenSpec] = {}
-    for label, entry in tokens_obj.items():
-        where = f"tokens.{label}"
-        _require_keys(entry, {"address", "decimals"}, set(), where)
-        resolved = _address(entry["address"], f"{where}.address")
-        if resolved in tokens:
-            raise PrepareConfigError(
-                f"tokens: {label!r} and {tokens[resolved].label!r} name the same address {resolved}"
-            )
-        aliases[str(label)] = resolved
-        tokens[resolved] = ClassicTokenSpec(
-            address=resolved,
-            label=str(label),
-            decimals=_int(entry["decimals"], 0, 255, f"{where}.decimals"),
-        )
-
+    aliases, tokens = _parse_declared_tokens(raw["tokens"])
     pairs_obj = raw["pairs"]
     if not isinstance(pairs_obj, list) or not pairs_obj:
         raise PrepareConfigError("pairs: expected a non-empty list")
@@ -408,23 +436,7 @@ def parse_classic_prepare_config(
     for i, entry in enumerate(pairs_obj):
         where = f"pairs[{i}]"
         _require_keys(entry, {"tokens"}, {"excluded"}, where)
-        toks = entry["tokens"]
-        if not isinstance(toks, list) or len(toks) != 2:
-            raise PrepareConfigError(f"{where}.tokens: expected two tokens")
-        ends = []
-        for j, tok in enumerate(toks):
-            if not isinstance(tok, str) or tok not in aliases:
-                raise PrepareConfigError(
-                    f"{where}.tokens[{j}]: {tok!r} is not a declared token label "
-                    f"{sorted(aliases)} (undeclared tokens are unsupported)"
-                )
-            ends.append(aliases[tok])
-        if ends[0] == ends[1]:
-            raise PrepareConfigError(f"{where}.tokens: the two tokens must differ")
-        t0, t1 = sorted(ends)
-        if (t0, t1) in seen_pairs:
-            raise PrepareConfigError(f"{where}: duplicate pair {t0}/{t1}")
-        seen_pairs.add((t0, t1))
+        t0, t1 = _declared_pair(entry["tokens"], aliases, seen_pairs, where)
         excluded = entry.get("excluded")
         if excluded is not None and (not isinstance(excluded, str) or not excluded.strip()):
             raise PrepareConfigError(f"{where}.excluded: an exclusion needs a written reason")
@@ -457,6 +469,137 @@ def load_classic_prepare_config(path: str | Path) -> ClassicPrepareConfig:
         raise PrepareConfigError(f"{path}: invalid YAML: {exc}") from exc
     try:
         return parse_classic_prepare_config(
+            raw, source_path=str(path), sha256=hashlib.sha256(data).hexdigest()
+        )
+    except PrepareConfigError as exc:
+        raise PrepareConfigError(f"{path}: {exc}") from exc
+
+
+# ---------------------------------------------------------------------------
+# Liquidity Book prepare configs (WHI-1434)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class LBPairSpec:
+    """One token pair whose LB pairs (every bin step) are discovered through
+    `LBFactory.getAllLBPairs`. `excluded_bin_steps` (bin step -> written reason) are still
+    discovered, but recorded as explicit omissions instead of collected."""
+
+    token0: str  # address-sorted, as LBFactory sorts tokens for storage
+    token1: str
+    excluded_bin_steps: tuple[tuple[int, str], ...] = ()
+
+
+@dataclass(frozen=True)
+class BinWalkLimits:
+    """Bin-tree walk bounds. Starting at the active bin, `getNextNonEmptyBin` is walked
+    `walk_chunk_bins` bins at a time on the side the largest reference swap of that
+    direction needs, until the migrated simulator no longer reports
+    `incomplete_snapshot` (or the walk reaches the end of the id space, which proves
+    real exhaustion); then `margin_bins` more bins are read past the bin the swap ends
+    in. More than `max_bins_per_direction` bins on one side is `incomplete_snapshot`:
+    publication is refused rather than the envelope silently truncated."""
+
+    walk_chunk_bins: int
+    margin_bins: int
+    max_bins_per_direction: int
+
+
+@dataclass(frozen=True)
+class LBPrepareConfig:
+    source_key: str
+    bundle_id_prefix: str
+    tokens: dict[str, ClassicTokenSpec]  # lowercase address -> spec
+    pairs: tuple[LBPairSpec, ...]
+    cases: tuple[Case, ...]
+    limits: BinWalkLimits
+    rpc: RpcSettings
+    source_path: str
+    sha256: str
+
+
+def parse_lb_prepare_config(raw: Any, *, source_path: str, sha256: str) -> LBPrepareConfig:
+    _require_keys(
+        raw,
+        {
+            "schema_version",
+            "source",
+            "bundle_id_prefix",
+            "tokens",
+            "pairs",
+            "cases",
+            "collection",
+            "rpc",
+        },
+        set(),
+        "<root>",
+    )
+    if raw["schema_version"] != SUPPORTED_SCHEMA_VERSION:
+        raise PrepareConfigError(
+            f"schema_version: unsupported {raw['schema_version']!r} "
+            f"(expected {SUPPORTED_SCHEMA_VERSION})"
+        )
+    source_key, prefix = raw["source"], raw["bundle_id_prefix"]
+    if not isinstance(source_key, str) or not source_key:
+        raise PrepareConfigError("source: expected a non-empty string")
+    if not isinstance(prefix, str) or not prefix:
+        raise PrepareConfigError("bundle_id_prefix: expected a non-empty string")
+    aliases, tokens = _parse_declared_tokens(raw["tokens"])
+    pairs_obj = raw["pairs"]
+    if not isinstance(pairs_obj, list) or not pairs_obj:
+        raise PrepareConfigError("pairs: expected a non-empty list")
+    pairs: list[LBPairSpec] = []
+    seen_pairs: set[tuple[str, str]] = set()
+    for i, entry in enumerate(pairs_obj):
+        where = f"pairs[{i}]"
+        _require_keys(entry, {"tokens"}, {"excluded_bin_steps"}, where)
+        t0, t1 = _declared_pair(entry["tokens"], aliases, seen_pairs, where)
+        excluded: list[tuple[int, str]] = []
+        for j, ex in enumerate(entry.get("excluded_bin_steps", [])):
+            w = f"{where}.excluded_bin_steps[{j}]"
+            _require_keys(ex, {"bin_step", "reason"}, set(), w)
+            step = _int(ex["bin_step"], 1, (1 << 16) - 1, f"{w}.bin_step")
+            reason = ex["reason"]
+            if not isinstance(reason, str) or not reason.strip():
+                raise PrepareConfigError(f"{w}.reason: an exclusion needs a written reason")
+            if step in {s for s, _ in excluded}:
+                raise PrepareConfigError(f"{w}.bin_step: duplicate {step}")
+            excluded.append((step, " ".join(reason.split())))
+        pairs.append(LBPairSpec(token0=t0, token1=t1, excluded_bin_steps=tuple(excluded)))
+    cases = _parse_cases(raw["cases"], aliases, seen_pairs)
+    coll = raw["collection"]
+    _require_keys(
+        coll, {"walk_chunk_bins", "margin_bins", "max_bins_per_direction"}, set(), "collection"
+    )
+    limits = BinWalkLimits(
+        walk_chunk_bins=_int(coll["walk_chunk_bins"], 1, 1024, "collection.walk_chunk_bins"),
+        margin_bins=_int(coll["margin_bins"], 0, 1024, "collection.margin_bins"),
+        max_bins_per_direction=_int(
+            coll["max_bins_per_direction"], 1, 100_000, "collection.max_bins_per_direction"
+        ),
+    )
+    return LBPrepareConfig(
+        source_key=source_key,
+        bundle_id_prefix=prefix,
+        tokens=tokens,
+        pairs=tuple(pairs),
+        cases=cases,
+        limits=limits,
+        rpc=_parse_rpc(raw["rpc"]),
+        source_path=source_path,
+        sha256=sha256,
+    )
+
+
+def load_lb_prepare_config(path: str | Path) -> LBPrepareConfig:
+    data = Path(path).read_bytes()
+    try:
+        raw = yaml.safe_load(data)
+    except yaml.YAMLError as exc:
+        raise PrepareConfigError(f"{path}: invalid YAML: {exc}") from exc
+    try:
+        return parse_lb_prepare_config(
             raw, source_path=str(path), sha256=hashlib.sha256(data).hexdigest()
         )
     except PrepareConfigError as exc:
