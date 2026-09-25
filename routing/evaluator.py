@@ -57,13 +57,13 @@ cleanly or is invalid.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from pools.quote import quote_exact_in
-from pools.result import QuoteStatus
+from pools.result import QuoteStatus, SwapResult
 from routing.plan import ALL_REMAINING, REQUEST_FUND_ID, RoutePlan, SwapStep
 from snapshot.models import (
     Case,
@@ -76,6 +76,12 @@ from snapshot.models import (
 
 if TYPE_CHECKING:
     from benchmark.objective import ObjectiveContext
+
+
+# The pool-quote seam the replay calls. Always `pools.quote.quote_exact_in` unless a
+# caller passes a *pure* equivalent (e.g. `routing.search.QuoteCache`, which returns an
+# earlier identical call's immutable result) -- see `evaluate`.
+QuoteFn = Callable[[PoolState, str, int], SwapResult[PoolState]]
 
 
 class EvalStatus(StrEnum):
@@ -331,8 +337,20 @@ def _trace(
 
 
 def evaluate(
-    bundle: SnapshotBundle, case: Case, plan: RoutePlan, objective: ObjectiveContext
+    bundle: SnapshotBundle,
+    case: Case,
+    plan: RoutePlan,
+    objective: ObjectiveContext,
+    *,
+    quote: QuoteFn = quote_exact_in,
 ) -> Evaluation:
+    """Replay `plan` from the bundle's original state (see the module docstring).
+
+    `quote` is the pool-quote seam. It must behave exactly like
+    `pools.quote.quote_exact_in` -- a pure function of `(state, token_in, amount)` --
+    and exists only so a solver scoring many candidates that share prefixes can
+    memoize identical calls (WHI-1438). The runner's independent evaluation always
+    uses the default."""
     route_features: dict[str, int] = {"hops": len(plan.steps)}
     ledger: dict[str, FundRecord] = {}
     next_states: dict[str, PoolState] = {}
@@ -400,7 +418,7 @@ def evaluate(
             continue
 
         pool_state = next_states.get(step.pool_id, bundle.pools[step.pool_id])
-        result = quote_exact_in(pool_state, step.token_in, total_input)
+        result = quote(pool_state, step.token_in, total_input)
         trace.append(
             _trace(
                 idx,

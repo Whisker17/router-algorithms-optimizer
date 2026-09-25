@@ -66,7 +66,7 @@ from benchmark.results import (
     load_manifest,
 )
 from benchmark.worker import AttemptOutcome, SolveRequest, Worker, WorkerSpec
-from routing.algorithms.base import AlgorithmConfig, AlgorithmFactory, SolveResult, SolveStatus
+from routing.algorithms.base import AlgorithmFactory, SolveResult, SolveStatus
 from routing.algorithms.registry import get_algorithm
 from routing.evaluator import EvalStatus, evaluate
 from routing.plan import RoutePlan
@@ -126,6 +126,7 @@ def _independent_record(
         "algorithm": solved.algorithm,
         "candidates_considered": solved.candidates_considered,
         "candidates_truncated": solved.candidates_truncated,
+        "search": dict(solved.search_stats),
         "solver_reported_status": solved.status,
         "solver_reported_gross_output": solver_reported_gross_output,
         "solver_reported_score": solved.score,
@@ -210,6 +211,7 @@ def _fingerprint(result: SolveResult | None) -> Any:
         result.candidates_considered,
         result.candidates_truncated,
         result.error,
+        dict(result.search_stats),
     )
 
 
@@ -284,7 +286,7 @@ class _WorkerSlot:
         run = self.run
         spec = WorkerSpec(
             factory=self.factory,
-            config=AlgorithmConfig(name=self.factory.name),
+            config=run.profile.algorithm_config(self.factory),
             bundle=run.bundle,
             objective=run.profile.objective,
             memory=self.memory,
@@ -671,6 +673,7 @@ def _deterministic_view(record: Mapping[str, Any]) -> Any:
         "error": record["error"],
         "candidates_considered": record["candidates_considered"],
         "candidates_truncated": record["candidates_truncated"],
+        "search": record.get("search"),
         "quotes_counted": record["quotes"]["counted"],
         "solver_reported": record["solver_reported"],
         "seed": record["measurement"].get("seed"),
