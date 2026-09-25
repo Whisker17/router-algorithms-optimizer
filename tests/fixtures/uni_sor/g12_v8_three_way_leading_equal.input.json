@@ -1,0 +1,295 @@
+{
+  "adaptations": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amount_in_raw": "1000",
+  "behaviours": [
+    "B-S8",
+    "B-F1"
+  ],
+  "case_id": "g12_v8_three_way_leading_equal",
+  "categories": [
+    "G-12"
+  ],
+  "chain_id": 1,
+  "description": "Selection found as [r1@40, r2@40, r3@20] (129). The equal leading pair is a 'strictly descending' run for the inconsistent comparator and is reversed: final order [r2, r1, r3].",
+  "expect": {
+    "naive_selection": [
+      {
+        "percent": 40,
+        "pool_ids": [
+          "r1"
+        ]
+      },
+      {
+        "percent": 40,
+        "pool_ids": [
+          "r2"
+        ]
+      },
+      {
+        "percent": 20,
+        "pool_ids": [
+          "r3"
+        ]
+      }
+    ],
+    "selection": [
+      {
+        "percent": 40,
+        "pool_ids": [
+          "r2"
+        ]
+      },
+      {
+        "percent": 40,
+        "pool_ids": [
+          "r1"
+        ]
+      },
+      {
+        "percent": 20,
+        "pool_ids": [
+          "r3"
+        ]
+      }
+    ]
+  },
+  "gas_score_provider": "zero (gross_only)",
+  "naive_alternative": "a stable descending sort ([r1, r2, r3])",
+  "origin": {
+    "kind": "synthetic"
+  },
+  "pools": {
+    "V2": [],
+    "V3": [
+      {
+        "fee": 100,
+        "pool_id": "r1",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 500,
+        "pool_id": "r2",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "r3",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  },
+  "quotes": [
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 20,
+      "raw_quote": "25",
+      "route_pool_ids": [
+        "r1"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 40,
+      "raw_quote": "50",
+      "route_pool_ids": [
+        "r1"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 60,
+      "raw_quote": "62",
+      "route_pool_ids": [
+        "r1"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 80,
+      "raw_quote": "70",
+      "route_pool_ids": [
+        "r1"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "75",
+      "route_pool_ids": [
+        "r1"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 20,
+      "raw_quote": "24",
+      "route_pool_ids": [
+        "r2"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 40,
+      "raw_quote": "49",
+      "route_pool_ids": [
+        "r2"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 60,
+      "raw_quote": "61",
+      "route_pool_ids": [
+        "r2"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 80,
+      "raw_quote": "69",
+      "route_pool_ids": [
+        "r2"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "74",
+      "route_pool_ids": [
+        "r2"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 20,
+      "raw_quote": "30",
+      "route_pool_ids": [
+        "r3"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 40,
+      "raw_quote": "40",
+      "route_pool_ids": [
+        "r3"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 60,
+      "raw_quote": "55",
+      "route_pool_ids": [
+        "r3"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 80,
+      "raw_quote": "60",
+      "route_pool_ids": [
+        "r3"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "65",
+      "route_pool_ids": [
+        "r3"
+      ]
+    }
+  ],
+  "routing": {
+    "max_hops": 3,
+    "max_splits": 3,
+    "min_splits": 1,
+    "percent_step": 20
+  },
+  "schema": "uni-sor-golden-input/1",
+  "token_in": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "token_out": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tokens": [
+    {
+      "address": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "decimals": 18,
+      "symbol": "TKA"
+    },
+    {
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "decimals": 18,
+      "symbol": "TKB"
+    },
+    {
+      "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "decimals": 18,
+      "symbol": "TKC"
+    },
+    {
+      "address": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "decimals": 18,
+      "symbol": "TKD"
+    },
+    {
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+      "symbol": "TKE"
+    }
+  ]
+}

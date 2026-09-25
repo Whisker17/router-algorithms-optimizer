@@ -1,0 +1,1041 @@
+{
+  "adaptations": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amounts": [
+    {
+      "denominator": "100",
+      "numerator": "35",
+      "percent": 5,
+      "quotient": "0"
+    },
+    {
+      "denominator": "100",
+      "numerator": "70",
+      "percent": 10,
+      "quotient": "0"
+    },
+    {
+      "denominator": "100",
+      "numerator": "105",
+      "percent": 15,
+      "quotient": "1"
+    },
+    {
+      "denominator": "100",
+      "numerator": "140",
+      "percent": 20,
+      "quotient": "1"
+    },
+    {
+      "denominator": "100",
+      "numerator": "175",
+      "percent": 25,
+      "quotient": "1"
+    },
+    {
+      "denominator": "100",
+      "numerator": "210",
+      "percent": 30,
+      "quotient": "2"
+    },
+    {
+      "denominator": "100",
+      "numerator": "245",
+      "percent": 35,
+      "quotient": "2"
+    },
+    {
+      "denominator": "100",
+      "numerator": "280",
+      "percent": 40,
+      "quotient": "2"
+    },
+    {
+      "denominator": "100",
+      "numerator": "315",
+      "percent": 45,
+      "quotient": "3"
+    },
+    {
+      "denominator": "100",
+      "numerator": "350",
+      "percent": 50,
+      "quotient": "3"
+    },
+    {
+      "denominator": "100",
+      "numerator": "385",
+      "percent": 55,
+      "quotient": "3"
+    },
+    {
+      "denominator": "100",
+      "numerator": "420",
+      "percent": 60,
+      "quotient": "4"
+    },
+    {
+      "denominator": "100",
+      "numerator": "455",
+      "percent": 65,
+      "quotient": "4"
+    },
+    {
+      "denominator": "100",
+      "numerator": "490",
+      "percent": 70,
+      "quotient": "4"
+    },
+    {
+      "denominator": "100",
+      "numerator": "525",
+      "percent": 75,
+      "quotient": "5"
+    },
+    {
+      "denominator": "100",
+      "numerator": "560",
+      "percent": 80,
+      "quotient": "5"
+    },
+    {
+      "denominator": "100",
+      "numerator": "595",
+      "percent": 85,
+      "quotient": "5"
+    },
+    {
+      "denominator": "100",
+      "numerator": "630",
+      "percent": 90,
+      "quotient": "6"
+    },
+    {
+      "denominator": "100",
+      "numerator": "665",
+      "percent": 95,
+      "quotient": "6"
+    },
+    {
+      "denominator": "100",
+      "numerator": "700",
+      "percent": 100,
+      "quotient": "7"
+    }
+  ],
+  "case_id": "g11_7_wei_5pct_grid",
+  "categories": [
+    "G-11",
+    "G-14",
+    "G-12"
+  ],
+  "diagnostic": {
+    "function": "getBestSwapRouteBy",
+    "selection_matches_primary": true,
+    "sorted_by_percent": [
+      {
+        "list_indices": [
+          0,
+          18
+        ],
+        "percent": 15
+      },
+      {
+        "list_indices": [
+          1,
+          19
+        ],
+        "percent": 20
+      },
+      {
+        "list_indices": [
+          2,
+          20
+        ],
+        "percent": 25
+      },
+      {
+        "list_indices": [
+          3,
+          21
+        ],
+        "percent": 30
+      },
+      {
+        "list_indices": [
+          4,
+          22
+        ],
+        "percent": 35
+      },
+      {
+        "list_indices": [
+          5,
+          23
+        ],
+        "percent": 40
+      },
+      {
+        "list_indices": [
+          6,
+          24
+        ],
+        "percent": 45
+      },
+      {
+        "list_indices": [
+          7,
+          25
+        ],
+        "percent": 50
+      },
+      {
+        "list_indices": [
+          8,
+          26
+        ],
+        "percent": 55
+      },
+      {
+        "list_indices": [
+          9,
+          27
+        ],
+        "percent": 60
+      },
+      {
+        "list_indices": [
+          10,
+          28
+        ],
+        "percent": 65
+      },
+      {
+        "list_indices": [
+          11,
+          29
+        ],
+        "percent": 70
+      },
+      {
+        "list_indices": [
+          12,
+          30
+        ],
+        "percent": 75
+      },
+      {
+        "list_indices": [
+          13,
+          31
+        ],
+        "percent": 80
+      },
+      {
+        "list_indices": [
+          14,
+          32
+        ],
+        "percent": 85
+      },
+      {
+        "list_indices": [
+          15,
+          33
+        ],
+        "percent": 90
+      },
+      {
+        "list_indices": [
+          16,
+          34
+        ],
+        "percent": 95
+      },
+      {
+        "list_indices": [
+          17,
+          35
+        ],
+        "percent": 100
+      }
+    ]
+  },
+  "gas_score_provider": "zero (gross_only)",
+  "input_file": "tests/fixtures/uni_sor/g11_7_wei_5pct_grid.input.json",
+  "input_sha256": "496444c7a1b9f6e8f3bf7a20c5ca462793c3eb9737552d33d527dbe5b29c877d",
+  "percents": [
+    5,
+    10,
+    15,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45,
+    50,
+    55,
+    60,
+    65,
+    70,
+    75,
+    80,
+    85,
+    90,
+    95,
+    100
+  ],
+  "provenance": {
+    "chain_id": 1,
+    "contract": "docs/references/uni-sor-port-contract.md",
+    "diagnostic_calls": [
+      "AlphaRouter.prototype.getAmountDistribution",
+      "computeAllV3Routes",
+      "computeAllV2Routes",
+      "computeAllMixedRoutes",
+      "mixedRouteFilterOutV4Pools",
+      "V3Quoter.getQuotes",
+      "V2Quoter.getQuotes",
+      "MixedQuoter.getQuotes",
+      "getBestSwapRouteBy"
+    ],
+    "harness": {
+      "command": "tools/upstream/uni_sor/regen.sh",
+      "git_blob_sha1": {
+        "tools/upstream/uni_sor/.nvmrc": "eb6ead3cf55ae04f9e2c639f68121fb716c64c70",
+        "tools/upstream/uni_sor/author_inputs.py": "4568f9142ca27089493e6ce6922755cbe03615ef",
+        "tools/upstream/uni_sor/generate.js": "8197eadf9bd5200ed9b363f7ee36893f04c2440c",
+        "tools/upstream/uni_sor/package-lock.json": "a9c00806219865c687dce1bae84fcbcf5c98723c",
+        "tools/upstream/uni_sor/package.json": "534dcb0b6ec299aa199905dde91eda2ad79d5673",
+        "tools/upstream/uni_sor/regen.sh": "f5a0dcaf6e3933f57d2bc9a2ed6d9e9b628acd1d"
+      },
+      "install": "npm ci --ignore-scripts",
+      "package_lock_sha256": "e04f7ad106046830c1f4d482be9b17248f04ac435e59164537764ea179d30eff"
+    },
+    "packages": {
+      "@ethersproject/bignumber": {
+        "integrity": "sha512-n1CAdIHRWjSucQO3MC1zPSVgV/6dy/fjL9pMrPP9peL+QxEg9wOsVqwD4+818B6LUEtaXzVHQiuivzRoxPxUGw==",
+        "version": "5.7.0"
+      },
+      "@uniswap/router-sdk": {
+        "integrity": "sha512-9L6ar2MVU8ymXhSsYcplmK4EhZymxmjqpSlJrxLVu66fnNOeprZawTDqUXRM4jKxxb6r0e80VyBbwgc6JfnunA==",
+        "version": "2.3.5"
+      },
+      "@uniswap/sdk-core": {
+        "integrity": "sha512-MOhGAjGMqrd95p+te6tBK8pHgHCVMRTs5imqZk2aTqLoKgu6KzEGllifHb70ME6I4Q2p9eIPpX3xjfh4MKFT2w==",
+        "version": "7.10.1"
+      },
+      "@uniswap/smart-order-router": {
+        "integrity": "sha512-Bmg46KXDSfE1AAf1tPg+vDzMngVoGfzdohekhjJ1hIQG13tXcjEykqapQy+CrJUqXLL3lQvZj2uVEKfzCNH74Q==",
+        "version": "4.31.10"
+      },
+      "@uniswap/v2-sdk": {
+        "integrity": "sha512-JyXFOB4tyk9qk2kps9VA1VgXB9DBK6jbmElTsaMpDThVutDbEzE7nJMas6/TaBREBkitBk0EhAfs0aG1z2egPA==",
+        "version": "4.17.0"
+      },
+      "@uniswap/v3-sdk": {
+        "integrity": "sha512-BRgb9nWuxptXJmuQrax9XyqcuOMEuWsUjDSyus0UvOavzijbOu8jh3DWptg/15D7oL67Xmz5zvQaSPbLIL1cpA==",
+        "version": "3.27.0"
+      },
+      "@uniswap/v4-sdk": {
+        "integrity": "sha512-BofG+iZwztyBOghofq7KPWuofBwXI2JojGYoE79P6ZyCTimYMRoVdxO2qz0jg7E/pq0cDwbXwXN8/fOFY8JI/w==",
+        "version": "1.25.6"
+      },
+      "bunyan": {
+        "integrity": "sha512-0tECWShh6wUysgucJcBAoYegf3JJoZWibxdqhTm7OHPeT42qdjkZ29QCMcKwbgU1kiH+auSIasNRXMLWXafXig==",
+        "version": "1.8.15"
+      },
+      "jsbi": {
+        "integrity": "sha512-aBE4n43IPvjaddScbvWRA2YlTzKEynHzu7MqOyTipdHucf/VxS63ViCjxYRg86M8Rxwbt/GfzHl1kKERkt45fQ==",
+        "version": "3.2.5"
+      },
+      "lodash": {
+        "integrity": "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==",
+        "version": "4.17.21"
+      },
+      "mnemonist": {
+        "integrity": "sha512-bZTFT5rrPKtPJxj8KSV0WkPyNxl72vQepqqVUAW2ARUpUSF2qXMB6jZj7hW5/k7C1rtpzqbD/IIbJwLXUjCHeg==",
+        "version": "0.38.5"
+      }
+    },
+    "toolchain": {
+      "npm": "11.13.0",
+      "process_versions": {
+        "acorn": "8.16.0",
+        "ada": "3.4.4",
+        "amaro": "1.1.9",
+        "ares": "1.34.6",
+        "brotli": "1.2.0",
+        "cldr": "48.0",
+        "icu": "78.3",
+        "llhttp": "9.4.1",
+        "merve": "1.2.2",
+        "modules": "137",
+        "napi": "10",
+        "nbytes": "0.1.4",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.68.0",
+        "nghttp3": "",
+        "ngtcp2": "",
+        "node": "24.16.0",
+        "openssl": "3.5.6",
+        "simdjson": "4.6.1",
+        "simdutf": "6.4.0",
+        "sqlite": "3.53.0",
+        "tz": "2026b",
+        "undici": "7.25.0",
+        "unicode": "17.0",
+        "uv": "1.52.1",
+        "uvwasi": "0.0.23",
+        "v8": "13.6.233.17-node.49",
+        "zlib": "1.3.1-e00f703",
+        "zstd": "1.5.7"
+      }
+    },
+    "upstream": {
+      "build_files_sha256": {
+        "build/main/providers/portion-provider.js": "9b7528b79c8e6bb66de594866dd8234ee4367795a89beeed7bc17adf50d6c26c",
+        "build/main/routers/alpha-router/alpha-router.js": "04a0685d14a899a1bf09cb9d46fa409619ac0a46170e2bea0fa77dad5c7d27f4",
+        "build/main/routers/alpha-router/entities/route-with-valid-quote.js": "9e4501906a83fec55e7f1322f0e6a3ef3185d7e2d152fc6c50d476223883babd",
+        "build/main/routers/alpha-router/functions/best-swap-route.js": "fafe881bcf27747fe996c0b28b30e828ef6a31abeeb32bad98c7181a5cf027e4",
+        "build/main/routers/alpha-router/functions/compute-all-routes.js": "023c6be7eac5a8a04f6eb5a02b3fdaf640c851fd09d89621f9118445f1bf0fdc",
+        "build/main/routers/alpha-router/quoters/mixed-quoter.js": "32b67402d5c81f4ea73fbac7c727cb0183ddebdbd0f28a86c9d602ec48d38265",
+        "build/main/routers/alpha-router/quoters/v2-quoter.js": "e1802f8b109dc8c8020f0f4524abcaeb44f9fb927fca95ab9f7a399148c515ad",
+        "build/main/routers/alpha-router/quoters/v3-quoter.js": "6bd8289a8daa4c8aa67839d5e61c6a84bcc1d935a8c905f9bbccbf1c842d0d97",
+        "build/main/util/mixedRouteFilterOutV4Pools.js": "ea85faec27d5257be317d043372e8945649c12bf852d65cab5ab73d85e68ce92"
+      },
+      "commit": "04c7c0b4d85ac2a19a3ff53987d21f9c8f1fe647",
+      "npm_git_head": "f506b99b8a7bf4d6f9c386ee721e0f8adb61d7f9",
+      "npm_integrity": "sha512-Bmg46KXDSfE1AAf1tPg+vDzMngVoGfzdohekhjJ1hIQG13tXcjEykqapQy+CrJUqXLL3lQvZj2uVEKfzCNH74Q==",
+      "package": "@uniswap/smart-order-router",
+      "repository": "https://github.com/Uniswap/smart-order-router",
+      "version": "4.31.10"
+    },
+    "upstream_calls": [
+      "AlphaRouter.prototype.getAmountDistribution",
+      "computeAllV3Routes",
+      "computeAllV2Routes",
+      "computeAllMixedRoutes",
+      "mixedRouteFilterOutV4Pools",
+      "V3Quoter.getQuotes",
+      "V2Quoter.getQuotes",
+      "MixedQuoter.getQuotes",
+      "getBestSwapRoute"
+    ]
+  },
+  "result": {
+    "estimated_gas_used": "0",
+    "estimated_gas_used_quote_token": "0",
+    "estimated_gas_used_usd": "0",
+    "missing_amount": {
+      "denominator": "100",
+      "numerator": "0",
+      "quotient": "0"
+    },
+    "quote": "460",
+    "quote_gas_adjusted": "460",
+    "remainder_added": false,
+    "routes": [
+      {
+        "amount": {
+          "denominator": "100",
+          "numerator": "385",
+          "quotient": "3"
+        },
+        "gas_cost_in_token": "0",
+        "gas_cost_in_usd": "0",
+        "gas_estimate": "0",
+        "list_index": 8,
+        "percent": 55,
+        "pool_ids": [
+          "r1"
+        ],
+        "protocol": "V3",
+        "quote": "230",
+        "quote_adjusted_for_gas": "230",
+        "raw_quote": "230",
+        "token_path": [
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ]
+      },
+      {
+        "amount": {
+          "denominator": "100",
+          "numerator": "315",
+          "quotient": "3"
+        },
+        "gas_cost_in_token": "0",
+        "gas_cost_in_usd": "0",
+        "gas_estimate": "0",
+        "list_index": 24,
+        "percent": 45,
+        "pool_ids": [
+          "r2"
+        ],
+        "protocol": "V3",
+        "quote": "230",
+        "quote_adjusted_for_gas": "230",
+        "raw_quote": "230",
+        "token_path": [
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ]
+      }
+    ],
+    "sum_of_quotients": "6"
+  },
+  "routes": {
+    "MIXED": [],
+    "V2": [],
+    "V3": [
+      {
+        "pool_ids": [
+          "r1"
+        ],
+        "token_path": [
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ]
+      },
+      {
+        "pool_ids": [
+          "r2"
+        ],
+        "token_path": [
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ]
+      }
+    ]
+  },
+  "routes_with_valid_quotes": [
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 0,
+      "percent": 15,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "90",
+      "quote_adjusted_for_gas": "90",
+      "raw_quote": "90"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 1,
+      "percent": 20,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "90",
+      "quote_adjusted_for_gas": "90",
+      "raw_quote": "90"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 2,
+      "percent": 25,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "90",
+      "quote_adjusted_for_gas": "90",
+      "raw_quote": "90"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 3,
+      "percent": 30,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "166",
+      "quote_adjusted_for_gas": "166",
+      "raw_quote": "166"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 4,
+      "percent": 35,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "166",
+      "quote_adjusted_for_gas": "166",
+      "raw_quote": "166"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 5,
+      "percent": 40,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "166",
+      "quote_adjusted_for_gas": "166",
+      "raw_quote": "166"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 6,
+      "percent": 45,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "230",
+      "quote_adjusted_for_gas": "230",
+      "raw_quote": "230"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 7,
+      "percent": 50,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "230",
+      "quote_adjusted_for_gas": "230",
+      "raw_quote": "230"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 8,
+      "percent": 55,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "230",
+      "quote_adjusted_for_gas": "230",
+      "raw_quote": "230"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 9,
+      "percent": 60,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "285",
+      "quote_adjusted_for_gas": "285",
+      "raw_quote": "285"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 10,
+      "percent": 65,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "285",
+      "quote_adjusted_for_gas": "285",
+      "raw_quote": "285"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 11,
+      "percent": 70,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "285",
+      "quote_adjusted_for_gas": "285",
+      "raw_quote": "285"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 12,
+      "percent": 75,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "332",
+      "quote_adjusted_for_gas": "332",
+      "raw_quote": "332"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 13,
+      "percent": 80,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "332",
+      "quote_adjusted_for_gas": "332",
+      "raw_quote": "332"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 14,
+      "percent": 85,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "332",
+      "quote_adjusted_for_gas": "332",
+      "raw_quote": "332"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 15,
+      "percent": 90,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "374",
+      "quote_adjusted_for_gas": "374",
+      "raw_quote": "374"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 16,
+      "percent": 95,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "374",
+      "quote_adjusted_for_gas": "374",
+      "raw_quote": "374"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 17,
+      "percent": 100,
+      "pool_ids": [
+        "r1"
+      ],
+      "protocol": "V3",
+      "quote": "411",
+      "quote_adjusted_for_gas": "411",
+      "raw_quote": "411"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 18,
+      "percent": 15,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "90",
+      "quote_adjusted_for_gas": "90",
+      "raw_quote": "90"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 19,
+      "percent": 20,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "90",
+      "quote_adjusted_for_gas": "90",
+      "raw_quote": "90"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 20,
+      "percent": 25,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "90",
+      "quote_adjusted_for_gas": "90",
+      "raw_quote": "90"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 21,
+      "percent": 30,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "166",
+      "quote_adjusted_for_gas": "166",
+      "raw_quote": "166"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 22,
+      "percent": 35,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "166",
+      "quote_adjusted_for_gas": "166",
+      "raw_quote": "166"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 23,
+      "percent": 40,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "166",
+      "quote_adjusted_for_gas": "166",
+      "raw_quote": "166"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 24,
+      "percent": 45,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "230",
+      "quote_adjusted_for_gas": "230",
+      "raw_quote": "230"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 25,
+      "percent": 50,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "230",
+      "quote_adjusted_for_gas": "230",
+      "raw_quote": "230"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 26,
+      "percent": 55,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "230",
+      "quote_adjusted_for_gas": "230",
+      "raw_quote": "230"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 27,
+      "percent": 60,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "285",
+      "quote_adjusted_for_gas": "285",
+      "raw_quote": "285"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 28,
+      "percent": 65,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "285",
+      "quote_adjusted_for_gas": "285",
+      "raw_quote": "285"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 29,
+      "percent": 70,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "285",
+      "quote_adjusted_for_gas": "285",
+      "raw_quote": "285"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 30,
+      "percent": 75,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "332",
+      "quote_adjusted_for_gas": "332",
+      "raw_quote": "332"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 31,
+      "percent": 80,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "332",
+      "quote_adjusted_for_gas": "332",
+      "raw_quote": "332"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 32,
+      "percent": 85,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "332",
+      "quote_adjusted_for_gas": "332",
+      "raw_quote": "332"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 33,
+      "percent": 90,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "374",
+      "quote_adjusted_for_gas": "374",
+      "raw_quote": "374"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 34,
+      "percent": 95,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "374",
+      "quote_adjusted_for_gas": "374",
+      "raw_quote": "374"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 35,
+      "percent": 100,
+      "pool_ids": [
+        "r2"
+      ],
+      "protocol": "V3",
+      "quote": "411",
+      "quote_adjusted_for_gas": "411",
+      "raw_quote": "411"
+    }
+  ],
+  "routing": {
+    "max_hops": 3,
+    "max_splits": 4,
+    "min_splits": 1,
+    "percent_step": 5
+  },
+  "routing_config": {
+    "distributionPercent": 5,
+    "forceCrossProtocol": false,
+    "forceMixedRoutes": false,
+    "maxSplits": 4,
+    "maxSwapsPerPath": 3,
+    "minSplits": 1
+  },
+  "schema": "uni-sor-golden/1"
+}

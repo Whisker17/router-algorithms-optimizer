@@ -1,0 +1,2034 @@
+{
+  "adaptations": [
+    "A-1",
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amounts": [
+    {
+      "denominator": "100",
+      "numerator": "5230100000000000000",
+      "percent": 5,
+      "quotient": "52301000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "10460200000000000000",
+      "percent": 10,
+      "quotient": "104602000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "15690300000000000000",
+      "percent": 15,
+      "quotient": "156903000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "20920400000000000000",
+      "percent": 20,
+      "quotient": "209204000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "26150500000000000000",
+      "percent": 25,
+      "quotient": "261505000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "31380600000000000000",
+      "percent": 30,
+      "quotient": "313806000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "36610700000000000000",
+      "percent": 35,
+      "quotient": "366107000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "41840800000000000000",
+      "percent": 40,
+      "quotient": "418408000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "47070900000000000000",
+      "percent": 45,
+      "quotient": "470709000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "52301000000000000000",
+      "percent": 50,
+      "quotient": "523010000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "57531100000000000000",
+      "percent": 55,
+      "quotient": "575311000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "62761200000000000000",
+      "percent": 60,
+      "quotient": "627612000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "67991300000000000000",
+      "percent": 65,
+      "quotient": "679913000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "73221400000000000000",
+      "percent": 70,
+      "quotient": "732214000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "78451500000000000000",
+      "percent": 75,
+      "quotient": "784515000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "83681600000000000000",
+      "percent": 80,
+      "quotient": "836816000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "88911700000000000000",
+      "percent": 85,
+      "quotient": "889117000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "94141800000000000000",
+      "percent": 90,
+      "quotient": "941418000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "99371900000000000000",
+      "percent": 95,
+      "quotient": "993719000000000000"
+    },
+    {
+      "denominator": "100",
+      "numerator": "104602000000000000000",
+      "percent": 100,
+      "quotient": "1046020000000000000"
+    }
+  ],
+  "case_id": "c02_corpus_meth_weth_parallel_pools",
+  "categories": [
+    "G-2",
+    "G-1"
+  ],
+  "diagnostic": {
+    "function": "getBestSwapRouteBy",
+    "selection_matches_primary": true,
+    "sorted_by_percent": [
+      {
+        "list_indices": [
+          60,
+          20,
+          0,
+          40,
+          80
+        ],
+        "percent": 5
+      },
+      {
+        "list_indices": [
+          61,
+          21,
+          1,
+          41,
+          81
+        ],
+        "percent": 10
+      },
+      {
+        "list_indices": [
+          62,
+          22,
+          2,
+          42,
+          82
+        ],
+        "percent": 15
+      },
+      {
+        "list_indices": [
+          63,
+          23,
+          3,
+          43,
+          83
+        ],
+        "percent": 20
+      },
+      {
+        "list_indices": [
+          64,
+          24,
+          4,
+          84,
+          44
+        ],
+        "percent": 25
+      },
+      {
+        "list_indices": [
+          65,
+          25,
+          5,
+          85,
+          45
+        ],
+        "percent": 30
+      },
+      {
+        "list_indices": [
+          66,
+          26,
+          6,
+          86,
+          46
+        ],
+        "percent": 35
+      },
+      {
+        "list_indices": [
+          67,
+          27,
+          7,
+          87,
+          47
+        ],
+        "percent": 40
+      },
+      {
+        "list_indices": [
+          68,
+          28,
+          8,
+          88,
+          48
+        ],
+        "percent": 45
+      },
+      {
+        "list_indices": [
+          69,
+          29,
+          9,
+          89,
+          49
+        ],
+        "percent": 50
+      },
+      {
+        "list_indices": [
+          70,
+          30,
+          10,
+          90,
+          50
+        ],
+        "percent": 55
+      },
+      {
+        "list_indices": [
+          71,
+          31,
+          91,
+          11,
+          51
+        ],
+        "percent": 60
+      },
+      {
+        "list_indices": [
+          72,
+          32,
+          92,
+          12,
+          52
+        ],
+        "percent": 65
+      },
+      {
+        "list_indices": [
+          73,
+          33,
+          93,
+          13,
+          53
+        ],
+        "percent": 70
+      },
+      {
+        "list_indices": [
+          74,
+          34,
+          94,
+          14,
+          54
+        ],
+        "percent": 75
+      },
+      {
+        "list_indices": [
+          75,
+          35,
+          95,
+          15,
+          55
+        ],
+        "percent": 80
+      },
+      {
+        "list_indices": [
+          76,
+          36,
+          96,
+          16,
+          56
+        ],
+        "percent": 85
+      },
+      {
+        "list_indices": [
+          77,
+          37,
+          97,
+          17,
+          57
+        ],
+        "percent": 90
+      },
+      {
+        "list_indices": [
+          78,
+          38,
+          98,
+          18,
+          58
+        ],
+        "percent": 95
+      },
+      {
+        "list_indices": [
+          79,
+          39,
+          99,
+          19,
+          59
+        ],
+        "percent": 100
+      }
+    ]
+  },
+  "gas_score_provider": "zero (gross_only)",
+  "input_file": "tests/fixtures/uni_sor/c02_corpus_meth_weth_parallel_pools.input.json",
+  "input_sha256": "c0f9a76f052c9a4d3fbbe35b7efb2559cfa3e16fbabe3471ea83da5a8689bd0e",
+  "percents": [
+    5,
+    10,
+    15,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45,
+    50,
+    55,
+    60,
+    65,
+    70,
+    75,
+    80,
+    85,
+    90,
+    95,
+    100
+  ],
+  "provenance": {
+    "chain_id": 1,
+    "contract": "docs/references/uni-sor-port-contract.md",
+    "diagnostic_calls": [
+      "AlphaRouter.prototype.getAmountDistribution",
+      "computeAllV3Routes",
+      "computeAllV2Routes",
+      "computeAllMixedRoutes",
+      "mixedRouteFilterOutV4Pools",
+      "V3Quoter.getQuotes",
+      "V2Quoter.getQuotes",
+      "MixedQuoter.getQuotes",
+      "getBestSwapRouteBy"
+    ],
+    "harness": {
+      "command": "tools/upstream/uni_sor/regen.sh",
+      "git_blob_sha1": {
+        "tools/upstream/uni_sor/.nvmrc": "eb6ead3cf55ae04f9e2c639f68121fb716c64c70",
+        "tools/upstream/uni_sor/author_inputs.py": "4568f9142ca27089493e6ce6922755cbe03615ef",
+        "tools/upstream/uni_sor/generate.js": "8197eadf9bd5200ed9b363f7ee36893f04c2440c",
+        "tools/upstream/uni_sor/package-lock.json": "a9c00806219865c687dce1bae84fcbcf5c98723c",
+        "tools/upstream/uni_sor/package.json": "534dcb0b6ec299aa199905dde91eda2ad79d5673",
+        "tools/upstream/uni_sor/regen.sh": "f5a0dcaf6e3933f57d2bc9a2ed6d9e9b628acd1d"
+      },
+      "install": "npm ci --ignore-scripts",
+      "package_lock_sha256": "e04f7ad106046830c1f4d482be9b17248f04ac435e59164537764ea179d30eff"
+    },
+    "packages": {
+      "@ethersproject/bignumber": {
+        "integrity": "sha512-n1CAdIHRWjSucQO3MC1zPSVgV/6dy/fjL9pMrPP9peL+QxEg9wOsVqwD4+818B6LUEtaXzVHQiuivzRoxPxUGw==",
+        "version": "5.7.0"
+      },
+      "@uniswap/router-sdk": {
+        "integrity": "sha512-9L6ar2MVU8ymXhSsYcplmK4EhZymxmjqpSlJrxLVu66fnNOeprZawTDqUXRM4jKxxb6r0e80VyBbwgc6JfnunA==",
+        "version": "2.3.5"
+      },
+      "@uniswap/sdk-core": {
+        "integrity": "sha512-MOhGAjGMqrd95p+te6tBK8pHgHCVMRTs5imqZk2aTqLoKgu6KzEGllifHb70ME6I4Q2p9eIPpX3xjfh4MKFT2w==",
+        "version": "7.10.1"
+      },
+      "@uniswap/smart-order-router": {
+        "integrity": "sha512-Bmg46KXDSfE1AAf1tPg+vDzMngVoGfzdohekhjJ1hIQG13tXcjEykqapQy+CrJUqXLL3lQvZj2uVEKfzCNH74Q==",
+        "version": "4.31.10"
+      },
+      "@uniswap/v2-sdk": {
+        "integrity": "sha512-JyXFOB4tyk9qk2kps9VA1VgXB9DBK6jbmElTsaMpDThVutDbEzE7nJMas6/TaBREBkitBk0EhAfs0aG1z2egPA==",
+        "version": "4.17.0"
+      },
+      "@uniswap/v3-sdk": {
+        "integrity": "sha512-BRgb9nWuxptXJmuQrax9XyqcuOMEuWsUjDSyus0UvOavzijbOu8jh3DWptg/15D7oL67Xmz5zvQaSPbLIL1cpA==",
+        "version": "3.27.0"
+      },
+      "@uniswap/v4-sdk": {
+        "integrity": "sha512-BofG+iZwztyBOghofq7KPWuofBwXI2JojGYoE79P6ZyCTimYMRoVdxO2qz0jg7E/pq0cDwbXwXN8/fOFY8JI/w==",
+        "version": "1.25.6"
+      },
+      "bunyan": {
+        "integrity": "sha512-0tECWShh6wUysgucJcBAoYegf3JJoZWibxdqhTm7OHPeT42qdjkZ29QCMcKwbgU1kiH+auSIasNRXMLWXafXig==",
+        "version": "1.8.15"
+      },
+      "jsbi": {
+        "integrity": "sha512-aBE4n43IPvjaddScbvWRA2YlTzKEynHzu7MqOyTipdHucf/VxS63ViCjxYRg86M8Rxwbt/GfzHl1kKERkt45fQ==",
+        "version": "3.2.5"
+      },
+      "lodash": {
+        "integrity": "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==",
+        "version": "4.17.21"
+      },
+      "mnemonist": {
+        "integrity": "sha512-bZTFT5rrPKtPJxj8KSV0WkPyNxl72vQepqqVUAW2ARUpUSF2qXMB6jZj7hW5/k7C1rtpzqbD/IIbJwLXUjCHeg==",
+        "version": "0.38.5"
+      }
+    },
+    "toolchain": {
+      "npm": "11.13.0",
+      "process_versions": {
+        "acorn": "8.16.0",
+        "ada": "3.4.4",
+        "amaro": "1.1.9",
+        "ares": "1.34.6",
+        "brotli": "1.2.0",
+        "cldr": "48.0",
+        "icu": "78.3",
+        "llhttp": "9.4.1",
+        "merve": "1.2.2",
+        "modules": "137",
+        "napi": "10",
+        "nbytes": "0.1.4",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.68.0",
+        "nghttp3": "",
+        "ngtcp2": "",
+        "node": "24.16.0",
+        "openssl": "3.5.6",
+        "simdjson": "4.6.1",
+        "simdutf": "6.4.0",
+        "sqlite": "3.53.0",
+        "tz": "2026b",
+        "undici": "7.25.0",
+        "unicode": "17.0",
+        "uv": "1.52.1",
+        "uvwasi": "0.0.23",
+        "v8": "13.6.233.17-node.49",
+        "zlib": "1.3.1-e00f703",
+        "zstd": "1.5.7"
+      }
+    },
+    "upstream": {
+      "build_files_sha256": {
+        "build/main/providers/portion-provider.js": "9b7528b79c8e6bb66de594866dd8234ee4367795a89beeed7bc17adf50d6c26c",
+        "build/main/routers/alpha-router/alpha-router.js": "04a0685d14a899a1bf09cb9d46fa409619ac0a46170e2bea0fa77dad5c7d27f4",
+        "build/main/routers/alpha-router/entities/route-with-valid-quote.js": "9e4501906a83fec55e7f1322f0e6a3ef3185d7e2d152fc6c50d476223883babd",
+        "build/main/routers/alpha-router/functions/best-swap-route.js": "fafe881bcf27747fe996c0b28b30e828ef6a31abeeb32bad98c7181a5cf027e4",
+        "build/main/routers/alpha-router/functions/compute-all-routes.js": "023c6be7eac5a8a04f6eb5a02b3fdaf640c851fd09d89621f9118445f1bf0fdc",
+        "build/main/routers/alpha-router/quoters/mixed-quoter.js": "32b67402d5c81f4ea73fbac7c727cb0183ddebdbd0f28a86c9d602ec48d38265",
+        "build/main/routers/alpha-router/quoters/v2-quoter.js": "e1802f8b109dc8c8020f0f4524abcaeb44f9fb927fca95ab9f7a399148c515ad",
+        "build/main/routers/alpha-router/quoters/v3-quoter.js": "6bd8289a8daa4c8aa67839d5e61c6a84bcc1d935a8c905f9bbccbf1c842d0d97",
+        "build/main/util/mixedRouteFilterOutV4Pools.js": "ea85faec27d5257be317d043372e8945649c12bf852d65cab5ab73d85e68ce92"
+      },
+      "commit": "04c7c0b4d85ac2a19a3ff53987d21f9c8f1fe647",
+      "npm_git_head": "f506b99b8a7bf4d6f9c386ee721e0f8adb61d7f9",
+      "npm_integrity": "sha512-Bmg46KXDSfE1AAf1tPg+vDzMngVoGfzdohekhjJ1hIQG13tXcjEykqapQy+CrJUqXLL3lQvZj2uVEKfzCNH74Q==",
+      "package": "@uniswap/smart-order-router",
+      "repository": "https://github.com/Uniswap/smart-order-router",
+      "version": "4.31.10"
+    },
+    "upstream_calls": [
+      "AlphaRouter.prototype.getAmountDistribution",
+      "computeAllV3Routes",
+      "computeAllV2Routes",
+      "computeAllMixedRoutes",
+      "mixedRouteFilterOutV4Pools",
+      "V3Quoter.getQuotes",
+      "V2Quoter.getQuotes",
+      "MixedQuoter.getQuotes",
+      "getBestSwapRoute"
+    ]
+  },
+  "result": {
+    "estimated_gas_used": "0",
+    "estimated_gas_used_quote_token": "0",
+    "estimated_gas_used_usd": "0",
+    "missing_amount": {
+      "denominator": "100",
+      "numerator": "0",
+      "quotient": "0"
+    },
+    "quote": "1149924502488081807",
+    "quote_gas_adjusted": "1149924502488081807",
+    "remainder_added": false,
+    "routes": [
+      {
+        "amount": {
+          "denominator": "100",
+          "numerator": "104602000000000000000",
+          "quotient": "1046020000000000000"
+        },
+        "gas_cost_in_token": "0",
+        "gas_cost_in_usd": "0",
+        "gas_estimate": "0",
+        "list_index": 79,
+        "percent": 100,
+        "pool_ids": [
+          "0x94d692afff21e045691971a20df4a9adb482ddf6"
+        ],
+        "protocol": "V3",
+        "quote": "1149924502488081807",
+        "quote_adjusted_for_gas": "1149924502488081807",
+        "raw_quote": "1149924502488081807",
+        "token_path": [
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+        ]
+      }
+    ],
+    "sum_of_quotients": "1046020000000000000"
+  },
+  "routes": {
+    "MIXED": [],
+    "V2": [
+      {
+        "pool_ids": [
+          "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+        ],
+        "token_path": [
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+        ]
+      }
+    ],
+    "V3": [
+      {
+        "pool_ids": [
+          "0x283fdeeac018e403a9274fbdec3c570dd3157e68"
+        ],
+        "token_path": [
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+        ]
+      },
+      {
+        "pool_ids": [
+          "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+        ],
+        "token_path": [
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+        ]
+      },
+      {
+        "pool_ids": [
+          "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+        ],
+        "token_path": [
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+        ]
+      },
+      {
+        "pool_ids": [
+          "0x78b54c2bc2c5ad8f744915d481e5caaff0c6c8c2"
+        ],
+        "token_path": [
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+        ]
+      },
+      {
+        "pool_ids": [
+          "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+        ],
+        "token_path": [
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+        ]
+      },
+      {
+        "pool_ids": [
+          "0x94d692afff21e045691971a20df4a9adb482ddf6"
+        ],
+        "token_path": [
+          "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+          "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+        ]
+      }
+    ]
+  },
+  "routes_with_valid_quotes": [
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 0,
+      "percent": 5,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "56715846669328033",
+      "quote_adjusted_for_gas": "56715846669328033",
+      "raw_quote": "56715846669328033"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 1,
+      "percent": 10,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "111913273211261033",
+      "quote_adjusted_for_gas": "111913273211261033",
+      "raw_quote": "111913273211261033"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 2,
+      "percent": 15,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "165742167661874727",
+      "quote_adjusted_for_gas": "165742167661874727",
+      "raw_quote": "165742167661874727"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 3,
+      "percent": 20,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "218175667118472909",
+      "quote_adjusted_for_gas": "218175667118472909",
+      "raw_quote": "218175667118472909"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 4,
+      "percent": 25,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "269250709379106775",
+      "quote_adjusted_for_gas": "269250709379106775",
+      "raw_quote": "269250709379106775"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 5,
+      "percent": 30,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "319019412062872382",
+      "quote_adjusted_for_gas": "319019412062872382",
+      "raw_quote": "319019412062872382"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 6,
+      "percent": 35,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456641778830688",
+      "quote_adjusted_for_gas": "365456641778830688",
+      "raw_quote": "365456641778830688"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 7,
+      "percent": 40,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456665213082074",
+      "quote_adjusted_for_gas": "365456665213082074",
+      "raw_quote": "365456665213082074"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 8,
+      "percent": 45,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456665661932882",
+      "quote_adjusted_for_gas": "365456665661932882",
+      "raw_quote": "365456665661932882"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 9,
+      "percent": 50,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456665815395303",
+      "quote_adjusted_for_gas": "365456665815395303",
+      "raw_quote": "365456665815395303"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 10,
+      "percent": 55,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456665892868460",
+      "quote_adjusted_for_gas": "365456665892868460",
+      "raw_quote": "365456665892868460"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 11,
+      "percent": 60,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456665939592535",
+      "quote_adjusted_for_gas": "365456665939592535",
+      "raw_quote": "365456665939592535"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 12,
+      "percent": 65,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456665970842640",
+      "quote_adjusted_for_gas": "365456665970842640",
+      "raw_quote": "365456665970842640"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 13,
+      "percent": 70,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456665993213681",
+      "quote_adjusted_for_gas": "365456665993213681",
+      "raw_quote": "365456665993213681"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 14,
+      "percent": 75,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456666010019131",
+      "quote_adjusted_for_gas": "365456666010019131",
+      "raw_quote": "365456666010019131"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 15,
+      "percent": 80,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456666023106173",
+      "quote_adjusted_for_gas": "365456666023106173",
+      "raw_quote": "365456666023106173"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 16,
+      "percent": 85,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456666033585988",
+      "quote_adjusted_for_gas": "365456666033585988",
+      "raw_quote": "365456666033585988"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 17,
+      "percent": 90,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456666042167124",
+      "quote_adjusted_for_gas": "365456666042167124",
+      "raw_quote": "365456666042167124"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 18,
+      "percent": 95,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456666049322708",
+      "quote_adjusted_for_gas": "365456666049322708",
+      "raw_quote": "365456666049322708"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 19,
+      "percent": 100,
+      "pool_ids": [
+        "0x48ef5640e71001cac842f5627a0bfec1ef09deb7"
+      ],
+      "protocol": "V3",
+      "quote": "365456666055380731",
+      "quote_adjusted_for_gas": "365456666055380731",
+      "raw_quote": "365456666055380731"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 20,
+      "percent": 5,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "57217264102994614",
+      "quote_adjusted_for_gas": "57217264102994614",
+      "raw_quote": "57217264102994614"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 21,
+      "percent": 10,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "113965264447059496",
+      "quote_adjusted_for_gas": "113965264447059496",
+      "raw_quote": "113965264447059496"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 22,
+      "percent": 15,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "170249750411001362",
+      "quote_adjusted_for_gas": "170249750411001362",
+      "raw_quote": "170249750411001362"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 23,
+      "percent": 20,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "226076377834452001",
+      "quote_adjusted_for_gas": "226076377834452001",
+      "raw_quote": "226076377834452001"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 24,
+      "percent": 25,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "281450710912449849",
+      "quote_adjusted_for_gas": "281450710912449849",
+      "raw_quote": "281450710912449849"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 25,
+      "percent": 30,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "336378224044158972",
+      "quote_adjusted_for_gas": "336378224044158972",
+      "raw_quote": "336378224044158972"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 26,
+      "percent": 35,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "390864303637015490",
+      "quote_adjusted_for_gas": "390864303637015490",
+      "raw_quote": "390864303637015490"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 27,
+      "percent": 40,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "444914249867550179",
+      "quote_adjusted_for_gas": "444914249867550179",
+      "raw_quote": "444914249867550179"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 28,
+      "percent": 45,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "498533278400096162",
+      "quote_adjusted_for_gas": "498533278400096162",
+      "raw_quote": "498533278400096162"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 29,
+      "percent": 50,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "551739162675561146",
+      "quote_adjusted_for_gas": "551739162675561146",
+      "raw_quote": "551739162675561146"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 30,
+      "percent": 55,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "604713978095708861",
+      "quote_adjusted_for_gas": "604713978095708861",
+      "raw_quote": "604713978095708861"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 31,
+      "percent": 60,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "657379878411390623",
+      "quote_adjusted_for_gas": "657379878411390623",
+      "raw_quote": "657379878411390623"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 32,
+      "percent": 65,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "709631274285641002",
+      "quote_adjusted_for_gas": "709631274285641002",
+      "raw_quote": "709631274285641002"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 33,
+      "percent": 70,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "761473040042868255",
+      "quote_adjusted_for_gas": "761473040042868255",
+      "raw_quote": "761473040042868255"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 34,
+      "percent": 75,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "812909973880362712",
+      "quote_adjusted_for_gas": "812909973880362712",
+      "raw_quote": "812909973880362712"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 35,
+      "percent": 80,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "863946799348706608",
+      "quote_adjusted_for_gas": "863946799348706608",
+      "raw_quote": "863946799348706608"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 36,
+      "percent": 85,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "914588166797771124",
+      "quote_adjusted_for_gas": "914588166797771124",
+      "raw_quote": "914588166797771124"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 37,
+      "percent": 90,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "964838654789230281",
+      "quote_adjusted_for_gas": "964838654789230281",
+      "raw_quote": "964838654789230281"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 38,
+      "percent": 95,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "1014702771476492790",
+      "quote_adjusted_for_gas": "1014702771476492790",
+      "raw_quote": "1014702771476492790"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 39,
+      "percent": 100,
+      "pool_ids": [
+        "0x4f9e3683a523b66da89d82bba0a9caa1c3243df4"
+      ],
+      "protocol": "V3",
+      "quote": "1064184860433006311",
+      "quote_adjusted_for_gas": "1064184860433006311",
+      "raw_quote": "1064184860433006311"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 40,
+      "percent": 5,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "54658711828132861",
+      "quote_adjusted_for_gas": "54658711828132861",
+      "raw_quote": "54658711828132861"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 41,
+      "percent": 10,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "109132230809102113",
+      "quote_adjusted_for_gas": "109132230809102113",
+      "raw_quote": "109132230809102113"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 42,
+      "percent": 15,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "162686787966524932",
+      "quote_adjusted_for_gas": "162686787966524932",
+      "raw_quote": "162686787966524932"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 43,
+      "percent": 20,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341083766302089",
+      "quote_adjusted_for_gas": "194341083766302089",
+      "raw_quote": "194341083766302089"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 44,
+      "percent": 25,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341180512579867",
+      "quote_adjusted_for_gas": "194341180512579867",
+      "raw_quote": "194341180512579867"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 45,
+      "percent": 30,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341196576754826",
+      "quote_adjusted_for_gas": "194341196576754826",
+      "raw_quote": "194341196576754826"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 46,
+      "percent": 35,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341203186435163",
+      "quote_adjusted_for_gas": "194341203186435163",
+      "raw_quote": "194341203186435163"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 47,
+      "percent": 40,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341206790492010",
+      "quote_adjusted_for_gas": "194341206790492010",
+      "raw_quote": "194341206790492010"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 48,
+      "percent": 45,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341209059270151",
+      "quote_adjusted_for_gas": "194341209059270151",
+      "raw_quote": "194341209059270151"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 49,
+      "percent": 50,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341210618856672",
+      "quote_adjusted_for_gas": "194341210618856672",
+      "raw_quote": "194341210618856672"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 50,
+      "percent": 55,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341211756831289",
+      "quote_adjusted_for_gas": "194341211756831289",
+      "raw_quote": "194341211756831289"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 51,
+      "percent": 60,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341212623801791",
+      "quote_adjusted_for_gas": "194341212623801791",
+      "raw_quote": "194341212623801791"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 52,
+      "percent": 65,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341213306275333",
+      "quote_adjusted_for_gas": "194341213306275333",
+      "raw_quote": "194341213306275333"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 53,
+      "percent": 70,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341213857481357",
+      "quote_adjusted_for_gas": "194341213857481357",
+      "raw_quote": "194341213857481357"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 54,
+      "percent": 75,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341214311969375",
+      "quote_adjusted_for_gas": "194341214311969375",
+      "raw_quote": "194341214311969375"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 55,
+      "percent": 80,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341214693142287",
+      "quote_adjusted_for_gas": "194341214693142287",
+      "raw_quote": "194341214693142287"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 56,
+      "percent": 85,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341215017416114",
+      "quote_adjusted_for_gas": "194341215017416114",
+      "raw_quote": "194341215017416114"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 57,
+      "percent": 90,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341215296646308",
+      "quote_adjusted_for_gas": "194341215296646308",
+      "raw_quote": "194341215296646308"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 58,
+      "percent": 95,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341215539608623",
+      "quote_adjusted_for_gas": "194341215539608623",
+      "raw_quote": "194341215539608623"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 59,
+      "percent": 100,
+      "pool_ids": [
+        "0x8a6a1ed01989ff1c5ac6361c34cad9d7d0015ab4"
+      ],
+      "protocol": "V3",
+      "quote": "194341215752938150",
+      "quote_adjusted_for_gas": "194341215752938150",
+      "raw_quote": "194341215752938150"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 60,
+      "percent": 5,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "57496978048400276",
+      "quote_adjusted_for_gas": "57496978048400276",
+      "raw_quote": "57496978048400276"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 61,
+      "percent": 10,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "114993876840659822",
+      "quote_adjusted_for_gas": "114993876840659822",
+      "raw_quote": "114993876840659822"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 62,
+      "percent": 15,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "172490696376942514",
+      "quote_adjusted_for_gas": "172490696376942514",
+      "raw_quote": "172490696376942514"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 63,
+      "percent": 20,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "229987436657412224",
+      "quote_adjusted_for_gas": "229987436657412224",
+      "raw_quote": "229987436657412224"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 64,
+      "percent": 25,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "287484097682232828",
+      "quote_adjusted_for_gas": "287484097682232828",
+      "raw_quote": "287484097682232828"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 65,
+      "percent": 30,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "344980679451568198",
+      "quote_adjusted_for_gas": "344980679451568198",
+      "raw_quote": "344980679451568198"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 66,
+      "percent": 35,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "402477181965582207",
+      "quote_adjusted_for_gas": "402477181965582207",
+      "raw_quote": "402477181965582207"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 67,
+      "percent": 40,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "459973605224438728",
+      "quote_adjusted_for_gas": "459973605224438728",
+      "raw_quote": "459973605224438728"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 68,
+      "percent": 45,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "517469949228301632",
+      "quote_adjusted_for_gas": "517469949228301632",
+      "raw_quote": "517469949228301632"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 69,
+      "percent": 50,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "574966213977334791",
+      "quote_adjusted_for_gas": "574966213977334791",
+      "raw_quote": "574966213977334791"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 70,
+      "percent": 55,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "632462399471702076",
+      "quote_adjusted_for_gas": "632462399471702076",
+      "raw_quote": "632462399471702076"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 71,
+      "percent": 60,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "689958505711567357",
+      "quote_adjusted_for_gas": "689958505711567357",
+      "raw_quote": "689958505711567357"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 72,
+      "percent": 65,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "747454532697094505",
+      "quote_adjusted_for_gas": "747454532697094505",
+      "raw_quote": "747454532697094505"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 73,
+      "percent": 70,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "804950480428447390",
+      "quote_adjusted_for_gas": "804950480428447390",
+      "raw_quote": "804950480428447390"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 74,
+      "percent": 75,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "862446348905789880",
+      "quote_adjusted_for_gas": "862446348905789880",
+      "raw_quote": "862446348905789880"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 75,
+      "percent": 80,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "919942138129285845",
+      "quote_adjusted_for_gas": "919942138129285845",
+      "raw_quote": "919942138129285845"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 76,
+      "percent": 85,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "977437848099099152",
+      "quote_adjusted_for_gas": "977437848099099152",
+      "raw_quote": "977437848099099152"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 77,
+      "percent": 90,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "1034933478815393670",
+      "quote_adjusted_for_gas": "1034933478815393670",
+      "raw_quote": "1034933478815393670"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 78,
+      "percent": 95,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "1092429030278333266",
+      "quote_adjusted_for_gas": "1092429030278333266",
+      "raw_quote": "1092429030278333266"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 79,
+      "percent": 100,
+      "pool_ids": [
+        "0x94d692afff21e045691971a20df4a9adb482ddf6"
+      ],
+      "protocol": "V3",
+      "quote": "1149924502488081807",
+      "quote_adjusted_for_gas": "1149924502488081807",
+      "raw_quote": "1149924502488081807"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 80,
+      "percent": 5,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "53410673781280723",
+      "quote_adjusted_for_gas": "53410673781280723",
+      "raw_quote": "53410673781280723"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 81,
+      "percent": 10,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "100066950934641031",
+      "quote_adjusted_for_gas": "100066950934641031",
+      "raw_quote": "100066950934641031"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 82,
+      "percent": 15,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "141173891769368844",
+      "quote_adjusted_for_gas": "141173891769368844",
+      "raw_quote": "141173891769368844"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 83,
+      "percent": 20,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "177665985805616924",
+      "quote_adjusted_for_gas": "177665985805616924",
+      "raw_quote": "177665985805616924"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 84,
+      "percent": 25,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "210279054401680408",
+      "quote_adjusted_for_gas": "210279054401680408",
+      "raw_quote": "210279054401680408"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 85,
+      "percent": 30,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "239600381292311693",
+      "quote_adjusted_for_gas": "239600381292311693",
+      "raw_quote": "239600381292311693"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 86,
+      "percent": 35,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "266104392873786786",
+      "quote_adjusted_for_gas": "266104392873786786",
+      "raw_quote": "266104392873786786"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 87,
+      "percent": 40,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "290178525017064005",
+      "quote_adjusted_for_gas": "290178525017064005",
+      "raw_quote": "290178525017064005"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 88,
+      "percent": 45,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "312142287325166527",
+      "quote_adjusted_for_gas": "312142287325166527",
+      "raw_quote": "312142287325166527"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 89,
+      "percent": 50,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "332261524319282191",
+      "quote_adjusted_for_gas": "332261524319282191",
+      "raw_quote": "332261524319282191"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 90,
+      "percent": 55,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "350759228435130647",
+      "quote_adjusted_for_gas": "350759228435130647",
+      "raw_quote": "350759228435130647"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 91,
+      "percent": 60,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "367823839838311046",
+      "quote_adjusted_for_gas": "367823839838311046",
+      "raw_quote": "367823839838311046"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 92,
+      "percent": 65,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "383615689117264164",
+      "quote_adjusted_for_gas": "383615689117264164",
+      "raw_quote": "383615689117264164"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 93,
+      "percent": 70,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "398272050221010967",
+      "quote_adjusted_for_gas": "398272050221010967",
+      "raw_quote": "398272050221010967"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 94,
+      "percent": 75,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "411911141252576174",
+      "quote_adjusted_for_gas": "411911141252576174",
+      "raw_quote": "411911141252576174"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 95,
+      "percent": 80,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "424635320141056570",
+      "quote_adjusted_for_gas": "424635320141056570",
+      "raw_quote": "424635320141056570"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 96,
+      "percent": 85,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "436533658084892608",
+      "quote_adjusted_for_gas": "436533658084892608",
+      "raw_quote": "436533658084892608"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 97,
+      "percent": 90,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "447684027670009077",
+      "quote_adjusted_for_gas": "447684027670009077",
+      "raw_quote": "447684027670009077"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 98,
+      "percent": 95,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "458154809190701086",
+      "quote_adjusted_for_gas": "458154809190701086",
+      "raw_quote": "458154809190701086"
+    },
+    {
+      "gas_cost_in_token": "0",
+      "gas_cost_in_usd": "0",
+      "gas_estimate": "0",
+      "list_index": 99,
+      "percent": 100,
+      "pool_ids": [
+        "0x86e3a987187fed135d6d9c114f1857d8144f01e1"
+      ],
+      "protocol": "V2",
+      "quote": "468006294208432344",
+      "quote_adjusted_for_gas": "468006294208432344",
+      "raw_quote": "468006294208432344"
+    }
+  ],
+  "routing": {
+    "max_hops": 3,
+    "max_splits": 4,
+    "min_splits": 1,
+    "percent_step": 5
+  },
+  "routing_config": {
+    "distributionPercent": 5,
+    "forceCrossProtocol": false,
+    "forceMixedRoutes": false,
+    "maxSplits": 4,
+    "maxSwapsPerPath": 3,
+    "minSplits": 1
+  },
+  "schema": "uni-sor-golden/1"
+}
