@@ -27,6 +27,7 @@ this way; nothing here trusts a solver's self-reported status/output beyond the
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import platform
@@ -259,6 +260,18 @@ def _profile_sha256(profile_path: str) -> str | None:
     return sha256_file(path)
 
 
+def experiment_identity(bundle_hash: str, objective: Mapping[str, Any]) -> dict[str, Any]:
+    """`experiment_id` = SHA-256 over the canonical JSON of the corpus bundle hash and the
+    resolved objective (mode plus, for `empirical_cost`, the cost-model and
+    price-context hashes). Content-addressed: the artifact's file path is not identity."""
+    identity = dict(objective)
+    if isinstance(identity.get("cost_model"), Mapping):
+        identity["cost_model"] = {k: v for k, v in identity["cost_model"].items() if k != "path"}
+    body = {"bundle_hash": bundle_hash, "objective": identity}
+    digest = hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
+    return body | {"experiment_id": digest}
+
+
 @dataclass(frozen=True)
 class RunManifest:
     run_id: str
@@ -285,6 +298,10 @@ class RunManifest:
     timing: dict[str, Any]
     environment: dict[str, Any]
     run_dir: str
+    # WHI-1445: the experiment identity -- corpus bundle hash + objective (incl. the
+    # cost-model and price-context hashes). A different model or price context is a
+    # different experiment id; the bundle itself is never rewritten.
+    experiment: dict[str, Any] = field(default_factory=dict)
 
     @property
     def complete(self) -> bool:
@@ -332,6 +349,7 @@ class RunManifest:
             "prepare_events": list(self.prepare_events),
             "timing": self.timing,
             "environment": self.environment,
+            "experiment": self.experiment,
         }
 
     @classmethod
@@ -361,6 +379,7 @@ class RunManifest:
             timing=dict(raw.get("timing", {})),
             environment=dict(raw.get("environment", {})),
             run_dir=run_dir,
+            experiment=dict(raw.get("experiment", {})),
         )
 
 
@@ -448,6 +467,7 @@ class RunWriter:
             timing={},
             environment=dict(environment) if environment is not None else environment_record(),
             run_dir=str(run_dir),
+            experiment=experiment_identity(bundle.bundle_hash, profile.objective.to_dict()),
         )
         writer = cls(run_dir, manifest, memory=memory)
         writer._write_manifest(manifest)

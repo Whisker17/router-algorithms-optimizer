@@ -1,0 +1,46 @@
+# Corpus smoke profile under the empirical execution-cost objective (WHI-1445): the same
+# six algorithms and smoke-scale search/budget values as config/corpus_uni_sor_smoke.yaml,
+# but every algorithm selects on estimated net output from the frozen, holdout-validated
+# cost model (docs/references/cost-model.md). A plan whose complete shape is not a
+# supported cohort (e.g. parallel splits, shared-pool graphs) or whose prices are unknown
+# keeps its gross output but gets no net score and stays unranked on net.
+#
+# The model is pinned by path AND sha256: a different artifact is a different experiment
+# (the run manifest's `experiment.experiment_id` binds bundle hash + objective +
+# price-context hash + cost-model hash). uni_sor_port keeps upstream's zero gas scores
+# (contract A-3) and selects on raw quotes; its returned plan is still net-evaluated.
+#
+# Every search/graph/budget/measurement/worker value below is SMOKE-SCALE and
+# UNVALIDATED (see config/corpus_uni_sor_smoke.yaml).
+schema_version: 2
+algorithms:
+  - direct
+  - single_path
+  - direct_split
+  - path_split
+  - incremental_graph
+  - uni_sor_port
+objective:
+  mode: empirical_cost
+  cost_model: config/costs/mantle-101082044-cost-v1.json
+  cost_model_sha256: 50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71
+search:
+  max_hops: 2               # smoke-scale (DESIGN §2.12 trial value is 3)
+  max_splits: 4             # DESIGN §2.12 initial trial value (unvalidated)
+  percent_step: 5           # DESIGN §2.12 initial trial value (unvalidated)
+graph:
+  chunks: 20                # smoke-scale; matches percent_step 5 (unvalidated)
+budget:
+  time_limit_seconds: 120   # hard per-attempt wall clock
+  max_quotes: 100000        # hard per-attempt quote cap
+  max_candidates: null      # explicitly no candidate cap declared
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1445
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

@@ -50,12 +50,14 @@ The module has two layers:
      incomplete-snapshot failure is counted and reported, never dropped silently), when
      a hop only partially fills, when an intermediate hop outputs 0 (the next on-chain
      hop would revert), or, on a pure-V2 route, when any hop outputs 0.
-   - **A-3 gas scores:** the declared `ObjectiveContext`. Neither objective mode has a
-     per-route cost -- `gross_only` has none and `synthetic_fixed_cost` charges one
-     constant per plan, which cannot change the ranking of complete plans -- so every
-     score is `(0, 0, 0)` and SOR selects on raw quotes (named in results as the gas
-     score provider). A-4 (no L1 fee branch), A-6 (no portion), A-7 (no native routes)
-     and A-8 (no logging) hold by construction.
+   - **A-3 gas scores:** the declared `ObjectiveContext`. No objective mode has a
+     per-route cost -- `gross_only` has none, `synthetic_fixed_cost` charges one
+     constant per plan, which cannot change the ranking of complete plans, and
+     `empirical_cost` (WHI-1445) prices a complete plan's shape, which has no parity
+     mapping onto SOR's route-additive gas model -- so every score is `(0, 0, 0)` and
+     SOR selects on raw quotes (named in results as the gas score provider); the returned
+     plan is still net-evaluated by the shared objective. A-4 (no L1 fee branch), A-6
+     (no portion), A-7 (no native routes) and A-8 (no logging) hold by construction.
    - **D-1 integer fill:** routes in B-F1 order; route `j < k` draws its quoted
      `quotient_j` from the request fund and the last route draws `ALL_REMAINING`
      (`quotient_k` plus the residual `amount - sum(quotient_j)`, at most `k - 1` raw
@@ -158,7 +160,8 @@ QUOTE_PROVIDER = (
 )
 GAS_SCORE_PROVIDER = (
     "zero: the declared ObjectiveContext has no per-route cost (gross_only: none; "
-    "synthetic_fixed_cost: one plan-level constant) (A-3)"
+    "synthetic_fixed_cost: one plan-level constant; empirical_cost: a complete-plan "
+    "shape cost with no SOR route-gas parity mapping) (A-3)"
 )
 PROVENANCE: Mapping[str, Any] = MappingProxyType(
     {

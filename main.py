@@ -9,6 +9,13 @@ the envelope and the five prepare configs, and -- after `prepare --source <each>
 run at the corpus block -- `assemble` publishes the one corpus bundle. `plan` and
 `assemble` read only local files.
 
+`costs sql|ingest|evidence|fit|report` (WHI-1445) prepares the empirical execution-cost
+model: the Dune SQL is printed (run through the operator's Dune access), saved results
+are ingested as canonical exports, `evidence` reads a handful of receipts / balances /
+fee parameters over the public RPC, and `fit` writes the frozen cost-model artifact from
+those checked-in files alone (offline). `report` re-verifies an artifact and prints its
+holdout validation table.
+
 `run` measures every profiled algorithm in isolated worker processes under the
 profile's declared budget (WHI-1437, `benchmark.runner`); `run --order reverse|shuffle`
 plus `order-check RUN_A RUN_B` is the state-leak check. SIGTERM/Ctrl-C finalize the run
@@ -115,6 +122,28 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "cohort":
             sp.add_argument("--bundle", required=True, help="A corpus bundle")
             sp.add_argument("--output", required=True)
+
+    costs_p = subparsers.add_parser("costs", help="Calibrate the empirical execution-cost model")
+    costs_sub = costs_p.add_subparsers(dest="costs_command", required=True)
+    for name, help_text in (
+        ("sql", "Print the Dune SQL of one cost-calibration query"),
+        ("ingest", "Turn a saved Dune result into a canonical export"),
+        ("evidence", "Capture receipt/balance/fee-parameter evidence (public RPC)"),
+        ("fit", "Fit and write the frozen cost-model artifact (offline)"),
+        ("report", "Re-verify an artifact and print its holdout validation"),
+    ):
+        sp = costs_sub.add_parser(name, help=help_text)
+        sp.add_argument("--config", default="config/cost_calibration.yaml")
+        sp.add_argument("--exports", default="tests/fixtures/costs")
+        if name in ("sql", "ingest"):
+            sp.add_argument("--name", required=True, choices=["census", "samples"])
+        if name == "ingest":
+            sp.add_argument("--raw", required=True, help="Saved Dune result JSON")
+            sp.add_argument("--query-id", type=int, default=None)
+        if name == "evidence":
+            sp.add_argument("--force", action="store_true", help="Replace saved evidence")
+        if name in ("fit", "report"):
+            sp.add_argument("--model", required=True, help="Cost-model artifact path")
 
     validate_p = subparsers.add_parser("validate", help="Validate a bundle directory")
     validate_p.add_argument("--bundle", required=True)
@@ -244,6 +273,78 @@ def _cmd_corpus(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_costs(args: argparse.Namespace) -> int:
+    import json
+
+    from benchmark import costs
+    from snapshot import cost_evidence as ce
+
+    exports = Path(args.exports)
+    try:
+        config = ce.load_cost_config(args.config)
+        if args.costs_command == "sql":
+            sys.stdout.write(ce.generate_sql(config, args.name))
+            return 0
+        if args.costs_command == "ingest":
+            export = ce.ingest(config, args.name, args.raw, exports, query_id=args.query_id)
+            print(f"export {args.name}: {len(export.rows)} row(s), sha256={export.sha256}")
+            return 0
+        if args.costs_command == "report":
+            model = costs.load_cost_model(args.model)
+            print("\n".join(costs.validation_report(model)))
+            return 0
+        sample_set = ce.load_sample_set(exports, config)
+        evidence_path = exports / ce.EVIDENCE_FILE
+        if args.costs_command == "evidence":
+            from snapshot.rpc import HttpJsonRpcTransport
+
+            if evidence_path.exists() and not args.force:
+                raise ce.CostEvidenceError(f"{evidence_path}: exists (pass --force to recapture)")
+            transport = HttpJsonRpcTransport(config.rpc_url)
+            evidence = ce.capture_fee_evidence(
+                transport, config, sample_set, costs.receipt_selection(config, sample_set)
+            )
+            ce.check_fee_evidence(evidence, config)
+            evidence_path.write_text(json.dumps(evidence, indent=1, sort_keys=True) + "\n")
+            print(f"wrote {evidence_path} ({transport.call_count} HTTP request(s))")
+            return 0
+        evidence, evidence_sha = ce.load_fee_evidence(evidence_path)
+        if evidence["samples_export_sha256"] != sample_set.samples.sha256:
+            raise ce.CostEvidenceError(f"{evidence_path}: captured for a different export")
+        rules, summary = ce.check_fee_evidence(evidence, config)
+        provenance = {
+            "config": {"path": config.source_path, "sha256": config.sha256},
+            "exports": {
+                e.name: {
+                    "query_id": e.query_id,
+                    "execution_id": e.execution_id,
+                    "sql_sha256": e.sql_sha256,
+                    "export_sha256": e.sha256,
+                    "rows": len(e.rows),
+                }
+                for e in (sample_set.census, sample_set.samples)
+            },
+            "fee_evidence": {"path": str(evidence_path), "sha256": evidence_sha} | summary,
+        }
+        document = costs.fit_cost_model(
+            config,
+            sample_set,
+            rules,
+            provenance=provenance,
+            validated_receipts=costs.receipts_per_cohort(
+                summary["explained_tx_hashes"], sample_set
+            ),
+        )
+        digest = costs.write_cost_model(document, args.model)
+        model = costs.load_cost_model(args.model, expected_sha256=digest)
+        print("\n".join(costs.validation_report(model)))
+        print(f"wrote {args.model} sha256={digest}")
+        return 0
+    except (ce.CostEvidenceError, costs.CostModelError, OSError, KeyError) as exc:
+        print(f"costs {args.costs_command} failed: {exc}", file=sys.stderr)
+        return 1
+
+
 def _cmd_validate(args: argparse.Namespace) -> int:
     try:
         bundle = load_bundle(args.bundle)
@@ -329,6 +430,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_prepare(args)
     if args.command == "corpus":
         return _cmd_corpus(args)
+    if args.command == "costs":
+        return _cmd_costs(args)
     if args.command == "validate":
         return _cmd_validate(args)
     if args.command == "run":

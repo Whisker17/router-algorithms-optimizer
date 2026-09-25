@@ -1,0 +1,66 @@
+# Execution-cost calibration definition (WHI-1445 / I19). Read by snapshot/cost_evidence.py
+# and benchmark/costs.py (`uv run python main.py costs ...`); the reproducible recipe and
+# the validation record are docs/references/cost-model.md.
+#
+# Every value is a declared rule parameter or a frozen boundary (docs/DESIGN.md §2.9,
+# §2.12); nothing is recomputed from `now`.
+schema_version: 1
+model_id: mantle-101082044-cost-v1
+
+# The corpus snapshot this model prices plans for (config/corpus.yaml). The historical
+# window ends exactly at its timestamp -- never later -- so no post-snapshot transaction
+# can inform the model.
+snapshot:
+  chain_id: 5000
+  block_number: 101082044
+  block_hash: "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4"
+  block_timestamp: 1790294400  # 2026-09-25T00:00:00Z
+
+# Absolute UTC window [start, end). Partition filters (block_month / block_date) bound
+# every scan. Seven days, well after Mantle's Arsia fee model activated (2026-04-22).
+dune:
+  window_start: "2026-09-18 00:00:00"
+  window_end: "2026-09-25 00:00:00"
+  block_months: ["2026-09-01"]
+  performance: medium
+
+# dex.trades (project, version) -> the evaluator's pool family (routing.evaluator
+# `pool_calls_<family>`). Legs of any other label are counted as `other` and put the
+# transaction outside the calibration shapes.
+families:
+  - {dune_project: agni, dune_version: "3", family: concentrated}
+  - {dune_project: fusionx, dune_version: "3", family: concentrated}
+  - {dune_project: uniswap, dune_version: "3", family: concentrated}
+  - {dune_project: merchant_moe, dune_version: "2.2", family: liquidity_book}
+  - {dune_project: merchant_moe, dune_version: "1", family: constant_product}
+
+# Uniform transaction sample: key = xxhash64(seed | lowercase tx-hash hex); a transaction
+# is sampled iff (key & (modulus - 1)) == 0. `modulus` is a power of two.
+sampling:
+  seed: "WHI-1445/cost/v1"
+  modulus: 8
+  # Routers (tx `to`) ranked by window transaction count; ranks above this are "other".
+  top_routers: 24
+
+# Deterministic train/holdout assignment from the exported key (first 8 hex digits,
+# i.e. the high 32 bits of the sample key): holdout iff int(key, 16) % 10 < holdout_of_10.
+split:
+  holdout_of_10: 3
+
+# Model / applicability rules (benchmark/costs.py).
+model:
+  # A shape cohort is `supported` only with at least this many training and holdout txs.
+  min_train: 30
+  min_holdout: 10
+  # A pool family may appear in a supported plan only if at least this many training txs
+  # used it.
+  min_family_train: 20
+  # Low/high cost scenarios: these empirical quantiles of the cohort's holdout relative
+  # error (NOT confidence intervals).
+  scenario_quantiles: [0.05, 0.95]
+
+# Online fee evidence (public RPC only, cached, bounded).
+evidence:
+  rpc_url: "https://rpc.mantle.xyz"
+  receipt_samples: 12
+  param_checkpoints: 8

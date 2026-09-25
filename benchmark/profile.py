@@ -32,7 +32,7 @@ from typing import Any, Literal
 
 import yaml
 
-from benchmark.objective import ObjectiveContext, gross_only, synthetic_fixed_cost
+from benchmark.objective import ObjectiveContext, empirical_cost, gross_only, synthetic_fixed_cost
 from routing.algorithms.base import AlgorithmConfig, AlgorithmFactory, Budget
 from routing.algorithms.registry import ALGORITHMS
 
@@ -132,7 +132,7 @@ class RunProfile:
         return {
             "schema_version": self.schema_version,
             "algorithms": list(self.algorithms),
-            "objective": {"mode": self.objective.mode, "fixed_cost": self.objective.fixed_cost},
+            "objective": self.objective.to_dict(),
             "budget": self.budget.to_dict(),
             "measurement": self.measurement.to_dict(),
             "worker": self.worker.to_dict(),
@@ -222,8 +222,28 @@ def _parse_worker(obj: Any, where: str) -> WorkerSettings:
 
 
 def _parse_objective(obj: Any, where: str) -> ObjectiveContext:
-    _require_keys(obj, {"mode"}, {"fixed_cost"}, where)
+    _require_keys(obj, {"mode"}, {"fixed_cost", "cost_model", "cost_model_sha256"}, where)
     mode = obj["mode"]
+    if mode != "empirical_cost" and ("cost_model" in obj or "cost_model_sha256" in obj):
+        raise ProfileError(f"{where}: cost_model/cost_model_sha256 belong to empirical_cost")
+    if mode == "empirical_cost":
+        from benchmark.costs import CostModelError, load_cost_model
+
+        if "fixed_cost" in obj:
+            raise ProfileError(f"{where}: empirical_cost mode must not set fixed_cost")
+        missing = [k for k in ("cost_model", "cost_model_sha256") if k not in obj]
+        if missing:
+            raise ProfileError(
+                f"{where}: empirical_cost requires {missing} (the frozen artifact and its "
+                "declared identity)"
+            )
+        try:
+            model = load_cost_model(
+                str(obj["cost_model"]), expected_sha256=str(obj["cost_model_sha256"])
+            )
+        except (OSError, CostModelError) as exc:
+            raise ProfileError(f"{where}.cost_model: {exc}") from exc
+        return empirical_cost(model)
     if mode == "gross_only":
         if "fixed_cost" in obj:
             raise ProfileError(f"{where}: gross_only mode must not set fixed_cost")

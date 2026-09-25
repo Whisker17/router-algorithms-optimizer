@@ -31,6 +31,24 @@ soon — anything touching high-risk paths defaults to at least High), **Medium*
 
 ## Open
 
+- **`uni_sor_port` does not use the empirical cost in its own selection** (Medium, WHI-1445).
+  `routing/algorithms/uni_sor_port.py` (contract A-3) — SOR's gas model is route-additive
+  (`gasModel` per route); the empirical model prices a *complete plan shape*, and no parity
+  contract maps one onto the other, so the port keeps zero gas scores and selects on raw
+  quotes under `empirical_cost` too. Its returned plan is still net-evaluated and flagged.
+  Fix: a documented SOR-gas-model adapter (per-route cohort cost) with its own parity note.
+- **`direct_split` rechecks the objective only over its per-leg-count finalists**
+  (Low, WHI-1445). `routing/algorithms/direct_split.py` step 4 — under `empirical_cost` a
+  finalist that is unrankable (e.g. a single LB pool beyond the cohort bin range) is not
+  replaced by the next-best rankable allocation of the same leg count, so 4/349 full-corpus
+  plans fall back to a flagged `low_confidence` split. Fix: keep the best rankable
+  allocation per leg count as an extra finalist.
+- **Split/shared-graph and reverted-transaction costs are not calibrated**
+  (Medium, WHI-1445). `benchmark/costs.py` — `parallel` cohorts have <= 6 training
+  transactions in the 7-day window and failed swaps have no `dex.trades` rows, so split
+  plans stay unranked on net. Fix: a longer or wider window (or trace-level evidence for
+  split execution) in a new model version.
+
 - **The LB collector walks a book one non-empty bin per RPC round trip** (Medium, WHI-1436).
   `snapshot/collectors/liquidity_book.py::LBCollector._walk` — `getNextNonEmptyBin` answers
   are sequential per side, so a wide book costs one request per bin even with Multicall3

@@ -71,3 +71,13 @@ No loader code ships with the template — write it when the first config file l
   algorithms including `uni_sor_port` (WHI-1444; it needs all three `search.*` keys). It
   is used once over the matched V2/V3 cohort cut (`main.py corpus cohort`) and once over
   the full five-source corpus.
+- `cost_calibration.yaml` — the empirical execution-cost calibration definition (WHI-1445,
+  `snapshot/cost_evidence.py`): the snapshot, the absolute Dune window (ending at the
+  snapshot timestamp), the pool-family label map, sampling seed/modulus, the train/holdout
+  rule, the cohort support thresholds, the scenario quantiles and the receipt-evidence
+  bounds. `costs/<model_id>.json` are frozen cost-model artifacts written by `main.py
+  costs fit` (never edited by hand; a new model is a new file). See
+  `docs/references/cost-model.md`.
+- `corpus_empirical_cost_smoke.yaml` — the six-algorithm smoke profile under
+  `objective.mode: empirical_cost`, which pins the cost-model artifact by path and
+  `cost_model_sha256` (a mismatch is a load error).

@@ -45,8 +45,11 @@ is imported only under `TYPE_CHECKING`: `routing` stays independent of
 `benchmark` at runtime (docs/DESIGN.md §4.2: `benchmark/` depends on
 `routing`/pool interfaces, never the reverse), while `evaluate`'s signature
 still matches §4.3 exactly. The value passed in only needs `.mode`,
-`.fixed_cost` and `.label` at runtime (see `benchmark.objective.ObjectiveContext`
-for the concrete implementation actually used everywhere).
+`.fixed_cost`, `.label` and (for `empirical_cost`) `.plan_cost(route_features,
+token_out)` at runtime (see `benchmark.objective.ObjectiveContext` for the concrete
+implementation actually used everywhere). The empirical cost is a function of the
+*complete* plan's `route_features`, computed once per plan after the replay -- never a
+per-step sum -- and its detail (status, cohort, scenarios, flags) is kept in `cost`.
 
 Only two evaluator-level statuses are produced here: `ok` and `invalid_plan`. The
 richer status vocabulary in docs/DESIGN.md §2.10 (`no_route`, `unsupported`,
@@ -176,8 +179,17 @@ class Evaluation:
     estimated_cost: int | None = None
     estimated_net_output: int | None = None
     funds: tuple[FundRecord, ...] = ()
+    # empirical_cost only: the complete plan's cost detail (benchmark.costs); a plan
+    # without a reliable net score keeps `estimated_*` None and says why here.
+    cost: Mapping[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
+        out = self._to_dict()
+        if self.cost is not None:
+            out["cost"] = dict(self.cost)
+        return out
+
+    def _to_dict(self) -> dict[str, Any]:
         return {
             "status": self.status.value,
             "gross_output": str(self.gross_output),
@@ -194,15 +206,27 @@ class Evaluation:
         }
 
 
-def _cost_and_net(objective: ObjectiveContext, gross_output: int) -> tuple[int | None, int | None]:
-    """Only `synthetic_fixed_cost` supplies any cost figure today; gross-only
-    stays `(None, None)` rather than a fabricated `0` (docs/DESIGN.md §2.9:
-    "Unknown price/cost still permits gross-output comparison but produces no
-    reliable net score.")."""
+def _cost_and_net(
+    objective: ObjectiveContext,
+    gross_output: int,
+    route_features: Mapping[str, int],
+    token_out: str,
+) -> tuple[int | None, int | None, Mapping[str, Any] | None]:
+    """(estimated cost, estimated net output, cost detail). Gross-only stays
+    `(None, None, None)` rather than a fabricated `0`; `empirical_cost` yields a net
+    output only for a net-rankable complete plan (docs/DESIGN.md §2.9: "Unknown
+    price/cost still permits gross-output comparison but produces no reliable net
+    score.")."""
     if objective.mode == "gross_only":
-        return None, None
+        return None, None, None
+    if objective.mode == "empirical_cost":
+        detail = objective.plan_cost(dict(route_features), token_out)
+        if not detail.get("net_rankable"):
+            return None, None, detail
+        cost = int(detail["nominal_out_raw"])
+        return cost, gross_output - cost, detail
     cost = objective.fixed_cost
-    return cost, gross_output - cost
+    return cost, gross_output - cost, None
 
 
 def _is_int(value: object) -> bool:
@@ -478,7 +502,9 @@ def evaluate(
             gross=gross_output,
         )
 
-    estimated_cost, estimated_net_output = _cost_and_net(objective, gross_output)
+    estimated_cost, estimated_net_output, cost_detail = _cost_and_net(
+        objective, gross_output, route_features, case.token_out
+    )
     return Evaluation(
         status=EvalStatus.OK,
         gross_output=gross_output,
@@ -491,4 +517,5 @@ def evaluate(
         estimated_cost=estimated_cost,
         estimated_net_output=estimated_net_output,
         funds=tuple(ledger.values()),
+        cost=cost_detail,
     )
