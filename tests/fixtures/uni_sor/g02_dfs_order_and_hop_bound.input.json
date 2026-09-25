@@ -1,0 +1,267 @@
+{
+  "adaptations": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amount_in_raw": "1000",
+  "behaviours": [
+    "B-R1",
+    "B-R2",
+    "B-R5",
+    "B-S2",
+    "B-F1"
+  ],
+  "case_id": "g02_dfs_order_and_hop_bound",
+  "categories": [
+    "G-2",
+    "G-12"
+  ],
+  "chain_id": 1,
+  "description": "Pool-index DFS pre-order: the 3-hop A-C-D-B route precedes the 2-hop A-C-B route, parallel A/B pools are separate routes in index order, and the 4-hop A-C-D-E-B path is cut by max_hops=3. The tied 50 % entries of the two parallel pools pair up and the final V8 sort reverses them.",
+  "expect": {
+    "naive_selection": [
+      {
+        "percent": 50,
+        "pool_ids": [
+          "ab500"
+        ]
+      },
+      {
+        "percent": 50,
+        "pool_ids": [
+          "ab3000"
+        ]
+      }
+    ],
+    "routes": {
+      "MIXED": [],
+      "V2": [],
+      "V3": [
+        [
+          "ab500"
+        ],
+        [
+          "ac",
+          "cd",
+          "db"
+        ],
+        [
+          "ac",
+          "cb"
+        ],
+        [
+          "ab3000"
+        ]
+      ]
+    },
+    "selection": [
+      {
+        "percent": 50,
+        "pool_ids": [
+          "ab3000"
+        ]
+      },
+      {
+        "percent": 50,
+        "pool_ids": [
+          "ab500"
+        ]
+      }
+    ]
+  },
+  "gas_score_provider": "zero (gross_only)",
+  "naive_alternative": "BFS/length-ordered enumeration ([ab500, ab3000, ac>cb, ac>cd>db]) or emitting the 4-hop path",
+  "origin": {
+    "kind": "synthetic"
+  },
+  "pools": {
+    "V2": [],
+    "V3": [
+      {
+        "fee": 500,
+        "pool_id": "ab500",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 500,
+        "pool_id": "ac",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xcccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "fee": 500,
+        "pool_id": "cd",
+        "token0": "0xcccccccccccccccccccccccccccccccccccccccc",
+        "token1": "0xdddddddddddddddddddddddddddddddddddddddd"
+      },
+      {
+        "fee": 500,
+        "pool_id": "de",
+        "token0": "0xdddddddddddddddddddddddddddddddddddddddd",
+        "token1": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      {
+        "fee": 500,
+        "pool_id": "eb",
+        "token0": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 500,
+        "pool_id": "db",
+        "token0": "0xdddddddddddddddddddddddddddddddddddddddd",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 500,
+        "pool_id": "cb",
+        "token0": "0xcccccccccccccccccccccccccccccccccccccccc",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "ab3000",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  },
+  "quotes": [
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "60",
+      "route_pool_ids": [
+        "ab500"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "100",
+      "route_pool_ids": [
+        "ab500"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "55",
+      "route_pool_ids": [
+        "ac",
+        "cd",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "90",
+      "route_pool_ids": [
+        "ac",
+        "cd",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "50",
+      "route_pool_ids": [
+        "ac",
+        "cb"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "90",
+      "route_pool_ids": [
+        "ac",
+        "cb"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "60",
+      "route_pool_ids": [
+        "ab3000"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "100",
+      "route_pool_ids": [
+        "ab3000"
+      ]
+    }
+  ],
+  "routing": {
+    "max_hops": 3,
+    "max_splits": 2,
+    "min_splits": 1,
+    "percent_step": 50
+  },
+  "schema": "uni-sor-golden-input/1",
+  "token_in": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "token_out": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tokens": [
+    {
+      "address": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "decimals": 18,
+      "symbol": "TKA"
+    },
+    {
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "decimals": 18,
+      "symbol": "TKB"
+    },
+    {
+      "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "decimals": 18,
+      "symbol": "TKC"
+    },
+    {
+      "address": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "decimals": 18,
+      "symbol": "TKD"
+    },
+    {
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+      "symbol": "TKE"
+    }
+  ]
+}

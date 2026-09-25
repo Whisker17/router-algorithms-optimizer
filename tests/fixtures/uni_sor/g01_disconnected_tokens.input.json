@@ -1,0 +1,97 @@
+{
+  "adaptations": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amount_in_raw": "1000",
+  "behaviours": [
+    "B-R1",
+    "B-R7",
+    "B-R8",
+    "B-S10"
+  ],
+  "case_id": "g01_disconnected_tokens",
+  "categories": [
+    "G-1"
+  ],
+  "chain_id": 1,
+  "description": "tokenIn and tokenOut are in different components; no family enumerates a route, the quote list is empty and upstream returns null.",
+  "expect": {
+    "result": null,
+    "routes": {
+      "MIXED": [],
+      "V2": [],
+      "V3": []
+    }
+  },
+  "gas_score_provider": "zero (gross_only)",
+  "naive_alternative": "returning an empty plan or a partial route instead of null",
+  "origin": {
+    "kind": "synthetic"
+  },
+  "pools": {
+    "V2": [
+      {
+        "pool_id": "v2_ce",
+        "token0": "0xcccccccccccccccccccccccccccccccccccccccc",
+        "token1": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      }
+    ],
+    "V3": [
+      {
+        "fee": 500,
+        "pool_id": "v3_ac",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xcccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "fee": 500,
+        "pool_id": "v3_db",
+        "token0": "0xdddddddddddddddddddddddddddddddddddddddd",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  },
+  "quotes": [],
+  "routing": {
+    "max_hops": 3,
+    "max_splits": 2,
+    "min_splits": 1,
+    "percent_step": 50
+  },
+  "schema": "uni-sor-golden-input/1",
+  "token_in": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "token_out": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tokens": [
+    {
+      "address": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "decimals": 18,
+      "symbol": "TKA"
+    },
+    {
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "decimals": 18,
+      "symbol": "TKB"
+    },
+    {
+      "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "decimals": 18,
+      "symbol": "TKC"
+    },
+    {
+      "address": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "decimals": 18,
+      "symbol": "TKD"
+    },
+    {
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+      "symbol": "TKE"
+    }
+  ]
+}

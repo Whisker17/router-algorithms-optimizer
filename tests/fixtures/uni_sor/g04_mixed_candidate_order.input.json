@@ -1,0 +1,226 @@
+{
+  "adaptations": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amount_in_raw": "1000",
+  "behaviours": [
+    "B-R8",
+    "B-Q1",
+    "B-S2"
+  ],
+  "case_id": "g04_mixed_candidate_order",
+  "categories": [
+    "G-4",
+    "G-12"
+  ],
+  "chain_id": 1,
+  "description": "Both mixed routes tie for the best quote; mixed enumeration runs over V3 pools ++ V2 pools, so v3_ac>v2_cb is enumerated (and listed) first and wins the tie. Pure-V3/V2 paths are filtered out of the mixed list.",
+  "expect": {
+    "naive_selection": [
+      {
+        "percent": 100,
+        "pool_ids": [
+          "v2_ac",
+          "v3_cb"
+        ]
+      }
+    ],
+    "routes": {
+      "MIXED": [
+        [
+          "v3_ac",
+          "v2_cb"
+        ],
+        [
+          "v2_ac",
+          "v3_cb"
+        ]
+      ],
+      "V2": [
+        [
+          "v2_ac",
+          "v2_cb"
+        ],
+        [
+          "v2_ab"
+        ]
+      ],
+      "V3": [
+        [
+          "v3_ac",
+          "v3_cb"
+        ],
+        [
+          "v3_ab"
+        ]
+      ]
+    },
+    "selection": [
+      {
+        "percent": 100,
+        "pool_ids": [
+          "v3_ac",
+          "v2_cb"
+        ]
+      }
+    ]
+  },
+  "gas_score_provider": "zero (gross_only)",
+  "naive_alternative": "V2 ++ V3 candidate order (v2_ac>v3_cb first), or keeping pure paths in the mixed list",
+  "origin": {
+    "kind": "synthetic"
+  },
+  "pools": {
+    "V2": [
+      {
+        "pool_id": "v2_ac",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xcccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "pool_id": "v2_cb",
+        "token0": "0xcccccccccccccccccccccccccccccccccccccccc",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "pool_id": "v2_ab",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "V3": [
+      {
+        "fee": 500,
+        "pool_id": "v3_ac",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xcccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "fee": 500,
+        "pool_id": "v3_cb",
+        "token0": "0xcccccccccccccccccccccccccccccccccccccccc",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 500,
+        "pool_id": "v3_ab",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  },
+  "quotes": [
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "90",
+      "route_pool_ids": [
+        "v3_ac",
+        "v3_cb"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "90",
+      "route_pool_ids": [
+        "v3_ab"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "90",
+      "route_pool_ids": [
+        "v2_ac",
+        "v2_cb"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "90",
+      "route_pool_ids": [
+        "v2_ab"
+      ]
+    },
+    {
+      "family": "MIXED",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "100",
+      "route_pool_ids": [
+        "v3_ac",
+        "v2_cb"
+      ]
+    },
+    {
+      "family": "MIXED",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "100",
+      "route_pool_ids": [
+        "v2_ac",
+        "v3_cb"
+      ]
+    }
+  ],
+  "routing": {
+    "max_hops": 3,
+    "max_splits": 1,
+    "min_splits": 1,
+    "percent_step": 100
+  },
+  "schema": "uni-sor-golden-input/1",
+  "token_in": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "token_out": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tokens": [
+    {
+      "address": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "decimals": 18,
+      "symbol": "TKA"
+    },
+    {
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "decimals": 18,
+      "symbol": "TKB"
+    },
+    {
+      "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "decimals": 18,
+      "symbol": "TKC"
+    },
+    {
+      "address": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "decimals": 18,
+      "symbol": "TKD"
+    },
+    {
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+      "symbol": "TKE"
+    }
+  ]
+}

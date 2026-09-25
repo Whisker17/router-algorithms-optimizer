@@ -1,0 +1,240 @@
+{
+  "adaptations": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amount_in_raw": "1000",
+  "behaviours": [
+    "B-Q2",
+    "B-S10"
+  ],
+  "case_id": "g01_all_quotes_null",
+  "categories": [
+    "G-1"
+  ],
+  "chain_id": 1,
+  "description": "Routes exist in two families but every (route, percent) quote is null; every entry is dropped and upstream returns null.",
+  "expect": {
+    "list_length": 0,
+    "result": null,
+    "routes": {
+      "MIXED": [],
+      "V2": [
+        [
+          "v2_ab"
+        ]
+      ],
+      "V3": [
+        [
+          "v3_ab_500"
+        ],
+        [
+          "v3_ab_3000"
+        ]
+      ]
+    }
+  },
+  "gas_score_provider": "zero (gross_only)",
+  "naive_alternative": "treating a null quote as 0 and selecting a route",
+  "origin": {
+    "kind": "synthetic"
+  },
+  "pools": {
+    "V2": [
+      {
+        "pool_id": "v2_ab",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "V3": [
+      {
+        "fee": 500,
+        "pool_id": "v3_ab_500",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "v3_ab_3000",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  },
+  "quotes": [
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 25,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v3_ab_500"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 50,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v3_ab_500"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 75,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v3_ab_500"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 100,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v3_ab_500"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 25,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v3_ab_3000"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 50,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v3_ab_3000"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 75,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v3_ab_3000"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 100,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v3_ab_3000"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 25,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v2_ab"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 50,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v2_ab"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 75,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v2_ab"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": null,
+      "gas_cost_usd_raw": null,
+      "gas_estimate": null,
+      "percent": 100,
+      "raw_quote": null,
+      "route_pool_ids": [
+        "v2_ab"
+      ]
+    }
+  ],
+  "routing": {
+    "max_hops": 3,
+    "max_splits": 2,
+    "min_splits": 1,
+    "percent_step": 25
+  },
+  "schema": "uni-sor-golden-input/1",
+  "token_in": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "token_out": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tokens": [
+    {
+      "address": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "decimals": 18,
+      "symbol": "TKA"
+    },
+    {
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "decimals": 18,
+      "symbol": "TKB"
+    },
+    {
+      "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "decimals": 18,
+      "symbol": "TKC"
+    },
+    {
+      "address": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "decimals": 18,
+      "symbol": "TKD"
+    },
+    {
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+      "symbol": "TKE"
+    }
+  ]
+}

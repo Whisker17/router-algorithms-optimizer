@@ -1,0 +1,411 @@
+{
+  "adaptations": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amount_in_raw": "1000",
+  "behaviours": [
+    "B-R1",
+    "B-R3",
+    "B-R4",
+    "B-R5"
+  ],
+  "case_id": "g03_terminal_and_cycle_rules",
+  "categories": [
+    "G-3",
+    "G-2"
+  ],
+  "chain_id": 1,
+  "description": "max_hops=4 so only the token rules bound the DFS: a path stops at the first pool touching tokenOut (no ab>be 'route' ending past B), tokenIn is never revisited (no ac>ca_alt>...), and an intermediate token is never revisited (no ac>cd>dc_alt>...).",
+  "expect": {
+    "routes": {
+      "MIXED": [],
+      "V2": [],
+      "V3": [
+        [
+          "ac",
+          "cd",
+          "db"
+        ],
+        [
+          "ac",
+          "dc_alt",
+          "db"
+        ],
+        [
+          "ac",
+          "bc"
+        ],
+        [
+          "ac",
+          "cb"
+        ],
+        [
+          "ca_alt",
+          "cd",
+          "db"
+        ],
+        [
+          "ca_alt",
+          "dc_alt",
+          "db"
+        ],
+        [
+          "ca_alt",
+          "bc"
+        ],
+        [
+          "ca_alt",
+          "cb"
+        ],
+        [
+          "ab"
+        ]
+      ]
+    },
+    "selection": [
+      {
+        "percent": 50,
+        "pool_ids": [
+          "ca_alt",
+          "cb"
+        ]
+      },
+      {
+        "percent": 50,
+        "pool_ids": [
+          "ab"
+        ]
+      }
+    ]
+  },
+  "gas_score_provider": "zero (gross_only)",
+  "naive_alternative": "continuing the DFS past tokenOut (adds ab>be) or a visited set that omits tokenIn/intermediates (adds cyclic routes)",
+  "origin": {
+    "kind": "synthetic"
+  },
+  "pools": {
+    "V2": [],
+    "V3": [
+      {
+        "fee": 500,
+        "pool_id": "ac",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xcccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "ca_alt",
+        "token0": "0xcccccccccccccccccccccccccccccccccccccccc",
+        "token1": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "fee": 500,
+        "pool_id": "cd",
+        "token0": "0xcccccccccccccccccccccccccccccccccccccccc",
+        "token1": "0xdddddddddddddddddddddddddddddddddddddddd"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "dc_alt",
+        "token0": "0xdddddddddddddddddddddddddddddddddddddddd",
+        "token1": "0xcccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "fee": 500,
+        "pool_id": "db",
+        "token0": "0xdddddddddddddddddddddddddddddddddddddddd",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 500,
+        "pool_id": "ab",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 500,
+        "pool_id": "bc",
+        "token0": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "token1": "0xcccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "cb",
+        "token0": "0xcccccccccccccccccccccccccccccccccccccccc",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 500,
+        "pool_id": "be",
+        "token0": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "token1": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      }
+    ]
+  },
+  "quotes": [
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "40",
+      "route_pool_ids": [
+        "ac",
+        "cd",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "70",
+      "route_pool_ids": [
+        "ac",
+        "cd",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "41",
+      "route_pool_ids": [
+        "ac",
+        "dc_alt",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "71",
+      "route_pool_ids": [
+        "ac",
+        "dc_alt",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "42",
+      "route_pool_ids": [
+        "ac",
+        "bc"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "72",
+      "route_pool_ids": [
+        "ac",
+        "bc"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "43",
+      "route_pool_ids": [
+        "ac",
+        "cb"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "73",
+      "route_pool_ids": [
+        "ac",
+        "cb"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "44",
+      "route_pool_ids": [
+        "ca_alt",
+        "cd",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "74",
+      "route_pool_ids": [
+        "ca_alt",
+        "cd",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "45",
+      "route_pool_ids": [
+        "ca_alt",
+        "dc_alt",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "75",
+      "route_pool_ids": [
+        "ca_alt",
+        "dc_alt",
+        "db"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "46",
+      "route_pool_ids": [
+        "ca_alt",
+        "bc"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "76",
+      "route_pool_ids": [
+        "ca_alt",
+        "bc"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "47",
+      "route_pool_ids": [
+        "ca_alt",
+        "cb"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "77",
+      "route_pool_ids": [
+        "ca_alt",
+        "cb"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "48",
+      "route_pool_ids": [
+        "ab"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "78",
+      "route_pool_ids": [
+        "ab"
+      ]
+    }
+  ],
+  "routing": {
+    "max_hops": 4,
+    "max_splits": 2,
+    "min_splits": 1,
+    "percent_step": 50
+  },
+  "schema": "uni-sor-golden-input/1",
+  "token_in": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "token_out": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tokens": [
+    {
+      "address": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "decimals": 18,
+      "symbol": "TKA"
+    },
+    {
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "decimals": 18,
+      "symbol": "TKB"
+    },
+    {
+      "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "decimals": 18,
+      "symbol": "TKC"
+    },
+    {
+      "address": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "decimals": 18,
+      "symbol": "TKD"
+    },
+    {
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+      "symbol": "TKE"
+    }
+  ]
+}

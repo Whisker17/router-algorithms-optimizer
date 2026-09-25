@@ -351,6 +351,23 @@ benchmark replay never needs it.
    Nothing in the boundary depends on time or randomness. `Date.now()` feeds only
    metrics. If nondeterminism is ever observed, it MUST be demonstrated and
    canonicalized explicitly under a contract amendment.
+7. **As implemented (WHI-1443).** These choices implement §7.1–§7.6 without changing
+   any pin or B-/A-/D-/G- item. Details: `tools/upstream/uni_sor/README.md`.
+   - The `*RouteWithValidQuote` objects are built by the real `V3Quoter`, `V2Quoter`
+     and `MixedQuoter` `.getQuotes`, fed by the frozen table as their quote
+     providers. The null drop (B-Q2) and in-block order (B-Q1) are therefore upstream
+     code too. Only the V3 ++ V2 ++ MIXED concatenation is glue.
+   - The A-5 provider learns the route being constructed from the table gas model.
+     Every constructor calls `estimateGasCost(this)` before it resolves
+     `poolIdentifiers`.
+   - The "harness git revision" is recorded as the git blob ids of the harness files. A
+     commit id cannot be embedded in files that the same commit adds.
+     `git log --find-object=<blob>` recovers the commit.
+   - Goldens also record the npm version, the SHA-256 of the executed upstream build
+     files, `remainder_added` (whether B-F2 replaced a route amount) and the
+     diagnostic per-percent sorted groups as quote-list indices.
+   - Two regenerations from a fresh `npm ci` produced byte-identical files, and no
+     nondeterminism was observed.
 
 ## 8. Required golden categories (I22 produces, I18 must pass)
 
