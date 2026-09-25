@@ -81,3 +81,16 @@ No loader code ships with the template — write it when the first config file l
 - `corpus_empirical_cost_smoke.yaml` — the six-algorithm smoke profile under
   `objective.mode: empirical_cost`, which pins the cost-model artifact by path and
   `cost_model_sha256` (a mismatch is a load error).
+- `daily.yaml` / `full.yaml` — the calibrated WHI-1447 profiles: all six mandatory
+  algorithms under the pinned empirical cost model; `daily_gross.yaml` / `full_gross.yaml`
+  are their gross-only twins (identical except `objective`, enforced by a test). `full`
+  keeps the DESIGN §2.12 trial `search.max_hops: 3` (evidence: 2-hop searches fall
+  13-15 bps short on the tuning split) with calibrated `graph.chunks: 50` and budgets;
+  `daily` declares a smaller `max_hops: 2` search (`graph.chunks: 200`), 1 warmup + 3
+  repeats and a memory pass. Each header records which values are DESIGN trial values
+  and which were calibrated on the tuning split of this machine; the evidence is
+  `docs/references/v1-acceptance.md` §3. Run them over the report-split bundles
+  (`main.py corpus split`) for the held-out comparison.
+- `calibration/` — the WHI-1447 tuning-split calibration profiles: `probe-h3-*.yaml`
+  (uncapped 3-hop demand probes), `sweep-base.yaml` and the `sweep-*.yaml` grid points
+  generated from it by `main.py calibrate profiles` (do not edit; regenerate).

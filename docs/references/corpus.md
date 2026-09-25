@@ -318,7 +318,17 @@ uv run pytest tests/snapshot/test_corpus.py
 # 5. matched V2/V3 comparison bundle (sor_compatible pools, every case; WHI-1444)
 uv run python main.py corpus cohort --bundle data/corpus/mantle-5src-101082044/bundle \
   --output data/corpus/mantle-5src-101082044/sor_cohort
+# 6. declared tuning / report cuts (every pool, one split's cases; WHI-1447)
+for b in bundle sor_cohort; do for s in tuning report; do
+  uv run python main.py corpus split --bundle data/corpus/mantle-5src-101082044/$b \
+    --split $s --output data/corpus/mantle-5src-101082044/${b}_$s
+done; done
 ```
+
+Step 6 writes `bundle_tuning`, `bundle_report`, `sor_cohort_tuning` and
+`sor_cohort_report`; their descriptors record `split` and `subset_of`, and their
+identities are recorded in `docs/references/v1-acceptance/bundles.json` (re-checked by
+`tests/snapshot/test_corpus.py` when the full bundle is present).
 
 `plan` refuses SQL files that drift from the config; `assemble` re-derives the plan from
 the exports, requires each source bundle's provenance to name the checked-in generated

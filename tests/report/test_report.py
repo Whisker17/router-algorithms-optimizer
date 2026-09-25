@@ -122,7 +122,13 @@ def rec(
     }
 
 
-def write_bundle(root: Path, *, symbol_out: str = "USDT", cohort: str | None = None) -> Path:
+def write_bundle(
+    root: Path,
+    *,
+    symbol_out: str = "USDT",
+    cohort: str | None = None,
+    splits: dict[str, str] | None = None,
+) -> Path:
     bundle = root / "bundle"
     bundle.mkdir(parents=True)
     cases = "".join(
@@ -130,7 +136,10 @@ def write_bundle(root: Path, *, symbol_out: str = "USDT", cohort: str | None = N
         for c in ("c1", "c2", "c3", "c4")
     )
     meta = {
-        c: {"stratum": "large" if c in ("c1", "c2") else "low", "split": "report"}
+        c: {
+            "stratum": "large" if c in ("c1", "c2") else "low",
+            "split": (splits or {}).get(c, "report"),
+        }
         for c in ("c1", "c2", "c3", "c4")
     }
     corpus = {"case_metadata": meta, **({"cohort": cohort} if cohort else {})}
@@ -462,6 +471,32 @@ def test_bundle_labels_are_used_only_when_the_hash_matches(tmp_path: Path) -> No
     stale = load(run_dir, bundle_dirs=[other])
     assert stale.cases["c1"].stratum == agg.UNLABELED
     assert "bundle_hash mismatch" in stale.bundle_note
+
+
+def test_held_out_and_exploratory_scope_labels(tmp_path: Path) -> None:
+    """WHI-1447: a run is labeled held-out only when every case is a report-split case;
+    tuning-only, mixed and unlabeled runs are labeled exploratory in the HTML."""
+    records = [rec(c, "direct", gross=10) for c in ("c1", "c2", "c3", "c4")]
+    cases = {
+        "held": {},
+        "tune": dict.fromkeys(("c1", "c2", "c3", "c4"), "tuning"),
+        "mixed": {"c1": "tuning"},
+    }
+    expected = {
+        "held": agg.SCOPE_HELD_OUT,
+        "tune": agg.SCOPE_TUNING,
+        "mixed": agg.SCOPE_MIXED,
+    }
+    for name, splits in cases.items():
+        bundle = write_bundle(tmp_path / name, splits=splits)
+        run_dir = write_run(tmp_path / name, records, algorithms=["direct"], bundle=bundle)
+        run = load(run_dir)
+        assert run.evaluation_scope == expected[name]
+        paths = render_report(load_manifest(run_dir), tmp_path / name / "out", min_samples=MIN)
+        html = paths.html.read_text()
+        assert agg.SCOPE_TITLES[expected[name]].split(":")[0] in html
+    no_labels = load(write_run(tmp_path / "none", records, algorithms=["direct"]))
+    assert no_labels.evaluation_scope == agg.SCOPE_UNLABELED
 
 
 # ------------------------------------------------------------------ net / fee uncertainty

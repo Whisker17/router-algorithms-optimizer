@@ -1,0 +1,31 @@
+# WHI-1447 calibration probe (tuning split only; exploratory): uni_sor_port alone
+# at the DESIGN §2.12 trial search values (max_hops 3, max_splits 4, percent_step 5),
+# gross-only, and deliberately NO count caps and a very generous per-case
+# wall clock, so the recorded per-case solve times and quote counts show the unconstrained
+# cost on this machine. The daily/full budgets are derived from these observations
+# (docs/references/v1-acceptance.md §3). Run over the tuning split bundle only:
+#   uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_tuning \
+#     --profile config/calibration/probe-h3-sor.yaml --results-dir data/results
+schema_version: 2
+algorithms:
+  - uni_sor_port
+objective:
+  mode: gross_only
+search:
+  max_hops: 3               # DESIGN §2.12 initial trial value
+  max_splits: 4             # DESIGN §2.12 initial trial value
+  percent_step: 5           # DESIGN §2.12 initial trial value
+budget:
+  time_limit_seconds: 1800  # probe only: generous safety net, not a calibrated limit
+  max_quotes: null          # probe only: explicitly uncapped to observe demand
+  max_candidates: null
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1447
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

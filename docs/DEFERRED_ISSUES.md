@@ -31,6 +31,15 @@ soon — anything touching high-risk paths defaults to at least High), **Medium*
 
 ## Open
 
+- **`uni_sor_port` can select a route set whose union is an economic token cycle**
+  (Medium, WHI-1447). `routing/algorithms/uni_sor_port.py` (B-S* combination, contract
+  §3.3) — upstream excludes route combinations only by shared pool id, so at
+  `max_hops >= 3` it can combine e.g. USDC→mETH→WETH→USDT with USDC→WETH→mETH→USDT over
+  different pools. The v1 evaluator rejects any plan whose token graph has a cycle
+  (DESIGN §2.5), so such cases are recorded as `invalid_plan` (never dropped); the port
+  keeps upstream's selection for parity. Fix: either a documented adapter deviation that
+  skips cycle-forming combinations (with its own golden/parity note), or a spec change that
+  admits independent-route plans with opposite intermediate legs.
 - **`uni_sor_port` does not use the empirical cost in its own selection** (Medium, WHI-1445).
   `routing/algorithms/uni_sor_port.py` (contract A-3) — SOR's gas model is route-additive
   (`gasModel` per route); the empirical model prices a *complete plan shape*, and no parity

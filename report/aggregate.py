@@ -76,6 +76,21 @@ COHORT_TITLES = {
     COHORT_UNKNOWN: "Unlabeled universe (no verified bundle descriptor)",
 }
 
+SCOPE_HELD_OUT = "held_out"
+SCOPE_TUNING = "exploratory_tuning"
+SCOPE_MIXED = "exploratory_mixed"
+SCOPE_UNLABELED = "exploratory_unlabeled"
+SCOPE_TITLES = {
+    SCOPE_HELD_OUT: "HELD-OUT: every case is a declared report-split case (disjoint from "
+    "the tuning cases profiles were calibrated on)",
+    SCOPE_TUNING: "EXPLORATORY: tuning-split cases only (the cases profiles were calibrated "
+    "on); not a held-out result",
+    SCOPE_MIXED: "EXPLORATORY: mixes tuning-split and report-split cases; not a held-out "
+    "result (the per-stratum table shows the splits apart)",
+    SCOPE_UNLABELED: "EXPLORATORY: case splits unknown (no verified bundle descriptor); not "
+    "a held-out result",
+}
+
 
 class ReportInputError(ValueError):
     """The run records cannot be reported as asked."""
@@ -131,6 +146,21 @@ class RunData:
 
     def row(self, case_id: str, algorithm: str) -> Row:
         return self.rows[(case_id, algorithm)]
+
+    @property
+    def evaluation_scope(self) -> str:
+        """`held_out` iff every scheduled case is a declared `report`-split case,
+        `tuning` iff every case is a `tuning`-split case, else `mixed`/`unlabeled`
+        (docs/DESIGN.md §2.4: tuning and final reporting use disjoint declared cases, or
+        the report is clearly labeled exploratory)."""
+        splits = {self.cases[c].split for c in self.case_ids}
+        if not splits or UNLABELED in splits:
+            return SCOPE_UNLABELED
+        if splits == {"report"}:
+            return SCOPE_HELD_OUT
+        if splits == {"tuning"}:
+            return SCOPE_TUNING
+        return SCOPE_MIXED
 
     @property
     def objective_mode(self) -> str:

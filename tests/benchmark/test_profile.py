@@ -184,3 +184,47 @@ def test_load_profile_not_a_mapping(tmp_path: Path) -> None:
     path.write_text("- just\n- a\n- list\n")
     with pytest.raises(ProfileError, match="must be a mapping"):
         load_profile(path)
+
+
+# ------------------------------------------------------------ calibrated profiles (WHI-1447)
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SIX = (
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port",
+)
+
+
+@pytest.mark.parametrize("name", ["daily", "full"])
+def test_calibrated_profiles_and_their_gross_twins(name: str) -> None:
+    """daily/full run all six mandatory algorithms under the pinned empirical cost model;
+    each `_gross` twin differs only in its objective, so the two objectives compare the
+    same search, budget and measurement."""
+    net_path = REPO_ROOT / "config" / f"{name}.yaml"
+    gross_path = REPO_ROOT / "config" / f"{name}_gross.yaml"
+    net, gross = load_profile(net_path), load_profile(gross_path)
+    assert net.algorithms == gross.algorithms == SIX
+    assert net.objective.mode == "empirical_cost" and gross.objective.mode == "gross_only"
+    assert net.objective.cost_model is not None
+    assert net.objective.cost_model.sha256 == (
+        "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+    )
+    raw_net, raw_gross = (yaml.safe_load(p.read_text()) for p in (net_path, gross_path))
+    raw_net.pop("objective")
+    raw_gross.pop("objective")
+    assert raw_net == raw_gross
+    # Honest per-case limits are always declared (never uncapped in a measured profile).
+    assert net.budget.max_quotes is not None and net.budget.time_limit_seconds is not None
+    assert net.search["max_splits"] == 4 and net.search["percent_step"] == 5
+
+
+def test_full_profile_keeps_the_design_trial_hop_bound_and_daily_declares_less() -> None:
+    full = load_profile(REPO_ROOT / "config" / "full.yaml")
+    daily = load_profile(REPO_ROOT / "config" / "daily.yaml")
+    assert full.search["max_hops"] == 3  # DESIGN §2.12 trial value
+    assert daily.search["max_hops"] == 2  # declared reduction (config/daily.yaml header)
+    assert daily.measurement.memory_pass and daily.measurement.repeats >= 3

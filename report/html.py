@@ -691,6 +691,11 @@ def _run_section(run: RunData, min_samples: int) -> str:
             f"<div class='banner bad'>Run state <b>{esc(m.state)}</b>: records do not cover the "
             "whole schedule; unrecorded cases are counted as <code>missing</code>.</div>"
         )
+    scope = run.evaluation_scope
+    banners.append(
+        f"<div class='banner{'' if scope == agg.SCOPE_HELD_OUT else ' bad'}'>"
+        f"Evaluation scope: <b>{esc(agg.SCOPE_TITLES[scope])}</b></div>"
+    )
     banners.append(f"<div class='banner'>Objective: {esc(m.objective_label)}</div>")
     return (
         f"<section class='run' id='run-{esc(m.run_id)}'>"
@@ -723,7 +728,8 @@ def render_html(
 ) -> str:
     cohorts = [
         f"<li><a href='#run-{esc(r.manifest.run_id)}'>{esc(r.manifest.run_id)}</a> — "
-        f"{esc(agg.COHORT_TITLES[r.cohort])}</li>"
+        f"{esc(agg.COHORT_TITLES[r.cohort])} · <b>{esc(r.evaluation_scope)}</b> · "
+        f"{esc(r.objective_mode)}</li>"
         for r in runs
     ]
     links = "".join(f"<li><a href='{esc(name)}'>{esc(name)}</a></li>" for name in csv_files)

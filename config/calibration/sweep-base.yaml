@@ -1,0 +1,32 @@
+# WHI-1447 calibration sweep base (tuning split only; exploratory). DESIGN §2.12 asks
+# that `graph.chunks` be swept alongside the percentage granularity `search.percent_step`
+# for the split searches; `main.py calibrate profiles` materializes one profile per grid
+# point from this file (config/calibration/sweep-h*.yaml, generated -- do not edit).
+# The count caps are explicitly uncapped and the wall clock generous, as in the probes:
+# this measures demand, it is not a calibrated budget. `max_hops` is overridden per grid.
+schema_version: 2
+algorithms:
+  - path_split
+  - incremental_graph
+objective:
+  mode: gross_only
+search:
+  max_hops: 2
+  max_splits: 4             # DESIGN §2.12 initial trial value
+  percent_step: 5
+graph:
+  chunks: 20
+budget:
+  time_limit_seconds: 1800
+  max_quotes: null
+  max_candidates: null
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1447
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120
