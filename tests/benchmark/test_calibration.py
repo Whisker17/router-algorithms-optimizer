@@ -111,3 +111,71 @@ def test_summary_refuses_runs_of_different_bundles(tmp_path: Path) -> None:
     with pytest.raises(cal.CalibrationError, match="bundles"):
         cal.summarize_runs(sorted(results.iterdir()))
     assert main.main(["calibrate", "summarize", *map(str, sorted(results.iterdir()))]) == 1
+
+
+# --------------------------------------------------------------- acceptance manifest
+
+
+def test_acceptance_manifest_binds_runs_order_checks_and_reports(tmp_path: Path) -> None:
+    """The final experiment manifest records each run's bundle/profile/experiment
+    identity from saved records, re-runs the declared order check and is write-once."""
+    from benchmark import acceptance as acc
+    from snapshot.bundle import load_bundle
+
+    base = tmp_path / "base.yaml"
+    base.write_text(BASE)
+    results = tmp_path / "results"
+    for order in ("fixed", "reverse"):
+        run = ["run", "--bundle", str(FIXTURE), "--profile", str(base), "--order", order]
+        assert main.main([*run, "--results-dir", str(results)]) == 0
+    fixed, reverse = sorted(results.iterdir(), key=lambda p: load_manifest_order(p))
+    fixture = load_bundle(FIXTURE)
+    record = {
+        "source": {"bundle_hash": "c" * 64},
+        "bundles": {"fixture": {"bundle_hash": fixture.bundle_hash, "cases": 1, "pools": 1}},
+    }
+    bundles = tmp_path / "bundles.json"
+    bundles.write_text(json.dumps(record))
+    report = tmp_path / "report"
+    assert main.main(["report", str(fixed), "--output", str(report)]) == 0
+    out = tmp_path / "acceptance.json"
+    argv = [
+        "acceptance",
+        "--run",
+        f"A={fixed}",
+        "--run",
+        f"B={reverse}",
+        "--order-check",
+        "AB=A,B",
+        "--report",
+        str(report),
+        "--bundles",
+        str(bundles),
+        "--output",
+        str(out),
+    ]
+    assert main.main(argv) == 0
+    doc = json.loads(out.read_text())
+    assert doc["schema"] == acc.ACCEPTANCE_SCHEMA
+    assert [r["label"] for r in doc["runs"]] == ["A", "B"]
+    entry = doc["runs"][0]
+    assert entry["bundle"]["name"] == "fixture"
+    assert entry["bundle"]["corpus_bundle_hash"] == "c" * 64
+    assert entry["experiment"]["bundle_hash"] == fixture.bundle_hash
+    assert entry["profile"]["path"] == str(base) and entry["wall_seconds"]["total"] > 0
+    (check,) = doc["order_checks"]
+    assert check["mismatches"] == 0 and check["orders"] == ["fixed", "reverse"]
+    assert {Path(r["path"]).name for r in doc["reports"]} >= {"report.html", "cases.csv"}
+    # Write-once: the same bytes are accepted, different bytes refused.
+    assert main.main(argv) == 0
+    out.write_text("{}")
+    assert main.main(argv) == 1
+    with pytest.raises(acc.AcceptanceError, match="not a recorded acceptance bundle"):
+        acc.run_entry("X", fixed, {"bundles": {}})
+    with pytest.raises(acc.AcceptanceError, match="duplicate"):
+        acc.parse_labeled(["A=x", "A=y"], what="--run")
+
+
+def load_manifest_order(run_dir: Path) -> int:
+    order = json.loads((run_dir / "manifest.json").read_text())["measurement"]["order"]
+    return ["fixed", "reverse"].index(order)

@@ -27,6 +27,10 @@ disjoint declared cases. `calibrate profiles|summarize` (WHI-1447) writes one ru
 per grid point of a base profile and summarizes saved runs of one bundle (statuses,
 time/quote distributions, shortfall vs the best known gross among them); offline.
 
+`acceptance --run LABEL=DIR ... --order-check LABEL=A,B --report DIR --output PATH`
+(WHI-1447) composes the write-once final experiment manifest from complete saved runs,
+re-running the declared order checks; offline.
+
 `run` measures every profiled algorithm in isolated worker processes under the
 profile's declared budget (WHI-1437, `benchmark.runner`); `run --order reverse|shuffle`
 plus `order-check RUN_A RUN_B` is the state-leak check. SIGTERM/Ctrl-C finalize the run
@@ -182,6 +186,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     cal_summary.add_argument("runs", nargs="+", help="Complete runs over ONE bundle")
     cal_summary.add_argument("--json", default=None, help="Also write the summary as JSON")
+
+    acceptance_p = subparsers.add_parser(
+        "acceptance", help="Compose the immutable final experiment manifest (WHI-1447)"
+    )
+    acceptance_p.add_argument(
+        "--run", action="append", required=True, help="LABEL=RUN_DIR (a complete run)"
+    )
+    acceptance_p.add_argument(
+        "--order-check", action="append", default=[], help="LABEL=RUN_LABEL_A,RUN_LABEL_B"
+    )
+    acceptance_p.add_argument("--report", action="append", default=[], help="Report dir")
+    acceptance_p.add_argument("--bundles", default="docs/references/v1-acceptance/bundles.json")
+    acceptance_p.add_argument("--output", required=True, help="Manifest path (write-once)")
 
     validate_p = subparsers.add_parser("validate", help="Validate a bundle directory")
     validate_p.add_argument("--bundle", required=True)
@@ -485,6 +502,29 @@ def _cmd_calibrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_acceptance(args: argparse.Namespace) -> int:
+    from benchmark import acceptance as acc
+
+    try:
+        document = acc.compose_manifest(
+            acc.parse_labeled(args.run, what="--run"),
+            order_checks=acc.parse_labeled(args.order_check, what="--order-check"),
+            reports=args.report,
+            bundles_record=args.bundles,
+        )
+        digest = acc.write_manifest(document, args.output)
+    except (acc.AcceptanceError, ResultError, OSError, KeyError) as exc:
+        print(f"acceptance failed: {exc}", file=sys.stderr)
+        return 1
+    for check in document["order_checks"]:
+        print(
+            f"order check {check['label']} {check['runs']}: {check['mismatches']} mismatch(es) "
+            f"over {check['compared_records']} record(s)"
+        )
+    print(f"wrote {args.output} sha256={digest}")
+    return 1 if any(c["mismatches"] for c in document["order_checks"]) else 0
+
+
 def _cmd_validate(args: argparse.Namespace) -> int:
     try:
         bundle = load_bundle(args.bundle)
@@ -572,6 +612,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_corpus(args)
     if args.command == "costs":
         return _cmd_costs(args)
+    if args.command == "acceptance":
+        return _cmd_acceptance(args)
     if args.command == "calibrate":
         return _cmd_calibrate(args)
     if args.command == "validate":

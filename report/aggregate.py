@@ -143,6 +143,9 @@ class RunData:
     cohort: str
     bundle_note: str
     capabilities: dict[str, dict[str, Any]] = field(default_factory=dict)
+    # pool id -> source key, from the hash-verified bundle's pools.json (WHI-1447 source
+    # coverage); empty without a verified bundle.
+    pool_sources: dict[str, str] = field(default_factory=dict)
 
     def row(self, case_id: str, algorithm: str) -> Row:
         return self.rows[(case_id, algorithm)]
@@ -244,6 +247,21 @@ def _case_contexts(
             symbols[address.lower()] = entry.get("symbol") if isinstance(entry, dict) else None
     cohort = corpus.get("cohort") if isinstance(corpus, dict) and corpus else None
     return contexts, symbols, (cohort if cohort else ("full_source" if corpus else None))
+
+
+def _pool_sources(bundle_dir: Path | None, checksums: Mapping[str, str]) -> dict[str, str]:
+    """pool id -> source key of a verified bundle (empty when unavailable)."""
+    if bundle_dir is None:
+        return {}
+    text = _read_checked(bundle_dir, checksums, "pools.json")
+    if not text:
+        return {}
+    pools = json.loads(text).get("pools", [])
+    return {
+        str(p["pool_id"]).lower(): str(p.get("source_key") or p.get("family") or UNLABELED)
+        for p in pools
+        if isinstance(p, dict) and "pool_id" in p
+    }
 
 
 def _int_or_none(value: Any) -> int | None:
@@ -399,6 +417,7 @@ def load_run(
             candidates.append(repo_root / replay_bundle)
     bundle_dir, checksums, note = _verified_bundle(manifest, candidates)
     contexts, symbols, corpus_cohort = _case_contexts(bundle_dir, checksums)
+    pool_sources = _pool_sources(bundle_dir, checksums)
     rows: dict[tuple[str, str], Row] = {}
     mode = str(manifest.resolved_profile.get("objective", {}).get("mode", "unknown"))
     for record in records:
@@ -428,6 +447,7 @@ def load_run(
         cohort=_cohort_of(corpus_cohort, records),
         bundle_note=note,
         capabilities=capabilities,
+        pool_sources=pool_sources,
     )
 
 
@@ -651,6 +671,45 @@ def topology_table(run: RunData) -> list[dict[str, Any]]:
             }
         )
     return out
+
+
+def plan_pools(record: Mapping[str, Any] | None) -> list[str]:
+    evaluation = (record or {}).get("evaluation")
+    trace = evaluation.get("trace") if isinstance(evaluation, dict) else None
+    if not isinstance(trace, list):
+        return []
+    return [str(step.get("pool_id", "")).lower() for step in trace if isinstance(step, dict)]
+
+
+def source_coverage(run: RunData) -> dict[str, Any]:
+    """Which liquidity sources the solved plans actually use (docs/DESIGN.md §2.11
+    "source coverage"): per algorithm, the number of `ok` plans with at least one step
+    through a pool of each source, next to the bundle's admitted pools per source. Needs
+    the hash-verified bundle's pool records; empty otherwise."""
+    if not run.pool_sources:
+        return {"sources": [], "bundle_pools": {}, "rows": []}
+    bundle_pools = Counter(run.pool_sources.values())
+    sources = sorted(bundle_pools)
+    rows = []
+    for algorithm in run.algorithms:
+        used: Counter[str] = Counter()
+        solved = 0
+        for case_id in run.case_ids:
+            row = run.row(case_id, algorithm)
+            if row.status != "ok":
+                continue
+            solved += 1
+            for source in {run.pool_sources.get(p, UNLABELED) for p in plan_pools(row.record)}:
+                used[source] += 1
+        rows.append(
+            {
+                "algorithm": algorithm,
+                "ok": solved,
+                **{src: used.get(src, 0) for src in sources},
+                "other": sum(v for k, v in used.items() if k not in bundle_pools),
+            }
+        )
+    return {"sources": sources, "bundle_pools": dict(bundle_pools), "rows": rows}
 
 
 def _sign(x: int) -> int:

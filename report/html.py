@@ -312,6 +312,32 @@ def _topology(run: RunData) -> str:
     )
 
 
+def _sources(run: RunData) -> str:
+    cov = agg.source_coverage(run)
+    if not cov["sources"]:
+        return (
+            "<h3>Source coverage of solved plans</h3><p class='note'>Unavailable: no "
+            "hash-verified bundle pool records.</p>"
+        )
+    head = ["algorithm", "ok plans", *cov["sources"], "other"]
+    body = [
+        ["<i>admitted pools in bundle</i>", ""]
+        + [esc(cov["bundle_pools"][s]) for s in cov["sources"]]
+        + [""]
+    ]
+    body += [
+        [f"<code>{esc(r['algorithm'])}</code>", esc(r["ok"])]
+        + [esc(r[s]) for s in cov["sources"]]
+        + [esc(r["other"])]
+        for r in cov["rows"]
+    ]
+    return (
+        "<h3>Source coverage of solved plans</h3><p class='note'>Number of <code>ok</code> "
+        "plans with at least one step through a pool of each source (a plan may count under "
+        "several sources).</p>" + table(head, body, left=1)
+    )
+
+
 def _grouped(run: RunData, min_samples: int) -> str:
     if "direct" not in run.algorithms:
         return ""
@@ -708,6 +734,7 @@ def _run_section(run: RunData, min_samples: int) -> str:
         + _vs_direct(run, min_samples)
         + _pairwise(run, min_samples)
         + _topology(run)
+        + _sources(run)
         + _grouped(run, min_samples)
         + _net(run, min_samples)
         + _pareto(run, min_samples)
