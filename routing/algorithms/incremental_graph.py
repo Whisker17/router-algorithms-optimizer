@@ -74,6 +74,16 @@ budget abandons the incremental plan (declared truncation, `truncated_by`).
 truncated first; `paths_truncated`), besides `path_split`'s own use of it. The time
 limit is the runner's; every new best plan goes to `SolveContext.report_candidate`.
 
+**Experimental exact reuse (WHI-1507 / L05), default off.** `solve(...,
+graph_reuse=True)` -- selected only by an explicit caller; the registry, runner and every
+profile run the reference loop -- keeps each path's chunk result per actual amount until a
+committed chunk touches one of its pools, and decides cycle admission from a transitive
+closure of the committed edges, keeping monotone rejections (`_ExactReuse`). Plans,
+evaluations, statuses, budgets and every logical counter are the reference's; only the
+physical `quotes_memoized` is lower, and `search_stats["graph_reuse"]` reports the
+physical reuse/recomputation counters (including a chunk a budget aborted). No adoption
+or speedup claim: the performance decision is WHI-1510's.
+
 **Statuses** as `path_split`: `ok`; `timeout` (a declared budget truncated the search
 and nothing valid was found -- never evidence of `no_route`); `incomplete_snapshot`;
 `no_route` (`path_split`'s reason).
@@ -279,15 +289,114 @@ def _source_paths(ev: Evaluation) -> list[Path]:
     return [tuple(leg) for leg in legs]
 
 
+_NO_TOKENS: frozenset[str] = frozenset()
+
+
 class _BudgetExhausted(Exception):
     pass
 
 
+@dataclasses.dataclass(frozen=True)
+class _Failure:
+    """A path prefix whose marginal quote is unusable in one chunk: the counted
+    `reason`, the prefix length and, for `incomplete_snapshot`, the example suffix."""
+
+    reason: str
+    prefix: int
+    note: str | None = None
+
+
 class _ChunkFailed(Exception):
-    pass
+    def __init__(self, failure: _Failure) -> None:
+        super().__init__(failure.reason)
+        self.failure = failure
 
 
-def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+class _ExactReuse:
+    """Explicit, default-off exact reuse for one solve (WHI-1507 / research key L05;
+    `solve(..., graph_reuse=True)`). Mutable per-solve search state, never shared.
+
+    **Scores.** A path's chunk result (marginal and pool updates, or its first failing
+    prefix) is a pure function of the chunk's actual amount (carry included) and the
+    committed aggregate `(amount_in, amount_out)` of the pools on the path: quotes are
+    on the pools' original states through the solve's `QuoteCache`. It is kept per
+    (amount, path) and dropped for every path touching a pool of a committed chunk
+    (`pool_paths`); another amount is another key. A reused result makes no quote call:
+    the reference would have answered every one of its quotes from the `QuoteCache`
+    (same keys), so the quote meter, budget checks and `quotes_executed` are unchanged
+    and only `quotes_memoized` (physical cache lookups) is lower.
+
+    **Admission.** Committed token edges only grow, so a path once found to close a
+    cycle stays rejected; an admitted path is re-checked whenever an edge was added.
+    The check is atomic over the whole proposed path against the transitive closure of
+    the committed (acyclic) edges: the union is cyclic iff some later path token reaches
+    an earlier one (a path is itself cycle-free), which is exactly `creates_cycle`,
+    including cycles formed only by several new edges together. The check never
+    mutates anything; only a committed chunk extends the closure."""
+
+    def __init__(self, paths: list[Path]) -> None:
+        self.pool_paths: dict[str, list[int]] = {}
+        for j, path in enumerate(paths):
+            for e in path:
+                self.pool_paths.setdefault(e.pool_id, []).append(j)
+        self.scores: dict[int, dict[int, tuple[int, list[PoolFlow]] | _Failure]] = {}
+        self.entries = 0
+        self.reach: dict[str, set[str]] = {}
+        self.version = 0
+        self.rejected: set[int] = set()
+        self.admitted: dict[int, int] = {}
+        self.stats = dict.fromkeys(
+            (
+                "scores_reused",
+                "scores_recomputed",
+                "score_invalidations",
+                "score_entries_peak",
+                "cycle_decisions_reused",
+                "cycle_checks_executed",
+                "closure_edges_added",
+            ),
+            0,
+        )
+
+    def cyclic(self, j: int, path: Path) -> bool:
+        if j in self.rejected or self.admitted.get(j) == self.version:
+            self.stats["cycle_decisions_reused"] += 1
+            return j in self.rejected
+        self.stats["cycle_checks_executed"] += 1
+        seen = {path[0].token_in}
+        for e in path:
+            if not self.reach.get(e.token_out, _NO_TOKENS).isdisjoint(seen):
+                self.rejected.add(j)
+                return True
+            seen.add(e.token_out)
+        self.admitted[j] = self.version
+        return False
+
+    def commit(self, path: Path, new_edges: list[tuple[str, str]]) -> None:
+        for pool in dict.fromkeys(e.pool_id for e in path):
+            for j in self.pool_paths.get(pool, ()):
+                for entries in self.scores.values():
+                    if entries.pop(j, None) is not None:
+                        self.entries -= 1
+                        self.stats["score_invalidations"] += 1
+        for u, v in new_edges:
+            add = {v} | self.reach.get(v, set())
+            self.reach.setdefault(u, set())
+            for w, r in self.reach.items():
+                if w == u or u in r:
+                    r |= add
+            self.stats["closure_edges_added"] += 1
+        if new_edges:
+            self.version += 1
+
+
+def solve(
+    case: Case, context: SolveContext, budget: Budget, *, graph_reuse: bool = False
+) -> SolveResult:
+    """`graph_reuse=True` explicitly selects the exact score/admission reuse of
+    `_ExactReuse` (default off: the reference loop). It returns the same plan,
+    evaluation and search counters, except the physical `quotes_memoized`, and adds
+    its own physical counters as `search_stats["graph_reuse"]`."""
     prepared = context.prepared
     if not isinstance(prepared, PreparedIncrementalGraph):
         raise TypeError(f"{NAME}.solve needs the PreparedIncrementalGraph returned by prepare()")
@@ -340,6 +449,11 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
     incremental: tuple[RoutePlan, Evaluation, int] | None = None
     accounted_gross: int | None = None
 
+    def count(failure: _Failure, path: Path) -> None:
+        failures[failure.reason] = failures.get(failure.reason, 0) + 1
+        if failure.note is not None:
+            incomplete.append(path_label(path) + failure.note)
+
     def marginal(path: Path, amount: int, memo: dict[Path, Any]) -> tuple[int, list[PoolFlow]]:
         """The chunk's marginal output along `path` and the pools' new aggregates;
         raises `_ChunkFailed` (after counting the reason) if the path is not usable."""
@@ -348,7 +462,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             key = path[: i + 1]
             if key in memo:
                 hit = memo[key]
-                if isinstance(hit, str):
+                if isinstance(hit, _Failure):
                     raise _ChunkFailed(hit)
                 m, update = hit
                 updates.append(update)
@@ -361,26 +475,58 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             else:
                 r = guarded(bundle.pools[edge.pool_id], edge.token_in, x + m)
                 reason: str | None = None
+                note: str | None = None
                 if r.status is not QuoteStatus.OK or r.amount_in_consumed != x + m:
                     reason = r.status.value if r.status is not QuoteStatus.OK else "partial_fill"
                     if r.status is QuoteStatus.INCOMPLETE_SNAPSHOT:
-                        incomplete.append(f"{path_label(path)} @ {x + m}: {r.detail}")
+                        note = f" @ {x + m}: {r.detail}"
                 elif r.amount_out < out:
                     reason = "nonmonotone"
                 if reason is not None:
-                    memo[key] = reason
-                    failures[reason] = failures.get(reason, 0) + 1
-                    raise _ChunkFailed(reason)
+                    failure = _Failure(reason, i + 1, note)
+                    memo[key] = failure
+                    count(failure, path)
+                    raise _ChunkFailed(failure)
                 update = PoolFlow(edge, x + m, r.amount_out, order)
                 m = r.amount_out - out
             memo[key] = (m, update)
             updates.append(update)
         return m, updates
 
+    reuse = _ExactReuse(paths) if graph_reuse else None
+
+    def reused_marginal(
+        j: int, path: Path, amount: int, memo: dict[Path, Any]
+    ) -> tuple[int, list[PoolFlow]]:
+        """`marginal` through `reuse`: a kept result stands in for the recomputation.
+        A kept failure is counted exactly where the reference counts it -- by the first
+        path of the chunk that reaches the failing prefix -- and marks it in `memo`."""
+        assert reuse is not None
+        entries = reuse.scores.setdefault(amount, {})
+        hit = entries.get(j)
+        if hit is None:
+            reuse.stats["scores_recomputed"] += 1
+            try:
+                hit = marginal(path, amount, memo)
+            except _ChunkFailed as exc:
+                hit = exc.failure
+            entries[j] = hit
+            reuse.entries += 1
+            peak = reuse.stats["score_entries_peak"]
+            reuse.stats["score_entries_peak"] = max(peak, reuse.entries)
+        else:
+            reuse.stats["scores_reused"] += 1
+            if isinstance(hit, _Failure) and path[: hit.prefix] not in memo:
+                memo[path[: hit.prefix]] = hit
+                count(hit, path)
+        if isinstance(hit, _Failure):
+            raise _ChunkFailed(hit)
+        return hit
+
     try:
         if not paths:
             incremental_status = "no_paths"
-            raise _ChunkFailed("no_paths")
+            raise _ChunkFailed(_Failure("no_paths", 0))
         last = max(k for k, a in enumerate(amounts) if a > 0)
         carry = 0
         for k, chunk in enumerate(amounts):
@@ -395,12 +541,15 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
                     truncated_by = truncated_by or "max_candidates"
                     own_truncated += len(paths) - j
                     break
-                if creates_cycle(token_edges, path):
+                if creates_cycle(token_edges, path) if reuse is None else reuse.cyclic(j, path):
                     rejected_cycle += 1
                     continue
                 chunk_scored += 1
                 try:
-                    m, updates = marginal(path, amount, memo)
+                    if reuse is None:
+                        m, updates = marginal(path, amount, memo)
+                    else:
+                        m, updates = reused_marginal(j, path, amount, memo)
                 except _ChunkFailed:
                     continue
                 if choice is None or m > choice[0]:
@@ -411,9 +560,20 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
                 continue
             if choice is None:
                 incremental_status = f"chunk_{k + 1}_no_admissible_path"
-                raise _ChunkFailed(incremental_status)
+                raise _ChunkFailed(_Failure(incremental_status, 0))
             carry = 0
             _, path, updates = choice
+            if reuse is not None:
+                # A kept result may predate other pools' first use: take the order the
+                # reference assigns at scoring time, on fresh objects (the kept ones stay).
+                n = len(flows)
+                updates = [
+                    PoolFlow(u.edge, u.amount_in, u.amount_out, flows[p].order if p in flows else n)
+                    for u in updates
+                    for p in (u.edge.pool_id,)
+                ]
+                new_edges = [(e.token_in, e.token_out) for e in path]
+                reuse.commit(path, [t for t in dict.fromkeys(new_edges) if t not in token_edges])
             for update in updates:
                 flows[update.edge.pool_id] = update
             token_edges.update((e.token_in, e.token_out) for e in path)
@@ -499,6 +659,8 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
         "chosen_source": None,
         "topology": None,
     }
+    if reuse is not None:
+        stats["graph_reuse"] = dict(reuse.stats)
     common: dict[str, Any] = {
         "case_id": case.case_id,
         "algorithm": NAME,
