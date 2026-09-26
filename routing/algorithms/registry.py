@@ -10,6 +10,11 @@ heuristic, requires those three plus profile `graph.chunks`) and `uni_sor_port`
 `search.max_hops`, `search.max_splits` and `search.percent_step`). Each further mandatory
 algorithm (docs/DESIGN.md §2.6) adds one `AlgorithmFactory` entry here, with its
 `Capabilities` and the `search.*` keys it requires.
+
+`uni_sor_fast` (WHI-1508) is registered as a seventh, **opt-in experimental** identity: a
+candidate-shortlist heuristic over `uni_sor_port`'s core that also requires the
+`shortlist.*` settings. Registration only makes it selectable by a profile that names it;
+no existing profile lists it and it never replaces `uni_sor_port`.
 """
 
 from __future__ import annotations
@@ -20,6 +25,7 @@ from routing.algorithms import (
     incremental_graph,
     path_split,
     single_path,
+    uni_sor_fast,
     uni_sor_port,
 )
 from routing.algorithms.base import AlgorithmFactory, SolveFn
@@ -33,6 +39,7 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     path_split.NAME: path_split.FACTORY,
     incremental_graph.NAME: incremental_graph.FACTORY,
     uni_sor_port.NAME: uni_sor_port.FACTORY,
+    uni_sor_fast.NAME: uni_sor_fast.FACTORY,  # opt-in experiment, not a reference
 }
 
 
