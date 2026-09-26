@@ -809,6 +809,10 @@ def test_incomplete_range_inside_an_empty_span(
     assert missing[0] == "MissingState" and "outside the collected range" in missing[1]
     token_in = state.token0 if zero_for_one else state.token1
     assert quote_exact_in(state, token_in, 10**18).status is QuoteStatus.INCOMPLETE_SNAPSHOT
+    # The span's own first word uncollected: the very first read fails, at that word.
+    unknown_start = _mid_gap_state(word_range=(21, 45) if zero_for_one else (-3, 19))
+    first_missing, _ = _differential(unknown_start, zero_for_one, 10**18, counter=counter)
+    assert first_missing[0] == "MissingState" and "word 20 " in first_missing[1]
     # A limit before the uncollected word is an ordinary (zero-output) fill.
     limit = get_sqrt_ratio_at_tick(20 * _WORD10 + (-5 if zero_for_one else 5) * _WORD10)
     out, skipped = _differential(state, zero_for_one, 10**18, limit, counter)

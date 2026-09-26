@@ -197,9 +197,10 @@ def swap(
     has `computeSwapStep` return `(sqrtPriceNext, 0, 0, 0)` (every delta is a
     multiple of zero liquidity; `fee < 1e6` keeps the fee `mulDivRoundingUp` from
     reverting), so it changes nothing but `sqrtPriceX96`/`tick`, and the next
-    iteration's liquidity is still zero. Such iterations are still read word by word
-    through the same bitmap reads (an uncollected word raises the same
-    `MissingState`) and still counted in `steps`; the span stops at an initialized
+    iteration's liquidity is still zero. Such iterations still check their bitmap
+    word against the collected state (an uncollected word is never empty: the
+    reference iteration reads it and raises the same `MissingState`) and are still
+    counted in `steps`; the span stops at an initialized
     tick, the price limit and the MIN/MAX tick clamp, where the unchanged reference
     iteration runs. `fee >= 1e6` makes every zero-liquidity iteration revert, so
     such a pool is never skipped (a skipped word read could otherwise turn that
@@ -245,28 +246,53 @@ def swap(
     steps = 0
     skip_empty_spans = skip_empty_spans and state.fee < FEE_PIPS_DENOMINATOR
     limit_tick: int | None = None
+    bitmap_get = state.tick_bitmap.get
 
     while amount_remaining != 0 and sqrt_price != sqrt_price_limit_x96:
         if liquidity == 0 and skip_empty_spans:
             if limit_tick is None:
                 limit_tick = _empty_span_limit_tick(zero_for_one, sqrt_price_limit_x96)
-            # `limit_tick` lies in [MIN_TICK, MAX_TICK], so a target the reference
-            # would clamp to MIN/MAX_TICK always stops the span (no clamp needed).
-            while True:
-                tick_next, initialized = next_initialized_tick_within_one_word(
-                    read_word, tick, state.tick_spacing, zero_for_one
-                )
-                if initialized or (
-                    tick_next <= limit_tick if zero_for_one else tick_next >= limit_tick
-                ):
-                    break
-                steps += 1
-                tick = tick_next - 1 if zero_for_one else tick_next
-            # `sqrt_price` is deliberately left at its pre-span value: the stopping
-            # iteration below always runs with zero liquidity, and a zero-liquidity
-            # `computeSwapStep` lands on its target whatever its start price (after a
-            # non-empty span that target lies strictly beyond the pre-span price), so
-            # no skipped price is ever observable.
+            # The span's first iteration may start mid-word: the reference search.
+            tick_next, initialized = next_initialized_tick_within_one_word(
+                read_word, tick, state.tick_spacing, zero_for_one
+            )
+            if not initialized and (
+                tick_next > limit_tick if zero_for_one else tick_next < limit_tick
+            ):
+                # Every later iteration reads one whole word: it is empty iff that
+                # word is collected and zero, and targets the word's far end tick
+                # (zeroForOne `word * W`, oneForZero `(word + 1) * W - spacing`). The
+                # first word that is nonzero, uncollected or not strictly before the
+                # limit is left to the reference iteration below (same read, same
+                # `MissingState`). `limit_tick` lies in [MIN_TICK, MAX_TICK], so a
+                # target the reference would clamp always stops the span.
+                spacing = state.tick_spacing
+                word_ticks = 256 * spacing
+                if zero_for_one:
+                    first = word = tick_next // word_ticks - 1
+                    while (
+                        word >= word_lo
+                        and not bitmap_get(word, 0)
+                        and word * word_ticks > limit_tick
+                    ):
+                        word -= 1
+                    steps += 1 + first - word
+                    tick = (word + 1) * word_ticks - 1
+                else:
+                    first = word = (tick_next + spacing) // word_ticks
+                    while (
+                        word <= word_hi
+                        and not bitmap_get(word, 0)
+                        and (word + 1) * word_ticks - spacing < limit_tick
+                    ):
+                        word += 1
+                    steps += 1 + word - first
+                    tick = word * word_ticks - spacing
+                # `sqrt_price` is deliberately left at its pre-span value: the stopping
+                # iteration below always runs with zero liquidity, and a zero-liquidity
+                # `computeSwapStep` lands on its target whatever its start price (after
+                # a non-empty span that target lies strictly beyond the pre-span
+                # price), so no skipped price is ever observable.
         steps += 1
         sqrt_price_start = sqrt_price
         tick_next, initialized = next_initialized_tick_within_one_word(
