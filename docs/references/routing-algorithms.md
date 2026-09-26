@@ -437,7 +437,7 @@ Input $A = 10\,005$ TKA, $\text{percent\_step} = 10 \implies N = 10$ units, $\te
 - Ties: Fewer splits win ties; earlier admitted pools win identical gross outputs.
 
 ### 4.8 Computational and Memory Cost
-- Pool Quotes: $P_{\text{direct}} \cdot (G - 1)$ grid samples $+ P_{\text{direct}}$ full quotes, plus on-demand quotes for non-grid remainder amounts (up to $P_{\text{direct}} \cdot G$). On our $P=2, G=10$ teaching example, exactly 25 quotes are executed.
+- Pool Quotes: $P_{\text{direct}}$ full quotes $+ P_{\text{direct}} \cdot (G - 1)$ grid samples, plus on-demand quotes for non-grid remainder amounts (up to $P_{\text{direct}} \cdot \lvert \text{reachable non-grid remainders} \rvert$). On our $P=2, G=10, S=2$ teaching example ($A=10005$), this executes $2 + 18 + 5 = 25$ pool quotes.
 - DP Transitions: $\mathcal{O}(P_{\text{direct}} \cdot S \cdot G^2)$ state expansions.
 - Re-scoring: Exactly $S$ candidate plans re-evaluated under `ObjectiveContext`.
 
@@ -531,14 +531,28 @@ Request: $10\,000$ TKA $\to$ TKB, $\text{percent\_step} = 10, \text{max\_splits}
    - $\pi_1$ and $\pi_3$ share `P_AC`; $\pi_2$ and $\pi_3$ share `P_DB`.
    - `paths_conflict` evaluates to `True`, rejecting these combinations. Exactly 13 candidate branches
      are excluded by pool conflicts (`bnb_conflicts_excluded = 13`).
-3. **Branch-and-Bound Pruning Decision:**
-   - The incumbent single-path gross is $12434$ TKB.
-   - Consider exploring candidate branch: Leg 1 takes path $\pi_2$ at 30% ($3000$ TKA).
-     Quote of $\pi_2$ at 30% ($3000$ TKA) yields $3408$ TKB.
-     Remaining units: 7 (70% = $7000$ TKA).
-     The relaxed knapsack upper bound for 7 units (best kept value across all paths at 70%, which is path $\pi_1$ at 70%) is $8986$ TKB.
-     Total upper bound for this branch: $3408 + 8986 = 12394$ TKB.
-     Since $12394 \le 12434$ (the incumbent), this entire branch is pruned without quoting remaining paths!
+3. **Exact Branch-and-Bound Traversal and Pruning Decisions:**
+   The DFS explores non-increasing allocation sizes ($u \le \text{cap}$) and uses the knapsack upper bound table `ub[cap][k][r]`:
+   - **Initial Incumbent (1-leg, size $u = 10$):**
+     Path 2 (`P_AC -> P_CB`) takes 10 units ($10\,000$ TKA) $\to 12434$ TKB, setting `best[1] = 12434`.
+     Next at $u = 10$, Path 4 (`P_AC -> P_CD -> P_DB`) yields $11082$. Since $r = 0$, `promising(11082, 1, 0, 10)` checks if $11082 > 12434$: False $\implies$ **PRUNED!** Because the list is value-descending, all remaining paths at $u = 10$ are pruned immediately.
+   - **Size $u = 9$ (Remaining $r = 1$ unit):**
+     Path 2 at $u=9$ yields $11379$. Knapsack bound for 1 remaining unit from sizes $\le 9$ is $\text{ub}[9][1][1] = 1519$.
+     Upper bound $= 11379 + 1519 = 12898 > 12434 \implies$ promising!
+     Second leg must have size $r = 1$:
+     - Path 3 (`P_AD -> P_DB`, disjoint) yields $1168$. Total gross $= 11379 + 1168 = 12547 > 12434$, setting new 2-leg incumbent `best[2] = 12547`!
+     - Next path at size 1: Path 5 ($v = 1079$): gross $+ v = 11379 + 1079 = 12458 \le 12547 \implies$ **PRUNED!**
+     - Next candidate at size 9: Path 4 ($v = 10284$): bound is $1519$, total $= 10284 + 1519 = 11803 \le 12547 \implies$ **PRUNED!**
+   - **Size $u = 8$ (Remaining $r = 2$ units):**
+     Path 2 at $u=8$ yields $10288$. Knapsack bound for 2 units is $\text{ub}[8][1][2] = 2919$.
+     Upper bound $= 10288 + 2919 = 13207 > 12547 \implies$ promising!
+     Second leg must have size $r = 2$:
+     - Path 3 (`P_AD -> P_DB`, disjoint) yields $2293$. Total gross $= 10288 + 2293 = \mathbf{12581} > 12547$, setting optimal 2-leg incumbent `best[2] = 12581`!
+     - Next path at size 2: Path 5 ($v = 2093$): gross $+ v = 10288 + 2093 = 12381 \le 12581 \implies$ **PRUNED!**
+     - Next candidate at size 8: Path 4 ($v = 9433$): bound is $2919$, total $= 9433 + 2919 = 12352 \le 12581 \implies$ **PRUNED!**
+   - **Sizes $u \le 7$:**
+     At $u = 7$, Path 2 yields $9160$. The best disjoint continuation for 3 units on Path 3 yields $3376$: $9160 + 3376 = 12536 \le 12581 \implies$ **PRUNED!** All subsequent branches are cut because non-increasing size allocations cannot exceed the incumbent.
+   - **Summary:** Across the search, exactly 12 nodes are visited (`bnb_nodes = 12`) and 13 candidate branches are excluded by pool conflicts (`bnb_conflicts_excluded = 13`).
 4. **Disjoint Allocation Evaluation (80% / 20%):**
    - $\pi_1$ at $8\,000$ TKA:
      - Hop 1 (`P_AC`): in = $8\,000 \to$ out = $14773$ TKC.
@@ -561,8 +575,8 @@ Request: $10\,000$ TKA $\to$ TKB, $\text{percent\_step} = 10, \text{max\_splits}
 - Ties: Simpler route wins ties (single path > direct split > fewer legs).
 
 ### 5.8 Computational and Memory Cost
-- Pool Quotes: Combines sub-solver quotes (`single_path` + `direct_split`), plus candidate route samples across grid sizes. Each multi-hop route sample executes $\text{hops}(\pi)$ pool quotes. On our 6-path teaching graph, 100 pool quotes were executed (59 memo hits).
-- Memory: $\mathcal{O}(\lvert \Pi_H \rvert \cdot G)$ for the kept table and branch-and-bound stack.
+- Pool Quotes: Combines sub-solver quotes ($\text{Quotes}(\text{single\_path}) + \text{Quotes}(\text{direct\_split})$), plus candidate route samples across grid sizes $\sum_{\pi \in \text{kept}} \text{hops}(\pi) \cdot \lvert \text{sizes}(\pi) \rvert$. On our 6-path teaching graph, 100 pool quotes were executed (59 memo hits).
+- Memory: Knapsack upper-bound table `ub` allocated with dimensions $(G + 1) \times (S + 1) \times (G + 1)$, kept table $\mathcal{O}(\lvert \Pi_H \rvert \cdot G)$, and the shared `QuoteCache`.
 
 ### 5.9 Guarantees and Limitations
 - **Guarantee:** Best evaluated pool-disjoint allocation on the declared finite grid under stated pruning.
@@ -598,33 +612,42 @@ def solve_incremental_graph(case, bundle, chunks_K, max_hops, cache):
     retained_candidate = solve_path_split(...)
     paths = enumerate_paths(...)
     
+    amounts = chunk_amounts(case.amount_in, chunks_K)
     pool_inputs = defaultdict(int)
     chunk_allocations = []
+    last_positive_chunk_idx = max(k for k, a in enumerate(amounts) if a > 0)
     carry = 0
     
-    for k in range(1, chunks_K + 1):
-        chunk_size = floor(A * k / K) - floor(A * (k - 1) / K) + carry
-        if chunk_size == 0:
-            continue  # empty chunk skipped (A < K)
+    for k, chunk in enumerate(amounts):
+        if chunk == 0:
+            continue  # 1. Skip raw empty chunk first (A < K)
             
-        best_path, best_marginal = None, 0
+        amount = carry + chunk
+        choice = None  # (marginal, path, updates)
+        
         for path in paths:
             if creates_cycle(token_edges(chunk_allocations), path):
                 continue
-            marginal = simulate_marginal(path, chunk_size, pool_inputs)
-            if marginal > best_marginal:
-                best_path, best_marginal = path, marginal
+            try:
+                marginal, updates = simulate_marginal(path, amount, pool_inputs)
+            except ChunkFailed:
+                continue
+            if choice is None or marginal > choice[0]:
+                choice = (marginal, path, updates)  # Accepts marginal == 0 if choice is None
                 
-        if (best_marginal == 0 or not best_path) and k < chunks_K:
-            carry = chunk_size  # carry unusable chunk forward
+        # 2. Intermediate zero-marginal or unroutable: carry forward
+        if k != last_positive_chunk_idx and (choice is None or choice[0] == 0):
+            carry = amount
             continue
             
-        if not best_path:
-            return retained_candidate  # Final chunk unroutable -> fallback
+        # 3. Final chunk unroutable: abandon and fallback
+        if choice is None:
+            return retained_candidate
             
+        # 4. Commit chunk (including zero-marginal on final chunk)
         carry = 0
-        commit_chunk(best_path, chunk_size, pool_inputs)
-        chunk_allocations.append(best_path)
+        commit_chunk(choice[1], amount, choice[2], pool_inputs)
+        chunk_allocations.append(choice[1])
         
     merged = merged_plan(case, build_flows(chunk_allocations, pool_inputs))
     evaluation = evaluate(bundle, case, merged)
@@ -693,8 +716,8 @@ Using our synthetic teaching bundle, let $K = 10$ chunks ($1\,000$ TKA each):
 - Fallback: Retains simpler `path_split` candidate if the incremental plan does not strictly beat it.
 
 ### 6.8 Computational and Memory Cost
-- Pool Quotes: Quotes from initial `path_split`, plus up to $K \cdot \sum_{\pi} \text{hops}(\pi)$ marginal pool simulations.
-- Memory: $\mathcal{O}(\lvert \mathbb{P} \rvert + K)$ for aggregate pool input maps and flow records.
+- Pool Quotes: Sub-solver quotes ($\text{Quotes}(\text{path\_split})$), plus up to $K \cdot \sum_{\pi} \text{hops}(\pi)$ marginal pool simulations.
+- Memory: flow map $\mathcal{O}(P)$, chunk allocations $\mathcal{O}(K)$, candidate paths $\mathcal{O}(\lvert \Pi_H \rvert)$, and the `QuoteCache`.
 
 ### 6.9 Guarantees and Limitations
 - **Guarantee:** Never performs worse than `path_split` on objective score (fallback preservation).
@@ -828,7 +851,7 @@ On our synthetic teaching graph ($N = 10, S = 2$):
 - Budget Rejection: SOR returns `timeout` if declared candidate or quote budgets would truncate the quote table.
 
 ### 7.8 Computational and Memory Cost
-- Pool Quotes: $\sum_{\pi} \text{hops}(\pi) \cdot G$ quotes to populate quote matrix, plus FIFO queue node scans.
+- Pool Quotes: $\sum_{\pi} \text{hops}(\pi) \cdot G$ quotes to populate the percentage quote matrix, plus 1 on-demand replay quote if the adapter integer fill creates a non-percentage remainder allocation on the final route. On our teaching example with $H=1, A=10005$, this executes $2 \times 10 + 1 = 21$ quotes; with $H=2, A=10000$, it executes $2 \times 10 \times 1 + 2 \times 10 \times 2 = 60$ quotes.
 - Memory: Dense $|\Pi_H| \times G$ table storing `RouteQuote` objects.
 
 ### 7.9 Guarantees and Limitations
@@ -940,10 +963,10 @@ Let:
 |---|---|---|---|
 | `direct` | $\mathcal{O}(P_{\text{direct}} \cdot c_q)$ | $\le P_{\text{direct}}$ | $\mathcal{O}(1)$ |
 | `single_path` | $\mathcal{O}(H \cdot \lvert \Pi_H \rvert \cdot c_q)$ | $\le \sum_{\pi} \text{hops}(\pi)$ | $\mathcal{O}(H)$ stack + cache |
-| `direct_split` | $\mathcal{O}(P_{\text{direct}} \cdot G \cdot c_q + S \cdot G^2)$ | $\le P_{\text{direct}} \cdot (G + S)$ | $\mathcal{O}(S \cdot G^2)$ |
-| `path_split` | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G \cdot c_q + \text{BnB Nodes})$ | $\le \text{Quotes}(\text{sub}) + \sum_{\pi} \text{hops}(\pi) \cdot G$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G)$ |
-| `incremental_graph` | $\mathcal{O}(K \cdot \lvert \Pi_H \rvert \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot \sum_{\pi} \text{hops}(\pi) + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K)$ |
-| `uni_sor_port` | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G \cdot c_q + \lvert Q \rvert \cdot \lvert \Pi_H \rvert)$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G + \lvert Q \rvert)$ |
+| `direct_split` | $\mathcal{O}(P_{\text{direct}} \cdot G \cdot c_q + S \cdot G^2)$ | $\le P_{\text{direct}} \cdot G + P_{\text{direct}} \cdot \lvert \text{remainders} \rvert$ | $\mathcal{O}(S \cdot G^2)$ |
+| `path_split` | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G \cdot c_q + \text{BnB Nodes})$ | $\le \text{Quotes}(\text{sub}) + \sum_{\pi} \text{hops}(\pi) \cdot G$ | $\mathcal{O}(G^2 \cdot S + \lvert \Pi_H \rvert \cdot G)$ |
+| `incremental_graph` | $\mathcal{O}(K \cdot \lvert \Pi_H \rvert \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot \sum_{\pi} \text{hops}(\pi) + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K + \lvert \Pi_H \rvert)$ + cache |
+| `uni_sor_port` | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G \cdot c_q + \lvert Q \rvert \cdot \lvert \Pi_H \rvert)$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G + \text{replay quotes}$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G + \lvert Q \rvert)$ |
 
 ### 9.3 Source Reading Map
 
@@ -995,7 +1018,8 @@ When navigating the codebase, consult these authoritative entry points:
      `search_stats["paths_incomplete"]`; returns `ok` if any evaluable candidate succeeded.
    - `direct_split`: Incomplete grid samples are skipped; smaller splits of the same pool remain evaluable.
    - `path_split`: Skips missing-state paths; budget exhaustion before finding a route returns `timeout`.
-   - `incremental_graph`: If an intermediate chunk cannot find any admissible path, the incremental
-     solve aborts and falls back to the retained `path_split` candidate.
+   - `incremental_graph`: If an intermediate chunk has zero marginal output or no admissible path,
+     its amount is carried forward into the next chunk (`chunks_carried`). Only if the final chunk has
+     no admissible path does the incremental solve abort and fall back to the retained `path_split` candidate.
    - `uni_sor_port`: Refuses to select over a truncated quote table; if candidate or quote budgets
      truncate the matrix, it returns `timeout`.
