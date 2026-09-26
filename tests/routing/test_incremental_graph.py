@@ -659,6 +659,7 @@ def _differential(bundle: SnapshotBundle, case: Case, **kw: Any) -> dict[str, in
     s = ref.search_stats
     scores = stats["scores_reused"] + stats["scores_recomputed"]
     admissions = stats["cycle_decisions_reused"] + stats["cycle_checks_executed"]
+    assert stats["score_entries_peak"] <= 2 * s["paths_enumerated"]  # two amounts kept
     if s["incremental_status"] == "truncated":  # the aborted chunk is not in paths_scored
         assert scores > s["paths_scored"] and admissions > s["paths_scored"]
     else:
@@ -700,6 +701,7 @@ def test_reuse_matches_the_reference_on_random_graphs() -> None:
     # The generated cases exercise every reuse rule, not just the easy path.
     assert totals["scores_reused"] > 0 and totals["score_invalidations"] > 0
     assert totals["cycle_decisions_reused"] > 0 and totals["closure_edges_added"] > 0
+    assert totals["score_amounts_evicted"] > 0
     rejected = carried = 0
     for seed in range(40):
         bundle, cases = _random_bundle(seed)
@@ -857,17 +859,13 @@ def _mutant_differs(monkeypatch: pytest.MonkeyPatch, mutate: Any) -> bool:
     return False
 
 
-class _AmountBlind(dict):  # type: ignore[type-arg]
-    def setdefault(self, key: Any, default: Any = None) -> Any:
-        return super().setdefault(0, default)
-
-
 def test_differentials_catch_dropped_invalidation_rules(monkeypatch: pytest.MonkeyPatch) -> None:
     def no_pool_invalidation(r: Any) -> None:
         r.pool_paths = {p: [] for p in r.pool_paths}
 
     def amount_blind(r: Any) -> None:
-        r.scores = _AmountBlind()
+        entries_for = r.entries_for
+        r.entries_for = lambda amount: entries_for(0)
 
     def admitted_forever(r: Any) -> None:
         r.commit = _keep_version(r.commit, r)

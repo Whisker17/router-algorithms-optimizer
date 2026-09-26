@@ -321,7 +321,10 @@ class _ExactReuse:
     committed aggregate `(amount_in, amount_out)` of the pools on the path: quotes are
     on the pools' original states through the solve's `QuoteCache`. It is kept per
     (amount, path) and dropped for every path touching a pool of a committed chunk
-    (`pool_paths`); another amount is another key. A reused result makes no quote call:
+    (`pool_paths`); another amount is another key. Only the two most recently used
+    amounts are kept (uncarried chunks have at most two sizes, floor and ceiling; carried
+    sums rarely recur), so at most `2 * len(paths)` results are held; eviction only
+    loses reuse, never exactness. A reused result makes no quote call:
     the reference would have answered every one of its quotes from the `QuoteCache`
     (same keys), so the quote meter, budget checks and `quotes_executed` are unchanged
     and only `quotes_memoized` (physical cache lookups) is lower.
@@ -351,12 +354,23 @@ class _ExactReuse:
                 "scores_recomputed",
                 "score_invalidations",
                 "score_entries_peak",
+                "score_amounts_evicted",
                 "cycle_decisions_reused",
                 "cycle_checks_executed",
                 "closure_edges_added",
             ),
             0,
         )
+
+    def entries_for(self, amount: int) -> dict[int, tuple[int, list[PoolFlow]] | _Failure]:
+        entries = self.scores.pop(amount, None)
+        if entries is None:
+            entries = {}
+            if len(self.scores) == 2:
+                self.entries -= len(self.scores.pop(next(iter(self.scores))))
+                self.stats["score_amounts_evicted"] += 1
+        self.scores[amount] = entries  # most recently used last
+        return entries
 
     def cyclic(self, j: int, path: Path) -> bool:
         if j in self.rejected or self.admitted.get(j) == self.version:
@@ -502,7 +516,7 @@ def solve(
         A kept failure is counted exactly where the reference counts it -- by the first
         path of the chunk that reaches the failing prefix -- and marks it in `memo`."""
         assert reuse is not None
-        entries = reuse.scores.setdefault(amount, {})
+        entries = reuse.entries_for(amount)
         hit = entries.get(j)
         if hit is None:
             reuse.stats["scores_recomputed"] += 1

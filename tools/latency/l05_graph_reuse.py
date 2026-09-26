@@ -264,6 +264,37 @@ def paired(args: argparse.Namespace) -> dict[str, Any]:
     }  # fmt: skip
 
 
+def profile(args: argparse.Namespace) -> dict[str, Any]:
+    """cProfile (instrumented) of one solve per variant: cumulative seconds of the
+    embedded `path_split`, the chunk scoring (`marginal`, `reused_marginal`,
+    `creates_cycle`, `_ExactReuse.cyclic`) and the final `evaluate`."""
+    import cProfile
+    import pstats
+
+    exp_dir = Path(args.experiment)
+    experiment = l02._experiment(exp_dir)
+    prof = load_profile(REPO / experiment["profile"]["path"])
+    key, case_id = args.target.split(":")
+    bundle = l02._bundle(exp_dir, experiment, key)
+    case = next(c for c in bundle.cases if c.case_id == case_id)
+    prepared = l02._prepare(get_algorithm(ig.NAME), bundle, prof)
+    wanted = {"solve", "marginal", "reused_marginal", "creates_cycle", "cyclic", "evaluate"}
+    out: dict[str, Any] = {}
+    for label in LABELS:
+        profiler = cProfile.Profile()
+        profiler.enable()
+        _solve(Variant(label, args), prepared, bundle, prof, case, False)
+        profiler.disable()
+        rows = pstats.Stats(profiler).stats  # type: ignore[attr-defined]
+        out[label] = {
+            f"{Path(f).parent.name}/{Path(f).name}:{fn}": {"calls": nc, "cumulative_s": ct}
+            for (f, _, fn), (_, nc, _, ct, _) in rows.items()
+            if fn in wanted and ("routing" in f or "benchmark" in f)
+        }
+    return {"kind": "L05 cProfile (instrumented, one solve per variant, not a timing)",
+            "environment": l02._environment(), "target": args.target, "profiles": out}  # fmt: skip
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -278,15 +309,21 @@ def main() -> None:
     p.add_argument("--target", action="append", required=True, help="bundle:case")
     p.add_argument("--pairs", type=int, default=3)
     p.add_argument("--out", required=True)
-    for s in (w, p):  # declared experiment settings (WHI-1506's), not runtime defaults
+    pr = sub.add_parser("profile")
+    pr.add_argument("--experiment", required=True)
+    pr.add_argument("--target", required=True, help="bundle:case")
+    pr.add_argument("--out", required=True)
+    for s in (w, p, pr):  # declared experiment settings (WHI-1506's), not runtime defaults
         s.add_argument("--tick-capacity", type=int, default=16384)
         s.add_argument("--bin-capacity", type=int, default=4096)
         s.add_argument("--max-keys", type=int, default=4096)
         s.add_argument("--max-checkpoints", type=int, default=262144)
     args = parser.parse_args()
-    run: Callable[[argparse.Namespace], dict[str, Any]] = {"work": work, "paired": paired}[
-        args.command
-    ]
+    run: Callable[[argparse.Namespace], dict[str, Any]] = {
+        "work": work,
+        "paired": paired,
+        "profile": profile,
+    }[args.command]
     result = run(args)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
