@@ -29,8 +29,15 @@ The measured loop reuses `benchmark.runner`'s worker slot, per-case measurement,
 independent evaluation, failure mapping and memory pass unchanged. It only observes each
 attempt as well, to record what the ordinary runner discards: warmup samples, the solve's
 process CPU time (`benchmark.worker`) and the parent-observed transport overhead
-(request -> answer minus the child's solve time). Solve time excludes worker start-up,
-prepare, IPC and the parent's independent final evaluation, each recorded separately.
+(request -> answer minus the child's solve time: request/result pickling and transfer,
+the child's per-attempt context/meter setup; candidate-sink sends happen inside the solve
+window). Solve time excludes worker start-up (process start -> ready, which includes
+prepare; prepare is also reported alone), IPC and the parent's independent final
+evaluation, each recorded separately.
+
+SIGTERM is handled like Ctrl-C: the current run's unfinished cases are recorded as
+`cancelled`, its manifest and the experiment are finalized as `interrupted` (never
+`complete`), and the command exits 130.
 """
 
 from __future__ import annotations
@@ -40,6 +47,7 @@ import hashlib
 import json
 import os
 import shlex
+import signal
 import subprocess
 import sys
 import time
@@ -643,6 +651,7 @@ def run_latency_experiment(
         "parent_bundle": {"path": bundle_path, "bundle_id": parent.bundle_id,
                           "bundle_hash": parent.bundle_hash},
         "profile": {"path": protocol.profile_path, "sha256": protocol.profile_sha256},
+        "algorithms": list(profile.algorithms),
         "bundles": {label: {"path": b.source_path, "bundle_id": b.bundle_id,
                             "bundle_hash": b.bundle_hash, "cases": len(b.cases)}
                     for label, b in bundles.items()},
@@ -725,6 +734,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     run_p.add_argument("--stages", default=",".join(STAGES))
     run_p.add_argument("--allow-dirty", action="store_true")
     args = parser.parse_args(argv)
+
+    def _terminate(signum: int, frame: object) -> None:
+        raise KeyboardInterrupt(f"signal {signum}")
+
+    previous = signal.signal(signal.SIGTERM, _terminate)
     try:
         out = run_latency_experiment(
             args.protocol, args.bundle, args.out,
@@ -733,6 +747,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     except LatencyError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    except KeyboardInterrupt as exc:
+        print(f"experiment INTERRUPTED ({exc or 'interrupt'}); recorded as interrupted "
+              f"under {args.out}", file=sys.stderr)  # fmt: skip
+        return 130
+    finally:
+        signal.signal(signal.SIGTERM, previous)
     print(f"experiment: {out}\nsummarize:  uv run python -m report.latency summarize {out}")
     return 0
 

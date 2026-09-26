@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import multiprocessing
+import os
 import re
 import signal
 import time
@@ -143,7 +144,7 @@ def test_each_cost_is_charged_to_the_stage_that_incurred_it(
         if name == "delay_in_prepare":
             assert max(walls) < D / 2
         elif name == "delay_in_solve":
-            assert min(walls) >= D and min(cpus) >= D / 4  # burned CPU is CPU time
+            assert min(walls) >= D and min(cpus) >= D * 0.95  # burned CPU is CPU time
             assert prepare[name] < D / 2
         else:
             assert min(walls) >= D and max(cpus) < D / 2  # sleeping is wall, not CPU
@@ -306,9 +307,19 @@ def test_experiment_over_the_corpus_fixture_records_every_stage(tmp_path: Path) 
         ("cold", "fixed", "full_source/matrix"),
         ("cold", "fixed", "full_source/sentinel"),
     ]
+    assert doc["algorithms"] == ["direct", "single_path"]
     summary = report.summarize(out)
+    assert summary["coverage_problems"] == []
+    assert summary["internal_checks"] == {
+        "cross_order": [], "cold_warm": [], "attempts_inconsistent": []
+    }  # fmt: skip
+    # The report names its own generating source beside the measured one.
+    assert summary["experiment"]["measured_source"] == doc["source"]
+    assert summary["report"]["git_revision"] and summary["report"]["generated_at"]
     semantic = summary["semantic"]["full_source/matrix"]
-    assert semantic["status_counts"]["direct"] == {"ok": 2, "no_route": 1}  # failure kept
+    for run in ("timing fixed", "timing reverse", "cold fixed"):  # failure kept in every run
+        counts = semantic["status_counts"][f"{run} full_source/matrix"]
+        assert counts["direct"] == {"ok": 2, "no_route": 1}
     assert semantic["reverse_vs_fixed_mismatches"] == []
     assert semantic["cold_vs_warm_mismatches"] == []
     assert semantic["attempts_inconsistent"] == []
@@ -321,13 +332,55 @@ def test_experiment_over_the_corpus_fixture_records_every_stage(tmp_path: Path) 
     assert quote["bundle_hashes"] == [doc["bundles"]["full_source/sentinel"]["bundle_hash"]]
     cold = summary["cold"]["full_source/matrix"]["single_path"]
     assert cold["memory_records"] == 3 and cold["solve_peak_bytes"]["n"] == 3
+    assert cold["charged_seconds"]["n"] == 3  # every cold case charged, failures included
+    held_out = summary["quality"]["full_source/matrix"]["per_algorithm"]["direct"]["held_out"]
+    assert held_out["cases"] + held_out["not_applicable"] == 2  # held-out cases only
     rendered = report.render_summary(summary).replace(report.NO_TAIL_CLAIM, "")
     assert not re.search(r"p9\d|percentile|\bSLA\b", rendered, re.IGNORECASE)
     # A/A comparison of the experiment with itself: exact semantics, but a dirty test tree
     # can never yield an adopt verdict.
     result = report.compare(out, out, lane="exact")
     assert result["semantic_mismatches"] == [] and result["work_differences"] == []
+    assert result["coverage_problems"] == {"baseline": [], "candidate": [], "pairing": []}
     assert result["verdict"] == "inconclusive"
+
+
+def test_sigterm_finalizes_the_experiment_as_interrupted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real = latency.measure_run
+    calls = 0
+
+    def measure_then_terminate(*args: Any, **kwargs: Any) -> Any:
+        nonlocal calls
+        calls += 1
+        if calls == 2:  # a supervisor stops the driver after the second run's first case
+            inner = kwargs["on_record"]
+
+            def on_record(algorithm: str, case_id: str) -> None:
+                inner(algorithm, case_id)
+                os.kill(os.getpid(), signal.SIGTERM)
+
+            kwargs["on_record"] = on_record
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(latency, "measure_run", measure_then_terminate)
+    protocol = _write_protocol(tmp_path, _protocol_doc(tmp_path))
+    code = latency.main(["run", "--protocol", str(protocol), "--bundle", str(FIXTURE),
+                         "--out", str(tmp_path / "latency"), "--allow-dirty"])  # fmt: skip
+    assert code == 130
+    (out,) = (tmp_path / "latency").iterdir()
+    doc = json.loads((out / "experiment.json").read_text())
+    assert doc["state"] == "interrupted" and len(doc["runs"]) == 1  # completed run kept
+    manifests = [
+        json.loads((p / "manifest.json").read_text()) for p in sorted((out / "runs").iterdir())
+    ]
+    assert [m["state"] for m in manifests] == ["complete", "interrupted"]
+    (cases,) = (out / "runs").glob("*sentinel/cases.jsonl")
+    statuses = [json.loads(line)["status"] for line in cases.read_text().splitlines()]
+    assert statuses[0] != "cancelled" and set(statuses[1:]) == {"cancelled"}  # all retained
+    with pytest.raises(report.LatencyReportError, match="interrupted"):
+        report.summarize(out)  # never read as a complete experiment
 
 
 # ------------------------------------------------------------ acceptance rules
@@ -337,26 +390,34 @@ def _t(verdict: str) -> dict[str, Any]:
     return {"verdict": verdict}
 
 
+CLEAN_FACTS: dict[str, Any] = dict(
+    lane="exact", candidate_internal=0, semantic_mismatches=0, coverage_problems=0,
+    baseline_internal=0, fixed_budget_differences=0, evidence_clean=True, contaminated=False,
+    timing={"a": _t("faster")}, charged={"a": _t("not_slower")},
+)  # fmt: skip
+
+
 @pytest.mark.parametrize(
-    ("kwargs", "verdict"),
+    ("change", "verdict"),
     [
-        (dict(lane="exact", semantic_mismatches=1, timing={"a": _t("faster")}), "reject"),
-        (dict(lane="exact", semantic_mismatches=0, timing={"a": _t("faster")}), "adopt_eligible"),
-        (dict(lane="exact", semantic_mismatches=0, timing={"a": _t("faster"),
-                                                           "b": _t("slower")}), "reject"),
-        (dict(lane="exact", semantic_mismatches=0, timing={"a": _t("no_worthwhile_change")}),
-         "reject"),
-        (dict(lane="heuristic", semantic_mismatches=3, timing={"a": _t("faster")}),
-         "opt_in_only"),
-        (dict(lane="exact", semantic_mismatches=0, timing={"a": _t("faster")},
-              contaminated=True), "inconclusive"),
-        (dict(lane="exact", semantic_mismatches=0, timing={"a": _t("faster")},
-              evidence_clean=False), "inconclusive"),
+        ({}, "adopt_eligible"),
+        (dict(semantic_mismatches=1), "reject"),
+        (dict(candidate_internal=1, lane="heuristic"), "reject"),
+        (dict(coverage_problems=1), "inconclusive"),
+        (dict(baseline_internal=1), "inconclusive"),
+        (dict(fixed_budget_differences=1), "inconclusive"),
+        (dict(fixed_budget_differences=1, lane="heuristic"), "opt_in_only"),
+        (dict(timing={"a": _t("faster"), "b": _t("slower")}), "reject"),
+        (dict(timing={"a": _t("faster"), "b": _t("lost_samples")}), "reject"),
+        (dict(charged={"a": _t("slower")}), "reject"),
+        (dict(timing={"a": _t("no_worthwhile_change")}), "reject"),
+        (dict(lane="heuristic", semantic_mismatches=3), "opt_in_only"),
+        (dict(contaminated=True), "inconclusive"),
+        (dict(evidence_clean=False), "inconclusive"),
     ],
 )  # fmt: skip
-def test_judge_applies_the_preregistered_rules(kwargs: dict[str, Any], verdict: str) -> None:
-    facts: dict[str, Any] = {"evidence_clean": True, "contaminated": False, **kwargs}
-    assert report.judge(**facts)[0] == verdict
+def test_judge_applies_the_preregistered_rules(change: dict[str, Any], verdict: str) -> None:
+    assert report.judge(**{**CLEAN_FACTS, **change})[0] == verdict
 
 
 def test_timing_verdict_needs_wall_and_cpu_beyond_the_threshold() -> None:
@@ -367,15 +428,208 @@ def test_timing_verdict_needs_wall_and_cpu_beyond_the_threshold() -> None:
 
 
 def test_regret_is_against_the_same_scope_best_known_and_unknown_scores_are_na() -> None:
-    def rec(algorithm: str, status: str, score: int | None) -> dict[str, Any]:
+    def rec(algorithm: str, status: str, score: int | None, case: str = "c") -> dict[str, Any]:
         text = None if score is None else str(score)
-        return {"algorithm": algorithm, "case_id": "c", "status": status, "score": text}
+        return {"algorithm": algorithm, "case_id": case, "status": status, "score": text}
 
-    run = SimpleNamespace(records=[rec("a", "ok", 1000), rec("b", "ok", 990),
-                                   rec("c", "ok", None), rec("d", "no_route", None)])  # fmt: skip
-    block = report._quality_block(run)  # type: ignore[arg-type]
+    records = [rec("a", "ok", 1000), rec("b", "ok", 990), rec("c", "ok", None),
+               rec("d", "no_route", None), rec("a", "ok", 500, "t"),
+               rec("b", "ok", 1000, "t")]  # fmt: skip
+    run = SimpleNamespace(records=records)
+    block = report._quality_block(run, {"c": "held_out", "t": "tuning"})  # type: ignore[arg-type]
     row = block["cases"]["c"]
-    assert row["best_known_score"] == "1000"
+    assert row["best_known_score"] == "1000" and row["split"] == "held_out"
     assert row["a"]["regret_bps"] == 0 and row["b"]["regret_bps"] == 100
     assert row["c"]["regret_bps"] is None and row["d"]["regret_bps"] is None
-    assert block["per_algorithm"]["c"]["not_applicable"] == 1
+    assert block["per_algorithm"]["c"]["held_out"]["not_applicable"] == 1
+    # The tuning-case loss of `a` never reaches its held-out aggregate.
+    assert block["per_algorithm"]["a"]["held_out"]["max_regret_bps"] == 0
+    assert block["per_algorithm"]["a"]["tuning"]["max_regret_bps"] == 5000
+
+
+def test_cold_charge_counts_prepare_once() -> None:
+    """Worker start-up runs until ready, after prepare: it already contains prepare."""
+    events = ({"index": 0, "startup_seconds": 5.0, "prepare_seconds": 3.0},)
+    record = _rec("direct", "h1", 2.0)
+    record["measurement"].update(transport_seconds=[0.25], evaluation_seconds=1.0)
+    run = SimpleNamespace(manifest=SimpleNamespace(prepare_events=events), records=[record],
+                          memory=[])  # fmt: skip
+    parts = report.cold_parts(run)[("direct", "h1")]  # type: ignore[arg-type]
+    assert parts["charged_seconds"] == pytest.approx(8.25)  # not 11.25
+    assert parts["spawn_seconds"] == pytest.approx(2.0)
+    block = report._cold_block(run)["direct"]  # type: ignore[arg-type]
+    assert block["charged_seconds"]["median"] == pytest.approx(8.25)
+    failed = _rec("direct", "h2", 2.0)
+    failed["measurement"].update(solve_seconds=[], prepare_event=0)  # no solve: not charged
+    run.records.append(failed)
+    assert report.cold_parts(run)[("direct", "h2")]["charged_seconds"] is None  # type: ignore[arg-type]
+
+
+# ------------------------------------------------------------ comparator end to end
+#
+# Complete in-memory experiments (the same shapes the driver writes): identical semantics,
+# five 1.0 s baseline vs five 0.5 s candidate samples per case in both orders, clean
+# provenance, uncontaminated load. The unmodified pair is adopt_eligible; every defect
+# below must stop that.
+
+ALGS = ("direct", "single_path")
+CASES = {"full_source/matrix": ["t1", "h1", "h2"], "full_source/sentinel": ["s"]}
+STAGE_ORDERS = (("timing", "fixed"), ("timing", "reverse"), ("cold", "fixed"))
+RUN_KEYS = [(stage, order, label) for label in CASES for stage, order in STAGE_ORDERS]
+
+
+def _rec(algorithm: str, case: str, wall: float, **extra: Any) -> dict[str, Any]:
+    record: dict[str, Any] = {
+        "algorithm": algorithm, "case_id": case, "status": "ok", "score": "1000",
+        "evaluation": {"gross_output": "1000"}, "error": None, "limit_hit": None,
+        "solver_reported": {"status": "ok"}, "quotes": {"attempted": 5, "counted": 5},
+        "candidates_considered": 1, "candidates_truncated": 0, "search": {"truncated_by": None},
+        "measurement": {"seed": 1, "attempts_consistent": True, "prepare_event": 0,
+                        "solve_seconds": [wall] * 5, "solve_cpu_seconds": [wall] * 5,
+                        "transport_seconds": [0.001] * 5, "evaluation_seconds": 0.001},
+    }  # fmt: skip
+    record.update(extra)
+    return record
+
+
+def _experiment(wall: float) -> report.Experiment:
+    protocol: dict[str, Any] = yaml.safe_load((REPO / "config/latency/l01.yaml").read_text())
+    protocol.update(
+        matrix=[{"case": "t1", "split": "tuning", "covers": []},
+                {"case": "h1", "split": "held_out", "covers": []},
+                {"case": "h2", "split": "held_out", "covers": []}],
+        cohorts=["full_source"], cold={"cohorts": ["full_source"]}, quote_cli={"invocations": 0},
+    )  # fmt: skip
+    runs = {}
+    for stage, order, label in RUN_KEYS:
+        schedule = [[a, c] for a in ALGS for c in CASES[label]]
+        manifest = SimpleNamespace(
+            algorithms=ALGS, state="complete", bundle_hash=f"hash-{label}",
+            scheduled_count=len(schedule),
+            measurement={"schedule": schedule[::-1] if order == "reverse" else schedule},
+            prepare_events=({"index": 0, "algorithm": "direct", "status": "ok",
+                             "startup_seconds": 0.2, "prepare_seconds": 0.01},),
+        )  # fmt: skip
+        records = [_rec(a, c, wall) for a, c in schedule]
+        runs[(stage, order, label)] = report.RunView({}, manifest, records, [], Path(stage))  # type: ignore[arg-type]
+    document = {
+        "experiment_id": f"e{wall}", "partial": False, "stages_requested": list(latency.STAGES),
+        "protocol": {"sha256": "p", "document": protocol}, "algorithms": list(ALGS),
+        "bundles": {label: {"bundle_hash": f"hash-{label}"} for label in CASES},
+        "source": {"git_revision": "abc", "git_dirty": False}, "load": {"contaminated": False},
+        "quote_cli": [],
+    }  # fmt: skip
+    return report.Experiment(Path("."), document, runs)
+
+
+def _record(exp: report.Experiment, key: tuple[str, str, str], alg: str, case: str) -> Any:
+    return next(r for r in exp.runs[key].records if (r["algorithm"], r["case_id"]) == (alg, case))
+
+
+COLD, FIXED, REVERSE = (("cold", "fixed", "full_source/matrix"),
+                        ("timing", "fixed", "full_source/matrix"),
+                        ("timing", "reverse", "full_source/matrix"))  # fmt: skip
+
+
+def _failed(record: dict[str, Any], status: str = "algorithm_error") -> None:
+    record.update(status=status, score=None, evaluation=None, error="boom")
+    record["measurement"].update(solve_seconds=[], solve_cpu_seconds=[], transport_seconds=[])
+
+
+def _cold_error(e: report.Experiment) -> None:
+    _failed(_record(e, COLD, "single_path", "h1"))
+
+
+def _inconsistent(e: report.Experiment) -> None:
+    _record(e, FIXED, "single_path", "h1")["measurement"]["attempts_consistent"] = False
+
+
+def _order_leak(e: report.Experiment) -> None:  # same result in both runs, except reverse
+    _record(e, REVERSE, "direct", "t1").update(score="999")
+
+
+def _missing_record(e: report.Experiment) -> None:
+    e.runs[REVERSE].records.pop()
+
+
+def _missing_run(e: report.Experiment) -> None:
+    del e.runs[COLD]
+
+
+def _budget_bound(e: report.Experiment) -> None:  # truncated by the quote cap, then differs
+    for key in (FIXED, REVERSE, COLD):
+        _record(e, key, "single_path", "h2").update(
+            score="1001", search={"truncated_by": "max_quotes"}
+        )
+
+
+def _prepare_moved(e: report.Experiment) -> None:  # 2 s of work moved into prepare
+    for key in (COLD,):
+        e.runs[key].manifest.prepare_events[0].update(startup_seconds=2.2, prepare_seconds=2.0)
+
+
+@pytest.mark.parametrize(
+    ("defect", "verdict", "evidence", "symmetric"),
+    [
+        (_cold_error, "reject", lambda r: r["semantic_mismatches"], True),
+        (_inconsistent, "reject",
+         lambda r: r["internal_checks"]["candidate"]["attempts_inconsistent"], True),
+        (_order_leak, "reject", lambda r: r["internal_checks"]["candidate"]["cross_order"], True),
+        (_missing_record, "inconclusive", lambda r: r["coverage_problems"]["candidate"], True),
+        (_missing_run, "inconclusive", lambda r: r["coverage_problems"]["candidate"], True),
+        (_budget_bound, "inconclusive", lambda r: r["fixed_budget_differences"], True),
+        (_prepare_moved, "reject",  # a slower baseline prepare is fine: not symmetric
+         lambda r: r["charged"]["full_source/matrix direct"]["verdict"] == "slower", False),
+    ],
+)  # fmt: skip
+def test_exact_comparison_is_adopt_eligible_only_without_any_defect(
+    defect: Any, verdict: str, evidence: Any, symmetric: bool
+) -> None:
+    base = _experiment(1.0)
+    clean = report.compare_experiments(base, _experiment(0.5), lane="exact")
+    assert clean["verdict"] == "adopt_eligible", clean["reasons"]
+    assert clean["semantic_mismatches"] == [] and clean["fixed_budget_differences"] == []
+    candidate = _experiment(0.5)
+    defect(candidate)
+    result = report.compare_experiments(base, candidate, lane="exact")
+    assert result["verdict"] == verdict, result["reasons"]
+    assert evidence(result)  # the defect is named, not only reflected in the verdict
+    if not symmetric:
+        return
+    # The same defect in the baseline never yields an adopt verdict either.
+    base_defect = _experiment(1.0)
+    defect(base_defect)
+    flipped = report.compare_experiments(base_defect, _experiment(0.5), lane="exact")
+    assert flipped["verdict"] != "adopt_eligible"
+
+
+def test_heuristic_candidate_that_loses_timed_cases_is_rejected() -> None:
+    candidate = _experiment(0.5)
+    for key in (FIXED, REVERSE, COLD):  # times out on a held-out case in every stage
+        _failed(_record(candidate, key, "single_path", "h1"), "timeout")
+        _record(candidate, key, "single_path", "h1").update(limit_hit="time")
+    result = report.compare_experiments(_experiment(1.0), candidate, lane="heuristic")
+    assert result["timing"]["full_source/matrix single_path"]["verdict"] == "lost_samples"
+    assert result["verdict"] == "reject"
+    assert len(result["status_regressions"]) == 3
+
+
+def test_heuristic_regret_is_scoped_by_split() -> None:
+    candidate = _experiment(0.5)
+    for key in (FIXED, REVERSE, COLD):  # a loss on the tuning case only
+        _record(candidate, key, "single_path", "t1").update(score="990")
+    result = report.compare_experiments(_experiment(1.0), candidate, lane="heuristic")
+    regret = result["regret"]["full_source/matrix single_path"]
+    assert regret["held_out"]["losses"] == 0 and regret["held_out"]["cases"] == 2
+    assert regret["tuning"]["losses"] == 1 and regret["tuning"]["max_regret_bps"] == 100
+    assert result["verdict"] == "opt_in_only"
+    assert "sentinel" in result["regret"]["full_source/sentinel single_path"]
+
+
+def test_algorithm_pairing_cannot_drop_algorithms() -> None:
+    base, candidate = _experiment(1.0), _experiment(0.5)
+    with pytest.raises(report.LatencyReportError, match="exact lane"):
+        report.compare_experiments(base, candidate, lane="exact", pairs={"direct": "single_path"})
+    candidate.document["algorithms"] = ["direct"]  # a candidate that skipped an algorithm
+    with pytest.raises(report.LatencyReportError, match="never compared"):
+        report.compare_experiments(base, candidate, lane="exact")

@@ -5,20 +5,34 @@
         [--pair candidate_algorithm=reference_algorithm ...] [--json F] [--markdown F]
 
 Everything is read from saved, checksum-verified run records (`benchmark.results`); nothing
-re-runs a solver. The rules applied by `compare` are the protocol's pre-registered
-`acceptance` section (config/latency/l01.yaml, docs/references/latency-baseline.md):
+re-runs a solver. Every summary/comparison records its own report provenance (the source
+that generated it) beside the measured source of the raw records, so a regenerated report
+never relabels old measurements as new-source performance. The rules applied by `compare`
+are the protocol's pre-registered `acceptance` section (config/latency/l01.yaml,
+docs/references/latency-baseline.md):
 
+- coverage: every required run of the protocol schedule is present and complete, over the
+  pinned derived bundle, with exactly one record per scheduled (algorithm, case) and the
+  experiment's full algorithm set; a missing run or record is never read as agreement;
+- internal gates, per experiment: fixed == reverse order, cold == warm process, and every
+  case's attempts consistent (`benchmark.runner`'s deterministic view);
 - per (bundle, algorithm, case): the median of the measured solve samples pooled over both
   schedule orders; wall and process CPU separately;
 - decisions on the protocol's decision split only (held-out), and only for cases whose
   baseline median reaches `min_timed_solve_seconds`;
 - improvement = 1 - geometric mean of candidate/baseline per-case medians; it must reach
   both the minimum worthwhile improvement and `noise_multiplier` x the larger A/A noise
-  floor (exp|ln geomean(reverse/fixed)| - 1) of the two experiments, for wall AND CPU;
-- exact lane: every scheduled record's semantic fields identical in every order and
-  cohort; work counters may differ and are listed;
-- heuristic lane: paired regret against the same-scope reference, N/A where a score is
-  unknown; there is no default loss tolerance, so the verdict is at most "opt-in".
+  floor (exp|ln geomean(reverse/fixed)| - 1) of the two experiments, for wall AND CPU; the
+  cold charged time (start-up incl. prepare + solve + transport + evaluation) must not be
+  slower by that threshold, so work moved out of the solve window is still charged;
+- exact lane: every scheduled record's semantic fields identical in every stage (timing
+  in both orders, cold), cohort and bundle; work counters may differ and are listed; a
+  difference on a budget-bound record (limit hit, timeout or declared budget truncation) is
+  a fixed-budget completion difference, reported separately and inconclusive until a
+  sufficient-budget comparison establishes exactness;
+- heuristic lane: paired regret against the same-scope reference per split (held-out
+  decides), N/A where a score is unknown; there is no default loss tolerance, so the
+  verdict is at most "opt-in".
 
 Latency is never summarized as a percentile: each case has 2 x repeats samples, which does
 not support a tail or SLA claim.
@@ -34,15 +48,18 @@ import sys
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from benchmark.latency import STAGES, source_identity
 from benchmark.results import RunManifest, load_case_records, load_manifest, load_memory_records
-from benchmark.runner import compare_runs
+from benchmark.runner import _deterministic_view
 
-SUMMARY_SCHEMA = "latency-summary/1"
-COMPARISON_SCHEMA = "latency-comparison/1"
+SUMMARY_SCHEMA = "latency-summary/2"
+COMPARISON_SCHEMA = "latency-comparison/2"
 KILLED = {"timeout", "cancelled"}  # how far a killed search got is timing-dependent
+SENTINEL_SPLIT = "sentinel"  # the sentinel case is in neither matrix split
 NO_TAIL_CLAIM = (
     "No percentile, p95 or SLA is derived: each case has 2 x repeats samples; the figures "
     "are medians/min/max of observations on the recorded host."
@@ -84,6 +101,18 @@ class Experiment:
     def split_of(self) -> dict[str, str]:
         return {m["case"]: m["split"] for m in self.protocol["matrix"]}
 
+    def split(self, case_id: str) -> str:
+        return self.split_of.get(case_id, SENTINEL_SPLIT)
+
+    @property
+    def algorithms(self) -> list[str]:
+        """The experiment's scheduled algorithm set: recorded by the driver (older
+        experiments: the first run's manifest)."""
+        if self.document.get("algorithms"):
+            return list(self.document["algorithms"])
+        first = next(iter(self.runs.values()), None)
+        return list(first.manifest.algorithms) if first is not None else []
+
     def labels(self, stage: str) -> list[str]:
         return sorted({label for (s, _, label) in self.runs if s == stage})
 
@@ -107,6 +136,18 @@ def load_experiment(path: str | Path) -> Experiment:
             entry, manifest, load_case_records(run_dir), memory, run_dir
         )
     return Experiment(path, document, runs)
+
+
+def report_provenance() -> dict[str, Any]:
+    """Which source generated this report, and when (not the measured source)."""
+    source = source_identity()
+    return {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "git_revision": source["git_revision"],
+        "git_dirty": source["git_dirty"],
+        "dirty_patch_sha256": source["dirty_patch_sha256"],
+        "report_tree_id": source["code_tree_ids"].get("report"),
+    }
 
 
 # ------------------------------------------------------------------ helpers
@@ -156,6 +197,132 @@ def work_view(record: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def budget_bound(record: Mapping[str, Any]) -> bool:
+    """The fixed budget ended or cut this search (a hard limit, or a declared solver
+    truncation): what it completed depends on the budget, not only on the algorithm."""
+    return (
+        record["status"] == "timeout"
+        or record.get("limit_hit") is not None
+        or (record.get("search") or {}).get("truncated_by") is not None
+    )
+
+
+def _differing(a: Mapping[str, Any], b: Mapping[str, Any]) -> str:
+    return ", ".join(sorted(k for k in a.keys() | b.keys() if a.get(k) != b.get(k)))
+
+
+def record_mismatches(
+    a: Sequence[Mapping[str, Any]], b: Sequence[Mapping[str, Any]], *, one_sided: bool = True
+) -> list[str]:
+    """`benchmark.runner.compare_runs` on in-memory records: the deterministic outputs
+    (incl. work counters, seed and attempt consistency) of the same schedule must agree.
+    A record present on one side only is listed (`one_sided`), never silently skipped; the
+    gates leave it to `coverage_problems`, which always reports it."""
+    by_a, by_b = {_key(r): r for r in a}, {_key(r): r for r in b}
+    out: list[str] = []
+    for key in sorted(by_a.keys() | by_b.keys()):
+        if key not in by_a or key not in by_b:
+            if one_sided:
+                out.append(f"{key[0]}/{key[1]}: scheduled in only one run")
+            continue
+        view_a, view_b = _deterministic_view(by_a[key]), _deterministic_view(by_b[key])
+        if view_a != view_b:
+            out.append(f"{key[0]}/{key[1]}: differs in {_differing(view_a, view_b)}")
+    return out
+
+
+def _required_runs(exp: Experiment) -> set[tuple[str, str, str]]:
+    proto = exp.protocol
+    stages = exp.document.get("stages_requested") or list(STAGES)
+    required: set[tuple[str, str, str]] = set()
+    for kind in ("matrix", "sentinel"):
+        if "timing" in stages:
+            required |= {
+                ("timing", order, f"{cohort}/{kind}")
+                for cohort in proto["cohorts"]
+                for order in proto["timing"]["orders"]
+            }
+        if "cold" in stages:
+            required |= {
+                ("cold", "fixed", f"{cohort}/{kind}") for cohort in proto["cold"]["cohorts"]
+            }
+    return required
+
+
+def coverage_problems(exp: Experiment) -> list[str]:
+    """Everything the protocol schedule requires but the experiment does not hold exactly
+    once. Empty means complete coverage; anything else can never support a verdict."""
+    problems: list[str] = []
+    required = _required_runs(exp)
+    for key in sorted(required - exp.runs.keys()):
+        problems.append(f"{' '.join(key)}: required run missing")
+    for key in sorted(exp.runs.keys() - required):
+        problems.append(f"{' '.join(key)}: run outside the protocol schedule")
+    algorithms = exp.algorithms
+    if not algorithms:
+        problems.append("no algorithm set recorded")
+    matrix_cases = {m["case"] for m in exp.protocol["matrix"]}
+    bundles = exp.document.get("bundles") or {}
+    for key, run in sorted(exp.runs.items()):
+        where = " ".join(key)
+        manifest = run.manifest
+        if manifest.state != "complete":
+            problems.append(f"{where}: run is {manifest.state!r}")
+        if list(manifest.algorithms) != algorithms:
+            problems.append(f"{where}: algorithms {list(manifest.algorithms)} != {algorithms}")
+        bundle = bundles.get(key[2])
+        if bundle is None or manifest.bundle_hash != bundle.get("bundle_hash"):
+            problems.append(f"{where}: bundle differs from the experiment's derived bundle")
+        schedule = Counter(tuple(p) for p in manifest.measurement.get("schedule") or [])
+        cases = {c for (_, c) in schedule}
+        if key[2].endswith("/matrix") and cases != matrix_cases:
+            problems.append(f"{where}: schedule cases differ from the protocol matrix")
+        if key[2].endswith("/sentinel") and len(cases) != 1:
+            problems.append(f"{where}: sentinel schedule is not exactly one case")
+        full = Counter((a, c) for a in algorithms for c in cases)
+        if schedule != full or manifest.scheduled_count != sum(full.values()):
+            problems.append(f"{where}: schedule is not every algorithm x case exactly once")
+        records = Counter(_key(r) for r in run.records)
+        missing, extra = full - records, records - full
+        for a, c in sorted(missing):
+            problems.append(f"{where}: {a}/{c}: scheduled record missing")
+        for a, c in sorted(extra):
+            problems.append(f"{where}: {a}/{c}: unscheduled or duplicate record")
+        for r in run.records:
+            if r["status"] == "cancelled":
+                problems.append(f"{where}: {r['algorithm']}/{r['case_id']}: cancelled")
+    stages = exp.document.get("stages_requested") or list(STAGES)
+    wanted = exp.protocol["quote_cli"]["invocations"] if "quote_cli" in stages else 0
+    if len(exp.document.get("quote_cli") or []) != wanted:
+        problems.append(f"quote_cli: {len(exp.document.get('quote_cli') or [])} invocation(s),"
+                        f" protocol requires {wanted}")  # fmt: skip
+    return problems
+
+
+def internal_checks(exp: Experiment) -> dict[str, list[str]]:
+    """The experiment's own determinism gates: fixed == reverse order, cold == warm
+    process, and every case's attempts consistent."""
+    cross_order: list[str] = []
+    cold_warm: list[str] = []
+    for label in sorted(set(exp.labels("timing")) | set(exp.labels("cold"))):
+        fixed = exp.runs.get(("timing", "fixed", label))
+        reverse = exp.runs.get(("timing", "reverse", label))
+        cold = exp.runs.get(("cold", "fixed", label))
+        if fixed and reverse:
+            mismatches = record_mismatches(fixed.records, reverse.records, one_sided=False)
+            cross_order += [f"{label} {m}" for m in mismatches]
+        if fixed and cold:
+            mismatches = record_mismatches(fixed.records, cold.records, one_sided=False)
+            cold_warm += [f"{label} {m}" for m in mismatches]
+    repeat = sorted(
+        f"{' '.join(key)} {r['algorithm']}/{r['case_id']}"
+        for key, run in exp.runs.items()
+        for r in run.records
+        if r.get("measurement", {}).get("attempts_consistent") is False
+    )
+    return {"cross_order": cross_order, "cold_warm": cold_warm, "attempts_inconsistent": repeat}
+
+
 def _pooled_medians(exp: Experiment, label: str, kind: str) -> dict[tuple[str, str], float]:
     """(algorithm, case) -> median of the measured samples of every timing order."""
     pooled: dict[tuple[str, str], list[float]] = defaultdict(list)
@@ -171,7 +338,7 @@ def _order_medians(run: RunView, kind: str) -> dict[tuple[str, str], float]:
 
 
 def noise_floor(exp: Experiment, label: str, algorithm: str, kind: str) -> dict[str, Any]:
-    """A/A noise: geometric mean over decision-split cases (baseline median >= floor) of
+    """A/A noise: geometric mean over decision-split cases (both medians >= floor) of
     the reverse-order / fixed-order per-case median ratio; noise = exp|ln g| - 1."""
     fixed, reverse = (
         exp.runs.get(("timing", "fixed", label)),
@@ -179,13 +346,13 @@ def noise_floor(exp: Experiment, label: str, algorithm: str, kind: str) -> dict[
     )
     if fixed is None or reverse is None:
         return {"cases": 0, "geomean_ratio": None, "noise": None}
-    acc, split_of = exp.acceptance, exp.split_of
+    acc = exp.acceptance
     a, b = _order_medians(fixed, kind), _order_medians(reverse, kind)
     ratios = [
         b[k] / a[k]
         for k in a.keys() & b.keys()
         if k[0] == algorithm
-        and split_of.get(k[1], acc["decision_split"]) == acc["decision_split"]
+        and exp.split(k[1]) == acc["decision_split"]
         and min(a[k], b[k]) >= acc["min_timed_solve_seconds"]
     ]
     g = _geomean(ratios)
@@ -202,9 +369,8 @@ def noise_floor(exp: Experiment, label: str, algorithm: str, kind: str) -> dict[
 def _timing_block(exp: Experiment, label: str) -> dict[str, Any]:
     runs = [r for (s, _, lb), r in exp.runs.items() if s == "timing" and lb == label]
     walls, cpus = _pooled_medians(exp, label, "wall"), _pooled_medians(exp, label, "cpu")
-    algorithms = list(runs[0].manifest.algorithms)
     block: dict[str, Any] = {}
-    for algorithm in algorithms:
+    for algorithm in exp.algorithms:
         records = [r for run in runs for r in run.records if r["algorithm"] == algorithm]
         keys = sorted(k for k in walls if k[0] == algorithm)
         attempts = [a for r in records for a in r["measurement"].get("attempts", [])]
@@ -243,7 +409,8 @@ def _timing_block(exp: Experiment, label: str) -> dict[str, Any]:
             ),
             "first_attempt_over_case_median": _median(warm_first),
             "prepare_seconds": _spread(e["prepare_seconds"] for e in events),
-            "startup_seconds": _spread(e["startup_seconds"] for e in events),
+            # `startup_seconds` is spawn -> ready and INCLUDES prepare (benchmark.worker).
+            "startup_including_prepare_seconds": _spread(e["startup_seconds"] for e in events),
             "noise_wall": noise_floor(exp, label, algorithm, "wall"),
             "noise_cpu": noise_floor(exp, label, algorithm, "cpu"),
         }
@@ -273,28 +440,50 @@ def _sentinel_block(exp: Experiment, label: str) -> dict[str, Any]:
     }
 
 
-def _cold_block(run: RunView) -> dict[str, Any]:
+CHARGED_PARTS = (
+    "startup_including_prepare_seconds",
+    "solve_wall_seconds",
+    "transport_seconds",
+    "evaluation_seconds",
+)
+
+
+def cold_parts(run: RunView) -> dict[tuple[str, str], dict[str, float | None]]:
+    """Per (algorithm, case) of a cold run: the fresh worker's disjoint cost parts.
+
+    The worker's `startup_seconds` runs from process start until ready, which is AFTER
+    `prepare()`, so it already contains `prepare_seconds`; spawn-only time is the
+    difference. `charged_seconds` = start-up (incl. prepare) + solve + transport +
+    evaluation, each cost counted once (None if any part is missing, e.g. a failure)."""
     events = {e["index"]: e for e in run.manifest.prepare_events}
-    out: dict[str, Any] = {}
+    out: dict[tuple[str, str], dict[str, float | None]] = {}
     for record in run.records:
         m = record["measurement"]
         event = events.get(m.get("prepare_event"), {})
-        entry = out.setdefault(record["algorithm"], defaultdict(list))
-        parts = {
-            "startup_seconds": event.get("startup_seconds"),
-            "prepare_seconds": event.get("prepare_seconds"),
+        startup, prepare = event.get("startup_seconds"), event.get("prepare_seconds")
+        parts: dict[str, float | None] = {
+            "startup_including_prepare_seconds": startup,
+            "prepare_seconds": prepare,
+            "spawn_seconds": None if startup is None or prepare is None else startup - prepare,
             "solve_wall_seconds": (m.get("solve_seconds") or [None])[0],
             "solve_cpu_seconds": (m.get("solve_cpu_seconds") or [None])[0],
             "transport_seconds": (m.get("transport_seconds") or [None])[0],
             "evaluation_seconds": m.get("evaluation_seconds"),
         }
+        charged = [parts[n] for n in CHARGED_PARTS]
+        parts["charged_seconds"] = (
+            None if any(v is None for v in charged) else sum(v for v in charged if v is not None)
+        )
+        out[_key(record)] = parts
+    return out
+
+
+def _cold_block(run: RunView) -> dict[str, Any]:
+    entries: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for (algorithm, _), parts in cold_parts(run).items():
         for name, value in parts.items():
             if value is not None:
-                entry[name].append(value)
-        if all(parts[n] is not None for n in parts if n != "solve_cpu_seconds"):
-            entry["charged_seconds"].append(
-                sum(v for n, v in parts.items() if n != "solve_cpu_seconds" and v is not None)
-            )
+                entries[algorithm][name].append(value)
     memory: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(list))
     for record in run.memory:
         if record.get("solve_peak_bytes") is not None:
@@ -306,30 +495,48 @@ def _cold_block(run: RunView) -> dict[str, Any]:
         algorithm: {
             **{name: _spread(values) for name, values in entry.items()},
             **{name: _spread(values) for name, values in memory.get(algorithm, {}).items()},
+            "records": sum(1 for r in run.records if r["algorithm"] == algorithm),
             "memory_records": sum(1 for r in run.memory if r["algorithm"] == algorithm),
         }
-        for algorithm, entry in out.items()
+        for algorithm, entry in entries.items()
     }
 
 
-def _quality_block(run: RunView) -> dict[str, Any]:
+def _regret_stats(values: list[float], not_applicable: int) -> dict[str, Any]:
+    return {
+        "cases": len(values),
+        "not_applicable": not_applicable,
+        "at_zero_regret": sum(1 for x in values if x == 0),
+        "losses": sum(1 for x in values if x > 0),
+        "gains": sum(1 for x in values if x < 0),
+        "max_regret_bps": max(values, default=None),
+        "mean_regret_bps": statistics.fmean(values) if values else None,
+    }
+
+
+def _quality_block(run: RunView, split_of: Mapping[str, str]) -> dict[str, Any]:
     """Per case: the same-scope best known score among the recorded algorithms and each
-    algorithm's regret against it (bps); N/A (None) where a score is unknown."""
+    algorithm's regret against it (bps); N/A (None) where a score is unknown. Aggregates
+    are per split (tuning / held_out / sentinel), never pooled across them."""
     by_case: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
     for record in run.records:
         by_case[record["case_id"]][record["algorithm"]] = record
     cases: dict[str, Any] = {}
-    per_algorithm: dict[str, dict[str, Any]] = defaultdict(
-        lambda: {"at_best_known": 0, "regret_bps": [], "not_applicable": 0}
-    )
+    acc: dict[tuple[str, str], dict[str, Any]] = defaultdict(lambda: {"values": [], "na": 0})
     for case_id, records in sorted(by_case.items()):
+        split = split_of.get(case_id, SENTINEL_SPLIT)
         scores = {a: _score(r) for a, r in records.items() if r["status"] == "ok"}
         known = [s for s in scores.values() if s is not None]
         best = max(known) if known else None
-        row: dict[str, Any] = {"best_known_score": None if best is None else str(best)}
+        row: dict[str, Any] = {"split": split,
+                               "best_known_score": None if best is None else str(best)}  # fmt: skip
         for algorithm, record in records.items():
             score = scores.get(algorithm)
-            regret = (best - score) * 10_000 / best if best and score is not None else None
+            regret = (
+                (best - score) * 10_000 / best
+                if best is not None and best > 0 and score is not None
+                else None
+            )
             row[algorithm] = {
                 "status": record["status"],
                 "score": record.get("score"),
@@ -339,25 +546,16 @@ def _quality_block(run: RunView) -> dict[str, Any]:
                 "candidates_truncated": record.get("candidates_truncated"),
                 "truncated_by": (record.get("search") or {}).get("truncated_by"),
             }
-            stats = per_algorithm[algorithm]
+            stats = acc[(algorithm, split)]
             if regret is None:
-                stats["not_applicable"] += 1
+                stats["na"] += 1
             else:
-                stats["regret_bps"].append(regret)
-                stats["at_best_known"] += regret == 0
+                stats["values"].append(regret)
         cases[case_id] = row
-    return {
-        "cases": cases,
-        "per_algorithm": {
-            a: {
-                "at_best_known": s["at_best_known"],
-                "not_applicable": s["not_applicable"],
-                "max_regret_bps": max(s["regret_bps"], default=None),
-                "mean_regret_bps": statistics.fmean(s["regret_bps"]) if s["regret_bps"] else None,
-            }
-            for a, s in per_algorithm.items()
-        },
-    }
+    per_algorithm: dict[str, dict[str, Any]] = defaultdict(dict)
+    for (algorithm, split), stats in sorted(acc.items()):
+        per_algorithm[algorithm][split] = _regret_stats(stats["values"], stats["na"])
+    return {"cases": cases, "per_algorithm": dict(per_algorithm)}
 
 
 def _quote_cli_block(exp: Experiment, algorithms: Sequence[str]) -> dict[str, Any]:
@@ -386,40 +584,56 @@ def _quote_cli_block(exp: Experiment, algorithms: Sequence[str]) -> dict[str, An
     }
 
 
-def summarize(path: str | Path) -> dict[str, Any]:
-    exp = load_experiment(path)
+def summarize_experiment(exp: Experiment) -> dict[str, Any]:
     doc = exp.document
+    algorithms = exp.algorithms
+    internal = internal_checks(exp)
     semantic: dict[str, Any] = {}
-    for label in exp.labels("timing"):
+    for label in sorted(set(exp.labels("timing")) | set(exp.labels("cold"))):
         fixed = exp.runs.get(("timing", "fixed", label))
         reverse = exp.runs.get(("timing", "reverse", label))
         cold = exp.runs.get(("cold", "fixed", label))
-        runs = [r for r in (fixed, reverse, cold) if r is not None]
         semantic[label] = {
             "status_counts": {
-                algorithm: dict(
-                    Counter(r["status"] for r in runs[0].records if r["algorithm"] == algorithm)
-                )
-                for algorithm in runs[0].manifest.algorithms
+                " ".join(key): {
+                    a: dict(Counter(r["status"] for r in run.records if r["algorithm"] == a))
+                    for a in algorithms
+                }
+                for key, run in sorted(exp.runs.items())
+                if key[2] == label
             },
             "reverse_vs_fixed_mismatches": (
-                compare_runs(fixed.run_dir, reverse.run_dir) if fixed and reverse else None
+                record_mismatches(fixed.records, reverse.records) if fixed and reverse else None
             ),
             "cold_vs_warm_mismatches": (
-                compare_runs(fixed.run_dir, cold.run_dir) if fixed and cold else None
+                record_mismatches(fixed.records, cold.records) if fixed and cold else None
             ),
             "attempts_inconsistent": sorted(
-                f"{r['algorithm']}/{r['case_id']}"
-                for run in runs
+                f"{key[0]} {key[1]} {r['algorithm']}/{r['case_id']}"
+                for key, run in exp.runs.items()
+                if key[2] == label
                 for r in run.records
-                if r["measurement"].get("attempts_consistent") is False
+                if r.get("measurement", {}).get("attempts_consistent") is False
             ),
-            "scheduled": {run.entry["run_id"]: run.manifest.scheduled_count for run in runs},
+            "budget_bound": sorted(
+                {
+                    f"{r['algorithm']}/{r['case_id']}"
+                    for key, run in exp.runs.items()
+                    if key[2] == label
+                    for r in run.records
+                    if budget_bound(r)
+                }
+            ),
+            "scheduled": {
+                " ".join(key): run.manifest.scheduled_count
+                for key, run in sorted(exp.runs.items())
+                if key[2] == label
+            },
         }
-    first = next(iter(exp.runs.values()))
-    algorithms = list(first.manifest.algorithms)
+    split_of = exp.split_of
     return {
         "schema": SUMMARY_SCHEMA,
+        "report": report_provenance(),
         "experiment": {
             "experiment_id": doc["experiment_id"],
             "created_at": doc["created_at"],
@@ -427,7 +641,7 @@ def summarize(path: str | Path) -> dict[str, Any]:
             "partial": doc["partial"],
             "replay_command": doc["replay_command"],
             "protocol": {k: doc["protocol"][k] for k in ("path", "sha256", "key", "version")},
-            "source": doc["source"],
+            "measured_source": doc["source"],
             "parent_bundle": doc["parent_bundle"],
             "profile": doc["profile"],
             "bundles": doc["bundles"],
@@ -445,6 +659,8 @@ def summarize(path: str | Path) -> dict[str, Any]:
         },
         "load": doc["load"],
         "algorithms": algorithms,
+        "coverage_problems": coverage_problems(exp),
+        "internal_checks": internal,
         "semantic": semantic,
         "timing": {lb: _timing_block(exp, lb) for lb in exp.labels("timing") if "matrix" in lb},
         "sentinel": {
@@ -452,7 +668,7 @@ def summarize(path: str | Path) -> dict[str, Any]:
         },
         "cold": {lb: _cold_block(exp.runs[("cold", "fixed", lb)]) for lb in exp.labels("cold")},
         "quality": {
-            lb: _quality_block(exp.runs[("timing", "fixed", lb)])
+            lb: _quality_block(exp.runs[("timing", "fixed", lb)], split_of)
             for lb in exp.labels("timing")
             if ("timing", "fixed", lb) in exp.runs
         },
@@ -461,35 +677,66 @@ def summarize(path: str | Path) -> dict[str, Any]:
     }
 
 
+def summarize(path: str | Path) -> dict[str, Any]:
+    return summarize_experiment(load_experiment(path))
+
+
 # ------------------------------------------------------------------ comparison
 
 
 def judge(
     *,
     lane: str,
+    candidate_internal: int,
     semantic_mismatches: int,
-    timing: Mapping[str, Mapping[str, Any]],
+    coverage_problems: int,
+    baseline_internal: int,
+    fixed_budget_differences: int,
     evidence_clean: bool,
     contaminated: bool,
+    timing: Mapping[str, Mapping[str, Any]],
+    charged: Mapping[str, Mapping[str, Any]],
 ) -> tuple[str, list[str]]:
-    """The pre-registered verdict from already-computed facts. `timing` maps
+    """The pre-registered verdict from already-computed facts, in order. `timing` maps
     "<label> <algorithm>" to a dict with `verdict` in {faster, slower, no_worthwhile_change,
+    insufficient_cases, lost_samples}; `charged` to one in {slower, not_slower,
     insufficient_cases}."""
-    reasons: list[str] = []
-    faster = sorted(k for k, t in timing.items() if t["verdict"] == "faster")
-    slower = sorted(k for k, t in timing.items() if t["verdict"] == "slower")
+    if candidate_internal:
+        return "reject", [f"{candidate_internal} candidate order/cold/repeat inconsistency(ies):"
+                          " state leaks or nondeterminism"]  # fmt: skip
     if lane == "exact" and semantic_mismatches:
         return "reject", [f"{semantic_mismatches} semantic mismatch(es): not an exact variant"]
+    if coverage_problems:
+        return "inconclusive", [f"{coverage_problems} coverage problem(s): a required run or "
+                                "record is missing, so failures could be hidden"]  # fmt: skip
+    if baseline_internal:
+        return "inconclusive", [
+            f"{baseline_internal} baseline order/cold/repeat inconsistency(ies): the "
+            "reference is not deterministic"
+        ]
+    if lane == "exact" and fixed_budget_differences:
+        return "inconclusive", [
+            f"{fixed_budget_differences} fixed-budget completion difference(s): exactness "
+            "needs a sufficient-budget comparison (quote cap raised on those cases)"
+        ]
     if not evidence_clean:
         return "inconclusive", ["an experiment is partial, or ran from a dirty source tree"]
     if contaminated:
         return "inconclusive", ["host load exceeded the protocol threshold in an experiment"]
+    lost = sorted(k for k, t in timing.items() if t["verdict"] == "lost_samples")
+    if lost:
+        return "reject", ["candidate lost timed decision cases (failures): " + ", ".join(lost)]
+    slower = sorted(k for k, t in timing.items() if t["verdict"] == "slower")
     if slower:
-        reasons.append("slower: " + ", ".join(slower))
-        return "reject", reasons
+        return "reject", ["slower: " + ", ".join(slower)]
+    moved = sorted(k for k, t in charged.items() if t["verdict"] == "slower")
+    if moved:
+        return "reject", ["cold charged time slower (cost moved out of the solve): "
+                          + ", ".join(moved)]  # fmt: skip
+    faster = sorted(k for k, t in timing.items() if t["verdict"] == "faster")
     if not faster:
         return "reject", ["no algorithm reached the minimum worthwhile improvement"]
-    reasons.append("faster: " + ", ".join(faster))
+    reasons = ["faster: " + ", ".join(faster)]
     if lane == "heuristic":
         reasons.append("no default loss tolerance: owner must accept the reported regret")
         return "opt_in_only", reasons
@@ -507,16 +754,65 @@ def _timing_verdict(improvements: Mapping[str, float | None], threshold: float) 
     return "no_worthwhile_change"
 
 
-def compare(
-    baseline: str | Path,
-    candidate: str | Path,
+def _mapping(
+    base: Experiment, cand: Experiment, lane: str, pairs: Mapping[str, str] | None
+) -> dict[str, str]:
+    """candidate algorithm -> reference algorithm. Every candidate algorithm is compared
+    and every baseline algorithm is a reference: nothing is dropped by intersection."""
+    base_algs, cand_algs = base.algorithms, cand.algorithms
+    extra = dict(pairs or {})
+    if lane == "exact" and any(c != r for c, r in extra.items()):
+        raise LatencyReportError("the exact lane compares each algorithm with itself; --pair "
+                                 "names a different reference (use --lane heuristic)")  # fmt: skip
+    mapping = {a: a for a in cand_algs if a in base_algs}
+    mapping.update(extra)
+    unknown = sorted({c for c in mapping if c not in cand_algs}
+                     | {r for r in mapping.values() if r not in base_algs})  # fmt: skip
+    unpaired = sorted(set(cand_algs) - mapping.keys())
+    unused = sorted(set(base_algs) - set(mapping.values()))
+    if unknown or unpaired or unused:
+        raise LatencyReportError(
+            f"algorithm pairing is incomplete: unknown {unknown}, candidate algorithms "
+            f"without a reference {unpaired}, baseline algorithms never compared {unused}"
+        )
+    return mapping
+
+
+def _charged_verdict(
+    base_run: RunView, cand_run: RunView, b_alg: str, c_alg: str, split_of: Mapping[str, str],
+    acc: Mapping[str, Any], threshold: float,
+) -> dict[str, Any]:  # fmt: skip
+    b_parts, c_parts = cold_parts(base_run), cold_parts(cand_run)
+    ratios = []
+    for (alg, case), parts in b_parts.items():
+        b_charged = parts["charged_seconds"]
+        c_charged = (c_parts.get((c_alg, case)) or {}).get("charged_seconds")
+        if (alg == b_alg and split_of.get(case) == acc["decision_split"]
+                and b_charged is not None and c_charged is not None
+                and b_charged >= acc["min_timed_solve_seconds"]):  # fmt: skip
+            ratios.append(c_charged / b_charged)
+    g = _geomean(ratios)
+    improvement = None if g is None else 1 - g
+    verdict = (
+        "insufficient_cases"
+        if improvement is None
+        else "slower"
+        if improvement <= -threshold
+        else "not_slower"
+    )
+    return {"improvement": improvement, "decision_cases": len(ratios), "threshold": threshold,
+            "verdict": verdict}  # fmt: skip
+
+
+def compare_experiments(
+    base: Experiment,
+    cand: Experiment,
     *,
     lane: str,
     pairs: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     if lane not in ("exact", "heuristic"):
         raise LatencyReportError(f"unknown lane {lane!r}")
-    base, cand = load_experiment(baseline), load_experiment(candidate)
     if base.document["protocol"]["sha256"] != cand.document["protocol"]["sha256"]:
         raise LatencyReportError("the experiments used different protocol documents")
     base_bundles = {k: v["bundle_hash"] for k, v in base.document["bundles"].items()}
@@ -525,47 +821,57 @@ def compare(
         raise LatencyReportError("the experiments measured different derived bundles")
     acc = base.acceptance
     fields = list(acc["exact_semantic_fields"])
-    base_algorithms = list(next(iter(base.runs.values())).manifest.algorithms)
-    cand_algorithms = list(next(iter(cand.runs.values())).manifest.algorithms)
-    mapping = dict(pairs or {a: a for a in base_algorithms if a in cand_algorithms})
+    mapping = _mapping(base, cand, lane, pairs)
+    split_of = base.split_of
+    coverage = {"baseline": coverage_problems(base), "candidate": coverage_problems(cand),
+                "pairing": []}  # fmt: skip
+    for key in sorted(base.runs.keys() ^ cand.runs.keys()):
+        side = "baseline" if key in cand.runs else "candidate"
+        coverage["pairing"].append(f"{' '.join(key)}: run missing in the {side}")
+    internal = {"baseline": internal_checks(base), "candidate": internal_checks(cand)}
     semantic: list[str] = []
+    fixed_budget: list[str] = []
     work: list[str] = []
-    regret: dict[str, Any] = {}
-    timing: dict[str, Any] = {}
-    for label in base.labels("timing"):
-        for order in ("fixed", "reverse"):
-            b_run, c_run = (
-                base.runs.get(("timing", order, label)),
-                cand.runs.get(("timing", order, label)),
-            )
-            if b_run is None or c_run is None:
-                continue
-            b_rec = {_key(r): r for r in b_run.records}
-            c_rec = {_key(r): r for r in c_run.records}
-            for c_alg, b_alg in mapping.items():
-                for (alg, case_id), c_r in sorted(c_rec.items()):
-                    if alg != c_alg:
-                        continue
-                    b_r = b_rec.get((b_alg, case_id))
-                    where = f"{label} {order} {c_alg}/{case_id}"
-                    if b_r is None:
-                        semantic.append(f"{where}: no baseline record for {b_alg}")
-                        continue
-                    if semantic_view(b_r, fields) != semantic_view(c_r, fields):
-                        semantic.append(f"{where}: semantic fields differ")
+    transitions: dict[str, Counter[str]] = defaultdict(Counter)
+    status_regressions: list[str] = []
+    regret: dict[str, dict[str, dict[str, Any]]] = defaultdict(
+        lambda: defaultdict(lambda: {"values": [], "na": 0})
+    )
+    for key in sorted(base.runs.keys() & cand.runs.keys()):
+        stage, order, label = key
+        b_rec = {_key(r): r for r in base.runs[key].records}
+        c_rec = {_key(r): r for r in cand.runs[key].records}
+        for c_alg, b_alg in mapping.items():
+            case_ids = {c for a, c in b_rec if a == b_alg} | {c for a, c in c_rec if a == c_alg}
+            for case_id in sorted(case_ids):
+                b_r, c_r = b_rec.get((b_alg, case_id)), c_rec.get((c_alg, case_id))
+                where = f"{stage} {order} {label} {c_alg}/{case_id}"
+                if b_r is None or c_r is None:
+                    side = "baseline" if b_r is None else "candidate"
+                    coverage["pairing"].append(f"{where}: record missing in the {side}")
+                    continue
+                transitions[f"{stage} {order} {label} {c_alg}"][
+                    f"{b_r['status']}->{c_r['status']}"
+                ] += 1
+                if b_r["status"] == "ok" and c_r["status"] != "ok":
+                    status_regressions.append(f"{where}: ok -> {c_r['status']}")
+                if lane == "exact":
+                    b_view, c_view = semantic_view(b_r, fields), semantic_view(c_r, fields)
+                    if b_view != c_view:
+                        line = f"{where}: differs in {_differing(b_view, c_view)}"
+                        bound = budget_bound(b_r) or budget_bound(c_r)
+                        (fixed_budget if bound else semantic).append(line)
                     if work_view(b_r) != work_view(c_r):
                         work.append(f"{where}: work counters differ")
-                    if order == "fixed":
-                        b_s, c_s = _score(b_r), _score(c_r)
-                        entry = regret.setdefault(
-                            f"{label} {c_alg}",
-                            {"regret_bps": [], "not_applicable": 0, "transitions": Counter()},
-                        )
-                        entry["transitions"][f"{b_r['status']}->{c_r['status']}"] += 1
-                        if b_s and b_s > 0 and c_s is not None:
-                            entry["regret_bps"].append((b_s - c_s) * 10_000 / b_s)
-                        else:
-                            entry["not_applicable"] += 1
+                if stage == "timing" and order == "fixed":
+                    b_s, c_s = _score(b_r), _score(c_r)
+                    entry = regret[f"{label} {c_alg}"][split_of.get(case_id, SENTINEL_SPLIT)]
+                    if b_r["status"] == "ok" and b_s is not None and b_s > 0 and c_s is not None:
+                        entry["values"].append((b_s - c_s) * 10_000 / b_s)
+                    else:
+                        entry["na"] += 1
+    timing: dict[str, Any] = {}
+    for label in base.labels("timing"):
         if "matrix" not in label:
             continue
         medians = {
@@ -573,21 +879,22 @@ def compare(
             for who, exp in (("base", base), ("cand", cand))
             for kind in ("wall", "cpu")
         }
-        split_of = base.split_of
         for c_alg, b_alg in mapping.items():
             improvements: dict[str, float | None] = {}
             cases: dict[str, int] = {}
+            lost: set[str] = set()
             for kind in ("wall", "cpu"):
                 b_med, c_med = medians[("base", kind)], medians[("cand", kind)]
-                ratios = [
-                    c_med[(c_alg, case)] / value
-                    for (alg, case), value in b_med.items()
-                    if alg == b_alg
-                    and split_of.get(case) == acc["decision_split"]
-                    and medians[("base", "wall")].get((alg, case), 0.0)
-                    >= acc["min_timed_solve_seconds"]
-                    and (c_alg, case) in c_med
-                ]
+                ratios = []
+                for (alg, case), value in b_med.items():
+                    if (alg != b_alg or split_of.get(case) != acc["decision_split"]
+                            or medians[("base", "wall")].get((alg, case), 0.0)
+                            < acc["min_timed_solve_seconds"]):  # fmt: skip
+                        continue
+                    if (c_alg, case) in c_med:
+                        ratios.append(c_med[(c_alg, case)] / value)
+                    else:
+                        lost.add(case)  # a timed baseline case the candidate did not time
                 g = _geomean(ratios)
                 improvements[kind] = None if g is None else 1 - g
                 cases[kind] = len(ratios)
@@ -605,69 +912,93 @@ def compare(
                 "reference": b_alg,
                 "improvement": improvements,
                 "decision_cases": cases,
+                "lost_decision_cases": sorted(lost),
                 "noise": noise,
                 "threshold": threshold,
-                "verdict": _timing_verdict(improvements, threshold),
+                "verdict": "lost_samples" if lost else _timing_verdict(improvements, threshold),
             }
-    charged = {}
-    for label in base.labels("cold"):
-        b_cold = _cold_block(base.runs[("cold", "fixed", label)])
-        c_cold = _cold_block(cand.runs[("cold", "fixed", label)])
+    charged: dict[str, Any] = {}
+    charged_costs: dict[str, Any] = {}
+    for label in sorted(set(base.labels("cold")) & set(cand.labels("cold"))):
+        b_run, c_run = base.runs[("cold", "fixed", label)], cand.runs[("cold", "fixed", label)]
+        b_cold, c_cold = _cold_block(b_run), _cold_block(c_run)
         for c_alg, b_alg in mapping.items():
-            charged[f"{label} {c_alg}"] = {
+            charged_costs[f"{label} {c_alg}"] = {
                 name: {
                     "baseline_median": b_cold.get(b_alg, {}).get(name, {}).get("median"),
                     "candidate_median": c_cold.get(c_alg, {}).get(name, {}).get("median"),
                 }
-                for name in (
-                    "prepare_seconds",
-                    "charged_seconds",
-                    "solve_peak_bytes",
-                    "prepare_peak_bytes",
-                )  # fmt: skip
-            }
+                for name in ("prepare_seconds", "startup_including_prepare_seconds",
+                             "charged_seconds", "solve_peak_bytes", "prepare_peak_bytes")
+            }  # fmt: skip
+            if "matrix" in label:
+                threshold = (timing.get(f"{label} {c_alg}") or {}).get(
+                    "threshold", acc["minimum_worthwhile_improvement"]
+                )
+                charged[f"{label} {c_alg}"] = _charged_verdict(
+                    b_run, c_run, b_alg, c_alg, split_of, acc, threshold
+                )
     clean = all(
         not e.document["partial"] and e.document["source"]["git_dirty"] is False
         for e in (base, cand)
     )
     contaminated = any((e.document["load"] or {}).get("contaminated") for e in (base, cand))
+    n_coverage = sum(len(v) for v in coverage.values())
     verdict, reasons = judge(
         lane=lane,
+        candidate_internal=sum(len(v) for v in internal["candidate"].values()),
         semantic_mismatches=len(semantic),
-        timing=timing,
+        coverage_problems=n_coverage,
+        baseline_internal=sum(len(v) for v in internal["baseline"].values()),
+        fixed_budget_differences=len(fixed_budget),
         evidence_clean=clean,
         contaminated=contaminated,
+        timing=timing,
+        charged=charged,
     )
+    if status_regressions:
+        reasons.append(f"{len(status_regressions)} status regression(s) ok -> failure")
     return {
         "schema": COMPARISON_SCHEMA,
+        "report": report_provenance(),
         "lane": lane,
         "baseline": {"experiment_id": base.document["experiment_id"],
-                     "source": base.document["source"], "load": base.document["load"]},
+                     "measured_source": base.document["source"], "load": base.document["load"]},
         "candidate": {"experiment_id": cand.document["experiment_id"],
-                      "source": cand.document["source"], "load": cand.document["load"]},
+                      "measured_source": cand.document["source"], "load": cand.document["load"]},
         "pairs": mapping,
         "protocol_sha256": base.document["protocol"]["sha256"],
         "acceptance": acc,
+        "coverage_problems": coverage,
+        "internal_checks": internal,
         "semantic_mismatches": semantic,
+        "fixed_budget_differences": fixed_budget,
         "work_differences": work,
+        "status_transitions": {k: dict(v) for k, v in sorted(transitions.items())},
+        "status_regressions": status_regressions,
         "regret": {
-            k: {
-                "cases": len(v["regret_bps"]),
-                "not_applicable": v["not_applicable"],
-                "max_regret_bps": max(v["regret_bps"], default=None),
-                "mean_regret_bps": statistics.fmean(v["regret_bps"]) if v["regret_bps"] else None,
-                "losses": sum(1 for x in v["regret_bps"] if x > 0),
-                "gains": sum(1 for x in v["regret_bps"] if x < 0),
-                "status_transitions": dict(v["transitions"]),
-            }
-            for k, v in regret.items()
+            k: {split: _regret_stats(v["values"], v["na"]) for split, v in sorted(by.items())}
+            for k, by in sorted(regret.items())
         },
         "timing": timing,
-        "charged_costs": charged,
+        "charged": charged,
+        "charged_costs": charged_costs,
         "verdict": verdict,
         "reasons": reasons,
         "claims": NO_TAIL_CLAIM,
     }  # fmt: skip
+
+
+def compare(
+    baseline: str | Path,
+    candidate: str | Path,
+    *,
+    lane: str,
+    pairs: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    return compare_experiments(
+        load_experiment(baseline), load_experiment(candidate), lane=lane, pairs=pairs
+    )
 
 
 # ------------------------------------------------------------------ rendering
@@ -688,16 +1019,33 @@ def _agree(mismatches: list[str] | None, algorithm: str) -> str:
     return f"**{count} mismatch(es)**" if count else "yes"
 
 
+def _source(src: Mapping[str, Any]) -> str:
+    patch = src.get("dirty_patch_sha256")
+    return f"`{src.get('git_revision')}` dirty={src.get('git_dirty')}" + (
+        f" patch `{patch}`" if src.get("git_dirty") else ""
+    )
+
+
+def _problems(title: str, items: Sequence[str], limit: int = 20) -> list[str]:
+    if not items:
+        return [f"- {title}: none"]
+    shown = [f"  - {m}" for m in items[:limit]]
+    more = [f"  - … {len(items) - limit} more (see JSON)"] if len(items) > limit else []
+    return [f"- **{title}: {len(items)}**", *shown, *more]
+
+
 def render_summary(summary: Mapping[str, Any]) -> str:
     e, load = summary["experiment"], summary["load"] or {}
-    src = e["source"]
+    rep = summary["report"]
     lines = [
         f"# L01 latency baseline — experiment `{e['experiment_id']}`",
         "",
         f"- Protocol: `{e['protocol']['path']}` {e['protocol']['key']} v{e['protocol']['version']}"
         f" (sha256 `{e['protocol']['sha256']}`)",
-        f"- Source: `{src['git_revision']}` dirty={src['git_dirty']}"
-        + (f" patch `{src['dirty_patch_sha256']}`" if src["git_dirty"] else ""),
+        f"- Measured source (raw records): {_source(e['measured_source'])}; measured "
+        f"{e['created_at']} → {e['finished_at']}",
+        f"- Report generated {rep['generated_at']} from {_source(rep)} (report tree "
+        f"`{rep['report_tree_id']}`); regenerating a report never changes what was measured",
         f"- Parent bundle: `{e['parent_bundle']['bundle_id']}` "
         f"(`{e['parent_bundle']['bundle_hash']}`); profile `{e['profile']['path']}` "
         f"(`{e['profile']['sha256']}`)",
@@ -711,18 +1059,34 @@ def render_summary(summary: Mapping[str, Any]) -> str:
         "",
         f"_{summary['claims']}_",
         "",
+        "## Coverage and determinism gates",
+        "",
+        *_problems("Coverage problems", summary["coverage_problems"]),
+        *_problems("Fixed vs reverse order mismatches",
+                   summary["internal_checks"]["cross_order"]),
+        *_problems("Cold vs warm process mismatches", summary["internal_checks"]["cold_warm"]),
+        *_problems("Records with inconsistent attempts",
+                   summary["internal_checks"]["attempts_inconsistent"]),
+        "",
         "## Statuses and deterministic checks",
         "",
-        "| Bundle | Algorithm | Statuses | reverse≡fixed | cold≡warm |",
-        "| --- | --- | --- | --- | --- |",
-    ]
+        "Statuses of the fixed-order timing run (every run's counts are in the JSON). "
+        "`budget-bound` = a limit hit or declared budget truncation (fixed-budget scope).",
+        "",
+        "| Bundle | Algorithm | Statuses | reverse≡fixed | cold≡warm | budget-bound |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]  # fmt: skip
     for label, block in summary["semantic"].items():
         rev, cold = block["reverse_vs_fixed_mismatches"], block["cold_vs_warm_mismatches"]
-        for algorithm, counts in block["status_counts"].items():
+        counts_by_run = block["status_counts"]
+        first = counts_by_run.get(f"timing fixed {label}") or next(iter(counts_by_run.values()))
+        for algorithm, counts in first.items():
             status = ", ".join(f"{k} {v}" for k, v in sorted(counts.items()))
+            bound = [b for b in block["budget_bound"] if b.startswith(algorithm + "/")]
             lines.append(
                 f"| {label} | {algorithm} | {status} | {_agree(rev, algorithm)} | "
-                f"{_agree(cold, algorithm)} |"
+                f"{_agree(cold, algorithm)} | "
+                f"{', '.join(b.split('/', 1)[1] for b in bound) or '—'} |"
             )
     lines += ["", "## Warm-process solve time over the matrix (headline, uninstrumented)", ""]
     lines += [
@@ -763,19 +1127,27 @@ def render_summary(summary: Mapping[str, Any]) -> str:
             )
     lines += ["", "## Cold process (fresh worker per case) and separate memory pass", ""]
     lines += [
-        "| Bundle | Algorithm | startup median | prepare median | cold solve median | "
-        "evaluation median | charged median | solve peak max (MiB) |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "Start-up is process start → ready and **includes** prepare; spawn = start-up − "
+        "prepare. Charged = start-up (incl. prepare) + solve + transport + evaluation, each "
+        "cost once. Medians over the cases (n = cases with every part).",
+        "",
+        "| Bundle | Algorithm | start-up (incl. prepare) | prepare | spawn | cold solve | "
+        "transport | evaluation | charged (n) | solve peak max (MiB) |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for label, block in summary["cold"].items():
         for algorithm, c in block.items():
             peak = (c.get("solve_peak_bytes") or {}).get("max")
+
+            def med(name: str, digits: int = 3, c: Mapping[str, Any] = c) -> str:
+                return _f((c.get(name) or {}).get("median"), digits)
+
             lines.append(
-                f"| {label} | {algorithm} | {_f(c['startup_seconds']['median'])} | "
-                f"{_f(c['prepare_seconds']['median'], 4)} | "
-                f"{_f((c.get('solve_wall_seconds') or {}).get('median'))} | "
-                f"{_f((c.get('evaluation_seconds') or {}).get('median'), 4)} | "
-                f"{_f((c.get('charged_seconds') or {}).get('median'))} | "
+                f"| {label} | {algorithm} | {med('startup_including_prepare_seconds')} | "
+                f"{med('prepare_seconds', 4)} | {med('spawn_seconds')} | "
+                f"{med('solve_wall_seconds')} | {med('transport_seconds', 4)} | "
+                f"{med('evaluation_seconds', 4)} | {med('charged_seconds')} "
+                f"({(c.get('charged_seconds') or {}).get('n', 0)}/{c['records']}) | "
                 f"{_f(None if peak is None else peak / 2**20, 1)} |"
             )
     q = summary["quote_cli"]
@@ -791,44 +1163,84 @@ def render_summary(summary: Mapping[str, Any]) -> str:
         f"{_f(q['sum_of_solves_seconds']['min'])} / {_f(q['sum_of_solves_seconds']['median'])}"
         f" / {_f(q['sum_of_solves_seconds']['max'])} s",
         "",
-        "## Quality against the same-scope best known (fixed-order records)",
+        "## Quality against the same-scope best known (fixed-order records, per split)",
         "",
-        "| Bundle | Algorithm | at best known | N/A | max regret bps | mean regret bps |",
-        "| --- | --- | ---: | ---: | ---: | ---: |",
+        "Regret = (best known − score) × 10,000 / best known among the six algorithms on "
+        "the same bundle, cohort, objective and budget — not a mathematical optimum. N/A = "
+        "unknown score or failure, never zero. Tuning and held-out cases are never pooled.",
+        "",
+        "| Bundle | Algorithm | split | cases | at best known | N/A | max regret bps | "
+        "mean regret bps |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for label, block in summary["quality"].items():
         if "matrix" not in label:
             continue
-        for algorithm, s in block["per_algorithm"].items():
-            lines.append(
-                f"| {label} | {algorithm} | {s['at_best_known']} | {s['not_applicable']} | "
-                f"{_f(s['max_regret_bps'], 2)} | {_f(s['mean_regret_bps'], 2)} |"
-            )
+        for algorithm, by_split in block["per_algorithm"].items():
+            for split in ("held_out", "tuning"):
+                if split not in by_split:
+                    continue
+                s = by_split[split]
+                lines.append(
+                    f"| {label} | {algorithm} | {split} | {s['cases']} | {s['at_zero_regret']} "
+                    f"| {s['not_applicable']} | {_f(s['max_regret_bps'], 2)} | "
+                    f"{_f(s['mean_regret_bps'], 2)} |"
+                )
     return "\n".join(lines) + "\n"
 
 
 def render_comparison(result: Mapping[str, Any]) -> str:
+    coverage = [m for side in ("baseline", "candidate", "pairing")
+                for m in (f"{side}: {x}" for x in result["coverage_problems"][side])]  # fmt: skip
+    internal = [
+        f"{side} {gate}: {m}"
+        for side in ("candidate", "baseline")
+        for gate, items in result["internal_checks"][side].items()
+        for m in items
+    ]
+    rep = result["report"]
     lines = [
         f"# L01 comparison ({result['lane']} lane): **{result['verdict']}**",
         "",
         *[f"- {r}" for r in result["reasons"]],
-        f"- Baseline `{result['baseline']['experiment_id']}` "
-        f"(`{result['baseline']['source']['git_revision']}`), candidate "
-        f"`{result['candidate']['experiment_id']}` "
-        f"(`{result['candidate']['source']['git_revision']}`)",
-        f"- Semantic mismatches: {len(result['semantic_mismatches'])}; work-counter "
-        f"differences: {len(result['work_differences'])}",
+        f"- Baseline `{result['baseline']['experiment_id']}` measured on "
+        f"{_source(result['baseline']['measured_source'])}; candidate "
+        f"`{result['candidate']['experiment_id']}` measured on "
+        f"{_source(result['candidate']['measured_source'])}",
+        f"- Report generated {rep['generated_at']} from {_source(rep)}",
+        *_problems("Coverage problems", coverage),
+        *_problems("Order/cold/repeat inconsistencies", internal),
+        *_problems("Semantic mismatches", result["semantic_mismatches"]),
+        *_problems("Fixed-budget completion differences", result["fixed_budget_differences"]),
+        f"- Work-counter differences: {len(result['work_differences'])}; status "
+        f"regressions ok → failure: {len(result['status_regressions'])}",
         "",
         "| Bundle algorithm | reference | wall improvement | CPU improvement | cases | "
-        "threshold | verdict |",
-        "| --- | --- | ---: | ---: | ---: | ---: | --- |",
-    ]
+        "threshold | verdict | cold charged improvement | charged verdict |",
+        "| --- | --- | ---: | ---: | ---: | ---: | --- | ---: | --- |",
+    ]  # fmt: skip
     for key, t in result["timing"].items():
+        c = result["charged"].get(key) or {}
         lines.append(
             f"| {key} | {t['reference']} | {_f(t['improvement']['wall'])} | "
             f"{_f(t['improvement']['cpu'])} | {t['decision_cases']['wall']} | "
-            f"{_f(t['threshold'])} | {t['verdict']} |"
+            f"{_f(t['threshold'])} | {t['verdict']} | {_f(c.get('improvement'))} | "
+            f"{c.get('verdict', 'N/A')} |"
         )
+    lines += [
+        "",
+        "Held-out paired regret (fixed order) against the same-scope reference:",
+        "",
+        "| Bundle algorithm | cases | N/A | losses | gains | max regret bps | mean regret bps |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for key, by_split in result["regret"].items():
+        s = by_split.get("held_out")
+        if s is not None:
+            lines.append(
+                f"| {key} | {s['cases']} | {s['not_applicable']} | {s['losses']} | "
+                f"{s['gains']} | {_f(s['max_regret_bps'], 2)} | {_f(s['mean_regret_bps'], 2)} |"
+            )
     lines += ["", f"_{result['claims']}_"]
     return "\n".join(lines) + "\n"
 

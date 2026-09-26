@@ -242,8 +242,10 @@ DELAY_SECONDS = 0.3
 
 
 def _spin(seconds: float) -> None:
-    end = time.perf_counter() + seconds
-    while time.perf_counter() < end:
+    """Burn `seconds` of this process's CPU time (so also >= that much wall time, however
+    loaded the host is)."""
+    end = time.process_time() + seconds
+    while time.process_time() < end:
         pass
 
 
