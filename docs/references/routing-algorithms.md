@@ -487,22 +487,35 @@ def solve_path_split(case, bundle, max_hops, max_splits, percent_step, cache):
     B = (max_splits - 1) * max_hops
     kept_table = prune_with_disjoint_family_bound(paths, B)
     
-    # 3. Branch and Bound with Knapsack Relaxation
-    finalists = {}
-    def search(legs, used_units, accumulated_pools, gross):
-        if used_units == N:
-            update_finalists(finalists, len(legs), gross, legs)
+    # 3. Exact Branch and Bound over kept table (O(S * G^3) knapsack bound precomputation)
+    ub = compute_knapsack_bounds(kept_table, max_splits, N)  # ub[cap][k][r]
+    best = {}  # m_legs -> (best_gross, legs)
+    
+    def dfs(used, cap, min_idx, taken_pools, gross, legs):
+        r = N - used
+        if r == 0:
+            if all(gross > best[k][0] for k in range(1, len(legs) + 1) if k in best):
+                best[len(legs)] = (gross, legs)
             return
-        if gross + knapsack_bound(N - used_units) <= incumbent[len(legs)]:
-            return  # Prune branch
             
-        for path, u, val in kept_table:
-            if not pools_disjoint(path, accumulated_pools):
+        legs_left = max_splits - len(legs)
+        for u in range(min(cap, r), 0, -1):
+            if u * legs_left < r:
+                break  # Non-increasing sizes cannot cover remaining units
+            if legs_left == 1 and u != r:
                 continue
-            search(legs + [(path, u)], used_units + u, accumulated_pools | path.pools, gross + val)
-            
-    search([], 0, set(), 0)
-    return select_best_finalist([best_single, best_direct, finalists])
+                
+            for idx, (v, path) in enumerate(kept_table[u]):
+                # Promising check: can any reachable leg count beat incumbent?
+                if not any(gross + v + ub[u][m - len(legs) - 1][r - u] > best[m][0]
+                           for m in range(len(legs) + 1, max_splits + 1) if m in best):
+                    break  # Value-descending list: later entries cannot beat bound
+                if not taken_pools.isdisjoint(path.pools):
+                    continue  # Pool conflict: skipped
+                dfs(used + u, u, idx + 1, taken_pools | path.pools, gross + v, legs + ((path, u),))
+                
+    dfs(0, N, 0, frozenset(), 0, ())
+    return select_best_finalist([best_single, best_direct, best])
 ```
 
 ### 5.4 Architecture and Topology Diagram
@@ -550,9 +563,15 @@ Request: $10\,000$ TKA $\to$ TKB, $\text{percent\_step} = 10, \text{max\_splits}
      - Path 3 (`P_AD -> P_DB`, disjoint) yields $2293$. Total gross $= 10288 + 2293 = \mathbf{12581} > 12547$, setting optimal 2-leg incumbent `best[2] = 12581`!
      - Next path at size 2: Path 5 ($v = 2093$): gross $+ v = 10288 + 2093 = 12381 \le 12581 \implies$ **PRUNED!**
      - Next candidate at size 8: Path 4 ($v = 9433$): bound is $2919$, total $= 9433 + 2919 = 12352 \le 12581 \implies$ **PRUNED!**
-   - **Sizes $u \le 7$:**
-     At $u = 7$, Path 2 yields $9160$. The best disjoint continuation for 3 units on Path 3 yields $3376$: $9160 + 3376 = 12536 \le 12581 \implies$ **PRUNED!** All subsequent branches are cut because non-increasing size allocations cannot exceed the incumbent.
-   - **Summary:** Across the search, exactly 12 nodes are visited (`bnb_nodes = 12`) and 13 candidate branches are excluded by pool conflicts (`bnb_conflicts_excluded = 13`).
+   - **Sizes $u \in \{7, 6, 5\}$ (Remaining $r = 10 - u$ units):**
+     At each of these sizes, the root candidate has bound $\text{ub}[u][1][10 - u]$ exceeding $12581$ (e.g. at $u=7$, Path 2 has $9160 + 4220 = 13380 > 12581$, entering DFS node; Path 4 has $8527 + 4220 = 12747 > 12581$, entering DFS node).
+     However, when evaluating the second leg at remaining units $r = 10 - u$, the best disjoint route yields less than required to beat $12581$:
+     - For $u = 7$ ($r = 3$): Path 2 combines with Path 3 ($3376$): $9160 + 3376 = 12536 \le 12581 \implies$ pruned! Path 4 combines with Path 3: $8527 + 3376 = 11903 \le 12581 \implies$ pruned!
+     - For $u = 6$ ($r = 4$): Path 2 ($7990$) and Path 4 ($7559$) combine with Path 3 ($4418$): totals $12408$ and $11977 \le 12581 \implies$ pruned!
+     - For $u = 5$ ($r = 5$): Path 2 ($6779$) and Path 4 ($6522$) combine with Path 3 ($5423$): totals $12202$ and $11945 \le 12581 \implies$ pruned!
+   - **Loop termination for $u \le 4$:**
+     Since $u \cdot \text{legs\_left} < r \iff 4 \cdot 2 = 8 < 10$, non-increasing size allocations can no longer cover the 10 units, terminating the loop.
+   - **Summary:** Across the search, exactly 12 DFS nodes are visited (`bnb_nodes = 12`) and 13 candidate branches are excluded by pool conflicts (`bnb_conflicts_excluded = 13`), proving $12581$ optimal.
 4. **Disjoint Allocation Evaluation (80% / 20%):**
    - $\pi_1$ at $8\,000$ TKA:
      - Hop 1 (`P_AC`): in = $8\,000 \to$ out = $14773$ TKC.
@@ -851,7 +870,7 @@ On our synthetic teaching graph ($N = 10, S = 2$):
 - Budget Rejection: SOR returns `timeout` if declared candidate or quote budgets would truncate the quote table.
 
 ### 7.8 Computational and Memory Cost
-- Pool Quotes: $\sum_{\pi} \text{hops}(\pi) \cdot G$ quotes to populate the percentage quote matrix, plus 1 on-demand replay quote if the adapter integer fill creates a non-percentage remainder allocation on the final route. On our teaching example with $H=1, A=10005$, this executes $2 \times 10 + 1 = 21$ quotes; with $H=2, A=10000$, it executes $2 \times 10 \times 1 + 2 \times 10 \times 2 = 60$ quotes.
+- Pool Quotes: $\sum_{\pi} \text{hops}(\pi) \cdot G$ quotes to populate the percentage quote matrix, plus on-demand replay quotes if the adapter integer fill creates a non-percentage remainder allocation on the final route (bounded by $\text{hops}(\pi_{\text{last}})$). On our teaching example with $H=1, A=10005$, this executes $2 \times 10 + 1 = 21$ quotes; with $H=2, A=10001$, it executes $60 + 2 = 62$ quotes; with divisible $A=10000$, exactly 60 quotes.
 - Memory: Dense $|\Pi_H| \times G$ table storing `RouteQuote` objects.
 
 ### 7.9 Guarantees and Limitations
@@ -963,10 +982,10 @@ Let:
 |---|---|---|---|
 | `direct` | $\mathcal{O}(P_{\text{direct}} \cdot c_q)$ | $\le P_{\text{direct}}$ | $\mathcal{O}(1)$ |
 | `single_path` | $\mathcal{O}(H \cdot \lvert \Pi_H \rvert \cdot c_q)$ | $\le \sum_{\pi} \text{hops}(\pi)$ | $\mathcal{O}(H)$ stack + cache |
-| `direct_split` | $\mathcal{O}(P_{\text{direct}} \cdot G \cdot c_q + S \cdot G^2)$ | $\le P_{\text{direct}} \cdot G + P_{\text{direct}} \cdot \lvert \text{remainders} \rvert$ | $\mathcal{O}(S \cdot G^2)$ |
-| `path_split` | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G \cdot c_q + \text{BnB Nodes})$ | $\le \text{Quotes}(\text{sub}) + \sum_{\pi} \text{hops}(\pi) \cdot G$ | $\mathcal{O}(G^2 \cdot S + \lvert \Pi_H \rvert \cdot G)$ |
-| `incremental_graph` | $\mathcal{O}(K \cdot \lvert \Pi_H \rvert \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot \sum_{\pi} \text{hops}(\pi) + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K + \lvert \Pi_H \rvert)$ + cache |
-| `uni_sor_port` | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G \cdot c_q + \lvert Q \rvert \cdot \lvert \Pi_H \rvert)$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G + \text{replay quotes}$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G + \lvert Q \rvert)$ |
+| `direct_split` | $\mathcal{O}(P_{\text{direct}} \cdot G \cdot c_q + P_{\text{direct}} \cdot S \cdot G^2)$ | $\le P_{\text{direct}} \cdot G + P_{\text{direct}} \cdot \lvert \text{remainders} \rvert$ | $\mathcal{O}(S \cdot G^2)$ |
+| `path_split` | $\mathcal{O}(S \cdot G^3 + \lvert \Pi_H \rvert \cdot G \cdot c_q + \text{BnB Nodes})$ | $\le \text{Quotes}(\text{sub}) + \sum_{\pi} \text{hops}(\pi) \cdot G$ | $\mathcal{O}(S \cdot G^2 + \lvert \Pi_H \rvert \cdot G)$ |
+| `incremental_graph` | $\mathcal{O}(K \cdot \sum_{\pi} \text{hops}(\pi) \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot \sum_{\pi} \text{hops}(\pi) + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K + \lvert \Pi_H \rvert)$ + cache |
+| `uni_sor_port` | $\mathcal{O}(\sum_{\pi} \text{hops}(\pi) \cdot G \cdot c_q + \lvert Q \rvert \cdot \lvert \Pi_H \rvert)$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G + \text{hops}(\pi_{\text{last}})$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G + \lvert Q \rvert)$ |
 
 ### 9.3 Source Reading Map
 

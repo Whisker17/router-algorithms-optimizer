@@ -314,9 +314,17 @@ def test_uni_sor_port_selection_and_parity_behavior(
     assert res_h1.status == SolveStatus.OK
     assert res_h1.search_stats["quotes_executed"] == 21
 
-    # Test with max_hops=2 on A=10000: 4 routes (2 1-hop + 2 2-hop) x 10 buckets = 60 pool quotes
+    # Test with max_hops=2 on A=10001: 60 table quotes + 2 replay quotes = 62 quotes
+    case_nondiv2 = Case(case_id="ex_sor_nondiv2", token_in="TKA", token_out="TKB", amount_in=10_001)
     cfg = {"max_hops": 2, "max_splits": 2, "percent_step": 10}
     prep = uni_sor_port.prepare(teaching_bundle, AlgorithmConfig("uni_sor_port", cfg))
+    ctx_h2 = SolveContext(bundle=teaching_bundle, objective=gross_only(), prepared=prep)
+    res_h2 = uni_sor_port.solve(case_nondiv2, ctx_h2, Budget())
+    assert res_h2.status == SolveStatus.OK
+    assert res_h2.search_stats["quotes_executed"] == 62
+    assert res_h2.search_stats["d1_residual"] == "1"
+
+    # Test with max_hops=2 on A=10000: 4 routes (2 1-hop + 2 2-hop) x 10 buckets = 60 pool quotes
     case = Case(case_id="ex_sor", token_in="TKA", token_out="TKB", amount_in=10_000)
     ctx = SolveContext(bundle=teaching_bundle, objective=gross_only(), prepared=prep)
 
