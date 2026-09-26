@@ -1,0 +1,66 @@
+import argparse
+import cProfile
+from dataclasses import asdict
+import json
+import os
+import pstats
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path('/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer')
+sys.path.insert(0, str(ROOT))
+from benchmark.profile import load_profile
+from pools.quote import metered_quotes
+from routing.algorithms.base import SolveContext
+from routing.algorithms.registry import get_algorithm
+from snapshot.bundle import load_bundle
+
+parser = argparse.ArgumentParser()
+parser.add_argument('algorithm')
+args = parser.parse_args()
+out = Path('/tmp/router-latency-research')
+baseline = json.loads((out / 'baseline-full.json').read_text())
+run = baseline['runs'][0]
+record = next(r for r in run['records'] if r['algorithm'] == args.algorithm)
+quote_dir = Path(run['records_path']).parents[2]
+bundle = load_bundle(quote_dir / 'bundle')
+profile = load_profile(quote_dir / 'profile.yaml')
+factory = get_algorithm(args.algorithm)
+prepared = factory.prepare(bundle, profile.algorithm_config(factory)) if factory.prepare else None
+context = SolveContext(bundle=bundle, objective=profile.objective.bind(bundle),
+                       prepared=prepared, seed=record['measurement']['seed'], candidate_sink=None)
+profiler = cProfile.Profile(timer=time.process_time)
+wall_start = time.perf_counter()
+cpu_start = time.process_time()
+with metered_quotes(profile.budget.max_quotes) as meter:
+    result = profiler.runcall(factory.solve, bundle.cases[0], context, profile.budget)
+cpu = time.process_time() - cpu_start
+wall = time.perf_counter() - wall_start
+profiler.dump_stats(str(out / f'{args.algorithm}.pstats'))
+stat = pstats.Stats(profiler)
+functions = []
+for (file, line, name), (primitive, calls, own, cumulative, callers) in stat.stats.items():
+    rel = file.removeprefix(str(ROOT) + '/')
+    functions.append({'file': rel, 'line': line, 'function': name, 'primitive_calls': primitive,
+                      'calls': calls, 'self_cpu_seconds': own, 'cumulative_cpu_seconds': cumulative})
+evaluation = result.evaluation.to_dict() if result.evaluation is not None else None
+summary = {
+    'algorithm': args.algorithm,
+    'measurement_kind': 'cProfile process-CPU attribution only, not benchmark latency',
+    'limitations': 'Same input/profile/seed and quote meter as baseline; prepare/load excluded; direct diagnostic call omits worker IPC/candidate sink and hard worker clock; profiler adds overhead; shared workstation.',
+    'wall_seconds_instrumented': wall, 'process_cpu_seconds_instrumented': cpu,
+    'profiler_total_self_cpu_seconds': stat.total_tt, 'profile_total_calls': stat.total_calls,
+    'loadavg_end': os.getloadavg(),
+    'status': result.status.value, 'quotes_counted': meter.counted,
+    'score': str(result.score), 'evaluation': evaluation,
+    'plan': asdict(result.plan) if result.plan else None,
+    'search': dict(result.search_stats),
+    'matches_baseline_status': result.status.value == record['status'],
+    'matches_baseline_evaluation': evaluation == record['evaluation'],
+    'baseline_evaluation': record['evaluation'],
+    'top_self_cpu': sorted(functions, key=lambda x:x['self_cpu_seconds'], reverse=True)[:40],
+    'top_cumulative_cpu': sorted(functions, key=lambda x:x['cumulative_cpu_seconds'], reverse=True)[:40],
+}
+(out / f'{args.algorithm}-profile.json').write_text(json.dumps(summary, indent=2) + '\n')
+print(args.algorithm, 'wall', wall, 'CPU', cpu, 'matched evaluation', summary['matches_baseline_evaluation'])

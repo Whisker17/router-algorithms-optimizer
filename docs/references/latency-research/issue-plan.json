@@ -1,0 +1,285 @@
+{
+  "schema": "latency-experiment-plan/1",
+  "as_of": "2026-09-26",
+  "release": {
+    "id": "28115816-f182-4865-84cf-7caab1450231",
+    "version": "0.1.2",
+    "stage": "Planned",
+    "url": "https://linear.app/whisker-personal/pipeline/router-algorithms-optimizer/release/012-routing-latency-optimization-experiments-14487d7f7d22"
+  },
+  "research_issue": "WHI-1502",
+  "issues": [
+    {
+      "id": "WHI-1503",
+      "uuid": "0af7283d-8090-4ba2-b960-277c8ac1a262",
+      "title": "[0.1.2] [Benchmark] Establish a reproducible latency and quality experiment baseline",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1503/012-benchmark-establish-a-reproducible-latency-and-quality-experiment",
+      "description": "## Objective\n\nCreate the controlled baseline and acceptance protocol for all six algorithms before candidate tuning.\n\n## Context\n\nResearch source: docs/references/latency-optimization-research.md and latency-research/evidence.json at product baseline b2a680578f65ac65653a8160f04a3d97a5c5e71e. Sentinel: USDC→USDT 1000, Mantle block 101082044, daily_gross. One noisy case is not a performance distribution. Preserve protocol integer/state correctness, immutable snapshots, independent final evaluation, all failures/coverage and the six reference identities including pinned uni_sor_port. This is planned 0.1.2 work; do not start it during the research request.\n\n## Blocked By\n\n* <issue id=\"6133a267-0526-4165-a296-bd05ede80b21\" href=\"https://linear.app/whisker-personal/issue/WHI-1502/012-docs-research-routing-latency-and-publish-the-optimization\">WHI-1502</issue>\n\n## Blocks\n\n* <issue id=\"0aadfc47-c6f4-4092-a1bb-ea16bf42590a\" href=\"https://linear.app/whisker-personal/issue/WHI-1504/012-pools-experiment-with-exact-skipping-of-empty-zero-liquidity-cl\">WHI-1504</issue>\n* <issue id=\"424bf855-7d4e-49f3-9b16-1c16900b40ec\" href=\"https://linear.app/whisker-personal/issue/WHI-1505/012-pools-evaluate-bounded-reuse-of-exact-tick-and-bin-math\">WHI-1505</issue>\n* <issue id=\"ff03a945-8d93-40e0-9379-a0482b34f33d\" href=\"https://linear.app/whisker-personal/issue/WHI-1507/012-routing-evaluate-incremental-marginal-score-and-cycle-check-reuse\">WHI-1507</issue>\n* <issue id=\"073c4a6d-9f62-48ed-a639-20026723cca5\" href=\"https://linear.app/whisker-personal/issue/WHI-1508/012-routing-experiment-with-an-opt-in-sor-candidate-shortlisting\">WHI-1508</issue>\n\n## Execution\n\n* Complexity: high\n* Reason: Runner boundaries, repeatability, workload coverage and quality comparisons cross multiple contracts.\n* Expected scope: New benchmark/latency.py driver and report/latency.py summaries; `benchmark/worker.py` and `benchmark/results.py` only for explicit metrics; config/latency/, tests/benchmark/ and docs. Preserve ordinary quote semantics.\n\n## Implementation\n\n1. Freeze source/bundle/profile/objective/budgets and a compact matrix: the user sentinel, representative pairs and small/large amounts, matched V2/V3 versus full cohorts, CPMM/CL/LB, dense/sparse ranges, tick/bin rounding boundaries, shared pools and failures. Separate tuning from held-out cases.\n2. Measure solve wall and process CPU separately from prepare/startup, IPC, independent evaluation and complete single-request response. Distinguish six-algorithm CLI total. Collect stage/work profiles separately; cProfile/tracemalloc time is never headline latency.\n3. Pre-register machine/load controls, run order, repetitions/sample count, warmup, noise floor and minimum worthwhile improvement before optimization runs. Run paired baselines/candidates sequentially. Do not infer p95 from n=3. Declare cold/warm cache lifecycles, hit/miss and peak-memory accounting.\n4. Use a separate driver or batch runner for replication; quote must still invoke each selected solver exactly once. Compare exact integers/plans/status/state/parity on sufficient budgets; report completion under fixed budgets separately. Retain every scheduled outcome and searched-versus-eligible scope.\n5. Define paired heuristic regret relative to the same-scope best-known reference, not a mathematical optimum; preserve N/A for unknown net scores. Optional API capture must redact secrets and specify endpoint/chain/amount/preference/type/output/timing/cache conditions. Missing credentials or Mantle support does not block local work.\n\n## Out of scope\n\nEvery experiment must end with explicit adopt/reject evidence. Adopt only under L01 measurement/correctness rules; a rejected idea is not an implemented speedup. Charge preprocessing, cache population, memory and final evaluation; distinguish cold/warm and instrumented/uninstrumented runs. The quote command must remain one solve per algorithm, without extra warmups/retries. No language rewrite, service deployment, Jupiter integration, rewritten frozen results/default profiles or universal subsecond/API-equivalence claim. No approximate variant becomes a default without explicit acceptance of its quality trade-off.\n\n## Acceptance criteria\n\n- [ ] A versioned offline command reproduces the fixed six-algorithm matrix and sentinel.\n- [ ] Timing labels and an artificial prepare/solve-delay test prove cost cannot disappear across boundaries; quote invocation-count regression passes.\n- [ ] All statuses/cohorts and deterministic semantic comparisons are recorded; cold/warm and load conditions are explicit.\n- [ ] Measurement and exact/heuristic acceptance rules precede candidate tuning; no unsupported tail/SLA claim appears.\n\n## Testing / Verification\n\nFocused worker/result/quote tests, bounded real-corpus replay and reverse run order; relevant pytest, Ruff and mypy. Do not rerun the entire hours-long v1 campaign solely to establish this compact matrix.\n\n## References\n\ndocs/DESIGN.md; docs/references/latency-optimization-research.md §§1–8; docs/references/latency-research/evidence.json; docs/references/uni-sor-port-contract.md. Pinned upstream source links are in the research register.\n\nResearch plan key: L01.",
+      "status": "Todo",
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "projectId": "29829418-7ca6-43c9-bf03-a49f05c76b1a",
+      "teamId": "37abcce9-0070-470b-a57b-d8213047c418",
+      "releases": [
+        {
+          "id": "28115816-f182-4865-84cf-7caab1450231",
+          "version": "0.1.2",
+          "stage": "Planned"
+        }
+      ],
+      "blockedBy": [
+        "WHI-1502"
+      ],
+      "blocks": [
+        "WHI-1504",
+        "WHI-1505",
+        "WHI-1507",
+        "WHI-1508"
+      ],
+      "key": "L01",
+      "complexity": "high",
+      "priority": 2,
+      "description_sha256": "a75cf73bda9397c826996552e43dead4a0ae64fad0f16cfd2fbc6f7baf5facb9"
+    },
+    {
+      "id": "WHI-1504",
+      "uuid": "0aadfc47-c6f4-4092-a1bb-ea16bf42590a",
+      "title": "[0.1.2] [Pools] Experiment with exact skipping of empty zero-liquidity CL spans",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1504/012-pools-experiment-with-exact-skipping-of-empty-zero-liquidity-cl",
+      "description": "## Objective\n\nEvaluate skipping provably empty zero-liquidity spans without changing exact quote behavior.\n\n## Context\n\nResearch source: docs/references/latency-optimization-research.md and latency-research/evidence.json at product baseline b2a680578f65ac65653a8160f04a3d97a5c5e71e. Sentinel: USDC→USDT 1000, Mantle block 101082044, daily_gross. One noisy case is not a performance distribution. Preserve protocol integer/state correctness, immutable snapshots, independent final evaluation, all failures/coverage and the six reference identities including pinned uni_sor_port. This is planned 0.1.2 work; do not start it during the research request.\n\n## Blocked By\n\n* <issue id=\"0af7283d-8090-4ba2-b960-277c8ac1a262\" href=\"https://linear.app/whisker-personal/issue/WHI-1503/012-benchmark-establish-a-reproducible-latency-and-quality-experiment\">WHI-1503</issue>\n\n## Blocks\n\n* <issue id=\"424bf855-7d4e-49f3-9b16-1c16900b40ec\" href=\"https://linear.app/whisker-personal/issue/WHI-1505/012-pools-evaluate-bounded-reuse-of-exact-tick-and-bin-math\">WHI-1505</issue>\n* <issue id=\"c1412c86-b383-483a-a9c0-846de7bf0a43\" href=\"https://linear.app/whisker-personal/issue/WHI-1506/012-pools-experiment-with-exact-reuse-of-cl-traversal-prefixes-across\">WHI-1506</issue>\n* <issue id=\"867401cb-9032-4b83-ba72-cd2ea12076aa\" href=\"https://linear.app/whisker-personal/issue/WHI-1510/012-benchmark-publish-the-latency-experiment-results-and-adoption\">WHI-1510</issue>\n\n## Execution\n\n* Complexity: high\n* Reason: Traversal shortcuts must preserve Solidity rounding, range failures, returned state and protocol features.\n* Expected scope: pools/concentrated.py, pools/cl_math.py, minimal lazy derived index; tests/pools/ and experiment evidence. No search-policy change.\n\n## Implementation\n\n1. Reconfirm the hypothesis across L01 cases: the sentinel counted 478425 zero-liquidity/uninitialized steps out of 908823 CL steps. This count is not a predicted time saving.\n2. Use a minimal bounded/lazy known-state index; skip only when liquidity is zero and no initialized tick or required transition lies inside the span. Stop at initialized ticks, price limits, MIN/MAX ticks and collected-state boundaries. Unknown bitmap state is never empty.\n3. Preserve output, consumed input, final sqrt price/tick/liquidity, fee/protocol/hook state, checked failures and immutable inputs. Preserve logical protocol step/features for cost accounting even when fewer Python operations execute.\n4. Never casually skip positive-liquidity word boundaries: uninitialized boundaries can still affect integer rounding/fees. Handle exact exhaustion and zero-cost transitions in both directions.\n5. Compare independent fixtures/reference transition results and complete SOR quote/selection behavior. Charge index setup and memory; measure incremental work and cold/end-to-end latency, then adopt or explicitly reject.\n\n## Out of scope\n\nEvery experiment must end with explicit adopt/reject evidence. Adopt only under L01 measurement/correctness rules; a rejected idea is not an implemented speedup. Charge preprocessing, cache population, memory and final evaluation; distinguish cold/warm and instrumented/uninstrumented runs. The quote command must remain one solve per algorithm, without extra warmups/retries. No language rewrite, service deployment, Jupiter integration, rewritten frozen results/default profiles or universal subsecond/API-equivalence claim. No approximate variant becomes a default without explicit acceptance of its quality trade-off.\n\n## Acceptance criteria\n\n- [ ] Exact integer/state/failure equivalence passes across admitted CL sources and both directions.\n- [ ] Tests cover long empty spans, initialized liquidity changes, exact exhaustion, price limits, incomplete ranges and dense positive-liquidity counterexamples.\n- [ ] Snapshot immutability and logical protocol features remain valid.\n- [ ] Reduced executed work and paired measured effects support the disposition; all six references and SOR goldens pass on sufficient budgets.\n\n## Testing / Verification\n\nConcentrated-pool differential/stateful and generated sparse/dense fixtures, SOR goldens, paired L01 runs including setup. No float approximation, range widening or missing-state suppression.\n\n## References\n\ndocs/DESIGN.md; docs/references/latency-optimization-research.md §§1–8; docs/references/latency-research/evidence.json; docs/references/uni-sor-port-contract.md. Pinned upstream source links are in the research register.\n\nResearch plan key: L02.",
+      "status": "Todo",
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "projectId": "29829418-7ca6-43c9-bf03-a49f05c76b1a",
+      "teamId": "37abcce9-0070-470b-a57b-d8213047c418",
+      "releases": [
+        {
+          "id": "28115816-f182-4865-84cf-7caab1450231",
+          "version": "0.1.2",
+          "stage": "Planned"
+        }
+      ],
+      "blockedBy": [
+        "WHI-1503"
+      ],
+      "blocks": [
+        "WHI-1505",
+        "WHI-1506",
+        "WHI-1510"
+      ],
+      "key": "L02",
+      "complexity": "high",
+      "priority": 2,
+      "description_sha256": "23cd14e692a70a63a841cba9410b2554725f339e78cdc27ac2a6fa075a2e9c5d"
+    },
+    {
+      "id": "WHI-1505",
+      "uuid": "424bf855-7d4e-49f3-9b16-1c16900b40ec",
+      "title": "[0.1.2] [Pools] Evaluate bounded reuse of exact tick and bin math",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1505/012-pools-evaluate-bounded-reuse-of-exact-tick-and-bin-math",
+      "description": "## Objective\n\nReduce repeated pure math/index work still material after empty-span acceleration.\n\n## Context\n\nResearch source: docs/references/latency-optimization-research.md and latency-research/evidence.json at product baseline b2a680578f65ac65653a8160f04a3d97a5c5e71e. Sentinel: USDC→USDT 1000, Mantle block 101082044, daily_gross. One noisy case is not a performance distribution. Preserve protocol integer/state correctness, immutable snapshots, independent final evaluation, all failures/coverage and the six reference identities including pinned uni_sor_port. This is planned 0.1.2 work; do not start it during the research request.\n\n## Blocked By\n\n* <issue id=\"0af7283d-8090-4ba2-b960-277c8ac1a262\" href=\"https://linear.app/whisker-personal/issue/WHI-1503/012-benchmark-establish-a-reproducible-latency-and-quality-experiment\">WHI-1503</issue>\n* <issue id=\"0aadfc47-c6f4-4092-a1bb-ea16bf42590a\" href=\"https://linear.app/whisker-personal/issue/WHI-1504/012-pools-experiment-with-exact-skipping-of-empty-zero-liquidity-cl\">WHI-1504</issue>\n\n## Blocks\n\n* <issue id=\"c1412c86-b383-483a-a9c0-846de7bf0a43\" href=\"https://linear.app/whisker-personal/issue/WHI-1506/012-pools-experiment-with-exact-reuse-of-cl-traversal-prefixes-across\">WHI-1506</issue>\n* <issue id=\"867401cb-9032-4b83-ba72-cd2ea12076aa\" href=\"https://linear.app/whisker-personal/issue/WHI-1510/012-benchmark-publish-the-latency-experiment-results-and-adoption\">WHI-1510</issue>\n\n## Execution\n\n* Complexity: medium\n* Reason: Math stays unchanged; cache/index identity, memory bounds and cold accounting need verification.\n* Expected scope: pools/cl_math.py, pools/liquidity_book.py, minimal immutable pool helpers; tests/pools/, config/latency/ and evidence. Serialized snapshot schemas stay unchanged.\n\n## Implementation\n\n1. Re-profile after L02. Original loop tick-to-sqrt calls were 908823 with 13131 distinct inputs; do not assume that hit rate remains after skipping.\n2. Evaluate bounded exact memoization/precomputation of tick-to-sqrt/bin-price functions keyed by every input and reuse of immutable traversal indexes. Prefer lazy population over preparing every pool/direction.\n3. Preserve invalid-input/range checks and exact integers. Do not weaken loader validation or trust caller-owned MappingProxy ownership. Invalidate state-derived indexes on structural changes; no cross-snapshot state leakage.\n4. Charge preparation, first-use population, cache capacity, hit/miss and peak memory; compare cold/warm separately. Existing exact-amount QuoteCache already exists and must not be rediscovered as a new optimization.\n5. Keep only useful measured pieces, recording rejected pieces. Preserve full quote/state/fee/failure behavior and all six reference outputs.\n\n## Out of scope\n\nEvery experiment must end with explicit adopt/reject evidence. Adopt only under L01 measurement/correctness rules; a rejected idea is not an implemented speedup. Charge preprocessing, cache population, memory and final evaluation; distinguish cold/warm and instrumented/uninstrumented runs. The quote command must remain one solve per algorithm, without extra warmups/retries. No language rewrite, service deployment, Jupiter integration, rewritten frozen results/default profiles or universal subsecond/API-equivalence claim. No approximate variant becomes a default without explicit acceptance of its quality trade-off.\n\n## Acceptance criteria\n\n- [ ] Exact pure-function vectors and invalid-input behavior match reference.\n- [ ] Capacity/hit/invalidation/immutability tests prove bounded safe reuse.\n- [ ] Cold setup, warm solves and memory are visible; no moved-cost speedup.\n- [ ] Incremental benefit versus post-L02 is measured or the idea is explicitly rejected; frozen schemas/artifacts and SOR parity stay intact.\n\n## Testing / Verification\n\nExact CL math/LB boundary tests, cache enabled-versus-bypassed comparisons, mutation/identity tests and cold/warm paired L01 experiments.\n\n## References\n\ndocs/DESIGN.md; docs/references/latency-optimization-research.md §§1–8; docs/references/latency-research/evidence.json; docs/references/uni-sor-port-contract.md. Pinned upstream source links are in the research register.\n\nResearch plan key: L03.",
+      "status": "Todo",
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "projectId": "29829418-7ca6-43c9-bf03-a49f05c76b1a",
+      "teamId": "37abcce9-0070-470b-a57b-d8213047c418",
+      "releases": [
+        {
+          "id": "28115816-f182-4865-84cf-7caab1450231",
+          "version": "0.1.2",
+          "stage": "Planned"
+        }
+      ],
+      "blockedBy": [
+        "WHI-1503",
+        "WHI-1504"
+      ],
+      "blocks": [
+        "WHI-1506",
+        "WHI-1510"
+      ],
+      "key": "L03",
+      "complexity": "medium",
+      "priority": 3,
+      "description_sha256": "a4d6bb10b21c6678297658b556f2382a1d89615911cac09145e851817455b2f3"
+    },
+    {
+      "id": "WHI-1506",
+      "uuid": "c1412c86-b383-483a-a9c0-846de7bf0a43",
+      "title": "[0.1.2] [Pools] Experiment with exact reuse of CL traversal prefixes across quote amounts",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1506/012-pools-experiment-with-exact-reuse-of-cl-traversal-prefixes-across",
+      "description": "## Objective\n\nReuse completed original-state CL traversal steps across independent amount queries.\n\n## Context\n\nResearch source: docs/references/latency-optimization-research.md and latency-research/evidence.json at product baseline b2a680578f65ac65653a8160f04a3d97a5c5e71e. Sentinel: USDC→USDT 1000, Mantle block 101082044, daily_gross. One noisy case is not a performance distribution. Preserve protocol integer/state correctness, immutable snapshots, independent final evaluation, all failures/coverage and the six reference identities including pinned uni_sor_port. This is planned 0.1.2 work; do not start it during the research request.\n\n## Blocked By\n\n* <issue id=\"0aadfc47-c6f4-4092-a1bb-ea16bf42590a\" href=\"https://linear.app/whisker-personal/issue/WHI-1504/012-pools-experiment-with-exact-skipping-of-empty-zero-liquidity-cl\">WHI-1504</issue>\n* <issue id=\"424bf855-7d4e-49f3-9b16-1c16900b40ec\" href=\"https://linear.app/whisker-personal/issue/WHI-1505/012-pools-evaluate-bounded-reuse-of-exact-tick-and-bin-math\">WHI-1505</issue>\n\n## Blocks\n\n* <issue id=\"ff03a945-8d93-40e0-9379-a0482b34f33d\" href=\"https://linear.app/whisker-personal/issue/WHI-1507/012-routing-evaluate-incremental-marginal-score-and-cycle-check-reuse\">WHI-1507</issue>\n* <issue id=\"073c4a6d-9f62-48ed-a639-20026723cca5\" href=\"https://linear.app/whisker-personal/issue/WHI-1508/012-routing-experiment-with-an-opt-in-sor-candidate-shortlisting\">WHI-1508</issue>\n* <issue id=\"867401cb-9032-4b83-ba72-cd2ea12076aa\" href=\"https://linear.app/whisker-personal/issue/WHI-1510/012-benchmark-publish-the-latency-experiment-results-and-adoption\">WHI-1510</issue>\n\n## Execution\n\n* Complexity: high\n* Reason: Multi-amount reuse couples exact fee rounding, zero-cost boundaries, failures and state materialization.\n* Expected scope: `pools/concentrated.py` and `pools/quote.py` query helpers; routing/search.py or narrow amount-query callers only if needed; tests/pools/ and tests/routing/. Preserve full evaluator transitions and solver selection.\n\n## Implementation\n\n1. Measure remaining repeated work after L02/L03. One sentinel pool performed 226720 positive-liquidity steps across 180 quotes; exact-amount memoization does not share traversal across different amounts.\n2. Prototype lazy exact prefixes per complete pool/direction/state/source/time/fee identity: cumulative input including fees, output, needed state/features and bounds. Answer using a verified prefix plus exact final partial step. Different amounts are independent quotes, never sequential swaps.\n3. Preserve positive-liquidity word boundaries and integer rounding. For equal cumulative-cost prefixes, exact exhaustion must stop where the reference stops, without advancing through later zero-cost spans.\n4. If an amount-only search seam is necessary, give it an explicit contract; never return an incomplete SwapResult as a full transition. Independently replay final plans on a verified full-state path. Mutated/shared-pool states need valid separate keys or exact fallback.\n5. Bound memory, charge prefix construction, and preserve null/error/input-limit behavior. Compare shuffled amount sequences, all boundary states and complete SOR quote tables/selection before adoption; record a no-go if the proof or measured benefit fails.\n\n## Out of scope\n\nEvery experiment must end with explicit adopt/reject evidence. Adopt only under L01 measurement/correctness rules; a rejected idea is not an implemented speedup. Charge preprocessing, cache population, memory and final evaluation; distinguish cold/warm and instrumented/uninstrumented runs. The quote command must remain one solve per algorithm, without extra warmups/retries. No language rewrite, service deployment, Jupiter integration, rewritten frozen results/default profiles or universal subsecond/API-equivalence claim. No approximate variant becomes a default without explicit acceptance of its quality trade-off.\n\n## Acceptance criteria\n\n- [ ] Independent queries match reference output/consumption/required state/features/failures exactly.\n- [ ] Tests cover zero-cost ties, exact exhaustion, fees, initialized/uninitialized ticks, both directions, tiny/large inputs and incomplete ranges.\n- [ ] Mutated/shared states cannot reuse invalid prefixes; input immutability holds.\n- [ ] All SOR goldens and sufficient-budget quote-table/selection comparisons pass, with independent final evaluation evidence.\n- [ ] Work, cache/setup/memory and cold/end-to-end measurements support an explicit disposition.\n\n## Testing / Verification\n\nRecorded contract/fork fixtures plus generated multi-amount differential sequences against retained exact reference; seam/full-state and order-independence tests, SOR parity, paired post-L03 runs.\n\n## References\n\ndocs/DESIGN.md; docs/references/latency-optimization-research.md §§1–8; docs/references/latency-research/evidence.json; docs/references/uni-sor-port-contract.md. Pinned upstream source links are in the research register.\n\nResearch plan key: L04.",
+      "status": "Todo",
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "projectId": "29829418-7ca6-43c9-bf03-a49f05c76b1a",
+      "teamId": "37abcce9-0070-470b-a57b-d8213047c418",
+      "releases": [
+        {
+          "id": "28115816-f182-4865-84cf-7caab1450231",
+          "version": "0.1.2",
+          "stage": "Planned"
+        }
+      ],
+      "blockedBy": [
+        "WHI-1504",
+        "WHI-1505"
+      ],
+      "blocks": [
+        "WHI-1507",
+        "WHI-1508",
+        "WHI-1510"
+      ],
+      "key": "L04",
+      "complexity": "high",
+      "priority": 2,
+      "description_sha256": "ab76571fce7076bdcf0755f6ab051c4b35f96cada22126743bebeebc26691ccd"
+    },
+    {
+      "id": "WHI-1507",
+      "uuid": "ff03a945-8d93-40e0-9379-a0482b34f33d",
+      "title": "[0.1.2] [Routing] Evaluate incremental marginal-score and cycle-check reuse",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1507/012-routing-evaluate-incremental-marginal-score-and-cycle-check-reuse",
+      "description": "## Objective\n\nReduce whole-path rescoring and cycle work while preserving current incremental_graph decisions.\n\n## Context\n\nResearch source: docs/references/latency-optimization-research.md and latency-research/evidence.json at product baseline b2a680578f65ac65653a8160f04a3d97a5c5e71e. Sentinel: USDC→USDT 1000, Mantle block 101082044, daily_gross. One noisy case is not a performance distribution. Preserve protocol integer/state correctness, immutable snapshots, independent final evaluation, all failures/coverage and the six reference identities including pinned uni_sor_port. This is planned 0.1.2 work; do not start it during the research request.\n\n## Blocked By\n\n* <issue id=\"0af7283d-8090-4ba2-b960-277c8ac1a262\" href=\"https://linear.app/whisker-personal/issue/WHI-1503/012-benchmark-establish-a-reproducible-latency-and-quality-experiment\">WHI-1503</issue>\n* <issue id=\"c1412c86-b383-483a-a9c0-846de7bf0a43\" href=\"https://linear.app/whisker-personal/issue/WHI-1506/012-pools-experiment-with-exact-reuse-of-cl-traversal-prefixes-across\">WHI-1506</issue>\n\n## Blocks\n\n* <issue id=\"867401cb-9032-4b83-ba72-cd2ea12076aa\" href=\"https://linear.app/whisker-personal/issue/WHI-1510/012-benchmark-publish-the-latency-experiment-results-and-adoption\">WHI-1510</issue>\n\n## Execution\n\n* Complexity: high\n* Reason: State-dependent invalidation and DAG admission must preserve chunk order, stable ties, budgets and funding.\n* Expected scope: routing/algorithms/incremental_graph.py and minimal routing/search.py helpers; tests/routing/test_incremental_graph.py and test_plan_evaluation.py; experiment evidence.\n\n## Implementation\n\n1. Re-profile after shared quoting changes. Research observed 68000 marginal and 68000 cycle checks (340 paths×200 chunks); quote memoization does not remove all path-level work.\n2. Evaluate pool-to-path dependencies and reuse scores only for unaffected aggregate pool states/directions and the same actual chunk/carry. Correctly invalidate after allocations and chunk-size changes.\n3. Evaluate incremental reachability/bitsets. A reusable score is not proof of current cycle admissibility after new edges. Check proposed path edges together and never mutate committed topology on rejection.\n4. Preserve deterministic tie/order, chunk/dust behavior, candidate/quote budgets, simpler fallback and final merged-plan evaluation. Report logical scored candidates separately from costly recomputations so scope/budgets are not hidden.\n5. Differentially compare plans/decisions/evaluations on sufficient budgets; report fixed-budget completion separately. Charge preparation and memory, and make a measured adopt/reject decision.\n\n## Out of scope\n\nEvery experiment must end with explicit adopt/reject evidence. Adopt only under L01 measurement/correctness rules; a rejected idea is not an implemented speedup. Charge preprocessing, cache population, memory and final evaluation; distinguish cold/warm and instrumented/uninstrumented runs. The quote command must remain one solve per algorithm, without extra warmups/retries. No language rewrite, service deployment, Jupiter integration, rewritten frozen results/default profiles or universal subsecond/API-equivalence claim. No approximate variant becomes a default without explicit acceptance of its quality trade-off.\n\n## Acceptance criteria\n\n- [ ] Cached and uncached modes produce identical sufficient-budget plans/evaluations.\n- [ ] Tests cover changing chunks/carry, shared paths, topology invalidation, reverse/cyclic pool admission and fallback.\n- [ ] Immutable input and cross-case isolation hold; independent funding/state evaluation passes.\n- [ ] Counters are honest and post-L04 latency/work/memory justify the disposition; more chunks are not claimed monotonically better.\n\n## Testing / Verification\n\nGraph/evaluator differential fixtures, reverse-case replay, edge/carry invalidation and L01 experiments. Keep direct/path-split references intact.\n\n## References\n\ndocs/DESIGN.md; docs/references/latency-optimization-research.md §§1–8; docs/references/latency-research/evidence.json; docs/references/uni-sor-port-contract.md. Pinned upstream source links are in the research register.\n\nResearch plan key: L05.",
+      "status": "Todo",
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "projectId": "29829418-7ca6-43c9-bf03-a49f05c76b1a",
+      "teamId": "37abcce9-0070-470b-a57b-d8213047c418",
+      "releases": [
+        {
+          "id": "28115816-f182-4865-84cf-7caab1450231",
+          "version": "0.1.2",
+          "stage": "Planned"
+        }
+      ],
+      "blockedBy": [
+        "WHI-1503",
+        "WHI-1506"
+      ],
+      "blocks": [
+        "WHI-1510"
+      ],
+      "key": "L05",
+      "complexity": "high",
+      "priority": 2,
+      "description_sha256": "828e99351261dfeb97d37034244f4a506231462f21352a7449e1cbb321a74fd3"
+    },
+    {
+      "id": "WHI-1508",
+      "uuid": "073c4a6d-9f62-48ed-a639-20026723cca5",
+      "title": "[0.1.2] [Routing] Experiment with an opt-in SOR candidate-shortlisting variant",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1508/012-routing-experiment-with-an-opt-in-sor-candidate-shortlisting",
+      "description": "## Objective\n\nMeasure the latency–quality trade-off of a bounded amount-aware pool/route shortlist.\n\n## Context\n\nResearch source: docs/references/latency-optimization-research.md and latency-research/evidence.json at product baseline b2a680578f65ac65653a8160f04a3d97a5c5e71e. Sentinel: USDC→USDT 1000, Mantle block 101082044, daily_gross. One noisy case is not a performance distribution. Preserve protocol integer/state correctness, immutable snapshots, independent final evaluation, all failures/coverage and the six reference identities including pinned uni_sor_port. This is planned 0.1.2 work; do not start it during the research request.\n\n## Blocked By\n\n* <issue id=\"0af7283d-8090-4ba2-b960-277c8ac1a262\" href=\"https://linear.app/whisker-personal/issue/WHI-1503/012-benchmark-establish-a-reproducible-latency-and-quality-experiment\">WHI-1503</issue>\n* <issue id=\"c1412c86-b383-483a-a9c0-846de7bf0a43\" href=\"https://linear.app/whisker-personal/issue/WHI-1506/012-pools-experiment-with-exact-reuse-of-cl-traversal-prefixes-across\">WHI-1506</issue>\n\n## Blocks\n\n* <issue id=\"016a7e5a-1d7c-468f-891a-3d2b1c70f965\" href=\"https://linear.app/whisker-personal/issue/WHI-1509/012-routing-experiment-with-adaptive-percentage-sampling-and-anytime\">WHI-1509</issue>\n* <issue id=\"867401cb-9032-4b83-ba72-cd2ea12076aa\" href=\"https://linear.app/whisker-personal/issue/WHI-1510/012-benchmark-publish-the-latency-experiment-results-and-adoption\">WHI-1510</issue>\n\n## Execution\n\n* Complexity: high\n* Reason: Reduced candidates change the parity/coverage contract and require isolated identity plus quality evidence.\n* Expected scope: New routing/algorithms/uni_sor_fast.py; `routing/algorithms/registry.py` and benchmark/profile.py only for declared experiment settings; config/latency/, tests/routing/test_uni_sor_fast.py and report metadata.\n\n## Implementation\n\n1. Use pinned upstream get-candidate-pools.ts as a lead for direct/endpoints/second-hop/base-token budgets, not proof of hosted settings. Define explicit deterministic local frozen-state parameters.\n2. Use a distinct opt-in ID such as uni_sor_fast. Keep uni_sor_port/full cohort/grid/source goldens intact. Report eligible universe versus searched/skipped pools/routes and every budget/fallback decision.\n3. Retain useful direct/simpler incumbents; consider multiple amounts when ranking. TVL or full-input price alone can miss profitable small splits. Include deterministic fallback and its measured cost.\n4. Pre-register tuning sweeps, then evaluate held-out and adversarial low-TVL/thin pools, unusual base routes, large trades and cohort differences. Retain every failure and paired raw-output regret versus the same-scope best-known/reference.\n5. Report tail loss, coverage/success, route/quote work, cold solve and complete-request curves. Restricted-input parity is not full-universe parity. Do not choose an unapproved default loss tolerance.\n\n## Out of scope\n\nEvery experiment must end with explicit adopt/reject evidence. Adopt only under L01 measurement/correctness rules; a rejected idea is not an implemented speedup. Charge preprocessing, cache population, memory and final evaluation; distinguish cold/warm and instrumented/uninstrumented runs. The quote command must remain one solve per algorithm, without extra warmups/retries. No language rewrite, service deployment, Jupiter integration, rewritten frozen results/default profiles or universal subsecond/API-equivalence claim. No approximate variant becomes a default without explicit acceptance of its quality trade-off.\n\n## Acceptance criteria\n\n- [ ] Separately named opt-in behavior leaves original six IDs/defaults and SOR parity untouched.\n- [ ] Eligible/searched scope, pruning and fallback metadata are complete.\n- [ ] All returned plans are protocol-exact and independently valid; search approximation is explicit.\n- [ ] Held-out quality/latency/coverage curves retain adversarial and non-success cases.\n- [ ] Disposition declares its trade-off and makes no global-optimum, hosted-equivalence or universal subsecond claim.\n\n## Testing / Verification\n\nExisting goldens unchanged; deterministic shortlist/fallback and adversarial quality fixtures; matched-cohort L01 sweeps with N/A handling.\n\n## References\n\ndocs/DESIGN.md; docs/references/latency-optimization-research.md §§1–8; docs/references/latency-research/evidence.json; docs/references/uni-sor-port-contract.md. Pinned upstream source links are in the research register.\n\nResearch plan key: L06.",
+      "status": "Todo",
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "projectId": "29829418-7ca6-43c9-bf03-a49f05c76b1a",
+      "teamId": "37abcce9-0070-470b-a57b-d8213047c418",
+      "releases": [
+        {
+          "id": "28115816-f182-4865-84cf-7caab1450231",
+          "version": "0.1.2",
+          "stage": "Planned"
+        }
+      ],
+      "blockedBy": [
+        "WHI-1503",
+        "WHI-1506"
+      ],
+      "blocks": [
+        "WHI-1509",
+        "WHI-1510"
+      ],
+      "key": "L06",
+      "complexity": "high",
+      "priority": 3,
+      "description_sha256": "ba4a959c6fb78306487bceb4f3b7a08d0f149923a1dbbe534fca2bec1c275e18"
+    },
+    {
+      "id": "WHI-1509",
+      "uuid": "016a7e5a-1d7c-468f-891a-3d2b1c70f965",
+      "title": "[0.1.2] [Routing] Experiment with adaptive percentage sampling and anytime refinement",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1509/012-routing-experiment-with-adaptive-percentage-sampling-and-anytime",
+      "description": "## Objective\n\nReduce route×percentage quote work with coarse-to-fine sampling in the opt-in fast variant.\n\n## Context\n\nResearch source: docs/references/latency-optimization-research.md and latency-research/evidence.json at product baseline b2a680578f65ac65653a8160f04a3d97a5c5e71e. Sentinel: USDC→USDT 1000, Mantle block 101082044, daily_gross. One noisy case is not a performance distribution. Preserve protocol integer/state correctness, immutable snapshots, independent final evaluation, all failures/coverage and the six reference identities including pinned uni_sor_port. This is planned 0.1.2 work; do not start it during the research request.\n\n## Blocked By\n\n* <issue id=\"073c4a6d-9f62-48ed-a639-20026723cca5\" href=\"https://linear.app/whisker-personal/issue/WHI-1508/012-routing-experiment-with-an-opt-in-sor-candidate-shortlisting\">WHI-1508</issue>\n\n## Blocks\n\n* <issue id=\"867401cb-9032-4b83-ba72-cd2ea12076aa\" href=\"https://linear.app/whisker-personal/issue/WHI-1510/012-benchmark-publish-the-latency-experiment-results-and-adoption\">WHI-1510</issue>\n\n## Execution\n\n* Complexity: high\n* Reason: Skipping amount-grid entries changes search semantics and requires valid incumbents, integer remainder and honest work/quality limits.\n* Expected scope: Experimental uni_sor_fast.py from L06, explicit `benchmark/profile.py` and `config/latency/` settings, test_uni_sor_fast.py and report metadata. No reference-grid change.\n\n## Implementation\n\n1. Preserve original SOR full-table/grid behavior. Obtain a valid full-input/simpler incumbent before refinement where feasible.\n2. Evaluate coarse-to-fine sampling near promising allocations under a declared soft budget. Every published incumbent must be complete and independently valid; a partial table is not original SOR input and interrupted search is not globally optimal.\n3. Preserve full integer allocation, explicit remainder, nonnegative funding and physical-pool conflicts. Test narrow optima, small profitable shares, tiny/nondivisible amounts and boundary conditions a coarse grid can miss.\n4. Record sampled/skipped entries, refinement, soft/hard-limit outcomes and final validation overhead within end-to-end latency. Retain no-incumbent/partial/timeout outcomes honestly.\n5. Ablate candidate-only L06, adaptive-only where applicable, combined and reference settings. Pre-register tuning; measure held-out quality/coverage and latency. Keep opt-in identity until the quality trade-off is accepted.\n\n## Out of scope\n\nEvery experiment must end with explicit adopt/reject evidence. Adopt only under L01 measurement/correctness rules; a rejected idea is not an implemented speedup. Charge preprocessing, cache population, memory and final evaluation; distinguish cold/warm and instrumented/uninstrumented runs. The quote command must remain one solve per algorithm, without extra warmups/retries. No language rewrite, service deployment, Jupiter integration, rewritten frozen results/default profiles or universal subsecond/API-equivalence claim. No approximate variant becomes a default without explicit acceptance of its quality trade-off.\n\n## Acceptance criteria\n\n- [ ] Reference direct_split/path_split/uni_sor_port grids and parity remain unchanged.\n- [ ] Every returned plan fully funds integer input and passes independent evaluation; limit/failure labels remain honest.\n- [ ] Tests cover grid misses, small shares, ties/remainders, interruptions and no feasible incumbent.\n- [ ] Ablations distinguish shortlisting from sampling effects and expose all quality/coverage losses.\n- [ ] Disposition/settings are explicit; quote still executes once per selected solver and no universal SLA is claimed.\n\n## Testing / Verification\n\nReference goldens, adaptive allocation invariants and paired held-out gross/cold/end-to-end L01 comparisons.\n\n## References\n\ndocs/DESIGN.md; docs/references/latency-optimization-research.md §§1–8; docs/references/latency-research/evidence.json; docs/references/uni-sor-port-contract.md. Pinned upstream source links are in the research register.\n\nResearch plan key: L07.",
+      "status": "Todo",
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "projectId": "29829418-7ca6-43c9-bf03-a49f05c76b1a",
+      "teamId": "37abcce9-0070-470b-a57b-d8213047c418",
+      "releases": [
+        {
+          "id": "28115816-f182-4865-84cf-7caab1450231",
+          "version": "0.1.2",
+          "stage": "Planned"
+        }
+      ],
+      "blockedBy": [
+        "WHI-1508"
+      ],
+      "blocks": [
+        "WHI-1510"
+      ],
+      "key": "L07",
+      "complexity": "high",
+      "priority": 3,
+      "description_sha256": "136268d44cdc22e9cbc9f0cc76962d61d1102bee2ed9c9ac6877a9805ce8fa7f"
+    },
+    {
+      "id": "WHI-1510",
+      "uuid": "867401cb-9032-4b83-ba72-cd2ea12076aa",
+      "title": "[0.1.2] [Benchmark] Publish the latency experiment results and adoption decisions",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1510/012-benchmark-publish-the-latency-experiment-results-and-adoption",
+      "description": "## Objective\n\nPublish reproducible before/after decisions for six references and separately identified fast variants.\n\n## Context\n\nResearch source: docs/references/latency-optimization-research.md and latency-research/evidence.json at product baseline b2a680578f65ac65653a8160f04a3d97a5c5e71e. Sentinel: USDC→USDT 1000, Mantle block 101082044, daily_gross. One noisy case is not a performance distribution. Preserve protocol integer/state correctness, immutable snapshots, independent final evaluation, all failures/coverage and the six reference identities including pinned uni_sor_port. This is planned 0.1.2 work; do not start it during the research request.\n\n## Blocked By\n\n* <issue id=\"0aadfc47-c6f4-4092-a1bb-ea16bf42590a\" href=\"https://linear.app/whisker-personal/issue/WHI-1504/012-pools-experiment-with-exact-skipping-of-empty-zero-liquidity-cl\">WHI-1504</issue>\n* <issue id=\"424bf855-7d4e-49f3-9b16-1c16900b40ec\" href=\"https://linear.app/whisker-personal/issue/WHI-1505/012-pools-evaluate-bounded-reuse-of-exact-tick-and-bin-math\">WHI-1505</issue>\n* <issue id=\"c1412c86-b383-483a-a9c0-846de7bf0a43\" href=\"https://linear.app/whisker-personal/issue/WHI-1506/012-pools-experiment-with-exact-reuse-of-cl-traversal-prefixes-across\">WHI-1506</issue>\n* <issue id=\"ff03a945-8d93-40e0-9379-a0482b34f33d\" href=\"https://linear.app/whisker-personal/issue/WHI-1507/012-routing-evaluate-incremental-marginal-score-and-cycle-check-reuse\">WHI-1507</issue>\n* <issue id=\"073c4a6d-9f62-48ed-a639-20026723cca5\" href=\"https://linear.app/whisker-personal/issue/WHI-1508/012-routing-experiment-with-an-opt-in-sor-candidate-shortlisting\">WHI-1508</issue>\n* <issue id=\"016a7e5a-1d7c-468f-891a-3d2b1c70f965\" href=\"https://linear.app/whisker-personal/issue/WHI-1509/012-routing-experiment-with-adaptive-percentage-sampling-and-anytime\">WHI-1509</issue>\n\n## Blocks\n\nNone.\n\n## Execution\n\n* Complexity: high\n* Reason: Final claims must reconcile interacting exact/heuristic changes, setup costs, scope and statistical noise.\n* Expected scope: `benchmark/latency.py` and `report/latency.py` aggregation, docs/references/latency-optimization-results.md and small latency-results evidence, config/latency/ experiment profiles.\n\n## Implementation\n\n1. Freeze final source/corpus/reference hashes and adopted/rejected change IDs. Run held-out pre-registered sequential experiments under controlled conditions; contaminated research timings are not the comparison baseline.\n2. For exact changes verify integer/plan/state/status/SOR parity and report each algorithm, including neutral/negative direct results. Separate first request, warm reuse, setup, solve, evaluation, complete response and memory.\n3. For heuristics report matched-cohort regret, tail loss, coverage/success and candidate/adaptive/combined ablations plus fallback costs. Keep unknown net output N/A and unmatched API observations separate.\n4. Publish per-case machine-readable results, aggregate/noise evidence, commands and explicit adopt/reject conclusions. Any observed subsecond result is limited to its declared workload/hardware/boundary.\n5. Keep all six references available. No silent default/profile change or quality-tolerance approval. Follow the separate independent whole-release review and human production-promotion gates.\n\n## Out of scope\n\nEvery experiment must end with explicit adopt/reject evidence. Adopt only under L01 measurement/correctness rules; a rejected idea is not an implemented speedup. Charge preprocessing, cache population, memory and final evaluation; distinguish cold/warm and instrumented/uninstrumented runs. The quote command must remain one solve per algorithm, without extra warmups/retries. No language rewrite, service deployment, Jupiter integration, rewritten frozen results/default profiles or universal subsecond/API-equivalence claim. No approximate variant becomes a default without explicit acceptance of its quality trade-off.\n\n## Acceptance criteria\n\n- [ ] All six references and every experiment have reproducible dispositions.\n- [ ] Exact/parity checks pass; skipped/failed cases remain in denominators.\n- [ ] Adequate declared samples and cold/setup/cache/final-evaluation/memory accounting support latency claims.\n- [ ] Heuristic losses and ablations are explicit without optimality/API-equivalence claims.\n- [ ] Artifacts/hashes/commands/scope are complete; report completion does not promote production or accept a default trade-off.\n\n## Testing / Verification\n\nL01 protocol, relevant regression/golden/state and report-schema checks; inspect paired records, noisy labels and replay. Review final release candidate independently under existing workflow.\n\n## References\n\ndocs/DESIGN.md; docs/references/latency-optimization-research.md §§1–8; docs/references/latency-research/evidence.json; docs/references/uni-sor-port-contract.md. Pinned upstream source links are in the research register.\n\nResearch plan key: L08.",
+      "status": "Todo",
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "projectId": "29829418-7ca6-43c9-bf03-a49f05c76b1a",
+      "teamId": "37abcce9-0070-470b-a57b-d8213047c418",
+      "releases": [
+        {
+          "id": "28115816-f182-4865-84cf-7caab1450231",
+          "version": "0.1.2",
+          "stage": "Planned"
+        }
+      ],
+      "blockedBy": [
+        "WHI-1504",
+        "WHI-1505",
+        "WHI-1506",
+        "WHI-1507",
+        "WHI-1508",
+        "WHI-1509"
+      ],
+      "blocks": [],
+      "key": "L08",
+      "complexity": "high",
+      "priority": 2,
+      "description_sha256": "45ab11baaef8de2e653c06eea9a02ba86b4baa00e7d036832dd46b1134a7918f"
+    }
+  ],
+  "verification": {
+    "readback": "Complete descriptions, project/team, labels, states, exact Release/version and both native relation directions checked after publication. Related links excluded from DAG.",
+    "issue_count": 8,
+    "release_issue_count_including_research": 9,
+    "native_blocking_edges": 17,
+    "acyclic": true,
+    "source_commit": "b2a680578f65ac65653a8160f04a3d97a5c5e71e"
+  }
+}
