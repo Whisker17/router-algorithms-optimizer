@@ -930,7 +930,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 130
     finally:
         signal.signal(signal.SIGTERM, previous)
-    print(f"experiment: {out}\nsummarize:  uv run python -m report.latency summarize {out}")
+    view = "sufficient" if args.command == "sufficient" else "summarize"
+    print(f"experiment: {out}\nsummarize:  uv run python -m report.latency {view} {out}")
     return 0
 
 
