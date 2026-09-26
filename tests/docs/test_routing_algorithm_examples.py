@@ -213,6 +213,20 @@ def test_path_split_conflict_check_and_disjoint_allocation(
     assert res.search_stats["bnb_nodes"] == 12
     assert res.search_stats["bnb_best_gross"] == {"1": "12434", "2": "12581"}
 
+    # Verify intermediate quote of Path 4 (P_AC -> P_CD -> P_DB) at 4 units (4000 TKA):
+    p_ac = teaching_bundle.pools["P_AC"]
+    p_cd = teaching_bundle.pools["P_CD"]
+    p_db = teaching_bundle.pools["P_DB"]
+    assert isinstance(p_ac, ConstantProductPoolState)
+    assert isinstance(p_cd, ConstantProductPoolState)
+    assert isinstance(p_db, ConstantProductPoolState)
+    out_ac_4k = cp_quote(p_ac, "TKA", 4000).amount_out
+    out_cd_4k = cp_quote(p_cd, "TKC", out_ac_4k).amount_out
+    out_path4_4k = cp_quote(p_db, "TKD", out_cd_4k).amount_out
+    assert out_ac_4k == 7670
+    assert out_cd_4k == 7103
+    assert out_path4_4k == 5409
+
 
 def test_incremental_graph_shared_pool_and_merged_plan(
     teaching_bundle: SnapshotBundle,
