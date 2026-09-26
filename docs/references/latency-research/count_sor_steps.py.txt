@@ -1,0 +1,87 @@
+# Read-only diagnostic wrappers: count work, do not change quote/search behavior.
+import json
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+ROOT = Path('/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer')
+sys.path.insert(0, str(ROOT))
+from benchmark.profile import load_profile
+from pools import concentrated as cl
+from pools.quote import metered_quotes
+from routing.algorithms.base import SolveContext
+from routing.algorithms.registry import get_algorithm
+from snapshot.bundle import load_bundle
+
+out = Path('/tmp/router-latency-research')
+run = json.loads((out / 'baseline-full.json').read_text())['runs'][0]
+record = next(r for r in run['records'] if r['algorithm'] == 'uni_sor_port')
+quote_dir = Path(run['records_path']).parents[2]
+bundle = load_bundle(quote_dir / 'bundle')
+profile = load_profile(quote_dir / 'profile.yaml')
+factory = get_algorithm('uni_sor_port')
+prepared = factory.prepare(bundle, profile.algorithm_config(factory))
+counts = defaultdict(lambda: {'quotes': 0, 'steps': 0, 'zero_liquidity': 0,
+                              'zero_liquidity_uninitialized': 0, 'initialized_targets': 0})
+current = None
+initialized = False
+original_swap = cl.swap
+original_next = cl.next_initialized_tick_within_one_word
+original_step = cl.compute_swap_step_exact_in
+original_ratio = cl.get_sqrt_ratio_at_tick
+ratio_calls = 0
+unique_ratios = set()
+
+def counted_swap(state, *args):
+    global current
+    previous = current
+    current = state.pool_id
+    counts[current]['quotes'] += 1
+    try:
+        return original_swap(state, *args)
+    finally:
+        current = previous
+
+def counted_next(*args):
+    global initialized
+    result = original_next(*args)
+    initialized = result[1]
+    if current is not None and initialized:
+        counts[current]['initialized_targets'] += 1
+    return result
+
+def counted_step(sqrt_current, sqrt_target, liquidity, amount, fee):
+    if current is not None:
+        c = counts[current]
+        c['steps'] += 1
+        if liquidity == 0:
+            c['zero_liquidity'] += 1
+            if not initialized:
+                c['zero_liquidity_uninitialized'] += 1
+    return original_step(sqrt_current, sqrt_target, liquidity, amount, fee)
+
+def counted_ratio(tick):
+    global ratio_calls
+    ratio_calls += 1
+    unique_ratios.add(tick)
+    return original_ratio(tick)
+
+cl.swap = counted_swap
+cl.next_initialized_tick_within_one_word = counted_next
+cl.compute_swap_step_exact_in = counted_step
+cl.get_sqrt_ratio_at_tick = counted_ratio
+context = SolveContext(bundle=bundle, objective=profile.objective.bind(bundle),
+                       prepared=prepared, seed=record['measurement']['seed'])
+with metered_quotes(profile.budget.max_quotes) as meter:
+    result = factory.solve(bundle.cases[0], context, profile.budget)
+aggregate = {k: sum(c[k] for c in counts.values()) for k in next(iter(counts.values()))}
+summary = {'kind': 'count-only diagnostic; no optimization and no latency claim',
+           'algorithm': 'uni_sor_port', 'aggregate': aggregate,
+           'sqrt_ratio_calls': ratio_calls, 'distinct_tick_inputs': len(unique_ratios),
+           'quotes_counted': meter.counted,
+           'matches_baseline_evaluation': result.evaluation.to_dict() == record['evaluation'],
+           'matches_baseline_search': dict(result.search_stats) == record['search'],
+           'per_pool': sorted(({'pool_id': p, **c} for p,c in counts.items()),
+                              key=lambda c:c['steps'], reverse=True)}
+(out / 'sor-step-counts.json').write_text(json.dumps(summary, indent=2)+'\n')
+print(json.dumps({k:v for k,v in summary.items() if k!='per_pool'}, indent=2))
