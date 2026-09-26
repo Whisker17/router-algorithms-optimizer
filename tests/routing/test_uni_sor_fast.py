@@ -30,7 +30,8 @@ import pytest
 from benchmark.objective import gross_only
 from benchmark.profile import ProfileError, load_profile, parse_profile
 from pools.cl_math import get_sqrt_ratio_at_tick
-from pools.quote import metered_quotes
+from pools.quote import metered_quotes, quote_exact_in
+from pools.result import QuoteStatus
 from routing.algorithms import uni_sor_fast as fast
 from routing.algorithms import uni_sor_port as sor
 from routing.algorithms.base import AlgorithmConfig, Budget, SolveContext, SolveResult, SolveStatus
@@ -806,11 +807,16 @@ def test_local_refinement_can_miss_a_narrow_optimum_and_the_loss_is_retained() -
     assert ref.score is not None and one.score is not None and one.score < ref.score
     assert one.search_stats["truncated_by"] is None
     _independently_valid(NARROW, NARROW_CASE, one)
-    # Anytime: every published plan was valid when published and strictly improved.
-    scores = [gross_only().score(evaluate(NARROW, NARROW_CASE, p, gross_only())) for p in sink]
+    # Anytime: the validated full-input seed is published first, then every strictly
+    # better validated selection; each published plan replays ok.
+    evals = [evaluate(NARROW, NARROW_CASE, p, gross_only()) for p in sink]
+    assert all(ev.status is EvalStatus.OK for ev in evals)
+    scores = [gross_only().score(ev) for ev in evals]
     assert scores == sorted(set(scores)) and scores[-1] == one.score
+    assert s["seed"] == {"route_id": "V2:d1", "outcome": "improved"}
     improved = [r for r in s["rounds"] if r["incumbent"] == "improved"]
-    assert len(improved) == len(sink) and s["rounds"][0]["kind"] == "coarse"
+    assert len(improved) + 1 == len(sink) and s["rounds"][0]["kind"] == "coarse"
+    assert s["incumbent"]["source"] == "sor_selection"
     two = _adaptive(NARROW, NARROW_CASE, KEEP_ALL, {**SAMPLING, "refine_radius": 2})
     assert (two.plan, two.score) == (ref.plan, ref.score)
 
@@ -886,7 +892,12 @@ def test_no_incumbent_from_the_sampled_table_completes_the_grid_before_any_concl
     assert s["shortlist"]["fallback"]["reason"] == "no_ranked_route"
     samp = s["sampling"]
     assert samp["scope"] == "full_cohort_fallback"
-    assert samp["grid_completion"] == {"triggered": True, "completed": True}
+    assert samp["grid_completion"] == {
+        "triggered": True,
+        "completed": True,
+        "reason": "no_selection",
+    }
+    assert samp["seed"] is None  # no valid 100 % entry to seed from
     assert [r["kind"] for r in samp["rounds"]][:2] == ["coarse", "grid_completion"]
     assert s["truncated_by"] is None  # the soft cap never stops before a first selection
     assert (got.status, got.plan, got.score) == (ref.status, ref.plan, ref.score)
@@ -966,3 +977,91 @@ def test_isolated_runner_records_the_sampling_metadata(tmp_path: Path) -> None:
         assert rec["quotes"]["counted"] == rec["search"]["quotes_executed"]
         if rec["status"] == "ok":
             assert rec["search"]["evaluated_gross"] == rec["evaluation"]["gross_output"]
+
+
+# WHI-1509 acceptance correction: a combined SOR selection is not a validated incumbent.
+# One CL pool (collected band fits 50 but not 51 input) and one tiny CPMM pool, input 101:
+# the coarse winner is CP@50 + CL@50, whose D-1 fill gives CL the remainder (51) and fails
+# replay, while the full-input CP route is feasible.
+BOUNDARY = _bundle(_cl("cl", 1580), _cp("cp", "A", "B", 101, 101))
+BOUNDARY_CASE = Case("b101", "A", "B", 101)
+BOUNDARY_SEARCH = {"max_hops": 1, "max_splits": 2, "percent_step": 5}
+BOUNDARY_PARAMS = _params([50, 100], 2, 2, BOUNDARY_SEARCH)
+SOFT_ONE = {"coarse_step": 50, "refine_radius": 1, "soft_max_quotes": 1}
+
+
+def test_boundary_fill_failure_keeps_the_validated_full_input_incumbent_before_a_soft_stop() -> (
+    None
+):
+    cl, cp = BOUNDARY.pools["cl"], BOUNDARY.pools["cp"]
+    assert quote_exact_in(cp, "A", 101).status is QuoteStatus.OK
+    assert quote_exact_in(cl, "A", 50).status is QuoteStatus.OK
+    assert quote_exact_in(cl, "A", 51).status is QuoteStatus.INCOMPLETE_SNAPSHOT
+    # The reference (and L06) take the full-grid combined selection, whose fill fails.
+    assert _ref(BOUNDARY, BOUNDARY_CASE, BOUNDARY_SEARCH).status is SolveStatus.INVALID_PLAN
+    assert _fast(BOUNDARY, BOUNDARY_CASE, BOUNDARY_PARAMS).status is SolveStatus.INVALID_PLAN
+    sink: list[Any] = []
+    with metered_quotes(None) as meter:
+        got = _adaptive(BOUNDARY, BOUNDARY_CASE, BOUNDARY_PARAMS, SOFT_ONE, sink=sink)
+    s = got.search_stats
+    samp = s["sampling"]
+    assert samp["rounds"][0]["selection"] == ["V2:cp@50", "V3:cl@50"]
+    assert samp["rounds"][0]["incumbent"] == "rejected" and samp["rejected_incumbents"] == 1
+    assert samp["seed"] == {"route_id": "V2:cp", "outcome": "improved"}
+    # The soft cap stopped only because a VALID incumbent was in hand.
+    assert got.status is SolveStatus.OK and s["truncated_by"] == "soft_max_quotes"
+    assert samp["stop_reason"] == "soft_limit" and samp["incumbent"]["validated"] is True
+    assert samp["incumbent"]["source"] == "full_input_seed"
+    assert samp["incumbent"]["selection"] == [{"route_id": "V2:cp", "percent": 100}]
+    assert s["allocation"] == ["101"] and samp["skipped_entries"] == 36
+    _independently_valid(BOUNDARY, BOUNDARY_CASE, got)
+    assert sink == [got.plan]  # one publication, after validation, of the returned plan
+    assert samp["validations"] == 2 and s["shortlist"]["quotes"]["validation"] == 1
+    assert s["quotes_executed"] == meter.counted == sum(s["shortlist"]["quotes"].values())
+    # Uncapped, refinement runs to a fixed point and still returns the valid seed.
+    free = _adaptive(
+        BOUNDARY, BOUNDARY_CASE, BOUNDARY_PARAMS, {**SOFT_ONE, "soft_max_quotes": None}
+    )
+    assert free.status is SolveStatus.OK and free.search_stats["sampling"]["stop_reason"] == (
+        "converged"
+    )
+    assert free.plan == got.plan and free.search_stats["truncated_by"] is None
+
+
+def test_boundary_hard_cut_after_the_seed_is_a_timeout_with_only_the_seed_published() -> None:
+    sink: list[Any] = []
+    cut = _adaptive(BOUNDARY, BOUNDARY_CASE, BOUNDARY_PARAMS, SOFT_ONE, Budget(max_quotes=4), sink)
+    s = cut.search_stats
+    assert cut.status is SolveStatus.TIMEOUT and cut.plan is None and cut.score is None
+    assert s["truncated_by"] == "max_quotes" and s["sampling"]["stop_reason"] == "hard_limit"
+    assert s["sampling"]["incumbent"]["source"] == "full_input_seed"
+    assert len(sink) == 1
+    ev = evaluate(BOUNDARY, BOUNDARY_CASE, sink[0], gross_only())
+    assert ev.status is EvalStatus.OK
+    assert str(ev.gross_output) == s["sampling"]["incumbent"]["evaluated_gross"]
+    assert s["quotes_executed"] == 4 == sum(s["shortlist"]["quotes"].values())
+
+
+def test_rejected_selection_without_any_valid_incumbent_is_never_a_soft_stop() -> None:
+    """Two CL pools, no valid 100 % entry (no seed); the only complete split (50/50) fails
+    its fill. The soft cap cannot stop without a valid incumbent: the rest of the grid is
+    searched (charged), nothing is published, and the status is the reference's
+    `invalid_plan` for the rejected plan -- never `ok`, never a soft-limit label."""
+    two = _bundle(_cl("cla", 1580), _cl("clb", 1580))
+    ref = _ref(two, BOUNDARY_CASE, BOUNDARY_SEARCH)
+    sink: list[Any] = []
+    got = _adaptive(two, BOUNDARY_CASE, BOUNDARY_PARAMS, SOFT_ONE, sink=sink)
+    s = got.search_stats
+    samp = s["sampling"]
+    assert ref.status is got.status is SolveStatus.INVALID_PLAN and got.error == ref.error
+    assert got.score is None and sink == []
+    assert samp["seed"] is None and samp["incumbent"] is None
+    assert samp["stop_reason"] == "no_valid_incumbent_full_grid"
+    assert samp["soft_limit"]["reached"] is False and s["truncated_by"] is None
+    assert samp["grid_completion"] == {
+        "triggered": True,
+        "completed": True,
+        "reason": "no_valid_incumbent",
+    }
+    assert samp["skipped_entries"] == 0 and samp["rejected_incumbents"] >= 1
+    assert s["search_completed"] is True

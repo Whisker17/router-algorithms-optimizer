@@ -34,13 +34,16 @@ Each table search (the shortlist, or the L06 full-cohort fallback) becomes:
 1. **Coarse.** Every searched route is quoted at the grid percents that are multiples of
    `coarse_step` (100 is always one). The unchanged SOR core combines this partial table.
    It gets the full `percents` list, and a percent group with no entries is skipped, as
-   B-S4/B-S6 already allow. So the B-S3 baseline makes the best full-input single route
-   the first incumbent whenever a 100 % entry is valid.
-2. **Incumbent.** Each new selection is D-1 integer-filled, then built with
+   B-S4/B-S6 already allow.
+2. **Incumbent.** First, a simpler full-input incumbent is **seeded and validated before
+   any refinement**: the sampled 100 % entries in B-S2 order, each as the core's
+   single-route selection, until one replays valid (`search.sampling.seed`). A combined
+   selection is not an incumbent by itself; its D-1 fill can fail where the full-input
+   route does not (§7). Each candidate (seed or combined selection) is D-1 integer-filled, then built with
    `split_path_plan`, which refuses shared physical pools and disconnected legs. It is
    then replayed by the evaluator, and that replay is charged as `validation`. Only then,
    and only if it is valid and scores strictly better, is it published through
-   `report_candidate`. The funding check requires the integer allocation to sum to the
+   `report_candidate`. A combined selection also replaces an equal-scoring seed. The funding check requires the integer allocation to sum to the
    input with every leg positive, and the last leg takes the explicit remainder. A
    selection that fails any check is counted in `rejected_incumbents` and is never
    published.
@@ -51,13 +54,19 @@ Each table search (the shortlist, or the L06 full-cohort fallback) becomes:
    - no new percent is proposed: `converged`, a local fixed point over the sampled table
      and **not** a global or full-grid optimum; or
    - before a round, the solve's counted quotes (all phases) have reached
-     `soft_max_quotes`: `soft_limit`. Status stays `ok` with the valid incumbent, and it
-     is labelled `truncated_by: soft_max_quotes`, so the report treats it as budget-bound.
-4. **Grid completion.** If the sampled table has no complete selection, the rest of the
-   full grid is quoted, charged in the same phase, before anything is concluded. The L06
-   fallback and the "no `no_route` / `incomplete_snapshot` from a restricted scope" rules
-   therefore apply unchanged. The soft cap never stops a search that has no complete
-   selection yet.
+     `soft_max_quotes` **and a valid incumbent is in hand**: `soft_limit`. Status stays
+     `ok` with that incumbent, and it is labelled `truncated_by: soft_max_quotes`, so the
+     report treats it as budget-bound. Without a valid incumbent the soft cap never stops
+     the search.
+4. **Grid completion** (`grid_completion.reason`). When the sampled table has no complete
+   selection (`no_selection`), or refinement converged while every selection was rejected
+   (`no_valid_incumbent`), the rest of the full grid is quoted, charged in the same phase,
+   before anything is concluded.
+   - No selection over the full grid: the L06 fallback and the "no `no_route` /
+     `incomplete_snapshot` from a restricted scope" rules apply unchanged.
+   - Selections but no valid incumbent over the full grid:
+     `no_valid_incumbent_full_grid`, then `invalid_plan` for the last rejected plan. That
+     plan is never published, and this is the same status the reference gives.
 5. **Hard limits** stay truthful. `max_quotes` gives `timeout` with **no plan**; the
    runner would re-evaluate a returned plan as `ok`. The last valid incumbent is kept only
    as labelled metadata (`search.sampling.incumbent`) and through the candidate sink, so
@@ -113,12 +122,14 @@ evidence therefore counts `quotes_exceed_reference` per row; it was 0 on every r
 - `rounds`: each round's `kind` (`coarse` / `refine` / `grid_completion`), added percents
   and entries, table quotes, selection, and incumbent outcome (`improved` / `unchanged` /
   `not_better` / `rejected`);
-- `stop_reason`: `converged`, `soft_limit`, `no_selection_full_grid` or `hard_limit`;
-- `soft_limit {max_quotes, reached, quotes_at_stop}` and
-  `grid_completion {triggered, completed}`;
+- `stop_reason`: `converged`, `soft_limit`, `no_selection_full_grid`,
+  `no_valid_incumbent_full_grid` or `hard_limit`;
+- `soft_limit {max_quotes, reached, quotes_at_stop}`,
+  `grid_completion {triggered, completed, reason}` and `seed {route_id, outcome}` (or
+  `null` when no 100 % entry was sampled);
 - `validations`, `rejected_incumbents` and `rejection_errors`;
-- `incumbent`: round, selection, allocation, evaluated gross, score and
-  `validated: true`, or `null`.
+- `incumbent`: round, `source` (`full_input_seed` / `sor_selection`), selection,
+  allocation, evaluated gross, score and `validated: true`, or `null`.
 
 The L06 keys keep their meaning. `search_scope` is the planned route scope and
 `search_completed` says whether it completed. `searched_*` is the route coverage of the
@@ -126,8 +137,9 @@ last completed table. `candidates_truncated` counts skipped routes.
 
 ## 3. Correctness and adversarial evidence
 
-[`tests/routing/test_uni_sor_fast.py`](../../tests/routing/test_uni_sor_fast.py) has 31 new
-L07 tests. The file totals 82 passing and 3 skipped. Expected CPMM values come from the
+[`tests/routing/test_uni_sor_fast.py`](../../tests/routing/test_uni_sor_fast.py) has 34 new
+L07 tests: 31 original plus 3 from the acceptance correction in §7. The file totals 85
+passing and 3 skipped. Expected CPMM values come from the
 Solidity formula, and plans are replayed by a fresh evaluator.
 
 | Test | Shows |
@@ -342,3 +354,77 @@ uv run python tools/latency/l07_adaptive_sampling.py held_out --experiment <L01 
 ```
 
 On this host, tuning took about 2.6 minutes and held-out about 0.8 minutes.
+
+## 7. Acceptance correction after the evidence run: validated incumbent before any stop
+
+The orchestrator's pre-merge verification of PR #39 at `fb4dbe9` found a real boundary
+case with two pools:
+
+- a fixture CL pool with liquidity 1,580, whose collected band fits an input of 50 but not
+  51;
+- a CPMM pool with reserves 101/101.
+
+The case is input 101, 1 hop, 2 splits, 5 % grid, probes {50, 100}, 2 routes per probe,
+2 direct routes, coarse step 50, radius 1, soft cap 1.
+
+What went wrong at `fb4dbe9`:
+
+- The coarse winner, CP@50 + CL@50, fills 50 + 51. CL@51 is `incomplete_snapshot`, so the
+  plan was rejected.
+- The soft cap then stopped with **no** incumbent, and the solve returned `invalid_plan`.
+  The feasible full-input CP route (100 % quote ok) was ignored, 36 entries stayed
+  unsampled, and nothing was published.
+- The combinatorial selection had been treated as if it were the validated incumbent.
+
+The fix is in `uni_sor_fast.py` only (§1 steps 2–4):
+
+- **Seed.** The full-input incumbent is validated before refinement.
+- **Soft cap.** It stops only with a valid incumbent.
+- **No valid incumbent.** This is handled separately: grid completion with reason
+  `no_valid_incumbent`, then `no_valid_incumbent_full_grid` and `invalid_plan` for the
+  unpublished rejected plan.
+
+Unchanged:
+
+- ranking, probes, shortlist, fallback, the refinement proposal, every setting and
+  tuning parameter;
+- the L06 path when `sampling` is absent: the 945-solve identity check still reports
+  "identical 945";
+- the reference grids.
+
+New tests:
+
+| Test | Shows |
+| --- | --- |
+| `…boundary_fill_failure_keeps_the_validated_full_input_incumbent_before_a_soft_stop` | The real 101 case. The reference and L06 return `invalid_plan`. Sampling rejects the coarse CP@50 + CL@50 plan, seeds CP@100, and soft-stops with that valid incumbent: `ok`, `truncated_by: soft_max_quotes`. The single publication equals the returned plan. The meter equals the phases. Uncapped, it `converged` to the same plan |
+| `…boundary_hard_cut_after_the_seed_is_a_timeout…` | `max_quotes` 4 cuts the combined plan's replay: `timeout`, no plan. Only the valid seed was published, and `sampling.incumbent` matches it |
+| `…rejected_selection_without_any_valid_incumbent_is_never_a_soft_stop` | Two CL pools: no valid 100 % entry, so no seed, and the only split fails its fill. The soft cap does not stop. The grid completes with reason `no_valid_incumbent`, nothing is published, and the result is `invalid_plan` with the reference's error. No soft-limit label |
+
+**Focused comparison with `fb4dbe9`.** 2,508 sampling solves: the fixture bundles plus the
+thin, narrow, CL and boundary cases × 3 shortlists × 4 sampling settings × 2 budgets.
+
+- Status, plan, score, selection and `quotes_executed` were identical everywhere except
+  the boundary case. It changed `invalid_plan → ok` in 8 solves: the fix itself.
+- Validation quotes were unchanged in all 2,508. Seed replays are memo hits, because the
+  100 % entry was quoted at exactly the input on the same legs.
+- `validations` rose by 1 in 96 solves, where the coarse selection is not the seed route.
+
+**What this means for the committed evidence.** The tuning and held-out evidence
+(`cd27439` / `6c934c8`) stays bound to its measured source and is not re-run.
+
+- Every one of its rows had 0 rejected incumbents. Under the gross objective a valid
+  combined selection always scores at least the seed: its head legs are the quoted
+  entries and its last leg only gains the remainder. It therefore replaces the seed or
+  equals it.
+- So status, plan, score, quotes, soft stops and regret in those rows are unaffected by
+  construction. Only these counters and keys would differ at the corrected source:
+  - `validations`: +1 per table search whose coarse selection is not the seed route;
+  - one extra sink publication in the same cases;
+  - the new `seed`, `incumbent.source` and `grid_completion.reason` keys.
+- Validation quotes would not change.
+- Under a net objective with gas costs, the seed can outscore a multi-route selection. This
+  is a behaviour difference from `fb4dbe9` that the gross-only evidence does not exercise.
+  WHI-1510's measurements use the corrected source.
+- A new status transition becomes possible: a case where the reference's full-grid
+  selection fails replay but a full-input route is feasible now returns `ok`. It is
+  reported as a status difference, and regret is N/A because the reference is not `ok`.

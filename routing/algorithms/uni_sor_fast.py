@@ -67,10 +67,14 @@ a. **Coarse.** Every searched route at the grid percents that are multiples of
    `coarse_step` (100 always among them). The unchanged SOR core combines this partial
    table (a missing percent group is simply absent, as B-S4/B-S6 already allow), so its
    B-S3 baseline makes the best full-input single route the first incumbent.
-b. **Incumbent.** Every new selection is D-1 integer-filled, built as a pool-disjoint plan
-   that funds the whole input (`split_path_plan` refuses shared pools) and replayed by the
-   evaluator (charged as `validation`) **before** it is published through
-   `report_candidate`; only a valid, strictly better-scoring plan replaces the incumbent.
+b. **Incumbent.** First the simpler full-input incumbent is seeded: the sampled 100 %
+   entries in B-S2 order, each as the core's single-route selection, until one replays
+   valid. Then every new combined selection is considered: a combinatorial selection is
+   not an incumbent until it is D-1 integer-filled, built as a pool-disjoint plan that
+   funds the whole input (`split_path_plan` refuses shared pools) and replayed by the
+   evaluator (charged as `validation`) -- its fill can fail where the full-input route
+   does not. Only a valid plan is published through `report_candidate`, and only when it
+   scores strictly better (a combined selection also replaces an equal-scoring seed).
 c. **Refine.** Around the percents of the incumbent and of the latest selection, the fine
    percents `p +/- j*percent_step` and the freed shares `j*percent_step`
    (`j <= refine_radius`) are added for every searched route, and the core re-combines
@@ -78,17 +82,22 @@ c. **Refine.** Around the percents of the incumbent and of the latest selection,
    repeats until no new percent is proposed (`converged`: a local fixed point, not a
    global optimum) or, before a round, the solve's executed quotes (all phases) reach
    `soft_max_quotes` (`soft_limit`: status `ok` with the valid incumbent, labelled
-   `truncated_by: soft_max_quotes`). The soft cap never stops a search that has no
-   complete selection yet.
-d. **Grid completion.** If the sampled table yields no complete selection, the rest of the
-   full grid is quoted (charged, same phase) before the L06 logic concludes anything, so
-   the fallback and `no_route` / `incomplete_snapshot` rules above are unchanged.
+   `truncated_by: soft_max_quotes`). The soft cap only stops with a **valid** incumbent,
+   never with a mere (possibly rejected) selection.
+d. **Grid completion.** If the sampled table yields no complete selection, or refinement
+   has converged while every selection was rejected, the rest of the full grid is quoted
+   (charged, same phase) before anything is concluded. No selection over the full grid:
+   the L06 fallback and `no_route` / `incomplete_snapshot` rules above apply unchanged.
+   Selections but no valid incumbent over the full grid (`no_valid_incumbent_full_grid`):
+   `invalid_plan` for the last rejected plan, which is never published.
 e. **Hard limits** stay truthful: `max_quotes` gives `timeout` with no plan (the last valid
    incumbent is kept only as labelled metadata and through the candidate sink).
 
 With `coarse_step == percent_step` the first table is the full grid and the result is the
-L06 result. The L06 work bound above does not hold in general here: sampled entries are a
-subset of the reference table, but several incumbents may be replayed, so the evidence
+L06 result whenever the combined selection replays valid and scores at least the seed
+(always under a gross objective; a net objective with gas costs may prefer the seed).
+The L06 work bound above does not hold in general here: sampled entries are a subset of
+the reference table, but several incumbents may be replayed, so the evidence
 counts quotes against the reference per case instead of assuming the bound. Otherwise the
 search is a second, declared approximation (`search.sor_fast.sampling_approximation:
 true`; per-table entry coverage and rounds in `search.sampling`).
@@ -622,9 +631,10 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
         out["score"] = context.objective.score(evaluation)
         return out
 
-    def summary(cand: dict[str, Any], round_index: int) -> dict[str, Any]:
+    def summary(cand: dict[str, Any], round_index: int, source: str) -> dict[str, Any]:
         return {
             "round": round_index,
+            "source": source,
             "selection": [
                 {"route_id": _route_label(r.route), "percent": r.percent}
                 for r in cand["selection"].routes
@@ -667,7 +677,8 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
                 "reached": False,
                 "quotes_at_stop": None,
             },
-            grid_completion={"triggered": False, "completed": None},
+            grid_completion={"triggered": False, "completed": None, "reason": None},
+            seed=None,
             validations=0,
             rejected_incumbents=0,
             rejection_errors=[],
@@ -706,58 +717,94 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             })  # fmt: skip
             return sel
 
-        def consider(sel: sor.SwapSelection) -> None:
+        def consider(sel: sor.SwapSelection, source: str = "sor_selection") -> str:
+            """Validate `sel` and keep it if it beats the incumbent. A combined SOR
+            selection also replaces an equal-scoring full-input seed (the seed is only
+            the safety net). Returns the outcome recorded for the round."""
             nonlocal incumbent, rejected
             key = tuple((r.route, r.percent) for r in sel.routes)
             if key in seen:
-                rounds[-1]["incumbent"] = "unchanged"
-                return
+                return "unchanged"
             seen.add(key)
             cand = validate(sel, phase)
             if cand["error"] is not None:
                 rejected = cand
                 sampling_stats["rejected_incumbents"] += 1
                 sampling_stats["rejection_errors"].append(cand["error"])
-                rounds[-1]["incumbent"] = "rejected"
-            elif incumbent is None or cand["score"] > incumbent["score"]:
+                return "rejected"
+            tie_over_seed = (
+                incumbent is not None
+                and source == "sor_selection"
+                and sampling_stats["incumbent"]["source"] == "full_input_seed"
+                and cand["score"] == incumbent["score"]
+            )
+            if incumbent is None or cand["score"] > incumbent["score"] or tie_over_seed:
                 incumbent = cand
-                sampling_stats["incumbent"] = summary(cand, len(rounds) - 1)
+                sampling_stats["incumbent"] = summary(cand, len(rounds) - 1, source)
                 context.report_candidate(cand["plan"])  # published only after validation
-                rounds[-1]["incumbent"] = "improved"
-            else:
-                rounds[-1]["incumbent"] = "not_better"
+                return "improved"
+            return "not_better"
+
+        def seed() -> None:
+            """The simpler full-input incumbent, validated before any refinement: the
+            sampled 100 % entries in B-S2 order (quote desc, stable), each as the core's
+            single-route selection, until one replays valid. The combined selection's
+            integer fill can fail where a full-input route does not."""
+            full = [rq for rq in table if rq.percent == 100]
+            for rq in sorted(full, key=lambda r: -r.quote_adjusted_for_gas):
+                one = sor.get_best_swap_route(
+                    case.amount_in, percents, [rq], max_splits=port.max_splits
+                )
+                assert one is not None  # a lone 100 % entry is the B-S3 baseline
+                outcome = consider(one, "full_input_seed")
+                sampling_stats["seed"] = {"route_id": _route_label(rq.route), "outcome": outcome}
+                if outcome != "rejected":
+                    return
+
+        def complete_grid(reason: str) -> sor.SwapSelection | None:
+            sampling_stats["grid_completion"].update(triggered=True, completed=False, reason=reason)
+            sel = run_round(set(percents) - sampled, "grid_completion")
+            sampling_stats["grid_completion"]["completed"] = True
+            return sel
 
         latest = run_round(set(coarse), "coarse")
+        seed()
         if latest is not None:
-            consider(latest)
+            rounds[-1]["incumbent"] = consider(latest)
         while True:
             if incumbent is None and latest is None:
-                missing = set(percents) - sampled
-                if not missing:
+                if sampled == set(percents):
                     sampling_stats["stop_reason"] = "no_selection_full_grid"
                     break
-                sampling_stats["grid_completion"]["triggered"] = True
-                sampling_stats["grid_completion"]["completed"] = False
-                latest = run_round(missing, "grid_completion")
-                sampling_stats["grid_completion"]["completed"] = True
+                latest = complete_grid("no_selection")
                 if latest is not None:
-                    consider(latest)
+                    rounds[-1]["incumbent"] = consider(latest)
                 continue
             basis = {r.percent for r in latest.routes} if latest is not None else set()
             if incumbent is not None:
                 basis |= {r.percent for r in incumbent["selection"].routes}
             new = refine_percents(basis, step, sampling.refine_radius) - sampled
             if not new:
-                sampling_stats["stop_reason"] = "converged"
+                if incumbent is None and sampled != set(percents):
+                    # Selections exist but none replayed valid: no stop without a valid
+                    # incumbent; the rest of the grid is searched first (charged).
+                    latest = complete_grid("no_valid_incumbent")
+                    if latest is not None:
+                        rounds[-1]["incumbent"] = consider(latest)
+                    continue
+                sampling_stats["stop_reason"] = (
+                    "converged" if incumbent is not None else "no_valid_incumbent_full_grid"
+                )
                 break
             soft = sampling.soft_max_quotes
-            if soft is not None and cache.misses >= soft:
+            if soft is not None and cache.misses >= soft and incumbent is not None:
+                # The soft cap only ever stops with a VALID incumbent in hand.
                 sampling_stats["stop_reason"] = "soft_limit"
                 sampling_stats["soft_limit"]["reached"] = True
                 break
             latest = run_round(new, "refine")
             if latest is not None:
-                consider(latest)
+                rounds[-1]["incumbent"] = consider(latest)
         sampling_stats["soft_limit"]["quotes_at_stop"] = cache.misses
         sampling_stats["completed"] = True
         best = incumbent["selection"] if incumbent is not None else latest
