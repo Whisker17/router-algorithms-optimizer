@@ -108,26 +108,36 @@ Per-case `search` metadata:
 
 - `sor_fast`: reference, upstream pin, contract, gas provider, quote path, B-S12 params
   and `search_approximation: true`;
-- `search_scope`: `shortlist` (restricted), `full_cohort` (the shortlist kept every route,
-  identical to the reference) or `full_cohort_fallback`;
+- `search_scope`: the **planned** scope of the last table search started — `shortlist`
+  (restricted), `full_cohort` (the shortlist kept every route, identical to the reference)
+  or `full_cohort_fallback`;
+- `search_completed`: whether that planned table was quoted in full and combined. A
+  budget-interrupted table is `false`: planned scope is not completed coverage;
 - `shortlist`:
   - settings, eligible routes by family, eligible pools;
   - probe entries, null and incomplete;
   - ranked routes, routes contributed per probe, direct routes retained;
-  - searched/skipped routes by family, searched/skipped pools, the searched route ids;
-  - fallback `{triggered, reason}`;
+  - `shortlisted` `{routes, pools, route_ids}`: the **initial** shortlist chosen by the
+    probes, before any table search;
+  - `searched_routes` / `skipped_routes` by family, `searched_pools` / `skipped_pools`,
+    `searched_route_ids`: the coverage of the last **completed** table search. After a
+    completed fallback this is the whole eligible set (nothing skipped). After an
+    interrupted fallback it stays the completed shortlist table, and it is `null` if no
+    table search completed;
+  - fallback `{triggered, reason, completed}`: `completed` is `null` without a fallback and
+    `false` if the budget ran out inside it;
   - quotes by phase (`probe`, `shortlist_table`, `fallback_table`, `validation`), which sum
     to `quotes_executed`.
 
 Plus every key `uni_sor_port` records: coverage mode, selection, allocation, D-1 residual,
 cached and evaluated gross, requote delta and `truncated_by`.
 
-`candidates_truncated` is the number of skipped routes. The existing report shows it next
-to the declared limits.
+`candidates_truncated` is the number of skipped routes of a shortlist search (0 after a
+fallback). The existing report shows it next to the declared limits.
 
 ## 3. Correctness and adversarial evidence
 
-[`tests/routing/test_uni_sor_fast.py`](../../tests/routing/test_uni_sor_fast.py): 50 tests,
+[`tests/routing/test_uni_sor_fast.py`](../../tests/routing/test_uni_sor_fast.py): 51 tests,
 plus 3 skipped non-profile YAML files. Expected CPMM values come from the Solidity
 formula, and plans are replayed by a fresh evaluator.
 
@@ -139,7 +149,8 @@ formula, and plans are replayed by a fresh evaluator.
 | `…thin_pool_is_worst_at_full_input…`, `…full_input_ranking_misses_the_thin_split_and_loses_output`, `…small_probe_catches_the_thin_split` | Adversarial low-TVL case. A thin but better-priced pool is last at 100 % and best at 5 %, and the reference uses it. Probing only at 100 % with 3 routes skips it. The result is valid and has **strictly lower output** (an asserted loss). A 5 % probe catches it |
 | `…unusual_intermediate_route…` | No base-token list: a two-hop route through an arbitrary token ranks first on quotes. `direct_routes` keeps the direct incumbent |
 | `…ties_keep_the_reference_quote_list_order` | Deterministic tie-break and repeat identity |
-| `…no_ranked_route_falls_back…`, `…restricted_failure_is_never_no_route…`, `…enumeration_statuses…` | CL pools with a bounded collected band. At 100 % every route needs uncollected state, but 50/50 fits: the fallback is charged and its status, plan and quotes equal the reference's. `incomplete_snapshot` and dust `no_route` also come only after the full table. LB-only cases are `unsupported` and disconnected cases `no_route`, as in the reference |
+| `…no_ranked_route_falls_back…`, `…restricted_failure_is_never_no_route…`, `…enumeration_statuses…` | CL pools with a bounded collected band. At 100 % every route needs uncollected state, but 50/50 fits: the fallback is charged and its status, plan and quotes equal the reference's, and its completed coverage is every eligible route and pool while `shortlisted` stays empty. `incomplete_snapshot` and dust `no_route` also come only after the full table. LB-only cases are `unsupported` and disconnected cases `no_route`, as in the reference |
+| `…interrupted_fallback_is_planned_scope_not_completed_coverage` | The shortlist (`cl1` only) completes without a selection. The completed fallback covers both routes and equals the reference. With a quote budget that runs out inside the fallback: `timeout`, `search_completed: false`, fallback `completed: false`, and the searched coverage stays the completed shortlist table (`cl1`), never the planned full table |
 | `…quote_budget_is_a_timeout…`, `…accounting_matches_the_meter…`, `…isolated_runner_records…` | Budgets during the probes or the table give `timeout`, never `no_route`. Phase quotes sum to the worker meter. Quotes stay at or below the reference's. Spawned workers pickle the factory and settings, and the runner's independent replay agrees |
 
 Unchanged reference behaviour is covered by the existing SOR goldens and parity, profile,
@@ -241,6 +252,12 @@ The sentinel is one case, not a distribution.
   SOR enumerates has no valid quote, so the reference says `no_route`, as in L01.
 - Each triggers `no_ranked_route` → full-table fallback, with quotes equal to the
   reference's (1 and 11), and states `no_route` only over the full table.
+- **Metadata caveat for these fallback rows.** The committed raw evidence was measured at
+  `9cfb76a` / `05a640a`, before the coverage fix of §7. It records the *initial* (empty)
+  shortlist as `searched_routes` / `searched_pools` (0) for these 8 rows (4 per setting),
+  although the completed fallback searched the whole eligible set (1 route each).
+  Status, regret, scope, fallback reason and quotes in those rows are unaffected. No
+  tuning row had a fallback. The files are kept as measured, not rewritten.
 - The single-route CPMM case (`emp-1bdd88-78c1b0-low-2`) keeps every route
   (`full_cohort`) and is identical to the reference.
 
@@ -312,3 +329,22 @@ uv run python tools/latency/l06_sor_shortlist.py held_out --experiment <L01 dir>
 ```
 
 Both phases took about 2 minutes on this host.
+
+## 7. Coverage-metadata fix after the evidence run
+
+The orchestrator's review of PR #38 found that after a fallback, `searched_*` described the
+initial shortlist rather than the completed full-table search. The fix (after `f46403c`):
+
+- keeps the initial shortlist as `shortlist.shortlisted`;
+- makes `searched_*` / `skipped_*` / `searched_route_ids` the coverage of the last completed
+  table search;
+- adds `search_completed` and fallback `completed`, so an interrupted fallback is never read
+  as completed full-cohort coverage.
+
+It is metadata only. On 963 old-vs-new solves (the fixture bundles, the CL fallback and
+budget cases and the thin-pool case, with three settings and three budgets), status, plan,
+evaluation, score, selection, allocation, quotes, scope and truncation were identical. The
+check was a one-off script, not committed. No ranking, probe, selection or tuning parameter
+changed, and nothing was re-swept. The pre-registered evidence keeps its measured sources
+with the caveat in §4.2. WHI-1510 uses the final schema.
+

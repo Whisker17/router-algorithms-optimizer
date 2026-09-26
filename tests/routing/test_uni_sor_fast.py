@@ -309,6 +309,7 @@ def test_a_shortlist_that_keeps_every_route_is_the_reference(rel: str) -> None:
         ref, got = _ref(bundle, case), _fast(bundle, case, params)
         s = got.search_stats
         assert s["quotes_executed"] <= ref.search_stats["quotes_executed"]
+        _coverage_is_the_completed_search(got)
         if s["search_scope"] != "full_cohort":
             assert s["search_scope"] in ("shortlist", "full_cohort_fallback", None)
             continue
@@ -357,11 +358,18 @@ def test_full_input_ranking_misses_the_thin_split_and_loses_output() -> None:
     assert ref.status is got.status is SolveStatus.OK
     s = got.search_stats
     assert s["search_scope"] == "shortlist" and s["sor_fast"]["search_approximation"] is True
+    assert s["search_completed"] is True
     assert s["shortlist"]["searched_route_ids"] == [f"V2:{BIG}", f"V2:{MID1}", f"V2:{MID2}"]
     assert s["shortlist"]["skipped_routes"] == {"V3": 0, "V2": 1, "MIXED": 0}
     assert (s["shortlist"]["searched_pools"], s["shortlist"]["skipped_pools"]) == (3, 1)
+    # No fallback: the completed coverage is the initial shortlist.
+    assert s["shortlist"]["shortlisted"] == {
+        "routes": s["shortlist"]["searched_routes"],
+        "pools": 3,
+        "route_ids": s["shortlist"]["searched_route_ids"],
+    }
     assert got.candidates_truncated == 1 and got.candidates_considered == 4
-    assert not s["shortlist"]["fallback"]["triggered"]
+    assert s["shortlist"]["fallback"] == {"triggered": False, "reason": None, "completed": None}
     assert ref.score is not None and got.score is not None
     assert got.score < ref.score  # the heuristic's loss, not hidden
     _independently_valid(THIN_BUNDLE, THIN_CASE, got)
@@ -431,8 +439,21 @@ def test_no_ranked_route_falls_back_to_the_full_table_and_charges_it() -> None:
     assert ref.status is SolveStatus.OK and ref.search_stats["entries_incomplete"] == 2
     s = got.search_stats
     assert s["shortlist"]["probe_entries_incomplete"] == 2 and s["shortlist"]["ranked_routes"] == 0
-    assert s["shortlist"]["fallback"] == {"triggered": True, "reason": "no_ranked_route"}
+    assert s["shortlist"]["fallback"] == {
+        "triggered": True,
+        "reason": "no_ranked_route",
+        "completed": True,
+    }
     assert s["search_scope"] == "full_cohort_fallback" and got.candidates_truncated == 0
+    # The initial shortlist was empty; the completed coverage is the whole fallback table.
+    sl = s["shortlist"]
+    assert sl["shortlisted"] == {"routes": {"V3": 0, "V2": 0, "MIXED": 0}, "pools": 0,
+                                 "route_ids": []}  # fmt: skip
+    assert s["search_completed"] is True
+    assert sl["searched_routes"] == sl["eligible_routes"] == {"V3": 2, "V2": 0, "MIXED": 0}
+    assert sl["skipped_routes"] == {"V3": 0, "V2": 0, "MIXED": 0}
+    assert (sl["searched_pools"], sl["skipped_pools"]) == (sl["eligible_pools"], 0) == (2, 0)
+    assert sl["searched_route_ids"] == ["V3:cl1", "V3:cl2"]
     assert (got.status, got.plan, got.score) == (ref.status, ref.plan, ref.score)
     assert s["selection"] == ref.search_stats["selection"]
     assert s["quotes_executed"] == ref.search_stats["quotes_executed"]
@@ -440,6 +461,53 @@ def test_no_ranked_route_falls_back_to_the_full_table_and_charges_it() -> None:
     assert q["probe"] == 2 and q["fallback_table"] == 2 and q["shortlist_table"] == 0
     assert sum(q.values()) == s["quotes_executed"]
     _independently_valid(CL_BUNDLE, case, got)
+
+
+def test_interrupted_fallback_is_planned_scope_not_completed_coverage() -> None:
+    """25 % grid, probes {50, 100}, one route per probe: only `cl1` is shortlisted (both
+    routes tie at 50 %, none is valid at 100 %). Its table completes without a selection,
+    so the full-table fallback runs. Uninterrupted, the fallback's coverage is recorded
+    and the result is the reference's; with a quote budget that runs out inside the
+    fallback, the result is `timeout`, the fallback is `completed: false`, and the
+    searched coverage stays the completed shortlist table -- never the planned full one."""
+    search = {"max_hops": 1, "max_splits": 2, "percent_step": 25}
+    case = Case("c", "A", "B", 4 * 10**10)
+    params = _params([50, 100], 1, 0, search)
+    shortlisted = {"routes": {"V3": 1, "V2": 0, "MIXED": 0}, "pools": 1, "route_ids": ["V3:cl1"]}
+    ref = _ref(CL_BUNDLE, case, search)
+    done = _fast(CL_BUNDLE, case, params)
+    s = done.search_stats
+    assert s["shortlist"]["shortlisted"] == shortlisted
+    assert s["shortlist"]["fallback"] == {
+        "triggered": True,
+        "reason": "no_shortlist_selection",
+        "completed": True,
+    }
+    assert s["search_scope"] == "full_cohort_fallback" and s["search_completed"] is True
+    assert s["shortlist"]["searched_route_ids"] == ["V3:cl1", "V3:cl2"]
+    assert s["shortlist"]["skipped_routes"] == {"V3": 0, "V2": 0, "MIXED": 0}
+    assert (done.status, done.plan, done.score) == (ref.status, ref.plan, ref.score)
+    assert s["quotes_executed"] == ref.search_stats["quotes_executed"] == 8
+    assert s["shortlist"]["quotes"] == {"probe": 4, "shortlist_table": 2, "fallback_table": 2,
+                                        "validation": 0}  # fmt: skip
+
+    cut = _fast(CL_BUNDLE, case, params, Budget(max_quotes=7))
+    c = cut.search_stats
+    assert cut.status is SolveStatus.TIMEOUT and c["truncated_by"] == "max_quotes"
+    assert cut.error is not None and "full-table fallback quote table" in cut.error
+    assert c["search_scope"] == "full_cohort_fallback" and c["search_completed"] is False
+    assert c["shortlist"]["fallback"] == {
+        "triggered": True,
+        "reason": "no_shortlist_selection",
+        "completed": False,
+    }
+    assert c["shortlist"]["shortlisted"] == shortlisted
+    assert c["shortlist"]["searched_route_ids"] == ["V3:cl1"]
+    assert c["shortlist"]["searched_routes"] == {"V3": 1, "V2": 0, "MIXED": 0}
+    assert c["shortlist"]["skipped_routes"] == {"V3": 1, "V2": 0, "MIXED": 0}
+    assert (c["shortlist"]["searched_pools"], c["shortlist"]["skipped_pools"]) == (1, 1)
+    assert c["shortlist"]["quotes"]["fallback_table"] == 1 and c["quotes_executed"] == 7
+    assert cut.plan is None and c["selection"] is None
 
 
 def test_restricted_failure_is_never_no_route_after_fallback_statuses_are_the_references() -> None:
@@ -478,8 +546,18 @@ def test_quote_budget_is_a_timeout_never_no_route() -> None:
     )
     assert probes.error is not None and "shortlist probes" in probes.error
     assert "not evidence of no_route" in probes.error
+    ps = probes.search_stats
+    assert ps["search_scope"] is None and ps["search_completed"] is False
+    assert (
+        ps["shortlist"]["searched_routes"] is None and ps["shortlist"]["searched_route_ids"] is None
+    )
+    assert ps["shortlist"]["shortlisted"] == {"routes": None, "pools": None, "route_ids": None}
     table = _fast(THIN_BUNDLE, THIN_CASE, _params([100], 1, 0), Budget(max_quotes=5))
-    assert table.status is SolveStatus.TIMEOUT and "quote table" in (table.error or "")
+    assert table.status is SolveStatus.TIMEOUT and "shortlist quote table" in (table.error or "")
+    ts = table.search_stats
+    assert ts["search_scope"] == "shortlist" and ts["search_completed"] is False
+    assert ts["shortlist"]["shortlisted"]["route_ids"] == [f"V2:{BIG}"]
+    assert ts["shortlist"]["searched_route_ids"] is None
     capped = _fast(THIN_BUNDLE, THIN_CASE, _params([100], 1, 0), Budget(max_candidates=3))
     assert capped.status is SolveStatus.TIMEOUT and capped.candidates_truncated == 4
 
@@ -495,6 +573,26 @@ def test_quote_accounting_matches_the_meter_and_never_exceeds_the_reference() ->
         assert s["quotes_executed"] <= _ref(bundle, case).search_stats["quotes_executed"]
         if got.status is SolveStatus.OK:
             _independently_valid(bundle, case, got)
+        _coverage_is_the_completed_search(got)
+
+
+def _coverage_is_the_completed_search(res: SolveResult) -> None:
+    """Invariant: a completed full-cohort search (kept every route, or a completed
+    fallback) records every eligible route and pool as searched; a completed shortlist
+    records exactly its shortlist."""
+    s = res.search_stats
+    sl = s["shortlist"]
+    if not s["search_completed"]:
+        return
+    if s["search_scope"] in ("full_cohort", "full_cohort_fallback"):
+        assert sl["searched_routes"] == sl["eligible_routes"]
+        assert set(sl["skipped_routes"].values()) == {0} and sl["skipped_pools"] == 0
+        assert sl["searched_pools"] == sl["eligible_pools"]
+        assert len(sl["searched_route_ids"]) == sum(sl["eligible_routes"].values())
+    else:
+        assert s["search_scope"] == "shortlist"
+        assert sl["searched_route_ids"] == sl["shortlisted"]["route_ids"]
+        assert sl["searched_pools"] == sl["shortlisted"]["pools"]
 
 
 def test_isolated_runner_records_the_variant_with_its_provenance(tmp_path: Path) -> None:

@@ -281,12 +281,17 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
         "ranked_routes": None,
         "routes_by_probe": None,
         "direct_retained": None,
+        # The initial shortlist chosen by the probes (planned, before any table search).
+        "shortlisted": {"routes": None, "pools": None, "route_ids": None},
+        # Coverage of the last COMPLETED table search (shortlist, or the full-table
+        # fallback once it completed); None while no table search has completed. A
+        # budget-interrupted table never counts as searched.
         "searched_routes": None,
         "skipped_routes": None,
         "searched_pools": None,
         "skipped_pools": None,
         "searched_route_ids": None,
-        "fallback": {"triggered": False, "reason": None},
+        "fallback": {"triggered": False, "reason": None, "completed": None},
         "quotes": {"probe": 0, "shortlist_table": 0, "fallback_table": 0, "validation": 0},
     }
     stats: dict[str, Any] = {
@@ -300,7 +305,10 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             "quote_path": QUOTE_PATH,
             "params": params,
         },
+        # Planned scope of the last table search started, and whether it completed
+        # (quoted in full and combined). `search_scope` alone is not completed coverage.
         "search_scope": None,
+        "search_completed": False,
         "shortlist": shortlist_stats,
         "coverage_mode": port.coverage_mode,
         "cohort_pools": {sor.V3: len(port.v3_pools), sor.V2: len(port.v2_pools)},
@@ -450,16 +458,22 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
     shortlist_stats["probe_entries_null"] = n_probe - len(probe_quotes)
     shortlist_stats["probe_entries_incomplete"] = len(probe_incomplete)
     short = shortlist_routes(routes, probe_quotes, settings)
-    searched = {pid for rs in short.routes.values() for r in rs for pid in r.pool_ids}
+
+    def pools_of(table_routes: Mapping[str, Sequence[sor.SorRoute]]) -> set[str]:
+        return {pid for rs in table_routes.values() for r in rs for pid in r.pool_ids}
+
+    def route_ids(table_routes: Mapping[str, Sequence[sor.SorRoute]]) -> list[str]:
+        return [_route_label(r) for fam in sor.FAMILIES for r in table_routes.get(fam, ())]
+
     shortlist_stats.update(
         ranked_routes=short.ranked,
         routes_by_probe={str(p): n for p, n in short.by_probe.items()},
         direct_retained=short.direct_retained,
-        searched_routes={fam: len(rs) for fam, rs in short.routes.items()},
-        skipped_routes={fam: len(routes[fam]) - len(short.routes[fam]) for fam in sor.FAMILIES},
-        searched_pools=len(searched),
-        skipped_pools=len(eligible_pools - searched),
-        searched_route_ids=[_route_label(r) for fam in sor.FAMILIES for r in short.routes[fam]],
+        shortlisted={
+            "routes": {fam: len(rs) for fam, rs in short.routes.items()},
+            "pools": len(pools_of(short.routes)),
+            "route_ids": route_ids(short.routes),
+        },
     )
     whole = short.size == n_routes
 
@@ -483,6 +497,17 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             case.amount_in, percents, route_quotes, max_splits=port.max_splits
         )
         charge(phase)
+        searched = pools_of(table_routes)
+        shortlist_stats.update(
+            searched_routes={fam: len(table_routes.get(fam, ())) for fam in sor.FAMILIES},
+            skipped_routes={
+                fam: len(routes[fam]) - len(table_routes.get(fam, ())) for fam in sor.FAMILIES
+            },
+            searched_pools=len(searched),
+            skipped_pools=len(eligible_pools - searched),
+            searched_route_ids=route_ids(table_routes),
+        )
+        stats["search_completed"] = True
         return selection
 
     selection: sor.SwapSelection | None = None
@@ -495,12 +520,18 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             shortlist_stats["fallback"] = {
                 "triggered": True,
                 "reason": "no_ranked_route" if not short.size else "no_shortlist_selection",
+                "completed": False,
             }
             stats["search_scope"] = "full_cohort_fallback"
+            stats["search_completed"] = False
             selection = search(routes, "fallback_table")
+            shortlist_stats["fallback"]["completed"] = True
     except _BudgetExhausted:
-        charge("fallback_table" if shortlist_stats["fallback"]["triggered"] else "shortlist_table")
-        return timeout("quote table")
+        in_fallback = shortlist_stats["fallback"]["triggered"]
+        charge("fallback_table" if in_fallback else "shortlist_table")
+        return timeout(
+            "full-table fallback quote table" if in_fallback else "shortlist quote table"
+        )
     candidates_truncated = 0 if stats["search_scope"] != "shortlist" else n_routes - short.size
 
     if selection is None:
