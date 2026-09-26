@@ -1,0 +1,45 @@
+{
+ "bundles_equal": true,
+ "runs": {
+  "cold fixed full_source/matrix": {
+   "records": 144,
+   "semantic_differences": []
+  },
+  "cold fixed full_source/sentinel": {
+   "records": 6,
+   "semantic_differences": []
+  },
+  "timing fixed full_source/matrix": {
+   "records": 144,
+   "semantic_differences": []
+  },
+  "timing fixed full_source/sentinel": {
+   "records": 6,
+   "semantic_differences": []
+  },
+  "timing fixed sor_compatible/matrix": {
+   "records": 144,
+   "semantic_differences": []
+  },
+  "timing fixed sor_compatible/sentinel": {
+   "records": 6,
+   "semantic_differences": []
+  },
+  "timing reverse full_source/matrix": {
+   "records": 144,
+   "semantic_differences": []
+  },
+  "timing reverse full_source/sentinel": {
+   "records": 6,
+   "semantic_differences": []
+  },
+  "timing reverse sor_compatible/matrix": {
+   "records": 144,
+   "semantic_differences": []
+  },
+  "timing reverse sor_compatible/sentinel": {
+   "records": 6,
+   "semantic_differences": []
+  }
+ }
+}

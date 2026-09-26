@@ -44,7 +44,8 @@ exact comparisons need; docs/references/latency-baseline.md §7).
 arm with the same protocol: explicit exact controls (L02-L05) installed inside the child
 worker's solve window only -- fresh instances per solve, so their construction and filling
 is charged to that solve; the parent's independent final evaluation keeps the default
-reference path -- and/or the opt-in `uni_sor_fast` overlay. `session --arms F` runs every
+reference path -- and/or the opt-in `uni_sor_fast` overlay (the pinned `uni_sor_port`, its
+contract and goldens are never altered by an arm). `session --arms F` runs every
 arm once, in the registered order, each followed by its own same-source/same-arm
 sufficient-budget run; it stops on a coverage, determinism or provenance failure, never on
 host load alone, and never retries.

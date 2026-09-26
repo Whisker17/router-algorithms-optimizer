@@ -1,8 +1,12 @@
 # L08 — final latency results and adoption decisions (WHI-1510)
 
-Status: **pre-registered; final collection pending** (this section is replaced by the
-measured results and dispositions once the single pre-registered session has run, or by
-the precise blocker if it cannot run). Research key L08
+Status: **the single pre-registered L08 session ran to completion; no experiment is
+adopted.** Session `20260926T200553953133Z-dbac5a10` (2026-09-26 20:05–22:17 UTC, measured
+source `2fda208`, clean) measured all ten arms with complete coverage, clean determinism
+gates and exact semantics, but 8 of the 10 arm experiments exceeded L01's unchanged host-load
+rule (1-minute load > 5.0 on the shared 10-core host). Every decision comparison is therefore
+`inconclusive` → **not adopted (inconclusive)**: that is a measurement-environment blocker,
+not evidence that any experiment is slow (§§3–5). Research key L08
 ([latency-optimization-research.md](latency-optimization-research.md) §§4, 6). Base
 `911f819` (0.1.2 `dev`, WHI-1504…1509 merged, every experiment default-off / opt-in).
 
@@ -115,17 +119,223 @@ and this document reports the blocker.
 case, and the L06/L07 held-out results were visible before later work; the held-out split
 is not untouched evidence for any of these experiments.
 
-## 3. Results
+## 3. Results of session `dbac5a10`
 
-Pending the session.
+Evidence (committed, compact): [`latency-results/`](latency-results/) —
+[`final-dbac5a10.md`](latency-results/final-dbac5a10.md) / [`.json`](latency-results/final-dbac5a10.json)
+(`report.latency final`, generated at `e9f3ebd`, clean; every comparison's verdict, reasons,
+timing, charged costs, regret and status transitions), per-case records
+[`records-dbac5a10.jsonl.gz`](latency-results/records-dbac5a10.jsonl.gz) (1,750 rows; uncompressed
+sha256 `c1b133b7…c7da`), the session manifest, the launch record, the R-vs-L01 identity check
+and `SHA256SUMS-dbac5a10.txt` over all 291 raw non-bundle files. The raw session (836 MB,
+incl. derived bundles) stays under the gitignored `data/latency-l08/` of the WHI-1510 worktree.
+Tables below are derived from the records by [`tables.py.txt`](latency-results/tables.py.txt).
+Measured source and later commits: every experiment ran at `2fda208`; the later commits of this
+issue change only the report generator's per-case row shape (`e9f3ebd`), one docstring of
+`benchmark/latency.py` (a repository guard requires runtime modules naming `uni_sor_*` to name
+the pinned `uni_sor_port`) and documentation/evidence, so no measured code path changed.
 
-## 4. Reproduction
+### 3.1 Session, coverage and load
+
+Launch: the orchestrator waived only the optional 3.0 launch headroom, prospectively (readiness
+19:58–20:00 UTC: 3.85, 4.24, 3.84, 4.29, 4.07; instantaneous check 20:05:40 UTC 4.63, no heavy
+competitor). During the session unrelated work started (a `cargo test` of another project from
+~21:00 UTC, browser and system daemons); per the pre-registered rule the single session
+continued, and nothing was retried or discarded.
+
+| Arm | experiment | UTC | load samples | max 1-min load | samples > 5.0 | contaminated | own SB |
+| --- | --- | --- | ---: | ---: | ---: | --- | --- |
+| R | `…ce605e14-R` | 20:05–20:52 | 780 | 12.25 | 135 (17.3 %) | yes | ok, not bound |
+| E1 | `…db26dbac-E1` | 20:53–21:11 | 770 | 11.46 | 602 (78.2 %) | yes | ok, not bound |
+| E2 | `…63367a9a-E2` | 21:11–21:29 | 770 | 34.99 | 762 (99.0 %) | yes | ok, not bound |
+| E3 | `…19c85727-E3` | 21:29–21:37 | 770 | 5.62 | 215 (27.9 %) | yes | ok, not bound |
+| E4 | `…add6ede2-E4` | 21:37–21:45 | 770 | 5.62 | 58 (7.5 %) | yes | ok, not bound |
+| S0 | `…070ced63-S0` | 21:45–22:05 | 145 | 10.78 | 82 (56.6 %) | yes | — |
+| H1 | `…bf485880-H1` | 22:05–22:08 | 145 | 4.88 | 0 | **no** | — |
+| H2 | `…ab5c9349-H2` | 22:08–22:10 | 145 | 4.37 | 0 | **no** | — |
+| H3 | `…c88e4a25-H3` | 22:10–22:16 | 145 | 5.73 | 63 (43.4 %) | yes | — |
+| H4 | `…536bd1f3-H4` | 22:16–22:17 | 145 | 6.16 | 145 (100 %) | yes | — |
+
+Every arm: 0 coverage problems (every required run complete, every scheduled record once,
+declared samples and cold charge evidence present) and 0 order/cold/repeat inconsistencies;
+the session gate never stopped. R's five `main.py quote` invocations exited 0 with exactly one
+solve per algorithm (CLI wall 7.77–7.86 s, median 7.77 s; sum of the six solves 6.16 s). The
+owner's 5.174 exception (experiment `4e49878d`) is not applied to any of these experiments, and
+that retained partial `299b88a` run enters no verdict here.
+
+### 3.2 Exactness, defaults and state (load-independent)
+
+- **The default path is unchanged.** R (`2fda208`) uses the L01 derived bundle hashes, and all
+  900 of its records (both orders, both cohorts, cold, sentinel) have semantic fields identical to
+  the L01 reference `d5061563` (`bbda6e2`): [`r-vs-l01-d5061563.json`](latency-results/r-vs-l01-d5061563.json).
+- **Every control is exact through the spawned-worker path.** In all seven exact comparisons
+  (L02, L03, L04, L05, both cumulative, H2→H4): 0 semantic mismatches in every stage, order,
+  cohort and bundle; 0 status regressions (750 records per six-algorithm comparison: 685
+  ok→ok, 65 no_route→no_route); the budget-bound `incremental_graph` /
+  `bnd-78c1b0-201eba-round_at` record is established 1/1 by each arm's own same-source
+  L01-SB (unbounded, identical). Work counters differ only for L05: 125 = every
+  `incremental_graph` record of the ten runs (its declared `graph_reuse` counters).
+- **The controls ran inside the workers and match their predecessors' accounting** (per-solve
+  counters over all four bundles): E2 tick memo 5,936,056 hits / 323,960 misses and bin memo
+  239,272 / 13,789 — exactly WHI-1505's figures; E3 at most 55 prefix keys and 15,370
+  checkpoints in one solve, 0 evictions or invalidations — WHI-1506's figures; with L04 the tick memo sees
+  only 408,810 hits because resumed prefixes skip those steps.
+- **State isolation:** fixed ≡ reverse order and cold ≡ warm process in every arm; every
+  attempt consistent (warmup included); instances are fresh per solve.
+- **Heuristic scope under exact controls:** H2→H4 is exact (0 mismatches, identical quotes),
+  so L02–L04 compose with the L06/L07 search without changing it.
+
+### 3.3 Verdicts (L01 rules, verbatim)
+
+| Comparison | lane | role | baseline → candidate | verdict | disposition | reason |
+| --- | --- | --- | --- | --- | --- | --- |
+| L02 | exact | decision | R → E1 | inconclusive | not adopted (inconclusive) | host load (R 12.25, E1 11.46) |
+| L03 | exact | decision | E1 → E2 | inconclusive | not adopted (inconclusive) | host load (E1 11.46, E2 34.99) |
+| L04 | exact | decision | E2 → E3 | inconclusive | not adopted (inconclusive) | host load (E2 34.99, E3 5.62) |
+| L05 | exact | decision | E3 → E4 | inconclusive | not adopted (inconclusive) | host load (E3 5.62, E4 5.62) |
+| L02-L04-cumulative | exact | info | R → E3 | inconclusive | — | host load |
+| L02-L05-cumulative | exact | info | R → E4 | inconclusive | — | host load |
+| H4-exact-controls | exact | info | H2 → H4 | inconclusive | — | host load (H4 6.16) |
+| L06 | heuristic | decision | S0 → H1 | inconclusive | not adopted (inconclusive) | host load (S0 10.78) |
+| L07-combined | heuristic | decision | S0 → H2 | inconclusive | not adopted (inconclusive) | host load (S0 10.78) |
+| L07-adaptive-only | heuristic | decision | S0 → H3 | inconclusive | not adopted (inconclusive) | host load (S0 10.78, H3 5.73) |
+| L07-sampling-ablation | heuristic | info | H1 → H2 | **opt_in_only** | opt-in only | both uncontaminated: sampling 17.0 % (full source) / 16.7 % (matched) faster in wall and CPU, cold charge not slower, 0 added loss |
+| L06-L07-with-exact-controls | heuristic | info | S0 → H4 | inconclusive | — | host load |
+
+In every inconclusive comparison, host load is the *only* reason: no coverage, determinism,
+semantic, sufficient-budget, lost-sample or status problem was found.
+
+### 3.4 Timing diagnostics (contaminated; not adoption evidence)
+
+Shown because the direction and cost accounting are informative, and because a later clean
+session should be read against them — not as speedups. Sentinel (full source) warm solve
+median over 10 samples, s:
+
+| algorithm | R | E1 (L02) | E2 (+L03) | E3 (+L04) | E4 (+L05) | S0 | H1 | H2 | H3 | H4 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| direct | 0.012 | 0.003 | 0.003 | 0.004 | 0.004 | — | — | — | — | — |
+| single_path | 0.223 | 0.158 | 0.133 | 0.086 | 0.086 | — | — | — | — | — |
+| direct_split | 0.210 | 0.043 | 0.036 | 0.009 | 0.009 | — | — | — | — | — |
+| path_split | 0.843 | 0.537 | 0.424 | 0.232 | 0.233 | — | — | — | — | — |
+| incremental_graph | 1.116 | 0.760 | 0.649 | 0.441 | 0.315 | — | — | — | — | — |
+| uni_sor_port | 3.759 | 2.467 | 1.900 | 0.446 | 0.448 | 3.752 | — | — | — | — |
+| uni_sor_fast | — | — | — | — | — | — | 0.651 | 0.495 | 1.618 | 0.120 |
+
+- Held-out matrix improvements by the comparator (wall; CPU within ±0.01 except where noted):
+  R→E1 (L02) 0.39–0.78 on the five timed algorithms, every cold charge `not_slower`;
+  R→E3 cumulative 0.49 (`incremental_graph`) to 0.92 (`direct_split`) on full source; E3→E4 (L05)
+  `incremental_graph` 0.226 full source / 0.174 matched, the other five within ±0.016
+  (between-experiment A/A at ≤ 5.62 load, all `no_worthwhile_change`).
+- **E1→E2 (L03) reads slower** on full source (−0.35 to −0.41 wall for `single_path` /
+  `direct_split` / `path_split`, every cold charge `slower`, and even the spawn start-up,
+  which no control touches, doubled for `direct`), but E2 ran at load up to 34.99 with 99 % of
+  samples above 5.0; its matched-cohort readings are +0.07…+0.11 (`uni_sor_port` −0.10). These numbers cannot separate L03's effect from the load; no
+  conclusion either way is drawn.
+- `direct` has no held-out case above the 0.02 s floor in any arm (`insufficient_cases`).
+- Heuristic lane vs S0 (S0 itself contaminated): H1 0.82, H2 0.85, H3 0.68, H4 0.96 wall
+  improvement; cold charges `not_slower`.
+
+**Cold fresh-worker charge (full-source matrix, median over the 24 cases, s) and solve peak
+(max over cases, MiB)** — the per-algorithm complete-response boundary of the controlled arms:
+
+| algorithm | R | E1 | E2 | E3 | E4 | peak R → E3 |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| direct | 0.124 | 0.127 | 0.252 | 0.124 | 0.124 | 1.08 → 1.09 |
+| single_path | 0.194 | 0.164 | 0.250 | 0.150 | 0.152 | 15.75 → 15.92 |
+| direct_split | 0.127 | 0.130 | 0.283 | 0.128 | 0.126 | 59.89 → 60.00 |
+| path_split | 0.398 | 0.345 | 0.473 | 0.248 | 0.249 | 82.03 → 82.45 |
+| incremental_graph | 0.797 | 0.535 | 0.671 | 0.429 | 0.331 | 484.56 → 484.98 (E4 485.14) |
+| uni_sor_port | 0.779 | 0.350 | 0.329 | 0.222 | 0.220 | 268.66 → 259.21 |
+
+`uni_sor_fast` (full-source matrix, cold charge median / peak): H1 0.255 s / 50.3 MiB, H2
+0.243 / 41.2, H3 0.318 / 171.0, H4 0.163 / 41.0; S0's `uni_sor_port` 0.776 / 268.7. Sentinel
+cold charges: `uni_sor_port` R 3.94 s → E3 0.62 s (peak 298.7 → 239.8 MiB: fewer transient
+step objects); `uni_sor_fast` H1 0.80, H2 0.64, H3 1.79, H4 0.27 s. Start-up incl. prepare is
+0.12–0.14 s per worker in every arm except under E2's load; prepare is unchanged by every
+control (≤ 0.13 ms native algorithms, ≈18.7 ms SOR port/fast), because no control has a
+preparation step: all construction and filling is inside the solve. The independent
+evaluation (≈0.2–0.7 ms per plan) always runs on the reference path. All per-case numbers
+are in the records.
+
+### 3.5 Heuristic quality, coverage and ablations (load-independent, corrected source)
+
+Regret vs S0's `uni_sor_port` on the same bundle, objective and budget (gross; N/A never 0);
+full-source and matched-cohort rows are identical (SOR's candidates are the V2/V3 cohort in
+both):
+
+| Arm | held-out ok / N/A | losses | max bps | mean bps | tuning losses | sentinel | quotes vs S0 | fallbacks | sampling stops | validations / rejected |
+| --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- | --- |
+| H1 (L06) | 13 / 2 | 2 | 1.125 | 0.171 | 0 | 0 | 0.217 | 2 | — | 0 / 0 |
+| H2 (L07 combined) | 13 / 2 | 2 | 1.125 | 0.171 | 0 | 0 | 0.152 | 2 | 23 converged, 2 no_selection_full_grid | 47 / 0 |
+| H3 (adaptive-only) | 13 / 2 | 0 | 0 | 0 | 0 | 0 | 0.467 | 2 | 23 converged, 2 no_selection_full_grid | 45 / 0 |
+| H4 (H2 + L02–L04) | 13 / 2 | 2 | 1.125 | 0.171 | 0 | 0 | 0.152 | 2 | as H2 | 47 / 0 |
+
+(Quotes, fallbacks, stops and validations: full-source matrix + sentinel, fixed order.)
+
+- The two losses are the ones WHI-1508 recorded: `emp-09bc4e-201eba-low-1` 1.125 bps and
+  `bnd-09bc4e-201eba-liq_at` 1.095 bps, per cohort. They are the shortlist's; sampling adds
+  none (H1→H2: 0 loss on every split), and the adaptive-only arm, which keeps every ranked
+  route, has none.
+- The 2 N/A rows per cohort are the reference's `no_route` cases (`bnd-1bdd88-78c1b0-dust`,
+  `…-round_below`): every arm took the charged full-table fallback and stated `no_route`
+  only over the full table. No ok → failure transition anywhere; no hard-limit stop, soft
+  stop or rejected incumbent occurred in the matrix, so those paths remain covered by unit
+  tests only.
+- L07's corrected-source metadata (seed validation before any stop, `validations`,
+  `grid_completion.reason`) is now measured: 47 validations in H2, 0 rejected incumbents.
+
+## 4. Dispositions
+
+| Experiment | Disposition | Evidence / reason |
+| --- | --- | --- |
+| Six reference algorithms incl. pinned `uni_sor_port` | **Unchanged and available** | R ≡ L01 reference on 900 records; no default, profile, pin or golden changed |
+| L02 empty-span skip (`skip_empty_spans=True`) | **Not adopted (inconclusive: host load)**; stays explicit, default-off | exact in every stage; comparator reason is load only |
+| L02 nonzero-bitmap-word index | Not built | only relevant after an L02 adoption, which did not happen |
+| L03 tick/bin price memo (per solve, 16,384 / 4,096) | **Not adopted (inconclusive: host load)**; stays explicit, default-off | exact; E2 ran at load ≤ 34.99, so its slower-looking readings are not interpretable |
+| L03 LB sorted-tree reuse | Not selected (WHI-1505 evidence unchanged) | 0.2–0.7 % instrumented share on this workload |
+| L04 CL prefix reuse (per solve, 4,096 / 262,144) | **Not adopted (inconclusive: host load)**; stays explicit, default-off | exact; 0 evictions; no preparation cost |
+| L04 amount-only seam; cross-swap prefix reuse | Not needed / out of scope by design (WHI-1506) | — |
+| L05 graph score/admission reuse | **Not adopted (inconclusive: host load, E3/E4 max 5.62)**; stays explicit, default-off | exact; declared counter differences only |
+| L05 heap/argmax index | Not built (WHI-1507) | — |
+| L06 `uni_sor_fast` shortlist `p5.100-k8-d0` | **Opt-in only; not a default; L06 comparison inconclusive (S0 load)** | real held-out losses ≤ 1.125 bps; no owner loss tolerance |
+| L06 aggressive `p100-k2-d0`; TVL/base-token budgets | Not carried (losses up to 35.0 bps; untimed) / not implemented (no frozen TVL) | WHI-1508 evidence |
+| L07 combined `c25-r1-snone` | **Opt-in only; not a default; L07-combined comparison inconclusive (S0 load)** | sampling ablation vs L06 is `opt_in_only` on a clean pair (17 % faster, 0 added loss); inherits L06's losses |
+| L07 adaptive-only `c25-r1-snone` | **Opt-in only; not a default; comparison inconclusive (S0/H3 load)** | 0 held-out loss at 0.467 × reference quotes; no guarantee (narrow-optimum test) |
+| L07 aggressive `c50-r1-s250`, soft caps, 50 % grid | Not carried (losses up to 35.7 bps; untimed); whether soft caps are acceptable at all is the owner's decision | WHI-1509 evidence |
+| Composition (L06/L07 + L02–L04) | Exact (H2→H4); timing inconclusive (H4 load) | — |
+
+No experiment is labelled "slower" or "rejected for performance": no comparison reached a
+`reject`, and an inconclusive timing is not evidence of slowness.
+
+## 5. Remaining gap and exact decisions needed
+
+- **Unmet:** "adequate declared samples … support latency claims." The samples are complete
+  and correctly bounded, but no decision comparison has two uncontaminated experiments, so no
+  adopt (or performance-reject) verdict exists for L02–L07.
+- **Needed to close it (parent/owner decision, not taken here):** either (a) one new run of the
+  same frozen L08 v1 session in an actually quiet window (new session id, no threshold or rule
+  change; this issue made no retry), or (b) an explicit owner decision on whether any of the
+  marginally contaminated experiments (E3/E4 max 5.62; H3 5.73) may be used, as was done for
+  the 5.174 case. Neither is assumed.
+- Even an adopt-eligible exact control stays default-off until a separate reviewed activation
+  change; every heuristic default needs the owner's explicit acceptance of its reported loss.
+
+## 6. Limitations
+
+One snapshot/block (101082044), the L01 matrix (24 cases + sentinel), `daily_gross`, one
+shared Apple M2 Pro (10 logical CPUs; cores not pinned). Ten samples per case do not support a
+tail, p95 or SLA; nothing here is a universal subsecond claim or an API equivalence. Only the
+`per_solve` lifetime was measured. A controlled arm's complete response is its per-algorithm
+cold charge, not a six-algorithm CLI total. Held-out cases were visible to earlier work (§2).
+
+## 7. Reproduction
 
 ```bash
 uv run python -m benchmark.latency session --arms config/latency/l08.yaml \
   --bundle data/corpus/mantle-5src-101082044/bundle --out data/latency-l08
 uv run python -m report.latency final data/latency-l08/<session> \
   --json final.json --markdown final.md --records records.jsonl
+python3 docs/references/latency-results/tables.py.txt docs/references/latency-results/records-dbac5a10.jsonl.gz
 # one arm / one comparison by hand:
 uv run python -m benchmark.latency run --protocol config/latency/l01.yaml \
   --arms config/latency/l08.yaml --arm E1 --bundle <parent bundle> --out <dir>

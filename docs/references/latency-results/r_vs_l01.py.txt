@@ -1,0 +1,16 @@
+"""R (2fda208, default path) vs the L01 semantic reference d5061563 (bbda6e2): same derived
+bundles, identical semantic fields on every fixed-order timing record."""
+import glob, json, sys
+from report import latency as report
+S, L01 = sys.argv[1], sys.argv[2]
+r = report.load_experiment(glob.glob(S + "/*-R")[0])
+base = report.load_experiment(L01)
+fields = r.acceptance["exact_semantic_fields"]
+out = {"bundles_equal": {k: v["bundle_hash"] for k, v in r.document["bundles"].items()}
+       == {k: v["bundle_hash"] for k, v in base.document["bundles"].items()}, "runs": {}}
+for key, run in sorted(r.runs.items()):
+    b = {report._key(x): x for x in base.runs[key].records}
+    diff = [f"{a}/{c}" for (a, c), x in ((report._key(x), x) for x in run.records)
+            if report.semantic_view(x, fields) != report.semantic_view(b[(a, c)], fields)]
+    out["runs"][" ".join(key)] = {"records": len(run.records), "semantic_differences": diff}
+print(json.dumps(out, indent=1))

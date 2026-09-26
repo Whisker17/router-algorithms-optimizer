@@ -1,0 +1,426 @@
+{
+  "arms": {
+    "document": {
+      "arms": [
+        {
+          "algorithms": "reference",
+          "controls": [],
+          "name": "R",
+          "stages": [
+            "timing",
+            "cold",
+            "quote_cli"
+          ]
+        },
+        {
+          "algorithms": "reference",
+          "controls": [
+            "L02"
+          ],
+          "name": "E1",
+          "stages": [
+            "timing",
+            "cold"
+          ]
+        },
+        {
+          "algorithms": "reference",
+          "controls": [
+            "L02",
+            "L03"
+          ],
+          "name": "E2",
+          "stages": [
+            "timing",
+            "cold"
+          ]
+        },
+        {
+          "algorithms": "reference",
+          "controls": [
+            "L02",
+            "L03",
+            "L04"
+          ],
+          "name": "E3",
+          "stages": [
+            "timing",
+            "cold"
+          ]
+        },
+        {
+          "algorithms": "reference",
+          "controls": [
+            "L02",
+            "L03",
+            "L04",
+            "L05"
+          ],
+          "name": "E4",
+          "stages": [
+            "timing",
+            "cold"
+          ]
+        },
+        {
+          "algorithms": [
+            "uni_sor_port"
+          ],
+          "controls": [],
+          "name": "S0",
+          "stages": [
+            "timing",
+            "cold"
+          ]
+        },
+        {
+          "algorithms": [
+            "uni_sor_fast"
+          ],
+          "controls": [],
+          "name": "H1",
+          "shortlist": {
+            "direct_routes": 0,
+            "probe_percents": [
+              5,
+              100
+            ],
+            "routes_per_probe": 8
+          },
+          "stages": [
+            "timing",
+            "cold"
+          ]
+        },
+        {
+          "algorithms": [
+            "uni_sor_fast"
+          ],
+          "controls": [],
+          "name": "H2",
+          "sampling": {
+            "coarse_step": 25,
+            "refine_radius": 1,
+            "soft_max_quotes": null
+          },
+          "shortlist": {
+            "direct_routes": 0,
+            "probe_percents": [
+              5,
+              100
+            ],
+            "routes_per_probe": 8
+          },
+          "stages": [
+            "timing",
+            "cold"
+          ]
+        },
+        {
+          "algorithms": [
+            "uni_sor_fast"
+          ],
+          "controls": [],
+          "name": "H3",
+          "sampling": {
+            "coarse_step": 25,
+            "refine_radius": 1,
+            "soft_max_quotes": null
+          },
+          "shortlist": {
+            "direct_routes": 0,
+            "probe_percents": [
+              25,
+              50,
+              75,
+              100
+            ],
+            "routes_per_probe": 1000000
+          },
+          "stages": [
+            "timing",
+            "cold"
+          ]
+        },
+        {
+          "algorithms": [
+            "uni_sor_fast"
+          ],
+          "controls": [
+            "L02",
+            "L03",
+            "L04"
+          ],
+          "name": "H4",
+          "sampling": {
+            "coarse_step": 25,
+            "refine_radius": 1,
+            "soft_max_quotes": null
+          },
+          "shortlist": {
+            "direct_routes": 0,
+            "probe_percents": [
+              5,
+              100
+            ],
+            "routes_per_probe": 8
+          },
+          "stages": [
+            "timing",
+            "cold"
+          ]
+        }
+      ],
+      "comparisons": [
+        {
+          "baseline": "R",
+          "candidate": "E1",
+          "id": "L02",
+          "lane": "exact",
+          "role": "decision"
+        },
+        {
+          "baseline": "E1",
+          "candidate": "E2",
+          "id": "L03",
+          "lane": "exact",
+          "role": "decision"
+        },
+        {
+          "baseline": "E2",
+          "candidate": "E3",
+          "id": "L04",
+          "lane": "exact",
+          "role": "decision"
+        },
+        {
+          "baseline": "E3",
+          "candidate": "E4",
+          "id": "L05",
+          "lane": "exact",
+          "role": "decision"
+        },
+        {
+          "baseline": "R",
+          "candidate": "E3",
+          "id": "L02-L04-cumulative",
+          "lane": "exact",
+          "role": "informational"
+        },
+        {
+          "baseline": "R",
+          "candidate": "E4",
+          "id": "L02-L05-cumulative",
+          "lane": "exact",
+          "role": "informational"
+        },
+        {
+          "baseline": "H2",
+          "candidate": "H4",
+          "id": "H4-exact-controls",
+          "lane": "exact",
+          "role": "informational"
+        },
+        {
+          "baseline": "S0",
+          "candidate": "H1",
+          "id": "L06",
+          "lane": "heuristic",
+          "pairs": {
+            "uni_sor_fast": "uni_sor_port"
+          },
+          "role": "decision"
+        },
+        {
+          "baseline": "S0",
+          "candidate": "H2",
+          "id": "L07-combined",
+          "lane": "heuristic",
+          "pairs": {
+            "uni_sor_fast": "uni_sor_port"
+          },
+          "role": "decision"
+        },
+        {
+          "baseline": "S0",
+          "candidate": "H3",
+          "id": "L07-adaptive-only",
+          "lane": "heuristic",
+          "pairs": {
+            "uni_sor_fast": "uni_sor_port"
+          },
+          "role": "decision"
+        },
+        {
+          "baseline": "H1",
+          "candidate": "H2",
+          "id": "L07-sampling-ablation",
+          "lane": "heuristic",
+          "role": "informational"
+        },
+        {
+          "baseline": "S0",
+          "candidate": "H4",
+          "id": "L06-L07-with-exact-controls",
+          "lane": "heuristic",
+          "pairs": {
+            "uni_sor_fast": "uni_sor_port"
+          },
+          "role": "informational"
+        }
+      ],
+      "controls": {
+        "L02": {
+          "skip_empty_spans": true
+        },
+        "L03": {
+          "bin_capacity": 4096,
+          "lifetime": "per_solve",
+          "tick_capacity": 16384
+        },
+        "L04": {
+          "lifetime": "per_solve",
+          "max_checkpoints": 262144,
+          "max_keys": 4096
+        },
+        "L05": {
+          "graph_reuse": true,
+          "lifetime": "per_solve"
+        }
+      },
+      "dispositions": {
+        "exact": {
+          "adopt_eligible": "adopt-eligible (not activated; default activation is a separate reviewed change)",
+          "inconclusive": "not adopted (inconclusive)",
+          "reject": "rejected"
+        },
+        "heuristic": {
+          "inconclusive": "not adopted (inconclusive)",
+          "opt_in_only": "opt-in only (no default; any loss needs the owner's explicit acceptance)",
+          "reject": "rejected"
+        }
+      },
+      "key": "L08",
+      "protocol": {
+        "path": "config/latency/l01.yaml",
+        "sha256": "961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b"
+      },
+      "schema": "latency-arms/1",
+      "source": "every_arm_same_clean_commit",
+      "sufficient_budget": {
+        "path": "config/latency/l01-sufficient-budget.yaml",
+        "sha256": "4059506da09280cdb0e8d4a94ac6ecef1c786113016e8eee430bef38089db43b"
+      },
+      "version": 1
+    },
+    "key": "L08",
+    "path": "config/latency/l08.yaml",
+    "sha256": "e7add86add573033f04c6790f705cb2951712ffc272a4498d03f01251101beaa",
+    "version": 1
+  },
+  "created_at": "2026-09-26T20:05:53.953416+00:00",
+  "entries": [
+    {
+      "arm": "R",
+      "experiment": "20260926T200553953878Z-ce605e14-R",
+      "finished_at": "2026-09-26T20:53:04.665021+00:00",
+      "started_at": "2026-09-26T20:05:53.953863+00:00",
+      "sufficient": "20260926T205259728998Z-5b82a0a8-R-sufficient"
+    },
+    {
+      "arm": "E1",
+      "experiment": "20260926T205304665435Z-db26dbac-E1",
+      "finished_at": "2026-09-26T21:11:31.948874+00:00",
+      "started_at": "2026-09-26T20:53:04.665421+00:00",
+      "sufficient": "20260926T211127160984Z-bc68934e-E1-sufficient"
+    },
+    {
+      "arm": "E2",
+      "experiment": "20260926T211131949286Z-63367a9a-E2",
+      "finished_at": "2026-09-26T21:29:30.936657+00:00",
+      "started_at": "2026-09-26T21:11:31.949272+00:00",
+      "sufficient": "20260926T212926294163Z-5e369153-E2-sufficient"
+    },
+    {
+      "arm": "E3",
+      "experiment": "20260926T212930937036Z-19c85727-E3",
+      "finished_at": "2026-09-26T21:37:47.912235+00:00",
+      "started_at": "2026-09-26T21:29:30.937022+00:00",
+      "sufficient": "20260926T213743146053Z-80825416-E3-sufficient"
+    },
+    {
+      "arm": "E4",
+      "experiment": "20260926T213747912600Z-add6ede2-E4",
+      "finished_at": "2026-09-26T21:45:31.849529+00:00",
+      "started_at": "2026-09-26T21:37:47.912590+00:00",
+      "sufficient": "20260926T214527009229Z-f03a9e55-E4-sufficient"
+    },
+    {
+      "arm": "S0",
+      "experiment": "20260926T214531849929Z-070ced63-S0",
+      "finished_at": "2026-09-26T22:05:10.528196+00:00",
+      "started_at": "2026-09-26T21:45:31.849916+00:00"
+    },
+    {
+      "arm": "H1",
+      "experiment": "20260926T220510528495Z-bf485880-H1",
+      "finished_at": "2026-09-26T22:08:04.234853+00:00",
+      "started_at": "2026-09-26T22:05:10.528484+00:00"
+    },
+    {
+      "arm": "H2",
+      "experiment": "20260926T220804235146Z-ab5c9349-H2",
+      "finished_at": "2026-09-26T22:10:28.913791+00:00",
+      "started_at": "2026-09-26T22:08:04.235135+00:00"
+    },
+    {
+      "arm": "H3",
+      "experiment": "20260926T221028914290Z-c88e4a25-H3",
+      "finished_at": "2026-09-26T22:16:24.950835+00:00",
+      "started_at": "2026-09-26T22:10:28.914280+00:00"
+    },
+    {
+      "arm": "H4",
+      "experiment": "20260926T221624951179Z-536bd1f3-H4",
+      "finished_at": "2026-09-26T22:17:09.524892+00:00",
+      "started_at": "2026-09-26T22:16:24.951166+00:00"
+    }
+  ],
+  "finished_at": "2026-09-26T22:17:09.525220+00:00",
+  "order": [
+    "R",
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "S0",
+    "H1",
+    "H2",
+    "H3",
+    "H4"
+  ],
+  "parent_bundle": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle",
+  "replay_command": "uv run python -m benchmark.latency session --arms config/latency/l08.yaml --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle --out data/latency-l08",
+  "schema": "latency-session/1",
+  "session_id": "20260926T200553953133Z-dbac5a10",
+  "source": {
+    "code_tree_ids": {
+      "benchmark": "70beaa1ddd511940510c8b11e6ae47f00d96a6ec",
+      "config": "fbe746f8d57a4e5ee8ede1d6e70e9a6f73ae806c",
+      "main.py": "bc1a81f69a02db62edda5dbf916f58a4defbe288",
+      "pools": "6f9685cbcb280780296d1119fa141a147b6fe99b",
+      "pyproject.toml": "77f66e9b32c40ee755831297a828a6213b2b159e",
+      "report": "7d29ac94e92857b24cc35c0e032b5d1218e9b098",
+      "routing": "59f418530aedb28c5ff3b94b53d12618265475df",
+      "snapshot": "e966e3bcf7fdbfeab1eace6088d37313df9fa791",
+      "uv.lock": "611568a832a513d8d4fbdfd2de11d8774b9b6c39"
+    },
+    "dirty_patch_sha256": null,
+    "dirty_paths": [],
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "2fda208a6eea1ba21bfc420a02d02ca74e2a2aa1"
+  },
+  "state": "complete",
+  "stop_reasons": []
+}

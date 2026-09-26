@@ -1,0 +1,100 @@
+"""Derive the L08 results tables from the committed per-case records (records.jsonl.gz).
+
+    python3 tables.py records.jsonl.gz   # stdlib only; prints Markdown tables
+"""
+import gzip
+import json
+import statistics
+import sys
+from collections import defaultdict
+
+rows = [json.loads(line) for line in gzip.open(sys.argv[1], "rt")]
+ARMS = ["R", "E1", "E2", "E3", "E4", "S0", "H1", "H2", "H3", "H4"]
+
+
+def med(values):
+    values = [v for v in values if v is not None]
+    return statistics.median(values) if values else None
+
+
+def f(v, d=3):
+    return "—" if v is None else f"{v:.{d}f}"
+
+
+print("### Sentinel (full source), warm solve median s over 10 samples")
+algs = defaultdict(dict)
+for r in rows:
+    if r["bundle"] == "full_source/sentinel":
+        algs[r["algorithm"]][r["arm"]] = r["solve_wall_median_seconds"]
+names = [a for a in ARMS if any(a in v for v in algs.values())]
+print("| algorithm | " + " | ".join(names) + " |")
+print("| --- |" + " ---: |" * len(names))
+for alg, by in algs.items():
+    print(f"| {alg} | " + " | ".join(f(by.get(a)) for a in names) + " |")
+
+print("\n### Full-source matrix, cold fresh-worker charge: median over the 24 cases (s)")
+print("| algorithm | arm | charged | start-up incl. prepare | prepare ms | solve | "
+      "evaluation ms | solve peak MiB (max) |")
+print("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |")
+cold = defaultdict(list)
+for r in rows:
+    if r["bundle"] == "full_source/matrix" and r["cold"]:
+        cold[(r["algorithm"], r["arm"])].append(r)
+for (alg, arm), rs in sorted(cold.items(), key=lambda k: (k[0][0], ARMS.index(k[0][1]))):
+    c = [r["cold"] for r in rs]
+    peak = max((r["solve_peak_bytes"] or 0) for r in rs) / 2**20
+    print(f"| {alg} | {arm} | {f(med(x['charged_seconds'] for x in c))} | "
+          f"{f(med(x['startup_including_prepare_seconds'] for x in c))} | "
+          f"{f(1000 * med(x['prepare_seconds'] for x in c), 3)} | "
+          f"{f(med(x['solve_wall_seconds'] for x in c))} | "
+          f"{f(1000 * med(x['evaluation_seconds'] for x in c), 3)} | {peak:.2f} |")
+
+print("\n### Sentinel (full source), cold fresh-worker charge per algorithm (s) and solve peak")
+print("| algorithm | arm | charged | solve | start-up incl. prepare | solve peak MiB |")
+print("| --- | --- | ---: | ---: | ---: | ---: |")
+for r in sorted((r for r in rows if r["bundle"] == "full_source/sentinel" and r["cold"]),
+                key=lambda r: (r["algorithm"], ARMS.index(r["arm"]))):
+    c = r["cold"]
+    print(f"| {r['algorithm']} | {r['arm']} | {f(c['charged_seconds'])} | "
+          f"{f(c['solve_wall_seconds'])} | {f(c['startup_including_prepare_seconds'])} | "
+          f"{(r['solve_peak_bytes'] or 0) / 2**20:.2f} |")
+
+print("\n### Control counters, fixed-order timing records, all four bundles (per-solve memos)")
+print("| arm | tick hits | tick misses | bin hits | bin misses | prefix max keys held | "
+      "prefix max checkpoints | evictions/invalidations |")
+print("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+for arm in ARMS:
+    cs = [r["controls"] for r in rows if r["arm"] == arm and r["controls"]]
+    if not cs:
+        continue
+    tick = [c["tick_math"] for c in cs if c["tick_math"]]
+    bins = [c["bin_math"] for c in cs if c["bin_math"]]
+    pre = [c["prefix"] for c in cs if c["prefix"]]
+    ev = sum(v for p in pre for k, v in p.items() if "evict" in k or "invalid" in k)
+    def total(xs, k):
+        return sum(x[k] for x in xs) if xs else "—"
+
+    print(f"| {arm} | {total(tick, 'hits')} | {total(tick, 'misses')} | "
+          f"{total(bins, 'hits')} | {total(bins, 'misses')} | "
+          f"{max((p['keys'] for p in pre), default='—')} | "
+          f"{max((p['checkpoints'] for p in pre), default='—')} | {ev if pre else '—'} |")
+
+print("\n### Heuristic arms, full-source matrix + sentinel (fixed order)")
+print("| arm | rows | ok | quotes vs S0 (sum) | fallbacks | stop reasons | validations | "
+      "rejected incumbents |")
+print("| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: |")
+ref = {(r["bundle"], r["case_id"]): r["quotes_counted"] for r in rows if r["arm"] == "S0"}
+for arm in ("H1", "H2", "H3", "H4"):
+    rs = [r for r in rows if r["arm"] == arm and r["bundle"].startswith("full_source")]
+    h = [r["heuristic"] for r in rs]
+    ratio = sum(r["quotes_counted"] or 0 for r in rs) / sum(ref[(r["bundle"], r["case_id"])] or 0
+                                                        for r in rs)
+    stops = defaultdict(int)
+    for x in h:
+        if x["sampling"]:
+            stops[x["sampling"]["stop_reason"]] += 1
+    print(f"| {arm} | {len(rs)} | {sum(r['status'] == 'ok' for r in rs)} | {ratio:.3f} | "
+          f"{sum(1 for x in h if (x['fallback'] or {}).get('triggered'))} | "
+          f"{dict(stops) or '—'} | "
+          f"{sum((x['sampling'] or {}).get('validations') or 0 for x in h)} | "
+          f"{sum((x['sampling'] or {}).get('rejected_incumbents') or 0 for x in h)} |")
