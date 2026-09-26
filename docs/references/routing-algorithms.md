@@ -3,10 +3,12 @@
 This guide provides a first-principles explanation of the six exact-input routing algorithms
 implemented in this repository. It covers their mathematical foundations, search mechanics,
 state management, and practical trade-offs against frozen Mantle liquidity snapshots.
+To compare these algorithms on a single swap via the CLI, see [`single-request.md`](single-request.md).
 
 Inspected source commit: `b2a680578f65ac65653a8160f04a3d97a5c5e71e` (Release 0.1.1).  
-All numeric traces are verified offline by `tests/docs/test_routing_algorithm_examples.py`
-and runnable via `docs/examples/routing-algorithms/run_examples.py`.
+All numeric traces and intermediate transitions are verified offline by
+`tests/docs/test_routing_algorithm_examples.py` and runnable via
+`docs/examples/routing-algorithms/run_examples.py`.
 
 ---
 
@@ -140,30 +142,36 @@ capability (no multi-hop, no split) required by `docs/DESIGN.md` §2.6.
 - **Incomplete Snapshot Policy:** If any evaluated direct pool fails with `INCOMPLETE_SNAPSHOT`
   (meaning the swap amount crossed into uncollected tick/bin state), the entire solve returns
   `SolveStatus.INCOMPLETE_SNAPSHOT`. Because that uncollected pool might have offered the best rate,
-  claiming another pool is "best direct" would be misleading.
+  claiming another pool is "best direct" would be misleading (`docs/DESIGN.md` §2.2).
 
 ### 2.3 Concise Pseudocode
 ```python
 def solve_direct(case, bundle, objective, budget):
     pools = bundle.pools_for_pair(case.token_in, case.token_out)
-    candidates = pools[:min(budget.max_candidates, budget.max_quotes)]
-    best_plan, best_score = None, -infinity
+    caps = [c for c in (budget.max_candidates, budget.max_quotes) if c is not None]
+    candidates = pools[:min(caps)] if caps else pools
+    truncated = len(pools) - len(candidates)
+    
+    best_plan, best_eval, best_score = None, None, None
     incomplete = []
     
     for pool in candidates:
-        plan = make_single_step_plan(pool.pool_id, case.amount_in)
-        eval_result = evaluate(bundle, case, plan, objective)
-        if eval_result.status == INCOMPLETE_SNAPSHOT:
-            incomplete.append(pool.pool_id)
+        plan = plan_for_pool(pool.pool_id, case)
+        evaluation = evaluate(bundle, case, plan, objective)
+        if evaluation.status != OK:
+            if evaluation.trace and evaluation.trace[-1].status == INCOMPLETE_SNAPSHOT:
+                incomplete.append(pool.pool_id)
             continue
-        if eval_result.status == OK and eval_result.score > best_score:
-            best_plan, best_score = plan, eval_result.score
+        score = objective.score(evaluation)
+        if best_score is None or score > best_score:
+            best_plan, best_eval, best_score = plan, evaluation, score
+            report_candidate(plan)
             
     if incomplete:
         return SolveResult(status=INCOMPLETE_SNAPSHOT)
-    if not best_plan:
+    if best_plan is None:
         return SolveResult(status=NO_ROUTE)
-    return SolveResult(status=OK, plan=best_plan)
+    return SolveResult(status=OK, plan=best_plan, evaluation=best_eval)
 ```
 
 ### 2.4 Architecture and Topology Diagram
@@ -204,14 +212,16 @@ Using our synthetic teaching bundle:
 - Ties: First pool in bundle insertion order is retained (`score > best_score`).
 
 ### 2.8 Computational and Memory Cost
-- Time Complexity: $\mathcal{O}(|\mathbb{P}_{\text{direct}}| \cdot \text{cost}_{\text{quote}})$.
-- Quote Work: At most $|\mathbb{P}_{\text{direct}}|$ quotes.
-- Memory: $\mathcal{O}(1)$ beyond bundle structures.
+- Time Complexity: $\mathcal{O}(\lvert \mathbb{P}_{\text{direct}} \rvert \cdot c_q)$, where $c_q$ is the quote simulation cost.
+- Quote Work: At most $\lvert \mathbb{P}_{\text{direct}} \rvert$ quotes.
+- Memory: $\mathcal{O}(1)$ beyond immutable bundle data structures.
 
 ### 2.9 Guarantees and Limitations
-- **Guarantee:** Globally optimal among single-pool direct routes for the given input.
+- **Guarantee:** Globally optimal among single-pool direct routes across the *evaluated complete-state*
+  candidates under the declared budget.
 - **Limitation:** Blind to multi-hop routes and split allocations; fails completely when no direct
-  pool exists (`NO_ROUTE`).
+  pool exists (`NO_ROUTE`). If truncated by budget, `no_route` indicates that no *evaluated*
+  pool succeeded.
 
 ---
 
@@ -229,25 +239,37 @@ cycle-free multi-hop paths at 100% of the input amount.
 - **Pruning Assumption:** If step $i$ along prefix $(e_1, \dots, e_i)$ fails (zero output,
   insufficient liquidity, or uncollected tick state), all candidate paths sharing that exact
   prefix are pruned immediately without quoting.
+- **Incomplete Candidates Excluded:** Unlike `direct`, incomplete intermediate detours are
+  excluded and recorded in `search_stats["paths_incomplete"]` rather than aborting the case,
+  because intermediate amounts on multi-hop paths cannot be bounded by a token envelope.
 
 ### 3.3 Concise Pseudocode
 ```python
 def solve_single_path(case, bundle, index, max_hops, cache, budget):
-    best_plan, best_score = None, -infinity
+    best_plan, best_score = None, None
     pruned_prefixes = set()
+    prefix_outputs = {}
     
     for path in enumerate_paths(index, case.token_in, case.token_out, max_hops):
-        if any(path[:k] in pruned_prefixes for k in range(1, len(path)+1)):
+        if any(path[:k] in pruned_prefixes for k in range(1, len(path) + 1)):
             continue
-        plan = make_path_plan(path, case.amount_in)
-        eval_result = evaluate(bundle, case, plan, quote=cache)
-        if eval_result.status != OK:
-            pruned_prefixes.add(path[:eval_result.failed_step + 1])
+        if budget_would_be_exceeded(path, budget, cache):
+            record_truncation()
             continue
-        if eval_result.score > best_score:
-            best_plan, best_score = plan, eval_result.score
             
-    return SolveResult(status=OK if best_plan else NO_ROUTE, plan=best_plan)
+        plan = path_plan(path, case.amount_in)
+        evaluation = evaluate(bundle, case, plan, objective, quote=cache)
+        
+        if evaluation.status != OK:
+            pruned_prefixes.add(path[:len(evaluation.trace)])
+            continue
+            
+        score = objective.score(evaluation)
+        if best_score is None or score > best_score:
+            best_plan, best_score = plan, score
+            report_candidate(plan)
+            
+    return format_result(best_plan, best_score)
 ```
 
 ### 3.4 Architecture and Topology Diagram
@@ -275,31 +297,39 @@ Consider the multi-hop candidate path `TKA -[P_AC]-> TKC -[P_CB]-> TKB`:
   $$\text{num} = 180\,776\,040 \cdot 150\,000 = 27\,116\,406\,000\,000$$
   $$\text{den} = 200\,000 \cdot 10\,000 + 180\,776\,040 = 2\,180\,776\,040$$
   $$\Delta y_{\text{CB}} = \lfloor 27\,116\,406\,000\,000 / 2\,180\,776\,040 \rfloor = 12434 \text{ TKB}$$
-- **Outcome:** The 2-hop path yields $12434$ TKB, outperforming the direct pool ($9066$ TKB) by $+3368$ raw units (+37.15%).
+- **Outcome:** The 2-hop path yields $12434$ TKB, outperforming direct pool `P_AB1` ($9066$ TKB) by $+3368$ raw units (+37.15%).
+- **Quote Work & Memoization:** On the 6 enumerated paths of the teaching graph, exactly 10 quotes are executed and 2 are memoized:
+  - 1-hop paths `P_AB1` (1) and `P_AB2` (1) execute 2 quotes.
+  - 2-hop paths `P_AC -> P_CB` (2) and `P_AD -> P_DB` (2) execute 4 quotes.
+  - 3-hop path `P_AC -> P_CD -> P_DB` reuses `P_AC` at 10000 (memo hit) and executes 2 new quotes.
+  - 3-hop path `P_AD -> P_CD -> P_CB` reuses `P_AD` at 10000 (memo hit) and executes 2 new quotes.
+  - Total: $2 + 4 + 2 + 2 = 10$ quotes executed, 2 hits.
 
 ### 3.6 Implementation Map
 - File: `routing/algorithms/single_path.py`
-- Preparation: `prepare(bundle, config)` (lines 101–117) creates immutable `GraphIndex`.
+- Preparation: `prepare(bundle, config)` (line 107) creates immutable `GraphIndex`.
 - Traversal generator: `routing/search.py:enumerate_paths` (lines 142–165).
-- Solver: `solve(case, context, budget)` (lines 164–294).
+- Solver: `solve(case, context, budget)` (lines 133–294).
 
 ### 3.7 Parameters, Budgets, and Ties
 - `search.max_hops`: Hop bound $H$ (integer $\ge 1$).
-- Bounded enumeration order: Hop-major (1-hop, then 2-hop, ..., up to $H$ hops). Within the same
-  hop count, adjacency depth-first order based on pool insertion order.
+- Enumeration order: Hop-major (1-hop, then 2-hop, ..., up to $H$ hops). Within the same
+  hop count, depth-first order based on bundle pool insertion order.
 - Status differentiation:
   - `unreachable`: $T_{\text{out}}$ has no path from $T_{\text{in}}$ at any hop distance.
   - `hop-bound`: $T_{\text{out}}$ is reachable, but the shortest path requires $> H$ hops.
   - `timeout`: Budget truncated the search before any valid candidate was evaluated.
 
 ### 3.8 Computational and Memory Cost
-- Path Space: $\mathcal{O}(|\mathbb{P}|^H)$ paths in the worst case.
-- Memoization: `QuoteCache` stores exact `(pool_id, token_in, amount)` tuples.
-- Overhead: $\mathcal{O}(|\Pi_H|)$ generator stack memory; bounded recursion depth.
+- Worst-Case Work: $\mathcal{O}(H \cdot \lvert \Pi_H \rvert \cdot c_q)$ unmemoized. With prefix
+  memoization, each unique prefix is quoted once.
+- Stack Memory: $\mathcal{O}(H)$ traversal generator stack.
+- Cache Memory: $\mathcal{O}(\lvert \text{prefixes} \rvert)$ storing exact `(pool_id, token_in, amount)` results.
 
 ### 3.9 Guarantees and Limitations
-- **Guarantee:** Optimal full-input single path within the bounded graph $\Pi_H$.
-- **Limitation:** Cannot split volume across parallel paths; vulnerable to price impact on large trades.
+- **Guarantee:** Best evaluated full-input single route across the bounded, unpruned path set
+  under the declared budget.
+- **Limitation:** Cannot split volume across parallel paths. Truncation cuts longest paths first.
 
 ---
 
@@ -324,30 +354,34 @@ allocation across direct pools using a discrete percentage grid and exact dynami
 def solve_direct_split(case, bundle, max_splits, percent_step, cache):
     N = 100 // percent_step
     pools = bundle.pools_for_pair(case.token_in, case.token_out)
-    sample_table = precompute_grid_quotes(pools, case.amount_in, N, cache)
     
-    # DP State: (legs_used, units_used, residue) -> (max_gross, legs_tuple)
-    dp = {(0, 0, 0): (0, ())}
-    finalists = {} # split_count -> (gross, allocation)
+    # 1. Quote single pools at 100%
+    singles = [quote(p, case.amount_in) for p in pools]
     
-    for j, pool in enumerate(pools):
-        new_dp = dict(dp)
-        for (legs, used, res), (gross, alloc) in dp.items():
-            # Option A: Close allocation as final leg
-            rem_units = N - used
-            final_amt = case.amount_in - sum(leg.amount for leg in alloc)
-            out_final = quote(pool, final_amt)
-            update_finalists(finalists, legs + 1, gross + out_final, alloc + (pool, rem_units))
+    # 2. Sample smaller grid units
+    for u in range(N - 1, 0, -1):
+        for p in pools:
+            quote(p, case.amount_in * u // N)
             
-            # Option B: Add as intermediate leg
+    # 3. Exact DP over (legs_used, units_used, residue)
+    states = {(0, 0, 0): (0, ())}
+    finalists = {}
+    for j, pool in enumerate(pools):
+        for (legs, used, res), (gross, alloc) in states.items():
+            final_amount = case.amount_in - (case.amount_in * used - res) // N
+            out = quote(pool, final_amount)
+            update_finalists(finalists, legs + 1, gross + out, alloc + [(j, N - used)])
+            
+        grown = dict(states)
+        for (legs, used, res), (gross, alloc) in states.items():
             if legs + 1 < max_splits:
-                for u in range(1, rem_units):
-                    out_u = sample_table[pool, u]
-                    new_state = (legs + 1, used + u, res + (case.amount_in * u % N))
-                    update_dp(new_dp, new_state, gross + out_u, alloc + (pool, u))
-        dp = new_dp
+                for u in range(1, N - used):
+                    out = sample_table[j, u]
+                    key = (legs + 1, used + u, res + (case.amount_in * u % N))
+                    update_dp(grown, key, gross + out, alloc + [(j, u)])
+        states = grown
         
-    # Re-score finalists under complete-plan objective
+    # 4. Re-evaluate finalists as complete RoutePlans
     return select_best_finalist(finalists)
 ```
 
@@ -365,31 +399,33 @@ flowchart TD
     end
 ```
 
-### 4.5 Hand-Worked Numeric Example
-Input $A = 10\,000$ TKA, $\text{percent\_step} = 10 \implies N = 10$ units ($1\,000$ TKA/unit), $\text{max\_splits} = 2$.
+### 4.5 Hand-Worked Numeric Example and DP Transitions
+Input $A = 10\,005$ TKA, $\text{percent\_step} = 10 \implies N = 10$ units, $\text{max\_splits} = 2$.
 1. **Grid Sampling:**
-   - `P_AB1`: Quotes for $u \in \{1, \dots, 10\}$ yield:
-     $[987, 1955, 2904, 3835, 4748, 5644, 6523, 7386, 8234, 9066]$.
-   - `P_AB2`: Quotes for $u \in \{1, \dots, 10\}$ yield:
-     $[892, 1776, 2652, 3519, 4377, 5227, 6069, 6903, 7728, 8546]$.
-2. **DP Transition (2 Splits):**
-   - Evaluating $u_1 \cdot 1000$ on `P_AB1` and $(10 - u_1) \cdot 1000$ on `P_AB2`:
-     - $u_1 = 5 (5000) + u_2 = 5 (5000): 4748 + 4377 = 9125$ TKB
-     - $u_1 = 6 (6000) + u_2 = 4 (4000): 5644 + 3519 = 9163$ TKB
-     - $u_1 = 7 (7000) + u_2 = 3 (3000): 6523 + 2652 = \mathbf{9175}$ TKB
-     - $u_1 = 8 (8000) + u_2 = 2 (2000): 7386 + 1776 = 9162$ TKB
-3. **Outcome:** $u = (7, 3)$ achieves $9175$ TKB, outperforming single pool `P_AB1` ($9066$ TKB) by $+109$ TKB (+1.20%).
-4. **Nondivisible Remainder Walkthrough:**
-   - Input $A = 10\,005$, $u = (7, 3)$:
-     - Leg 1: $\lfloor 10005 \cdot 7 / 10 \rfloor = \lfloor 7003.5 \rfloor = 7003$.
-     - Leg 2: $10005 - 7003 = 3002$ (`ALL_REMAINING`, carrying remainder 1).
-     - Sum: $7003 + 3002 = 10\,005$ raw units (0 residual).
+   - Samples full input $10005$ on `P_AB1` (9070) and `P_AB2` (8550).
+   - Samples floored amounts $10005 \cdot u // 10$ for $u \in [1..9]$.
+2. **DP State Transition:**
+   - State representation: `(legs_used, units_used, residue)`.
+   - Consider transition for $u_1 = 7$:
+     $$\text{amount}_1 = \lfloor 10005 \cdot 7 / 10 \rfloor = \lfloor 7003.5 \rfloor = 7003 \text{ TKA}$$
+     Quote on `P_AB1` for $7003$ TKA yields $6526$ TKB.
+     Residue: $10005 \cdot 7 \bmod 10 = 5$.
+     State reaches: `(1, 7, 5)` with accumulated gross $6526$.
+   - Closing allocation on `P_AB2`:
+     Remaining units: $10 - 7 = 3$.
+     $$\text{final\_amount} = 10005 - \lfloor (10005 \cdot 7 - 5) / 10 \rfloor = 10005 - 7003 = 3002 \text{ TKA}$$
+     Notice that $3002$ is exactly the base share $3001$ plus the accumulated remainder $+1$.
+     Quote on `P_AB2` for $3002$ TKA yields $2653$ TKB.
+     Total gross for 2-split: $6526 + 2653 = \mathbf{9179}$ TKB.
+3. **Outcome:** $9179 > 9070 \implies$ 2-split wins, executing $7003$ on `P_AB1` and $3002$ on `P_AB2` with 0 residual.
+4. **Quote Accounting:** 2 initial full quotes + 18 grid quotes ($9 \times 2$) + 5 on-demand remainder quotes = 25 quotes executed.
 
 ### 4.6 Implementation Map
 - File: `routing/algorithms/direct_split.py`
-- Preparation: `prepare(bundle, config)` (lines 68–84) validates $N = 100 / \text{percent\_step}$.
-- Leg amount calculation: `leg_amounts(amount_in, legs, units)` (lines 121–125).
-- Solver: `solve(case, context, budget)` (lines 160–348).
+- Preparation: `prepare(bundle, config)` (line 107) validates $N = 100 / \text{percent\_step}$.
+- Leg amount calculation: `leg_amounts(amount_in, legs, units)` (line 121).
+- Plan builder: `allocation_plan(case, pool_ids, legs)` (line 128).
+- Solver: `solve(case, context, budget)` (lines 157–348).
 
 ### 4.7 Parameters, Budgets, and Ties
 - `search.percent_step`: Divisor of 100 (e.g. 5, 10).
@@ -397,12 +433,12 @@ Input $A = 10\,000$ TKA, $\text{percent\_step} = 10 \implies N = 10$ units ($1\,
 - Ties: Fewer splits win ties; earlier admitted pools win identical gross outputs.
 
 ### 4.8 Computational and Memory Cost
-- Sample complexity: $\mathcal{O}(|\mathbb{P}_{\text{direct}}| \cdot N)$ quotes.
-- DP States: At most $\mathcal{O}(S \cdot N^2)$ states.
+- Quotes: At most $P_{\text{direct}} \cdot G + P_{\text{direct}} \cdot S$ quotes (grid samples + on-demand non-grid remainder quotes).
+- DP Transitions: $\mathcal{O}(P_{\text{direct}} \cdot S \cdot G^2)$ state expansions.
 - Re-scoring: Exactly $S$ candidate plans re-evaluated under `ObjectiveContext`.
 
 ### 4.9 Guarantees and Limitations
-- **Guarantee:** Globally optimal allocation over the declared finite grid under additive gross output.
+- **Guarantee:** Best evaluated direct split allocation on the declared finite grid under additive gross output.
 - **Limitation:** Does not support multi-hop routes; finalist re-scoring does not exhaustively
   search non-additive per-pool fixed fees across all non-finalist grid combinations.
 
@@ -423,31 +459,41 @@ may share a pool ID.
   $$\text{pools}(\pi_i) \cap \text{pools}(\pi_j) = \emptyset \quad \forall i \ne j$$
 - Pruning Bound $B$: Let $B = (S - 1) \cdot H$. If more than $B$ pairwise pool-disjoint paths
   are each strictly superior to path $P$ at grid size $u$, then $P$ cannot be part of the optimal
-  $S$-split plan and is safely pruned.
+  $S$-split plan and is safely pruned (`_family_exceeds`).
 - Upper Bound on Path Quote:
   $$\text{UB}(P, u) = \min\left(\text{out}_P(N), \left\lceil \frac{(\text{out}_P(u_0) + 1) \cdot a_u}{a_{u_0}} \right\rceil\right)$$
+- Branch-and-Bound: Explores non-increasing grid sizes best-first. A branch is pruned when its
+  accumulated gross plus a relaxed knapsack bound on remaining units cannot beat the incumbent.
 
 ### 5.3 Concise Pseudocode
 ```python
 def solve_path_split(case, bundle, max_hops, max_splits, percent_step, cache):
-    # Stage 1: Retain simpler candidates
+    # 1. Retain simpler candidates (single path, direct split)
     best_single = solve_single_path(...)
-    best_direct_split = solve_direct_split(...)
+    best_direct = solve_direct_split(...)
     
-    # Stage 2: Sample all paths at u0 and N
+    # 2. Sample endpoints and prune dominated candidates
     paths = enumerate_paths(...)
     sample_endpoints(paths, u0, N)
+    B = (max_splits - 1) * max_hops
+    kept_table = prune_with_disjoint_family_bound(paths, B)
     
-    # Stage 3: Conflict-aware candidate pruning
-    kept_table = prune_dominated_paths(paths, B=(max_splits - 1) * max_hops)
-    
-    # Stage 4: Exact Branch-and-Bound
-    # State: (current_legs, accumulated_pools, current_gross, remaining_units)
-    # Bound: current_gross + knapsack_bound(remaining_units)
-    finalists = branch_and_bound(kept_table, max_splits)
-    
-    # Stage 5: Re-evaluate finalists as fund-referenced RoutePlans
-    return select_best_plan([best_single, best_direct_split, finalists])
+    # 3. Branch and Bound with Knapsack Relaxation
+    finalists = {}
+    def search(legs, used_units, accumulated_pools, gross):
+        if used_units == N:
+            update_finalists(finalists, len(legs), gross, legs)
+            return
+        if gross + knapsack_bound(N - used_units) <= incumbent[len(legs)]:
+            return  # Prune branch
+            
+        for path, u, val in kept_table:
+            if not pools_disjoint(path, accumulated_pools):
+                continue
+            search(legs + [(path, u)], used_units + u, accumulated_pools | path.pools, gross + val)
+            
+    search([], 0, set(), 0)
+    return select_best_finalist([best_single, best_direct, finalists])
 ```
 
 ### 5.4 Architecture and Topology Diagram
@@ -455,55 +501,57 @@ def solve_path_split(case, bundle, max_hops, max_splits, percent_step, cache):
 ```mermaid
 flowchart TD
     subgraph Path Split Disjoint Routing
-        In([REQUEST: 10000 TKA]) -->|80% / 8000 TKA| P1[P_AC: 14751 TKC]
-        P1 --> P2[P_CB: 10565 TKB]
-        In -->|20% / 2000 TKA| P3[P_AD: 2950 TKD]
-        P3 --> P4[P_DB: 2016 TKB]
-        P2 --> OUT1([OUT1: 10565 TKB])
-        P4 --> OUT2([OUT2: 2016 TKB])
+        In([REQUEST: 10000 TKA]) -->|80% / 8000 TKA| P1[P_AC: 14773 TKC]
+        P1 --> P2[P_CB: 10288 TKB]
+        In -->|20% / 2000 TKA| P3[P_AD: 2932 TKD]
+        P3 --> P4[P_DB: 2293 TKB]
+        P2 --> OUT1([OUT1: 10288 TKB])
+        P4 --> OUT2([OUT2: 2293 TKB])
         OUT1 --> Tot([Total Terminal Gross: 12581 TKB])
         OUT2 --> Tot
     end
 ```
 
-### 5.5 Hand-Worked Numeric Example
+### 5.5 Hand-Worked Numeric Example, Conflict Rejection, and Pruning
 Request: $10\,000$ TKA $\to$ TKB, $\text{percent\_step} = 10, \text{max\_splits} = 2$.
 1. **Candidate Paths:**
    - $\pi_1$: `TKA -[P_AC]-> TKC -[P_CB]-> TKB` (Pools: `P_AC`, `P_CB`)
    - $\pi_2$: `TKA -[P_AD]-> TKD -[P_DB]-> TKB` (Pools: `P_AD`, `P_DB`)
    - $\pi_3$: `TKA -[P_AC]-> TKC -[P_CD]-> TKD -[P_DB]-> TKB` (Pools: `P_AC`, `P_CD`, `P_DB`)
 2. **Conflict Rejection:**
-   - Attempting to combine $\pi_1$ and $\pi_3$ fails because $\text{pools}(\pi_1) \cap \text{pools}(\pi_3) = \{\text{P\_AC}\} \ne \emptyset$.
-   - Attempting to combine $\pi_2$ and $\pi_3$ fails because $\text{pools}(\pi_2) \cap \text{pools}(\pi_3) = \{\text{P\_DB}\} \ne \emptyset$.
-   - Combining $\pi_1$ and $\pi_2$ is valid: $\{\text{P\_AC}, \text{P\_CB}\} \cap \{\text{P\_AD}, \text{P\_DB}\} = \emptyset$.
-3. **Allocation Evaluation (80% / 20%):**
+   - $\pi_1$ and $\pi_3$ share `P_AC`; $\pi_2$ and $\pi_3$ share `P_DB`.
+   - `paths_conflict` evaluates to `True`, rejecting these combinations. Exactly 13 candidate branches
+     are excluded by pool conflicts (`bnb_conflicts_excluded = 13`).
+3. **Disjoint Allocation Evaluation (80% / 20%):**
    - $\pi_1$ at $8\,000$ TKA:
-     - Hop 1 (`P_AC`): $8\,000$ TKA $\to 14751$ TKC
-     - Hop 2 (`P_CB`): $14751$ TKC $\to 10565$ TKB
+     - Hop 1 (`P_AC`): in = $8\,000 \to$ out = $14773$ TKC.
+     - Hop 2 (`P_CB`): in = $14773 \to$ out = $10288$ TKB.
    - $\pi_2$ at $2\,000$ TKA:
-     - Hop 1 (`P_AD`): $2\,000$ TKA $\to 2950$ TKD
-     - Hop 2 (`P_DB`): $2950$ TKD $\to 2016$ TKB
-   - Total Gross Output: $10565 + 2016 = \mathbf{12581}$ TKB.
-   - Comparison: Outperforms `single_path` ($12434$ TKB) by $+147$ raw units (+1.18%).
+     - Hop 1 (`P_AD`): in = $2\,000 \to$ out = $2932$ TKD.
+     - Hop 2 (`P_DB`): in = $2932 \to$ out = $2293$ TKB.
+   - Total Gross Output: $10288 + 2293 = \mathbf{12581}$ TKB.
+4. **Incumbent Pruning:** The single-path incumbent achieved $12434$ TKB. Any branch whose
+   accumulated gross plus upper bound cannot exceed $12434$ is terminated immediately.
+5. **Comparison:** Beats single path ($12434$ TKB) by $+147$ raw units (+1.18%).
 
 ### 5.6 Implementation Map
 - File: `routing/algorithms/path_split.py`
-- Conflict check: `paths_conflict(p1, p2)` (lines 142–148).
-- Candidate pruning: `_prune_candidates(...)` (lines 280–360).
-- Branch-and-bound engine: `_branch_and_bound(...)` (lines 380–470).
+- Conflict detection: `paths_conflict(p1, p2)` (line 133).
+- Branch-and-bound engine: `_branch_and_bound(...)` (lines 183–265).
+- Disjoint family counting: `_family_counts` (line 301), `_family_exceeds` (line 318), `_members_above` (line 335).
+- Solver: `solve(case, context, budget)` (lines 286–480).
 
 ### 5.7 Parameters, Budgets, and Ties
 - Parameters: `search.max_hops`, `search.max_splits`, `search.percent_step`.
-- Pruning: Relaxed knapsack upper bound stops exploring branches that cannot exceed current best.
 - Ties: Simpler route wins ties (single path > direct split > fewer legs).
 
 ### 5.8 Computational and Memory Cost
-- Complexity: $\mathcal{O}(|\Pi_H| \cdot N + \binom{|\Pi_H|}{S})$ in worst-case combinatorial search,
-  heavily reduced by disjoint pruning and knapsack branch-and-bound.
-- Cache: Shared `QuoteCache` prevents redundant simulation across search phases.
+- Work: Combines `single_path` and `direct_split` work, plus up to $\lvert \Pi_H \rvert \cdot G \cdot c_q$
+  samples and branch-and-bound node visits.
+- Cache: Shared `QuoteCache` prevents re-quoting identical (pool, amount) pairs across stages.
 
 ### 5.9 Guarantees and Limitations
-- **Guarantee:** Best evaluated pool-disjoint allocation on the discrete grid.
+- **Guarantee:** Best evaluated pool-disjoint allocation on the declared finite grid under stated pruning.
 - **Limitation:** Cannot route through shared pools or topology merges (e.g., cannot split volume
   after a common first hop).
 
@@ -540,25 +588,25 @@ def solve_incremental_graph(case, bundle, chunks_K, max_hops, cache):
     chunk_allocations = []
     
     for k in range(1, chunks_K + 1):
-        chunk_size = floor(A * k / K) - floor(A * (k-1) / K)
+        chunk_size = floor(A * k / K) - floor(A * (k - 1) / K)
         best_path, best_marginal = None, 0
         
         for path in paths:
-            if creates_cycle(chunk_allocations + [path]):
+            if creates_cycle(token_edges(chunk_allocations), path):
                 continue
             marginal = simulate_marginal(path, chunk_size, pool_inputs)
             if marginal > best_marginal:
                 best_path, best_marginal = path, marginal
                 
         if not best_path:
-            abandon_incremental_plan()
-            return retained_candidate
+            return retained_candidate  # Fallback
             
         commit_chunk(best_path, chunk_size, pool_inputs)
+        chunk_allocations.append(best_path)
         
-    merged_plan = build_merged_topological_plan(pool_inputs, chunk_allocations)
-    eval_result = evaluate(bundle, case, merged_plan)
-    return select_best(retained_candidate, (merged_plan, eval_result))
+    merged = merged_plan(case, build_flows(chunk_allocations, pool_inputs))
+    evaluation = evaluate(bundle, case, merged)
+    return select_best(retained_candidate, (merged, evaluation))
 ```
 
 ### 6.4 Architecture and Topology Diagram
@@ -570,51 +618,60 @@ flowchart TD
         Step1 --> F1([Fund F1: 18132 TKC])
         F1 -->|30.67% / 5562 TKC| Step2[Step 1: P_CD]
         F1 -->|69.33% / 12570 TKC| Step3[Step 2: P_CB]
-        Step2 --> F2([Fund F2: 5519 TKD])
-        Step3 --> F3([Fund F3: 8868 TKB])
+        Step2 --> F2([Fund F2: 5253 TKD])
+        Step3 --> F3([Fund F3: 8844 TKB])
         F2 --> Step4[Step 3: P_DB]
-        Step4 --> F4([Fund F4: 4024 TKB])
+        Step4 --> F4([Fund F4: 4048 TKB])
         F3 --> Tot([Total Terminal Gross: 12892 TKB])
         F4 --> Tot
     end
 ```
 
-### 6.5 Hand-Worked Numeric Example
+### 6.5 Hand-Worked Numeric Example and Chunk Accounting
 Using our synthetic teaching bundle, let $K = 10$ chunks ($1\,000$ TKA each):
-1. **Marginal Greedy Allocation:**
-   - Early chunks find that `P_AC` has massive reserves. All $10$ chunks ($10\,000$ TKA) route through `P_AC` into intermediate token `TKC`, yielding $18132$ TKC.
-   - At token `TKC`, flow splits across two branches to reach `TKB`:
-     - Branch 1: `TKC -[P_CB]-> TKB`
-     - Branch 2: `TKC -[P_CD]-> TKD -[P_DB]-> TKB`
-   - Allocating $12570$ TKC to Branch 1 produces $8868$ TKB.
-   - Allocating $5562$ TKC to Branch 2 produces $5519$ TKD on `P_CD`, which then produces $4024$ TKB on `P_DB`.
-2. **Merged Plan Evaluation:**
-   - Step 0 (`P_AC`): $10\,000$ TKA $\to 18132$ TKC (Fund `F1`)
-   - Step 1 (`P_CD`): $5562$ TKC (from `F1`) $\to 5519$ TKD (Fund `F2`)
-   - Step 2 (`P_CB`): $12570$ TKC (`ALL_REMAINING` of `F1`) $\to 8868$ TKB (Fund `F3`)
-   - Step 3 (`P_DB`): $5519$ TKD (from `F2`) $\to 4024$ TKB (Fund `F4`)
-   - Total Gross: $8868 + 4024 = \mathbf{12892}$ TKB.
-3. **Comparison:** Beats disjoint `path_split` ($12581$ TKB) by $+311$ TKB (+2.47%) and single path ($12434$ TKB) by $+458$ TKB (+3.68%).
+1. **Marginal Allocation Sequence:**
+   - Candidate Path 0: `TKA -[P_AC]-> TKC -[P_CD]-> TKD -[P_DB]-> TKB`
+   - Candidate Path 1: `TKA -[P_AC]-> TKC -[P_CB]-> TKB`
+   - Chunk greedy choices: `[0, 1, 1, 0, 1, 1, 1, 0, 1, 1]`.
+   - Path 0 captures 3 chunks ($3\,000$ TKA); Path 1 captures 7 chunks ($7\,000$ TKA).
+2. **Telescoping Flow Accounting:**
+   - Both paths traverse `P_AC`. Total input on `P_AC` is $3000 + 7000 = 10\,000$ TKA, producing $18132$ TKC.
+   - At intermediate token `TKC`, the flow splits:
+     - 3 chunks allocated to Path 0 draw $5562$ TKC into `P_CD`, producing $5253$ TKD.
+     - That $5253$ TKD enters `P_DB`, producing $4048$ TKB.
+     - The remaining $18132 - 5562 = 12570$ TKC enters `P_CB`, producing $8844$ TKB.
+3. **Merged Plan Execution:**
+   - Step 0 (`P_AC`): in = $10\,000$ TKA $\to$ out = $18132$ TKC (Fund `F1`)
+   - Step 1 (`P_CD`): in = $5562$ TKC $\to$ out = $5253$ TKD (Fund `F2`)
+   - Step 2 (`P_CB`): in = $12570$ TKC (`ALL_REMAINING` of `F1`) $\to$ out = $8844$ TKB (Fund `F3`)
+   - Step 3 (`P_DB`): in = $5253$ TKD $\to$ out = $4048$ TKB (Fund `F4`)
+   - Terminal Gross Output: $8844 + 4048 = \mathbf{12892}$ TKB.
+4. **Conservation & Reconciliation:**
+   - Fund `REQUEST`: 10000 consumed.
+   - Fund `F1`: 18132 produced, exactly $5562 + 12570 = 18132$ consumed.
+   - Fund `F2`: 5253 produced, exactly 5253 consumed.
+   - Zero residuals. Evaluated gross matches accounted gross exactly.
+5. **Comparison:** Beats disjoint `path_split` ($12581$ TKB) by $+311$ TKB (+2.47%).
 
 ### 6.6 Implementation Map
 - File: `routing/algorithms/incremental_graph.py`
-- Chunk schedule: `chunk_amounts(amount_in, chunks)` (lines 92–104).
-- Cycle detection: `creates_cycle(token_edges, new_path)` (lines 140–160).
-- Merged plan constructor: `merged_plan(case, allocations)` (lines 180–270).
+- Chunk schedule: `chunk_amounts(amount_in, chunks)` (line 139).
+- Cycle detection: `creates_cycle(edges, path)` (line 145).
+- Merged plan builder: `merged_plan(case, flows)` (line 180).
+- Topology classification: `topology(route_paths)` (line 260).
+- Solver: `solve(case, context, budget)` (lines 290–475).
 
 ### 6.7 Parameters, Budgets, and Ties
-- `graph.chunks`: Number of discrete allocation increments $K$.
-- Dust and Carry: Chunks yielding zero marginal output are carried into the next chunk.
-- Simpler Candidate Fallback: If the incremental heuristic produces a score lower than `path_split`,
-  the `path_split` candidate plan is retained.
+- Parameters: `graph.chunks` ($K$), plus `path_split` parameters for retained candidates.
+- Fallback: Retains simpler `path_split` candidate if the incremental plan does not strictly beat it.
 
 ### 6.8 Computational and Memory Cost
-- Simulation Work: $\mathcal{O}(K \cdot |\Pi_H|)$ marginal quote checks.
-- Memory: $\mathcal{O}(|\mathbb{P}| + K)$ to maintain tentative pool inputs and path allocations.
+- Work: Initial `path_split` work, plus up to $K \cdot \sum_{\pi} \text{hops}(\pi) \cdot c_q$ marginal queries.
+- Memory: $\mathcal{O}(\lvert \mathbb{P} \rvert + K)$ for aggregate pool input maps and flow records.
 
 ### 6.9 Guarantees and Limitations
-- **Guarantee:** Never performs worse than `path_split` (fallback preservation).
-- **Limitation:** Greedy heuristic; larger chunk counts $K$ do not guarantee monotonic improvements
+- **Guarantee:** Never performs worse than `path_split` on objective score (fallback preservation).
+- **Limitation:** Greedy heuristic; larger chunk counts do not guarantee monotonic improvements
   due to greedy path trapping.
 
 ---
@@ -630,47 +687,62 @@ comparator for exact-input V2/V3 routing.
 ### 7.2 Mathematical Model and Assumptions
 - Scope: Exact-input V2 and V3 pools only. Merchant Moe Liquidity Book (LB) pools are strictly
   excluded by Contract Deviation D-4.
-- Candidate Generation (`compute_all_routes`): Bounded BFS/DFS across V3 and V2 pools (max 2 hops).
-- Quote Matrix: Precomputes quotes for routes across percentage distribution (e.g. 10%, 20%, ..., 100%).
-- Search Queue (`get_best_swap_route_by`):
-  - Initialized with the best route and second-best route for each percentage slice.
-  - Greedy queue exploration combining routes that have non-overlapping pools (`find_first_route_not_using_used_pools`).
+- Candidate Generation (`compute_all_routes`): Bounded BFS/DFS across V3 and V2 pools (configurable
+  hop bound via `search.max_hops`, default 3 in upstream contract B-S12).
+- Quote Matrix: Precomputes quotes for routes across percentage distribution (e.g. 5%, 10%, ..., 100%).
+- Upstream Selection Queue (`get_best_swap_route_by`):
+  1. 100% single-route baseline forms the initial incumbent.
+  2. FIFO queue of partial solutions seeded with the best and second-best single routes for each percentage bucket.
+  3. Explores continuations in descending percentage order.
+  4. Finds the first non-overlapping route **within each percentage group** (`find_first_route_not_using_used_pools`).
+  5. Prunes layers that exceed `max_splits` or cannot beat the incumbent.
 - Tie Breaking: Strict V8 binary insertion sort emulation (`v8_small_array_sort`).
 
 ### 7.3 Concise Pseudocode
 ```python
-def solve_uni_sor_port(case, bundle, max_hops=2, max_splits=2, percent_step=10):
+def solve_uni_sor_port(case, bundle, max_hops, max_splits, percent_step):
     routes = compute_all_routes(case.token_in, case.token_out, max_hops, bundle.sor_pools)
-    percentages = amount_distribution(percent_step)
+    percentages = amount_distribution(case.amount_in, percent_step)
     quote_table = build_route_quotes(routes, percentages, case.amount_in)
     
-    # Priority Queue of Partial Solutions
-    best_swap_route = None
-    queue = initialize_queue_with_best_and_second_best(quote_table)
+    # 1. Baseline: Best 100% single route
+    best_route = quote_table.best_at_percent(100)
     
+    # 2. FIFO Queue of partial solutions
+    queue = deque()
+    for pct in percentages:
+        for route in quote_table.best_and_second_best(pct):
+            queue.append(PartialSolution(routes=[route], percent=pct))
+            
+    # 3. Layer expansion
     while queue:
-        current = queue.pop()
-        if current.total_percent == 100:
-            if is_better(current, best_swap_route):
-                best_swap_route = current
+        current = queue.popleft()
+        if current.percent == 100:
+            if current.quote > best_route.quote:
+                best_route = current
+            continue
+        if len(current.routes) >= max_splits:
             continue
             
-        next_route = find_first_route_not_using_used_pools(routes, current.used_pools)
-        if next_route:
-            queue.push(current.combine(next_route))
-            
-    # Apply Adapter Integer Fill (D-1) and Re-Quote (D-3)
-    plan = build_integer_fill_plan(best_swap_route, case.amount_in)
-    eval_result = evaluate(bundle, case, plan)
-    return SolveResult(status=OK, plan=plan, evaluation=eval_result)
+        rem_pct = 100 - current.percent
+        for pct in percentages_descending(max=rem_pct):
+            next_route = find_first_route_not_using_used_pools(quote_table[pct], current.used_pools)
+            if next_route:
+                queue.append(current.add(next_route))
+                break  # First non-overlapping continuation per percentage group
+                
+    # 4. Adapter Integer Fill (D-1) and Re-Quote (D-3)
+    plan = build_integer_fill_plan(best_route, case.amount_in)
+    evaluation = evaluate(bundle, case, plan)
+    return SolveResult(status=OK, plan=plan, evaluation=evaluation)
 ```
 
 ### 7.4 Architecture and Topology Diagram
 
 ```mermaid
 flowchart TD
-    subgraph Uni SOR Selection Queue
-        Init[Initialize Best & 2nd Best Seeds] --> Q[BFS Search Queue]
+    subgraph Uni SOR Selection
+        Init[Seed Best & 2nd Best Routes per %] --> Q[FIFO Layer Queue]
         Q --> Check{Percent == 100%?}
         Check -- No --> Find[find_first_route_not_using_used_pools]
         Find --> Push[Push Combined Node to Queue]
@@ -683,36 +755,38 @@ flowchart TD
 
 ### 7.5 Hand-Worked Numeric Example
 On our synthetic teaching graph ($N = 10, S = 2$):
-1. Routes discovered: $\pi_1 = \text{P\_AB1}, \pi_2 = \text{P\_AB2}, \pi_3 = \text{P\_AC}\to\text{P\_CB}, \pi_4 = \text{P\_AD}\to\text{P\_DB}$.
-2. Upstream Quote Table:
-   - At 80% ($8\,000$ TKA): $\pi_3$ yields $10565$ TKB.
-   - At 20% ($2\,000$ TKA): $\pi_4$ yields $2016$ TKB.
-3. Queue Expansion:
-   - Seed $\pi_3$ (80%) searches for non-overlapping routes for the remaining 20%.
-   - $\pi_4$ uses pools `P_AD`, `P_DB`, which are disjoint from `P_AC`, `P_CB`.
-   - Combined candidate $\pi_3 (80\%) + \pi_4 (20\%)$ reaches 100% with cached quote:
-     $$10565 + 2016 = 12581 \text{ TKB}$$
+1. Candidate Routes: $\pi_1 = \text{P\_AB1}, \pi_2 = \text{P\_AB2}, \pi_3 = \text{P\_AC}\to\text{P\_CB}, \pi_4 = \text{P\_AD}\to\text{P\_DB}$.
+2. Quote Matrix (80% / 20%):
+   - At 80% ($8\,000$ TKA): $\pi_3$ yields $10288$ TKB ($8000 \to 14773 \to 10288$).
+   - At 20% ($2\,000$ TKA): $\pi_4$ yields $2293$ TKB ($2000 \to 2932 \to 2293$).
+3. Queue Continuation:
+   - Partial solution $\pi_3$ (80%) looks for non-overlapping routes for remaining 20%.
+   - In 20% group, `find_first_route_not_using_used_pools` inspects sorted routes:
+     - $\pi_3$: shares `P_AC`, skipped.
+     - $\pi_4$: uses `P_AD`, `P_DB`, strictly disjoint $\implies$ selected!
+   - Combined route achieves $10288 + 2293 = \mathbf{12581}$ TKB.
 4. Adapter Fill (D-1) and Re-quote (D-3):
    - Leg 1 draws $8\,000$ TKA; Leg 2 draws `ALL_REMAINING` ($2\,000$ TKA).
-   - Independent replay yields $12581$ TKB (`requote_delta` = 0).
+   - Evaluated gross matches cached quote: $12581$ TKB (`requote_delta` = "0").
 
 ### 7.6 Implementation Map
 - File: `routing/algorithms/uni_sor_port.py`
-- Upstream Core Functions:
-  - Route discovery: `compute_all_routes(...)` (lines 350–430)
-  - Amount distribution: `amount_distribution(step)` (lines 435–445)
-  - Quote matrix: `build_route_quotes(...)` (lines 450–520)
-  - Queue search: `get_best_swap_route_by(...)` (lines 530–670)
-  - V8 Sort: `v8_small_array_sort(...)` (lines 200–310)
-- Benchmark Adapter: `solve(...)` (lines 750–920).
+- Route discovery: `compute_all_routes(...)` (line 266).
+- Amount distribution: `amount_distribution(...)` (line 352).
+- Quote matrix: `build_route_quotes(...)` (line 429).
+- V8 sorting emulation: `v8_small_array_sort(...)` (line 453).
+- Non-overlapping route finder: `find_first_route_not_using_used_pools(...)` (line 501).
+- Selection engine: `get_best_swap_route_by(...)` (line 538), `get_best_swap_route(...)` (line 670).
+- Integer fill: `integer_fill(...)` (line 709).
+- Adapter solver: `solve(...)` (line 833).
 
 ### 7.7 Parameters, Budgets, and Ties
-- Fixed Upstream Constants: Max 2 hops in V3/V2 core; gas scores set to zero (`(0, 0, 0)` under adaptation A-3).
-- Excluded Pools: Liquidity Book pools are excluded from candidate generation (D-4).
+- Gas Scores (Adaptation A-3): Gas scores set to zero (`(0, 0, 0)`), selecting purely on gross quotes.
+- Excluded Pools (Deviation D-4): Liquidity Book pools are excluded from candidate generation.
 
 ### 7.8 Computational and Memory Cost
-- Complexity: $\mathcal{O}(|\Pi_2| \cdot N + |Q| \log |Q|)$ where $|Q|$ is the BFS queue size.
-- Memory: Stores dense 2D quote table $|\Pi_2| \times N$.
+- Work: $\mathcal{O}(\lvert \Pi_H \rvert \cdot G \cdot c_q)$ to populate quote table, plus FIFO queue node scans.
+- Memory: Dense $|\Pi_H| \times G$ table storing `RouteQuote` objects.
 
 ### 7.9 Guarantees and Limitations
 - **Guarantee:** 100% bit-for-bit parity with pinned upstream Uniswap SOR selection logic
@@ -725,12 +799,25 @@ On our synthetic teaching graph ($N = 10, S = 2$):
 
 To demonstrate how these algorithms behave on real blockchain liquidity, we execute all six
 solvers against the verified frozen Mantle snapshot `mantle-5src-101082044-091b0759-fixture`:
+- **Parent Bundle:** `mantle-5src-101082044-091b0759-fixture`
+- **Bundle Hash:** `5401b1de8c83a3527e5f9b5afae4510a760f171f2b306d49dbb5c830256c9ad0`
 - **Block:** 101082044
 - **Block Hash:** `0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4`
 - **Request:** $10\,000$ USDC $\to$ USDT0
   - In: `0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9` (decimals: 6, raw: `10000000000`)
   - Out: `0x779ded0c9e1022225f8e0630b35a9b54be713736` (decimals: 6)
-- **Profile:** `config/daily_gross.yaml` (`gross_only` development mode)
+- **Profile:** `config/daily_gross.yaml` (sha256 `577b43ebc2d2`), `gross_only` development mode
+- **Scope:** 19 admitted pools across 5 sources: agni_v3 (6), fusionx_v3 (2), moe_classic_v1 (3), moe_lb_v2_2 (7), uniswap_v3 (1).
+- **Execution Command:**
+  ```bash
+  uv run python main.py quote \
+    --bundle tests/fixtures/corpus/bundle \
+    --profile config/daily_gross.yaml \
+    --token-in USDC --token-out USDT0 --amount 10000 --details
+  ```
+
+*Classification:* This is an **exploratory single request** evaluated on a checked-in 19-pool fixture
+subset, not a held-out corpus result.
 
 ### 8.1 Summary Comparison Table
 
@@ -771,10 +858,12 @@ Residuals: None. Reconciled exactly.
 ### 8.3 Analysis of Real-World Behavior
 1. **Marginal Exploitation:** `incremental_graph` identified that Merchant Moe Liquidity Book pool
    `0x368b...` possessed an extremely favorable active bin exchange rate for the first $50$ USDC,
-   capturing a marginal gain of $+2998$ raw base units (+0.03 bps) over the dominant Agni V3 pool.
-2. **Contract-Enforced Boundary:** `uni_sor_port` evaluated only the Agni V3 pool because Contract
-   Deviation D-4 explicitly excludes Liquidity Book pools. This accurately mirrors upstream Uniswap
-   SOR behavior on non-Uniswap concentrated architectures.
+   capturing a marginal gain of $+2998$ raw base units ($+0.003\text{ bps}$, calculated as
+   $2998 / 10000660449 \times 10000 \approx 0.003\text{ bps}$) over the dominant Agni V3 pool.
+2. **Contract-Enforced Boundary:** `uni_sor_port` evaluated 2 candidate routes: 1 direct Agni V3
+   route and 1 direct Merchant Moe Classic V2 route. Across 20 percentage buckets (5% to 100%),
+   it quoted $2 \times 20 = 40$ times. Contract Deviation D-4 explicitly excludes Liquidity Book
+   pools, accurately mirroring upstream Uniswap SOR behavior on non-Uniswap concentrated architectures.
 
 ---
 
@@ -784,31 +873,34 @@ Residuals: None. Reconciled exactly.
 
 | Property | `direct` | `single_path` | `direct_split` | `path_split` | `incremental_graph` | `uni_sor_port` |
 |---|---|---|---|---|---|---|
-| **Multi-Hop Support** | No | Yes ($\le H$) | No | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le 2$) |
+| **Multi-Hop Support** | No | Yes ($\le H$) | No | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) |
 | **Split Support** | No | No | Yes ($\le S$) | Yes ($\le S$) | Yes ($\le K$) | Yes ($\le S$) |
 | **Shared Intermediate Pools** | N/A | N/A | No | No | **Yes** | No |
 | **Supported Protocols** | All 5 | All 5 | All 5 | All 5 | All 5 | CPMM + CL only (No LB) |
-| **Search Mechanism** | Exhaustive scan | Hop-major bounded DFS | Exact Grid DP | Knapsack Branch & Bound | Greedy marginal chunks | BFS seed priority queue |
-| **Optimality Scope** | Global (Single) | Global (Bounded path) | Global (Grid) | Global (Disjoint grid) | Local heuristic | Local heuristic |
+| **Search Mechanism** | Exhaustive scan | Hop-major bounded DFS | Exact Grid DP | Knapsack Branch & Bound | Greedy marginal chunks | FIFO layer priority queue |
+| **Optimality Scope** | Best evaluated | Best evaluated | Best on grid | Best disjoint grid | Local heuristic | Local heuristic |
 
 ### 9.2 Asymptotic Search Complexity
 
 Let:
-- $P$: Number of admitted pools in snapshot.
+- $P$: Number of admitted pools in snapshot ($P_{\text{direct}}$ for direct pools).
 - $K$: Incremental chunks (`graph.chunks`).
 - $H$: Maximum hops (`search.max_hops`).
 - $G$: Grid units ($100 / \text{percent\_step}$).
 - $S$: Maximum splits (`search.max_splits`).
 - $c_q$: Computational cost of one simulated quote (CL/LB tick traversal).
+- $\Pi_H$: Cycle-free paths up to $H$ hops.
 
-| Algorithm | Worst-Case Time Complexity | Quote Work ($c_q$ operations) | Memory Complexity |
+*Table Notation:* `\lvert \Pi_H \rvert` denotes the count of cycle-free candidate paths.
+
+| Algorithm | Worst-Case Time Complexity | Upper Bound on Quote Work | Memory Complexity |
 |---|---|---|---|
 | `direct` | $\mathcal{O}(P_{\text{direct}} \cdot c_q)$ | $\le P_{\text{direct}}$ | $\mathcal{O}(1)$ |
-| `single_path` | $\mathcal{O}(P^H \cdot c_q)$ | $\le |\Pi_H|$ | $\mathcal{O}(H)$ stack |
-| `direct_split` | $\mathcal{O}(P_{\text{direct}} \cdot G \cdot c_q + S \cdot G^2)$ | $\le P_{\text{direct}} \cdot G$ | $\mathcal{O}(S \cdot G^2)$ |
-| `path_split` | $\mathcal{O}(|\Pi_H| \cdot G \cdot c_q + \binom{|\Pi_H|}{S})$ | $\le |\Pi_H| \cdot G$ | $\mathcal{O}(|\Pi_H| \cdot G)$ |
-| `incremental_graph` | $\mathcal{O}(K \cdot |\Pi_H| \cdot c_q)$ | $\le K \cdot |\Pi_H|$ | $\mathcal{O}(P + K)$ |
-| `uni_sor_port` | $\mathcal{O}(|\Pi_2| \cdot G \cdot c_q + |Q| \log |Q|)$ | $\le |\Pi_2| \cdot G$ | $\mathcal{O}(|\Pi_2| \cdot G + |Q|)$ |
+| `single_path` | $\mathcal{O}(H \cdot \lvert \Pi_H \rvert \cdot c_q)$ | $\le \sum_{\pi} \text{hops}(\pi)$ | $\mathcal{O}(H)$ stack + cache |
+| `direct_split` | $\mathcal{O}(P_{\text{direct}} \cdot G \cdot c_q + S \cdot G^2)$ | $\le P_{\text{direct}} \cdot (G + S)$ | $\mathcal{O}(S \cdot G^2)$ |
+| `path_split` | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G \cdot c_q + \text{BnB Nodes})$ | $\le \lvert \Pi_H \rvert \cdot G$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G)$ |
+| `incremental_graph` | $\mathcal{O}(K \cdot \lvert \Pi_H \rvert \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot \lvert \Pi_H \rvert + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K)$ |
+| `uni_sor_port` | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G \cdot c_q + \lvert Q \rvert \cdot \lvert \Pi_H \rvert)$ | $\le \lvert \Pi_H \rvert \cdot G$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G + \lvert Q \rvert)$ |
 
 ### 9.3 Source Reading Map
 
@@ -816,9 +908,16 @@ When navigating the codebase, consult these authoritative entry points:
 - **Interfaces & Context:** `routing/algorithms/base.py` (`SolveContext`, `Budget`, `SolveResult`, `SolveStatus`).
 - **Graph Traversal & Memoization:** `routing/search.py` (`build_graph_index`, `enumerate_paths`, `QuoteCache`).
 - **Plan Evaluation Seam:** `routing/evaluator.py` (`evaluate`, `_check_plan`, `Evaluation`).
+- **Algorithm Implementations:**
+  - `routing/algorithms/direct.py`: `solve` (lines 48–109), `_plan_for_pool` (lines 35–45)
+  - `routing/algorithms/single_path.py`: `prepare` (line 107), `_new_quotes_needed` (line 116), `solve` (lines 133–294)
+  - `routing/algorithms/direct_split.py`: `prepare` (line 107), `leg_amounts` (line 121), `allocation_plan` (line 128), `solve` (lines 157–348)
+  - `routing/algorithms/path_split.py`: `paths_conflict` (line 133), `_branch_and_bound` (line 183), `_family_counts` (line 301), `_family_exceeds` (line 318), `_members_above` (line 335), `solve` (lines 286–480)
+  - `routing/algorithms/incremental_graph.py`: `chunk_amounts` (line 139), `creates_cycle` (line 145), `merged_plan` (line 180), `topology` (line 260), `solve` (lines 290–475), `marginal` (line 343)
+  - `routing/algorithms/uni_sor_port.py`: `compute_all_routes` (line 266), `amount_distribution` (line 352), `build_route_quotes` (line 429), `v8_small_array_sort` (line 453), `find_first_route_not_using_used_pools` (line 501), `get_best_swap_route_by` (line 538), `get_best_swap_route` (line 670), `integer_fill` (line 709), `prepare` (line 772), `solve` (lines 833–950)
 - **Contract Verification:**
-  - Uniswap SOR: `docs/references/uni-sor-port-contract.md` and `tests/routing/test_uni_sor_parity.py`.
-  - Cost Model: `docs/references/cost-model.md` and `benchmark/costs.py`.
+  - Uniswap SOR: [`uni-sor-port-contract.md`](uni-sor-port-contract.md) and `tests/routing/test_uni_sor_parity.py`.
+  - Cost Model: [`cost-model.md`](cost-model.md) and `benchmark/costs.py`.
 
 ---
 
@@ -839,7 +938,7 @@ When navigating the codebase, consult these authoritative entry points:
 4. **Uncalibrated Split Costs:**
    Empirical cost models currently calibrate standard 1-hop and 2-hop single routes. Complex
    split or shared-pool topologies produce `UNRANKED` cost statuses in acceptance benchmarks
-   (`docs/DEFERRED_ISSUES.md`).
+   ([`../DEFERRED_ISSUES.md`](../DEFERRED_ISSUES.md)).
 5. **Economic Cycle Rejection:**
    Plans exhibiting token cycles (e.g., $T_A \to T_B \to T_A \to T_C$) are strictly rejected by the
    evaluator static check with status `INVALID_PLAN`.

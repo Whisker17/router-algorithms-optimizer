@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from benchmark.objective import gross_only
+from benchmark.profile import load_profile
 from pools.constant_product import quote_exact_in as cp_quote
 from routing.algorithms import (
     direct,
@@ -94,6 +95,8 @@ def test_direct_competing_pools_and_truncation(teaching_bundle: SnapshotBundle) 
     assert res.plan is not None and res.evaluation is not None
     assert res.evaluation.gross_output == 9066
     assert res.plan.steps[0].pool_id == "P_AB1"
+    assert res.evaluation.trace[0].amount_in == 10000
+    assert res.evaluation.trace[0].amount_out == 9066
     assert res.candidates_considered == 2
     assert res.candidates_truncated == 0
 
@@ -115,6 +118,12 @@ def test_single_path_hop_major_and_better_multihop(teaching_bundle: SnapshotBund
     assert res.evaluation.gross_output == 12434
     step_ids = [s.pool_id for s in res.plan.steps]
     assert step_ids == ["P_AC", "P_CB"]
+    assert res.evaluation.trace[0].amount_in == 10000
+    assert res.evaluation.trace[0].amount_out == 18132
+    assert res.evaluation.trace[1].amount_in == 18132
+    assert res.evaluation.trace[1].amount_out == 12434
+    assert res.search_stats["quotes_executed"] == 10
+    assert res.search_stats["quotes_memoized"] == 2
 
 
 def test_direct_split_dp_transition_and_remainder(teaching_bundle: SnapshotBundle) -> None:
@@ -133,18 +142,28 @@ def test_direct_split_dp_transition_and_remainder(teaching_bundle: SnapshotBundl
         {"pool_id": "P_AB1", "percent": 70, "amount_in": "7000"},
         {"pool_id": "P_AB2", "percent": 30, "amount_in": "3000"},
     ]
+    assert res.evaluation.trace[0].amount_in == 7000
+    assert res.evaluation.trace[0].amount_out == 6523
+    assert res.evaluation.trace[1].amount_in == 3000
+    assert res.evaluation.trace[1].amount_out == 2652
 
     # 2. Nondivisible input: 10,005 TKA with percent_step=10 (N=10)
     # Leg 1: floor(10005 * 7 / 10) = 7003
     # Leg 2: 10005 - 7003 = 3002 (ALL_REMAINING, carrying remainder 1)
     case_nondiv = Case(case_id="ex_ds_nondiv", token_in="TKA", token_out="TKB", amount_in=10_005)
     res_nondiv = direct_split.solve(case_nondiv, ctx, Budget())
+    assert res_nondiv.evaluation is not None
+    assert res_nondiv.evaluation.gross_output == 9179
     alloc_nondiv = res_nondiv.search_stats.get("best_allocation")
     assert alloc_nondiv == [
         {"pool_id": "P_AB1", "percent": 70, "amount_in": "7003"},
         {"pool_id": "P_AB2", "percent": 30, "amount_in": "3002"},
     ]
-    assert 7003 + 3002 == 10_005
+    assert res_nondiv.evaluation.trace[0].amount_in == 7003
+    assert res_nondiv.evaluation.trace[0].amount_out == 6526
+    assert res_nondiv.evaluation.trace[1].amount_in == 3002
+    assert res_nondiv.evaluation.trace[1].amount_out == 2653
+    assert res_nondiv.search_stats["quotes_executed"] == 25
 
     # 3. Small input where split does not help: 10 TKA -> single pool wins
     case_small = Case(case_id="ex_ds_small", token_in="TKA", token_out="TKB", amount_in=10)
@@ -173,6 +192,18 @@ def test_path_split_conflict_check_and_disjoint_allocation(
     path2_pools = {"P_AD", "P_DB"}
     assert path1_pools.isdisjoint(path2_pools)
 
+    # Check exact evaluated intermediate amounts:
+    assert res.evaluation.trace[0].amount_in == 8000
+    assert res.evaluation.trace[0].amount_out == 14773
+    assert res.evaluation.trace[1].amount_in == 14773
+    assert res.evaluation.trace[1].amount_out == 10288
+    assert res.evaluation.trace[2].amount_in == 2000
+    assert res.evaluation.trace[2].amount_out == 2932
+    assert res.evaluation.trace[3].amount_in == 2932
+    assert res.evaluation.trace[3].amount_out == 2293
+    assert 10288 + 2293 == 12581
+    assert res.search_stats["bnb_conflicts_excluded"] == 13
+
 
 def test_incremental_graph_shared_pool_and_merged_plan(
     teaching_bundle: SnapshotBundle,
@@ -194,6 +225,18 @@ def test_incremental_graph_shared_pool_and_merged_plan(
     assert len(pids) == len(set(pids)), "Merged plan must not reuse physical pools sequentially"
     assert pids == ["P_AC", "P_CD", "P_CB", "P_DB"]
 
+    # Check exact evaluated intermediate amounts:
+    assert res.evaluation.trace[0].amount_in == 10000
+    assert res.evaluation.trace[0].amount_out == 18132
+    assert res.evaluation.trace[1].amount_in == 5562
+    assert res.evaluation.trace[1].amount_out == 5253
+    assert res.evaluation.trace[2].amount_in == 12570
+    assert res.evaluation.trace[2].amount_out == 8844
+    assert res.evaluation.trace[3].amount_in == 5253
+    assert res.evaluation.trace[3].amount_out == 4048
+    assert 8844 + 4048 == 12892
+    assert res.search_stats["incremental_chunk_sequence"] == [0, 1, 1, 0, 1, 1, 1, 0, 1, 1]
+
 
 def test_uni_sor_port_selection_and_parity_behavior(
     teaching_bundle: SnapshotBundle,
@@ -208,6 +251,14 @@ def test_uni_sor_port_selection_and_parity_behavior(
     assert res.status == SolveStatus.OK
     assert res.evaluation is not None and res.evaluation.gross_output == 12581
     assert res.search_stats.get("requote_delta") == "0"
+    assert res.evaluation.trace[0].amount_in == 8000
+    assert res.evaluation.trace[0].amount_out == 14773
+    assert res.evaluation.trace[1].amount_in == 14773
+    assert res.evaluation.trace[1].amount_out == 10288
+    assert res.evaluation.trace[2].amount_in == 2000
+    assert res.evaluation.trace[2].amount_out == 2932
+    assert res.evaluation.trace[3].amount_in == 2932
+    assert res.evaluation.trace[3].amount_out == 2293
 
 
 def test_real_state_corpus_fixture_exact_evaluation() -> None:
@@ -217,6 +268,13 @@ def test_real_state_corpus_fixture_exact_evaluation() -> None:
     pools_before = (bundle_dir / "pools.json").read_bytes()
 
     bundle = load_bundle(bundle_dir)
+    profile_path = ROOT / "config" / "daily_gross.yaml"
+    profile = load_profile(profile_path)
+    real_budget = Budget(
+        max_quotes=profile.budget.max_quotes,
+        time_limit_seconds=profile.budget.time_limit_seconds,
+        max_candidates=profile.budget.max_candidates,
+    )
     case = Case(
         case_id="real_usdc_usdt0_10k",
         token_in="0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",  # USDC
@@ -224,56 +282,72 @@ def test_real_state_corpus_fixture_exact_evaluation() -> None:
         amount_in=10_000_000_000,
     )
     obj = gross_only()
-    budget = Budget()
 
     # 1. direct
-    r_dir = direct.solve(case, SolveContext(bundle=bundle, objective=obj), budget)
+    r_dir = direct.solve(case, SolveContext(bundle=bundle, objective=obj), real_budget)
     assert r_dir.status == SolveStatus.OK and r_dir.evaluation is not None
     assert r_dir.evaluation.gross_output == 10000660449
+    assert r_dir.candidates_considered == 4
 
     # 2. single_path
-    prep_sp = single_path.prepare(bundle, AlgorithmConfig("single_path", {"max_hops": 3}))
+    prep_sp = single_path.prepare(
+        bundle, AlgorithmConfig("single_path", profile.search)
+    )
     ctx_sp = SolveContext(bundle=bundle, objective=obj, prepared=prep_sp)
-    r_sp = single_path.solve(case, ctx_sp, budget)
+    r_sp = single_path.solve(case, ctx_sp, real_budget)
     assert r_sp.status == SolveStatus.OK and r_sp.evaluation is not None
     assert r_sp.evaluation.gross_output == 10000660449
+    assert r_sp.search_stats["quotes_executed"] == 4
 
     # 3. direct_split
-    ds_cfg = {"max_splits": 4, "percent_step": 5}
-    prep_ds = direct_split.prepare(bundle, AlgorithmConfig("direct_split", ds_cfg))
+    prep_ds = direct_split.prepare(
+        bundle, AlgorithmConfig("direct_split", profile.search)
+    )
     ctx_ds = SolveContext(bundle=bundle, objective=obj, prepared=prep_ds)
-    r_ds = direct_split.solve(case, ctx_ds, budget)
+    r_ds = direct_split.solve(case, ctx_ds, real_budget)
     assert r_ds.status == SolveStatus.OK and r_ds.evaluation is not None
     assert r_ds.evaluation.gross_output == 10000660449
+    assert r_ds.search_stats["quotes_executed"] == 80
 
     # 4. path_split
-    ps_cfg = {"max_hops": 3, "max_splits": 4, "percent_step": 5}
-    prep_ps = path_split.prepare(bundle, AlgorithmConfig("path_split", ps_cfg))
+    prep_ps = path_split.prepare(
+        bundle, AlgorithmConfig("path_split", profile.search)
+    )
     ctx_ps = SolveContext(bundle=bundle, objective=obj, prepared=prep_ps)
-    r_ps = path_split.solve(case, ctx_ps, budget)
+    r_ps = path_split.solve(case, ctx_ps, real_budget)
     assert r_ps.status == SolveStatus.OK and r_ps.evaluation is not None
     assert r_ps.evaluation.gross_output == 10000660449
+    assert r_ps.search_stats["quotes_executed"] == 80
 
     # 5. incremental_graph
-    ig_cfg = {"max_hops": 3, "max_splits": 4, "percent_step": 5, "chunks": 200}
-    prep_ig = incremental_graph.prepare(bundle, AlgorithmConfig("incremental_graph", ig_cfg))
+    ig_dict = dict(profile.search)
+    ig_dict.update(profile.graph)
+    prep_ig = incremental_graph.prepare(
+        bundle, AlgorithmConfig("incremental_graph", ig_dict)
+    )
     ctx_ig = SolveContext(bundle=bundle, objective=obj, prepared=prep_ig)
-    r_ig = incremental_graph.solve(case, ctx_ig, budget)
+    r_ig = incremental_graph.solve(case, ctx_ig, real_budget)
     assert r_ig.status == SolveStatus.OK and r_ig.evaluation is not None
     assert r_ig.evaluation.gross_output == 10000663447
+    assert r_ig.search_stats["quotes_executed"] == 264
     assert r_ig.plan is not None
     assert len(r_ig.plan.steps) == 2
     assert r_ig.plan.steps[0].inputs[0].amount == 9950000000
     assert r_ig.plan.steps[1].inputs[0].amount == "ALL_REMAINING"
+    assert r_ig.evaluation.trace[0].amount_in == 9950000000
+    assert r_ig.evaluation.trace[0].amount_out == 9950659893
     assert r_ig.evaluation.trace[1].amount_in == 50000000
+    assert r_ig.evaluation.trace[1].amount_out == 50003554
 
     # 6. uni_sor_port
-    sor_cfg = {"max_hops": 2, "max_splits": 4, "percent_step": 5}
-    prep_sor = uni_sor_port.prepare(bundle, AlgorithmConfig("uni_sor_port", sor_cfg))
+    prep_sor = uni_sor_port.prepare(
+        bundle, AlgorithmConfig("uni_sor_port", profile.search)
+    )
     ctx_sor = SolveContext(bundle=bundle, objective=obj, prepared=prep_sor)
-    r_sor = uni_sor_port.solve(case, ctx_sor, budget)
+    r_sor = uni_sor_port.solve(case, ctx_sor, real_budget)
     assert r_sor.status == SolveStatus.OK and r_sor.evaluation is not None
     assert r_sor.evaluation.gross_output == 10000660449
+    assert r_sor.search_stats["quotes_executed"] == 40
 
     # Assert byte identity of original files
     assert (bundle_dir / "manifest.json").read_bytes() == manifest_before
