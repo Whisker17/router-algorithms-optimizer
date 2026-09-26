@@ -54,7 +54,10 @@ No loader code ships with the template — write it when the first config file l
   `search.max_splits` and `search.percent_step`; `path_split` and `uni_sor_port`: all
   three) — again no built-in default. An optional `graph` section holds `graph.chunks`
   (DESIGN §2.12, integer >= 1), required by `incremental_graph` together with all three
-  `search.*` keys.
+  `search.*` keys. An optional `shortlist` section (WHI-1508) holds the pre-registered
+  settings of the opt-in experimental `uni_sor_fast` only (`probe_percents`: distinct
+  grid percents including 100; `routes_per_probe` >= 1; `direct_routes` >= 0), required
+  with all three `search.*` keys when a profile lists it. No checked-in profile does.
 - `corpus_single_path_smoke.yaml` — smoke-scale profile running `direct` and
   `single_path` (`search.max_hops: 3`) once over the frozen corpus (WHI-1438).
 - `corpus_direct_split_smoke.yaml` — smoke-scale profile running `direct` and
@@ -109,3 +112,7 @@ No loader code ships with the template — write it when the first config file l
   budget-bound records re-solved with the quote cap removed so exact comparisons can
   establish exactness beyond what the fixed budget completed. Read by
   `python -m benchmark.latency sufficient` and `report.latency compare --sufficient`.
+- `latency/l06.yaml` — the pre-registered WHI-1508 (L06) bounded sweep, nomination rule
+  and held-out procedure for the opt-in `uni_sor_fast` shortlist diagnostics, read by
+  `tools/latency/l06_sor_shortlist.py`. Not an L01 protocol and not an adopt rule. See
+  `docs/references/latency-l06-sor-shortlist.md`.
