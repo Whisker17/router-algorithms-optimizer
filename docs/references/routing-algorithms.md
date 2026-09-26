@@ -476,6 +476,18 @@ may share a pool ID.
 
 ### 5.3 Concise Pseudocode
 ```python
+def compute_knapsack_bounds(kept_table, max_splits, n_units):
+    """ub[cap][k][r]: Knapsack upper bound of k legs, sizes <= cap, summing to r."""
+    ub = [[[None] * (n_units + 1) for _ in range(max_splits + 1)] for _ in range(n_units + 1)]
+    for c in range(n_units + 1):
+        ub[c][0][0] = 0
+        for k in range(1, max_splits + 1):
+            for r in range(1, n_units + 1):
+                vals = [kept_table[u][0][0] + prev for u in range(1, min(c, r) + 1)
+                        if u in kept_table and (prev := ub[c][k - 1][r - u]) is not None]
+                ub[c][k][r] = max(vals) if vals else None
+    return ub
+
 def solve_path_split(case, bundle, max_hops, max_splits, percent_step, cache):
     # 1. Retain simpler candidates (single path, direct split)
     best_single = solve_single_path(...)
@@ -488,13 +500,25 @@ def solve_path_split(case, bundle, max_hops, max_splits, percent_step, cache):
     kept_table = prune_with_disjoint_family_bound(paths, B)
     
     # 3. Exact Branch and Bound over kept table (O(S * G^3) knapsack bound precomputation)
-    ub = compute_knapsack_bounds(kept_table, max_splits, N)  # ub[cap][k][r]
+    ub = compute_knapsack_bounds(kept_table, max_splits, N)
     best = {}  # m_legs -> (best_gross, legs)
     
+    def beats(gross, m):
+        return all(gross > best[k][0] for k in range(1, m + 1) if k in best)
+
+    def promising(gross, k, rest, cap):
+        if rest == 0:
+            return beats(gross, k)
+        for m in range(k + 1, max_splits + 1):
+            bound = ub[cap][m - k][rest] if ub is not None else None
+            if bound is not None and beats(gross + bound, m):
+                return True
+        return False
+
     def dfs(used, cap, min_idx, taken_pools, gross, legs):
         r = N - used
         if r == 0:
-            if all(gross > best[k][0] for k in range(1, len(legs) + 1) if k in best):
+            if beats(gross, len(legs)):
                 best[len(legs)] = (gross, legs)
             return
             
@@ -505,10 +529,10 @@ def solve_path_split(case, bundle, max_hops, max_splits, percent_step, cache):
             if legs_left == 1 and u != r:
                 continue
                 
-            for idx, (v, path) in enumerate(kept_table[u]):
-                # Promising check: can any reachable leg count beat incumbent?
-                if not any(gross + v + ub[u][m - len(legs) - 1][r - u] > best[m][0]
-                           for m in range(len(legs) + 1, max_splits + 1) if m in best):
+            lst = kept_table[u]
+            for idx in range(min_idx if u == cap else 0, len(lst)):
+                v, path = lst[idx]
+                if not promising(gross + v, len(legs) + 1, r - u, u):
                     break  # Value-descending list: later entries cannot beat bound
                 if not taken_pools.isdisjoint(path.pools):
                     continue  # Pool conflict: skipped
@@ -982,7 +1006,7 @@ Let:
 |---|---|---|---|
 | `direct` | $\mathcal{O}(P_{\text{direct}} \cdot c_q)$ | $\le P_{\text{direct}}$ | $\mathcal{O}(1)$ |
 | `single_path` | $\mathcal{O}(H \cdot \lvert \Pi_H \rvert \cdot c_q)$ | $\le \sum_{\pi} \text{hops}(\pi)$ | $\mathcal{O}(H)$ stack + cache |
-| `direct_split` | $\mathcal{O}(P_{\text{direct}} \cdot G \cdot c_q + P_{\text{direct}} \cdot S \cdot G^2)$ | $\le P_{\text{direct}} \cdot G + P_{\text{direct}} \cdot \lvert \text{remainders} \rvert$ | $\mathcal{O}(S \cdot G^2)$ |
+| `direct_split` | $\mathcal{O}(P_{\text{direct}} \cdot (G + \lvert \text{remainders} \rvert) \cdot c_q + P_{\text{direct}} \cdot S \cdot G^2 \cdot R)$ | $\le P_{\text{direct}} \cdot G + P_{\text{direct}} \cdot \lvert \text{remainders} \rvert$ | $\mathcal{O}(S \cdot G^2 \cdot R)$ |
 | `path_split` | $\mathcal{O}(S \cdot G^3 + \lvert \Pi_H \rvert \cdot G \cdot c_q + \text{BnB Nodes})$ | $\le \text{Quotes}(\text{sub}) + \sum_{\pi} \text{hops}(\pi) \cdot G$ | $\mathcal{O}(S \cdot G^2 + \lvert \Pi_H \rvert \cdot G)$ |
 | `incremental_graph` | $\mathcal{O}(K \cdot \sum_{\pi} \text{hops}(\pi) \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot \sum_{\pi} \text{hops}(\pi) + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K + \lvert \Pi_H \rvert)$ + cache |
 | `uni_sor_port` | $\mathcal{O}(\sum_{\pi} \text{hops}(\pi) \cdot G \cdot c_q + \lvert Q \rvert \cdot \lvert \Pi_H \rvert)$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G + \text{hops}(\pi_{\text{last}})$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G + \lvert Q \rvert)$ |
