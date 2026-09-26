@@ -4,7 +4,22 @@ Improvements to the template layer discovered in this project. When work here su
 an improvement that belongs to the template repo (see "Template feedback loop" in `AGENTS.md`),
 record it here so it can be ported back to `Whisker17/code-template`.
 
-## Discovered in router-algorithms-optimizer
+## 2026-09-26 — Adopt code-template v0.2 process tooling
+
+- Source pin: `0c468b16eb9b1f87269cd83b399b57b23688bbd9`, tracked by WHI-1499/WHI-1500.
+  Adopt eight core skills, explicit role/model/effort dispatch, complexity/scope metadata,
+  one-pass PR review and bounded release orchestration; remove legacy mandatory TDD,
+  rung-report and full-trap injection contracts. This supersedes earlier process notes below.
+- Preserve all business modules, runtime profiles, dependency versions and frozen evidence.
+  Keep project bindings and a short compatibility anchor for existing release-review links.
+- Template feedback: do not copy blank role values over a configured project; preserve an
+  instruction alias until the installed client actually supports native AGENTS loading;
+  distinguish completed legacy issue metadata from new dispatch requirements; type upstream
+  tooling tests when the downstream project checks tests strictly. These are local adapters,
+  not a reason to overwrite the downstream business scaffold.
+- Detailed adoption/verification record: `docs/agents/template-sync.md`.
+
+## Earlier discoveries in router-algorithms-optimizer (historical)
 
 - Owner-directed fast iteration (WHI-1471): ordinary issue PRs merge on acceptance,
   test/lint/type, scope and mergeability evidence, with optional targeted review. Move
