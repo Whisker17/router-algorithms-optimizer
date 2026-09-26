@@ -123,14 +123,20 @@ def run_all() -> None:
     assert res_direct.plan.steps[0].pool_id == "P_AB1"
     assert res_direct.evaluation.trace[0].amount_in == 10000
     assert res_direct.evaluation.trace[0].amount_out == 9066
-    print("Direct pool P_AB1: 9066 TKB, P_AB2: 8546 TKB -> Winner: P_AB1 (9066 TKB) [OK]")
+    print(
+        f"Direct pool {res_direct.plan.steps[0].pool_id}: "
+        f"{res_direct.evaluation.gross_output} TKB [OK]"
+    )
 
     # Check truncation with max_candidates=1
     trunc_budget = Budget(max_candidates=1)
     res_trunc = direct.solve(case, SolveContext(bundle=bundle, objective=obj), trunc_budget)
     assert res_trunc.candidates_considered == 1
     assert res_trunc.candidates_truncated == 1
-    print("Direct candidate truncation: considered 1, truncated 1 [OK]\n")
+    print(
+        f"Direct candidate truncation: considered {res_trunc.candidates_considered}, "
+        f"truncated {res_trunc.candidates_truncated} [OK]\n"
+    )
 
     # -------------------------------------------------------------
     # 3. single_path
@@ -154,8 +160,12 @@ def run_all() -> None:
     idx = build_graph_index(bundle)
     for p in enumerate_paths(idx, "TKA", "TKB", 3):
         print(f"  {path_label(p)}")
-    print("Hop-major search evaluated 1-hop first (9066), then 2-hop (12434).")
-    print("Chosen multi-hop path: TKA -[P_AC]-> TKC -[P_CB]-> TKB with 12434 TKB [OK]\n")
+    print(
+        f"Hop-major search: direct baseline 9066 -> chosen multi-hop {p_step_ids} "
+        f"with {res_sp.evaluation.gross_output} TKB "
+        f"({res_sp.search_stats['quotes_executed']} quotes, "
+        f"{res_sp.search_stats['quotes_memoized']} memo hits) [OK]\n"
+    )
 
     # -------------------------------------------------------------
     # 4. direct_split
@@ -173,11 +183,13 @@ def run_all() -> None:
         {"pool_id": "P_AB1", "percent": 70, "amount_in": "7000"},
         {"pool_id": "P_AB2", "percent": 30, "amount_in": "3000"},
     ]
-    assert res_ds.evaluation.trace[0].amount_in == 7000
-    assert res_ds.evaluation.trace[0].amount_out == 6523
-    assert res_ds.evaluation.trace[1].amount_in == 3000
-    assert res_ds.evaluation.trace[1].amount_out == 2652
-    print("DP optimal split: 70% P_AB1 (6523) + 30% P_AB2 (2652) = 9175 TKB [OK]")
+    t0, t1 = res_ds.evaluation.trace[0], res_ds.evaluation.trace[1]
+    assert t0.amount_in == 7000 and t0.amount_out == 6523
+    assert t1.amount_in == 3000 and t1.amount_out == 2652
+    print(
+        f"DP optimal split: 70% P_AB1 ({t0.amount_out}) + 30% P_AB2 ({t1.amount_out}) = "
+        f"{res_ds.evaluation.gross_output} TKB [OK]"
+    )
 
     # Check nondivisible input
     case_nondiv = Case(case_id="ex_nondiv", token_in="TKA", token_out="TKB", amount_in=10_005)
@@ -185,17 +197,16 @@ def run_all() -> None:
     res_nondiv = direct_split.solve(case_nondiv, ctx_nondiv, budget)
     assert res_nondiv.evaluation is not None
     assert res_nondiv.evaluation.gross_output == 9179
-    alloc_nondiv = res_nondiv.search_stats.get("best_allocation")
-    assert alloc_nondiv == [
-        {"pool_id": "P_AB1", "percent": 70, "amount_in": "7003"},
-        {"pool_id": "P_AB2", "percent": 30, "amount_in": "3002"},
-    ]
-    assert res_nondiv.evaluation.trace[0].amount_in == 7003
-    assert res_nondiv.evaluation.trace[0].amount_out == 6526
-    assert res_nondiv.evaluation.trace[1].amount_in == 3002
-    assert res_nondiv.evaluation.trace[1].amount_out == 2653
+    nt0, nt1 = res_nondiv.evaluation.trace[0], res_nondiv.evaluation.trace[1]
+    assert nt0.amount_in == 7003 and nt0.amount_out == 6526
+    assert nt1.amount_in == 3002 and nt1.amount_out == 2653
     assert res_nondiv.search_stats["quotes_executed"] == 25
-    print("Nondivisible 10005 TKA: leg 1 = 7003 (6526), leg 2 = 3002 (2653) -> sum 9179 [OK]\n")
+    print(
+        f"Nondivisible 10005 TKA: leg 1 = {nt0.amount_in} ({nt0.amount_out}), "
+        f"leg 2 = {nt1.amount_in} ({nt1.amount_out}) -> "
+        f"gross {res_nondiv.evaluation.gross_output} "
+        f"({res_nondiv.search_stats['quotes_executed']} quotes) [OK]\n"
+    )
 
     # -------------------------------------------------------------
     # 5. path_split
@@ -216,18 +227,23 @@ def run_all() -> None:
         ("P_DB", "TKD", "TKB"),
     ]
     # Check exact evaluated intermediate amounts:
-    assert res_ps.evaluation.trace[0].amount_in == 8000
-    assert res_ps.evaluation.trace[0].amount_out == 14773
-    assert res_ps.evaluation.trace[1].amount_in == 14773
-    assert res_ps.evaluation.trace[1].amount_out == 10288
-    assert res_ps.evaluation.trace[2].amount_in == 2000
-    assert res_ps.evaluation.trace[2].amount_out == 2932
-    assert res_ps.evaluation.trace[3].amount_in == 2932
-    assert res_ps.evaluation.trace[3].amount_out == 2293
-    assert 10288 + 2293 == 12581
+    tr = res_ps.evaluation.trace
+    assert tr[0].amount_in == 8000 and tr[0].amount_out == 14773
+    assert tr[1].amount_in == 14773 and tr[1].amount_out == 10288
+    assert tr[2].amount_in == 2000 and tr[2].amount_out == 2932
+    assert tr[3].amount_in == 2932 and tr[3].amount_out == 2293
+    assert tr[1].amount_out + tr[3].amount_out == 12581
     assert res_ps.search_stats["bnb_conflicts_excluded"] == 13
-    print("Path split: 80% P_AC->P_CB (10288) + 20% P_AD->P_DB (2293) = 12581 TKB [OK]")
-    print("Pool conflict verification: {P_AC, P_CB} and {P_AD, P_DB} are strictly disjoint [OK]\n")
+    assert res_ps.search_stats["bnb_nodes"] == 12
+    print(
+        f"Path split: 80% P_AC->P_CB ({tr[1].amount_out}) + "
+        f"20% P_AD->P_DB ({tr[3].amount_out}) = "
+        f"{res_ps.evaluation.gross_output} TKB [OK]"
+    )
+    print(
+        f"BnB search: {res_ps.search_stats['bnb_nodes']} nodes visited, "
+        f"{res_ps.search_stats['bnb_conflicts_excluded']} branches conflict-pruned [OK]\n"
+    )
 
     # -------------------------------------------------------------
     # 6. incremental_graph
@@ -241,27 +257,19 @@ def run_all() -> None:
     assert res_ig.plan is not None and res_ig.evaluation is not None
     assert res_ig.evaluation.gross_output == 12892
     assert res_ig.search_stats.get("topology") == "shared_pool"
-    ig_steps = [(s.pool_id, s.token_in, s.token_out) for s in res_ig.plan.steps]
-    assert ig_steps == [
-        ("P_AC", "TKA", "TKC"),
-        ("P_CD", "TKC", "TKD"),
-        ("P_CB", "TKC", "TKB"),
-        ("P_DB", "TKD", "TKB"),
-    ]
-    # Check exact evaluated intermediate amounts:
-    assert res_ig.evaluation.trace[0].amount_in == 10000
-    assert res_ig.evaluation.trace[0].amount_out == 18132
-    assert res_ig.evaluation.trace[1].amount_in == 5562
-    assert res_ig.evaluation.trace[1].amount_out == 5253
-    assert res_ig.evaluation.trace[2].amount_in == 12570
-    assert res_ig.evaluation.trace[2].amount_out == 8844
-    assert res_ig.evaluation.trace[3].amount_in == 5253
-    assert res_ig.evaluation.trace[3].amount_out == 4048
-    assert 8844 + 4048 == 12892
+    itr = res_ig.evaluation.trace
+    assert itr[0].amount_in == 10000 and itr[0].amount_out == 18132
+    assert itr[1].amount_in == 5562 and itr[1].amount_out == 5253
+    assert itr[2].amount_in == 12570 and itr[2].amount_out == 8844
+    assert itr[3].amount_in == 5253 and itr[3].amount_out == 4048
+    assert itr[2].amount_out + itr[3].amount_out == 12892
     assert res_ig.search_stats["incremental_chunk_sequence"] == [0, 1, 1, 0, 1, 1, 1, 0, 1, 1]
-    print("Shared intermediate pool P_AC receives full 10000 TKA -> 18132 TKC.")
-    print("At TKC, flow branches: 5562 to P_CD -> P_DB (4048 TKB) + 12570 to P_CB (8844 TKB).")
-    print("Total merged output: 12892 TKB (topology: shared_pool) [OK]\n")
+    print(
+        f"Shared intermediate pool P_AC in={itr[0].amount_in} -> out={itr[0].amount_out} TKC.\n"
+        f"At TKC, flow branches: {itr[1].amount_in} to P_CD -> P_DB ({itr[3].amount_out} TKB) + "
+        f"{itr[2].amount_in} to P_CB ({itr[2].amount_out} TKB).\n"
+        f"Total merged output: {res_ig.evaluation.gross_output} TKB (topology: shared_pool) [OK]\n"
+    )
 
     # -------------------------------------------------------------
     # 7. uni_sor_port
@@ -274,23 +282,19 @@ def run_all() -> None:
     assert res_sor.status == SolveStatus.OK
     assert res_sor.plan is not None and res_sor.evaluation is not None
     assert res_sor.evaluation.gross_output == 12581
-    sor_steps = [(s.pool_id, s.token_in, s.token_out) for s in res_sor.plan.steps]
-    assert sor_steps == [
-        ("P_AC", "TKA", "TKC"),
-        ("P_CB", "TKC", "TKB"),
-        ("P_AD", "TKA", "TKD"),
-        ("P_DB", "TKD", "TKB"),
-    ]
-    assert res_sor.evaluation.trace[0].amount_in == 8000
-    assert res_sor.evaluation.trace[0].amount_out == 14773
-    assert res_sor.evaluation.trace[1].amount_in == 14773
-    assert res_sor.evaluation.trace[1].amount_out == 10288
-    assert res_sor.evaluation.trace[2].amount_in == 2000
-    assert res_sor.evaluation.trace[2].amount_out == 2932
-    assert res_sor.evaluation.trace[3].amount_in == 2932
-    assert res_sor.evaluation.trace[3].amount_out == 2293
+    str_ = res_sor.evaluation.trace
+    assert str_[0].amount_in == 8000 and str_[0].amount_out == 14773
+    assert str_[1].amount_in == 14773 and str_[1].amount_out == 10288
+    assert str_[2].amount_in == 2000 and str_[2].amount_out == 2932
+    assert str_[3].amount_in == 2932 and str_[3].amount_out == 2293
     assert res_sor.search_stats.get("requote_delta") == "0"
-    print("SOR selection: 80% P_AC->P_CB (10288) + 20% P_AD->P_DB (2293) = 12581 TKB [OK]\n")
+    assert res_sor.search_stats["quotes_executed"] == 60
+    print(
+        f"SOR selection: 80% P_AC->P_CB ({str_[1].amount_out}) + "
+        f"20% P_AD->P_DB ({str_[3].amount_out}) = "
+        f"{res_sor.evaluation.gross_output} TKB "
+        f"({res_sor.search_stats['quotes_executed']} pool quotes) [OK]\n"
+    )
 
     # -------------------------------------------------------------
     # 8. Fixed-Block Real State Case (Matching profile config/daily_gross.yaml)
@@ -339,7 +343,9 @@ def run_all() -> None:
     assert r_ds.search_stats["quotes_executed"] == 80
 
     # 4. path_split
-    prep_real_ps = path_split.prepare(corpus_bundle, AlgorithmConfig("path_split", profile.search))
+    prep_real_ps = path_split.prepare(
+        corpus_bundle, AlgorithmConfig("path_split", profile.search)
+    )
     ctx_rps = SolveContext(bundle=corpus_bundle, objective=obj, prepared=prep_real_ps)
     r_ps = path_split.solve(real_case, ctx_rps, real_budget)
     assert r_ps.status == SolveStatus.OK and r_ps.evaluation is not None
@@ -376,13 +382,19 @@ def run_all() -> None:
     assert r_sor.evaluation.gross_output == 10000660449
     assert r_sor.search_stats["quotes_executed"] == 40
 
+    q_dir = r_dir.candidates_considered
+    q_sp = r_sp.search_stats["quotes_executed"]
+    q_ds = r_ds.search_stats["quotes_executed"]
+    q_ps = r_ps.search_stats["quotes_executed"]
+    q_ig = r_ig.search_stats["quotes_executed"]
+    q_sor = r_sor.search_stats["quotes_executed"]
     print("Real-state block 101082044 request 10000 USDC -> USDT0 (Profile: daily_gross.yaml):")
-    print("  direct:            10000660449 raw (10000.660449 USDT0), 4 quotes")
-    print("  single_path:       10000660449 raw (10000.660449 USDT0), 4 quotes")
-    print("  direct_split:      10000660449 raw (10000.660449 USDT0), 80 quotes")
-    print("  path_split:        10000660449 raw (10000.660449 USDT0), 80 quotes")
-    print("  incremental_graph: 10000663447 raw (10000.663447 USDT0) [Agni + Moe LB split]")
-    print("  uni_sor_port:      10000660449 raw (10000.660449 USDT0) [LB excluded by D-4]")
+    print(f"  direct:            {r_dir.evaluation.gross_output} raw, {q_dir} quotes")
+    print(f"  single_path:       {r_sp.evaluation.gross_output} raw, {q_sp} quotes")
+    print(f"  direct_split:      {r_ds.evaluation.gross_output} raw, {q_ds} quotes")
+    print(f"  path_split:        {r_ps.evaluation.gross_output} raw, {q_ps} quotes")
+    print(f"  incremental_graph: {r_ig.evaluation.gross_output} raw, {q_ig} quotes [Agni + Moe LB]")
+    print(f"  uni_sor_port:      {r_sor.evaluation.gross_output} raw, {q_sor} quotes [LB excluded]")
     print("All real-state assertions passed [OK]\n")
 
     print("=================================================================")

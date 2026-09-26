@@ -210,6 +210,8 @@ def test_path_split_conflict_check_and_disjoint_allocation(
     assert res.evaluation.trace[3].amount_out == 2293
     assert 10288 + 2293 == 12581
     assert res.search_stats["bnb_conflicts_excluded"] == 13
+    assert res.search_stats["bnb_nodes"] == 12
+    assert res.search_stats["bnb_best_gross"] == {"1": "12434", "2": "12581"}
 
 
 def test_incremental_graph_shared_pool_and_merged_plan(
@@ -247,7 +249,7 @@ def test_incremental_graph_shared_pool_and_merged_plan(
 
 def test_incremental_graph_dust_carry_and_fallback(teaching_bundle: SnapshotBundle) -> None:
     """Verify incremental_graph zero/dust carry with tiny input and fallback preservation."""
-    # Dust input A=3, K=20: 17 empty chunks, 1 carried, 2 allocated
+    # 1. Dust input A=3, K=20: 17 empty chunks, 1 carried, 2 allocated
     cfg = {"max_hops": 3, "max_splits": 2, "percent_step": 10, "chunks": 20}
     prep = incremental_graph.prepare(teaching_bundle, AlgorithmConfig("incremental_graph", cfg))
     case_dust = Case(case_id="c_dust", token_in="TKA", token_out="TKB", amount_in=3)
@@ -260,7 +262,38 @@ def test_incremental_graph_dust_carry_and_fallback(teaching_bundle: SnapshotBund
     assert res_dust.search_stats["chunks_allocated"] == 2
     assert res_dust.search_stats["incremental_status"] == "ok"
 
-    # Fallback preservation: when incremental search produces equal gross to path_split on A=10,
+    # 2. Zero-marginal final chunk commit: reserves (100, 10), A=100, K=10
+    block = BlockRef(chain_id=5000, number=1, hash="0x" + "00" * 32, timestamp=0)
+    p_zero = ConstantProductPoolState(
+        pool_id="P_zero",
+        token0="TKA",
+        token1="TKB",
+        reserve0=100,
+        reserve1=10,
+        fee_bps=30,
+        source_key="moe_classic_v1",
+    )
+    b_zero = SnapshotBundle(
+        bundle_id="syn_zero",
+        kind="synthetic",
+        schema_version=1,
+        block=block,
+        pools={"P_zero": p_zero},
+        cases=(),
+        bundle_hash="h_zero",
+        source_path="<test>",
+    )
+    case_zero = Case(case_id="c_zero", token_in="TKA", token_out="TKB", amount_in=100)
+    cfg_zero = {"max_hops": 1, "max_splits": 1, "percent_step": 10, "chunks": 10}
+    prep_zero = incremental_graph.prepare(b_zero, AlgorithmConfig("incremental_graph", cfg_zero))
+    ctx_zero = SolveContext(bundle=b_zero, objective=gross_only(), prepared=prep_zero)
+    res_zero = incremental_graph.solve(case_zero, ctx_zero, Budget())
+    assert res_zero.status == SolveStatus.OK
+    assert res_zero.search_stats["incremental_status"] == "ok"
+    assert res_zero.search_stats["incremental_accounted_gross"] == "4"
+    assert res_zero.search_stats["chunks_carried"] == 5
+
+    # 3. Fallback preservation: when incremental search produces equal gross to path_split on A=10,
     # simpler route wins the tie (retaining single_path as the chosen source).
     case_small = Case(case_id="c_small", token_in="TKA", token_out="TKB", amount_in=10)
     res_small = incremental_graph.solve(case_small, ctx, Budget())
@@ -272,6 +305,16 @@ def test_uni_sor_port_selection_and_parity_behavior(
     teaching_bundle: SnapshotBundle,
 ) -> None:
     """Verify uni_sor_port selects best routes and obeys port contract."""
+    # Test with max_hops=1 on A=10005: 2 pools x 10 = 20 table quotes + 1 replay = 21 quotes
+    cfg_h1 = {"max_hops": 1, "max_splits": 2, "percent_step": 10}
+    prep_h1 = uni_sor_port.prepare(teaching_bundle, AlgorithmConfig("uni_sor_port", cfg_h1))
+    case_nondiv = Case(case_id="ex_sor_nondiv", token_in="TKA", token_out="TKB", amount_in=10_005)
+    ctx_h1 = SolveContext(bundle=teaching_bundle, objective=gross_only(), prepared=prep_h1)
+    res_h1 = uni_sor_port.solve(case_nondiv, ctx_h1, Budget())
+    assert res_h1.status == SolveStatus.OK
+    assert res_h1.search_stats["quotes_executed"] == 21
+
+    # Test with max_hops=2 on A=10000: 4 routes (2 1-hop + 2 2-hop) x 10 buckets = 60 pool quotes
     cfg = {"max_hops": 2, "max_splits": 2, "percent_step": 10}
     prep = uni_sor_port.prepare(teaching_bundle, AlgorithmConfig("uni_sor_port", cfg))
     case = Case(case_id="ex_sor", token_in="TKA", token_out="TKB", amount_in=10_000)
@@ -280,6 +323,7 @@ def test_uni_sor_port_selection_and_parity_behavior(
     res = uni_sor_port.solve(case, ctx, Budget())
     assert res.status == SolveStatus.OK
     assert res.evaluation is not None and res.evaluation.gross_output == 12581
+    assert res.search_stats["quotes_executed"] == 60
     assert res.search_stats.get("requote_delta") == "0"
     assert res.evaluation.trace[0].amount_in == 8000
     assert res.evaluation.trace[0].amount_out == 14773
