@@ -1,0 +1,1274 @@
+{
+  "acceptance": {
+    "decision_split": "held_out",
+    "exact_semantic_fields": [
+      "status",
+      "evaluation",
+      "score",
+      "error",
+      "limit_hit",
+      "solver_reported"
+    ],
+    "heuristic_default_loss_tolerance": null,
+    "min_timed_solve_seconds": 0.02,
+    "minimum_worthwhile_improvement": 0.1,
+    "noise_multiplier": 2.0,
+    "work_fields": [
+      "quotes_counted",
+      "candidates_considered",
+      "candidates_truncated",
+      "search"
+    ]
+  },
+  "baseline": {
+    "experiment_id": "20260926T122008634477Z-08a7dfe8",
+    "load": {
+      "contaminated": true,
+      "cpu_count": 10,
+      "max_loadavg_1m": 62.2431640625,
+      "samples": 780,
+      "threshold_loadavg_1m": 5.0
+    },
+    "measured_source": {
+      "code_tree_ids": {
+        "benchmark": "350fa0757a41dc6533ad600d31a8729dad1ed40d",
+        "config": "02d44447c1d7939752f52125bfed07b666562708",
+        "main.py": "bc1a81f69a02db62edda5dbf916f58a4defbe288",
+        "pools": "71da9be88b2d39f23ac7280bfa4976e94f1d9f9f",
+        "pyproject.toml": "77f66e9b32c40ee755831297a828a6213b2b159e",
+        "report": "39664ca0dfce5e12296012919c435ab8f44c82ba",
+        "routing": "c01faf30e18b5f62c2d5fc132fc4545f0de195bd",
+        "snapshot": "e966e3bcf7fdbfeab1eace6088d37313df9fa791",
+        "uv.lock": "611568a832a513d8d4fbdfd2de11d8774b9b6c39"
+      },
+      "dirty_patch_sha256": null,
+      "dirty_paths": [],
+      "git_diff_sha256": null,
+      "git_dirty": false,
+      "git_revision": "299b88a787b63900229280f79a3d741e5710f169"
+    }
+  },
+  "bounded_exactness": {
+    "established": [
+      "full_source/matrix incremental_graph/bnd-78c1b0-201eba-round_at (3 bound record(s))"
+    ],
+    "evidence_problems": {
+      "baseline": [],
+      "candidate": [],
+      "pairing": []
+    },
+    "mismatches": [],
+    "required": 1,
+    "unproven": []
+  },
+  "candidate": {
+    "experiment_id": "20260926T125952820526Z-e47f54fe",
+    "load": {
+      "contaminated": true,
+      "cpu_count": 10,
+      "max_loadavg_1m": 24.15771484375,
+      "samples": 780,
+      "threshold_loadavg_1m": 5.0
+    },
+    "measured_source": {
+      "code_tree_ids": {
+        "benchmark": "350fa0757a41dc6533ad600d31a8729dad1ed40d",
+        "config": "02d44447c1d7939752f52125bfed07b666562708",
+        "main.py": "bc1a81f69a02db62edda5dbf916f58a4defbe288",
+        "pools": "517828ccb7a1114e4829b150aab2e0923819ca2c",
+        "pyproject.toml": "77f66e9b32c40ee755831297a828a6213b2b159e",
+        "report": "39664ca0dfce5e12296012919c435ab8f44c82ba",
+        "routing": "c01faf30e18b5f62c2d5fc132fc4545f0de195bd",
+        "snapshot": "e966e3bcf7fdbfeab1eace6088d37313df9fa791",
+        "uv.lock": "611568a832a513d8d4fbdfd2de11d8774b9b6c39"
+      },
+      "dirty_patch_sha256": null,
+      "dirty_paths": [],
+      "git_diff_sha256": null,
+      "git_dirty": false,
+      "git_revision": "8c7337a69a31e8317eec4a6b0ac21f96324df500"
+    }
+  },
+  "charged": {
+    "full_source/matrix direct": {
+      "decision_cases": 15,
+      "improvement": -0.01625037136938512,
+      "lost_decision_cases": [],
+      "threshold": 0.1,
+      "verdict": "not_slower"
+    },
+    "full_source/matrix direct_split": {
+      "decision_cases": 15,
+      "improvement": 0.24687162644673033,
+      "lost_decision_cases": [],
+      "threshold": 0.1,
+      "verdict": "not_slower"
+    },
+    "full_source/matrix incremental_graph": {
+      "decision_cases": 15,
+      "improvement": 0.23818412059918737,
+      "lost_decision_cases": [],
+      "threshold": 0.5101831334004161,
+      "verdict": "not_slower"
+    },
+    "full_source/matrix path_split": {
+      "decision_cases": 15,
+      "improvement": 0.2731375784494662,
+      "lost_decision_cases": [],
+      "threshold": 0.12197889721220534,
+      "verdict": "not_slower"
+    },
+    "full_source/matrix single_path": {
+      "decision_cases": 15,
+      "improvement": 0.13783738791114764,
+      "lost_decision_cases": [],
+      "threshold": 0.1,
+      "verdict": "not_slower"
+    },
+    "full_source/matrix uni_sor_port": {
+      "decision_cases": 15,
+      "improvement": 0.40717155862066,
+      "lost_decision_cases": [],
+      "threshold": 0.33570240953547614,
+      "verdict": "not_slower"
+    }
+  },
+  "charged_costs": {
+    "full_source/matrix direct": {
+      "charged_seconds": {
+        "baseline_median": 0.120469082,
+        "candidate_median": 0.123163687
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 92.0,
+        "candidate_median": 92.0
+      },
+      "prepare_seconds": {
+        "baseline_median": 4.59e-07,
+        "candidate_median": 5.41e-07
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 28393.0,
+        "candidate_median": 28429.0
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.117695791,
+        "candidate_median": 0.12155318749999999
+      }
+    },
+    "full_source/matrix direct_split": {
+      "charged_seconds": {
+        "baseline_median": 0.12316941749999999,
+        "candidate_median": 0.125974833
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 140.0,
+        "candidate_median": 140.0
+      },
+      "prepare_seconds": {
+        "baseline_median": 4.1454999999999995e-06,
+        "candidate_median": 4.229e-06
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 451430.0,
+        "candidate_median": 451479.0
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.1174729165,
+        "candidate_median": 0.1209794795
+      }
+    },
+    "full_source/matrix incremental_graph": {
+      "charged_seconds": {
+        "baseline_median": 0.781938376,
+        "candidate_median": 0.5159453745
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36824.0,
+        "candidate_median": 36824.0
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.0001029795,
+        "candidate_median": 0.000103792
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 36309335.5,
+        "candidate_median": 36309371.5
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.117153125,
+        "candidate_median": 0.1182965205
+      }
+    },
+    "full_source/matrix path_split": {
+      "charged_seconds": {
+        "baseline_median": 0.39553931249999996,
+        "candidate_median": 0.32408249999999994
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36824.0,
+        "candidate_median": 36824.0
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.000101667,
+        "candidate_median": 0.00010295850000000001
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 30039043.0,
+        "candidate_median": 30039043.0
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.118205687,
+        "candidate_median": 0.118974896
+      }
+    },
+    "full_source/matrix single_path": {
+      "charged_seconds": {
+        "baseline_median": 0.1918259165,
+        "candidate_median": 0.15989120899999998
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36824.0,
+        "candidate_median": 36824.0
+      },
+      "prepare_seconds": {
+        "baseline_median": 9.78125e-05,
+        "candidate_median": 0.00010018749999999999
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 2255895.0,
+        "candidate_median": 2255904.5
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.118068854,
+        "candidate_median": 0.1217775415
+      }
+    },
+    "full_source/matrix uni_sor_port": {
+      "charged_seconds": {
+        "baseline_median": 0.776109166,
+        "candidate_median": 0.3642078125
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 680350.0,
+        "candidate_median": 680350.0
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.01708975,
+        "candidate_median": 0.017164041999999997
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 31862094.5,
+        "candidate_median": 31862094.5
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.13438624999999998,
+        "candidate_median": 0.13602560400000002
+      }
+    },
+    "full_source/sentinel direct": {
+      "charged_seconds": {
+        "baseline_median": 0.12977999999999998,
+        "candidate_median": 0.13565691600000002
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 92,
+        "candidate_median": 92
+      },
+      "prepare_seconds": {
+        "baseline_median": 5.42e-07,
+        "candidate_median": 8.75e-07
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 53072,
+        "candidate_median": 53144
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.117135625,
+        "candidate_median": 0.1309355
+      }
+    },
+    "full_source/sentinel direct_split": {
+      "charged_seconds": {
+        "baseline_median": 0.325706417,
+        "candidate_median": 0.173026291
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 140,
+        "candidate_median": 140
+      },
+      "prepare_seconds": {
+        "baseline_median": 5.333e-06,
+        "candidate_median": 7.333e-06
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 1595515,
+        "candidate_median": 1595515
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.116960583,
+        "candidate_median": 0.126850833
+      }
+    },
+    "full_source/sentinel incremental_graph": {
+      "charged_seconds": {
+        "baseline_median": 1.22198125,
+        "candidate_median": 0.9246718740000001
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36432,
+        "candidate_median": 36432
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.000104,
+        "candidate_median": 0.00010725
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 85412785,
+        "candidate_median": 85412785
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.117268833,
+        "candidate_median": 0.126140208
+      }
+    },
+    "full_source/sentinel path_split": {
+      "charged_seconds": {
+        "baseline_median": 0.9477544579999999,
+        "candidate_median": 0.694898541
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36432,
+        "candidate_median": 36432
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.000100125,
+        "candidate_median": 0.000129959
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 68830065,
+        "candidate_median": 68830137
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.116657166,
+        "candidate_median": 0.128905083
+      }
+    },
+    "full_source/sentinel single_path": {
+      "charged_seconds": {
+        "baseline_median": 0.341165709,
+        "candidate_median": 0.29891433300000003
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36432,
+        "candidate_median": 36432
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.000100792,
+        "candidate_median": 0.000111459
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 17904920,
+        "candidate_median": 17904920
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.1168295,
+        "candidate_median": 0.130535
+      }
+    },
+    "full_source/sentinel uni_sor_port": {
+      "charged_seconds": {
+        "baseline_median": 3.855185166,
+        "candidate_median": 2.648041541
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 681601,
+        "candidate_median": 681497
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.017253166,
+        "candidate_median": 0.01862925
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 313157257,
+        "candidate_median": 313157257
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.134316791,
+        "candidate_median": 0.149578833
+      }
+    }
+  },
+  "claims": "No percentile, p95 or SLA is derived: each case has 2 x repeats samples; the figures are medians/min/max of observations on the recorded host.",
+  "coverage_problems": {
+    "baseline": [],
+    "candidate": [],
+    "pairing": []
+  },
+  "fixed_budget_differences": [],
+  "internal_checks": {
+    "baseline": {
+      "attempts_inconsistent": [],
+      "cold_warm": [],
+      "cross_order": []
+    },
+    "candidate": {
+      "attempts_inconsistent": [],
+      "cold_warm": [],
+      "cross_order": []
+    }
+  },
+  "lane": "exact",
+  "pairs": {
+    "direct": "direct",
+    "direct_split": "direct_split",
+    "incremental_graph": "incremental_graph",
+    "path_split": "path_split",
+    "single_path": "single_path",
+    "uni_sor_port": "uni_sor_port"
+  },
+  "protocol_sha256": "961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b",
+  "reasons": [
+    "host load exceeded the protocol threshold in an experiment"
+  ],
+  "regret": {
+    "full_source/matrix direct": {
+      "held_out": {
+        "at_zero_regret": 12,
+        "cases": 12,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 3
+      },
+      "tuning": {
+        "at_zero_regret": 8,
+        "cases": 8,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      }
+    },
+    "full_source/matrix direct_split": {
+      "held_out": {
+        "at_zero_regret": 12,
+        "cases": 12,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 3
+      },
+      "tuning": {
+        "at_zero_regret": 8,
+        "cases": 8,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      }
+    },
+    "full_source/matrix incremental_graph": {
+      "held_out": {
+        "at_zero_regret": 14,
+        "cases": 14,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/matrix path_split": {
+      "held_out": {
+        "at_zero_regret": 14,
+        "cases": 14,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/matrix single_path": {
+      "held_out": {
+        "at_zero_regret": 14,
+        "cases": 14,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/matrix uni_sor_port": {
+      "held_out": {
+        "at_zero_regret": 13,
+        "cases": 13,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 2
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/sentinel direct": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/sentinel direct_split": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/sentinel incremental_graph": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/sentinel path_split": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/sentinel single_path": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/sentinel uni_sor_port": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/matrix direct": {
+      "held_out": {
+        "at_zero_regret": 11,
+        "cases": 11,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 4
+      },
+      "tuning": {
+        "at_zero_regret": 8,
+        "cases": 8,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      }
+    },
+    "sor_compatible/matrix direct_split": {
+      "held_out": {
+        "at_zero_regret": 11,
+        "cases": 11,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 4
+      },
+      "tuning": {
+        "at_zero_regret": 8,
+        "cases": 8,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      }
+    },
+    "sor_compatible/matrix incremental_graph": {
+      "held_out": {
+        "at_zero_regret": 13,
+        "cases": 13,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 2
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/matrix path_split": {
+      "held_out": {
+        "at_zero_regret": 13,
+        "cases": 13,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 2
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/matrix single_path": {
+      "held_out": {
+        "at_zero_regret": 13,
+        "cases": 13,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 2
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/matrix uni_sor_port": {
+      "held_out": {
+        "at_zero_regret": 13,
+        "cases": 13,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 2
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/sentinel direct": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/sentinel direct_split": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/sentinel incremental_graph": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/sentinel path_split": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/sentinel single_path": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/sentinel uni_sor_port": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    }
+  },
+  "report": {
+    "dirty_patch_sha256": null,
+    "generated_at": "2026-09-26T13:22:43.745082+00:00",
+    "git_dirty": false,
+    "git_revision": "8c7337a69a31e8317eec4a6b0ac21f96324df500",
+    "report_tree_id": "39664ca0dfce5e12296012919c435ab8f44c82ba"
+  },
+  "schema": "latency-comparison/2",
+  "semantic_mismatches": [],
+  "status_regressions": [],
+  "status_transitions": {
+    "cold fixed full_source/matrix direct": {
+      "no_route->no_route": 3,
+      "ok->ok": 21
+    },
+    "cold fixed full_source/matrix direct_split": {
+      "no_route->no_route": 3,
+      "ok->ok": 21
+    },
+    "cold fixed full_source/matrix incremental_graph": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "cold fixed full_source/matrix path_split": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "cold fixed full_source/matrix single_path": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "cold fixed full_source/matrix uni_sor_port": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "cold fixed full_source/sentinel direct": {
+      "ok->ok": 1
+    },
+    "cold fixed full_source/sentinel direct_split": {
+      "ok->ok": 1
+    },
+    "cold fixed full_source/sentinel incremental_graph": {
+      "ok->ok": 1
+    },
+    "cold fixed full_source/sentinel path_split": {
+      "ok->ok": 1
+    },
+    "cold fixed full_source/sentinel single_path": {
+      "ok->ok": 1
+    },
+    "cold fixed full_source/sentinel uni_sor_port": {
+      "ok->ok": 1
+    },
+    "timing fixed full_source/matrix direct": {
+      "no_route->no_route": 3,
+      "ok->ok": 21
+    },
+    "timing fixed full_source/matrix direct_split": {
+      "no_route->no_route": 3,
+      "ok->ok": 21
+    },
+    "timing fixed full_source/matrix incremental_graph": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing fixed full_source/matrix path_split": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing fixed full_source/matrix single_path": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing fixed full_source/matrix uni_sor_port": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing fixed full_source/sentinel direct": {
+      "ok->ok": 1
+    },
+    "timing fixed full_source/sentinel direct_split": {
+      "ok->ok": 1
+    },
+    "timing fixed full_source/sentinel incremental_graph": {
+      "ok->ok": 1
+    },
+    "timing fixed full_source/sentinel path_split": {
+      "ok->ok": 1
+    },
+    "timing fixed full_source/sentinel single_path": {
+      "ok->ok": 1
+    },
+    "timing fixed full_source/sentinel uni_sor_port": {
+      "ok->ok": 1
+    },
+    "timing fixed sor_compatible/matrix direct": {
+      "no_route->no_route": 4,
+      "ok->ok": 20
+    },
+    "timing fixed sor_compatible/matrix direct_split": {
+      "no_route->no_route": 4,
+      "ok->ok": 20
+    },
+    "timing fixed sor_compatible/matrix incremental_graph": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing fixed sor_compatible/matrix path_split": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing fixed sor_compatible/matrix single_path": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing fixed sor_compatible/matrix uni_sor_port": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing fixed sor_compatible/sentinel direct": {
+      "ok->ok": 1
+    },
+    "timing fixed sor_compatible/sentinel direct_split": {
+      "ok->ok": 1
+    },
+    "timing fixed sor_compatible/sentinel incremental_graph": {
+      "ok->ok": 1
+    },
+    "timing fixed sor_compatible/sentinel path_split": {
+      "ok->ok": 1
+    },
+    "timing fixed sor_compatible/sentinel single_path": {
+      "ok->ok": 1
+    },
+    "timing fixed sor_compatible/sentinel uni_sor_port": {
+      "ok->ok": 1
+    },
+    "timing reverse full_source/matrix direct": {
+      "no_route->no_route": 3,
+      "ok->ok": 21
+    },
+    "timing reverse full_source/matrix direct_split": {
+      "no_route->no_route": 3,
+      "ok->ok": 21
+    },
+    "timing reverse full_source/matrix incremental_graph": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing reverse full_source/matrix path_split": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing reverse full_source/matrix single_path": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing reverse full_source/matrix uni_sor_port": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing reverse full_source/sentinel direct": {
+      "ok->ok": 1
+    },
+    "timing reverse full_source/sentinel direct_split": {
+      "ok->ok": 1
+    },
+    "timing reverse full_source/sentinel incremental_graph": {
+      "ok->ok": 1
+    },
+    "timing reverse full_source/sentinel path_split": {
+      "ok->ok": 1
+    },
+    "timing reverse full_source/sentinel single_path": {
+      "ok->ok": 1
+    },
+    "timing reverse full_source/sentinel uni_sor_port": {
+      "ok->ok": 1
+    },
+    "timing reverse sor_compatible/matrix direct": {
+      "no_route->no_route": 4,
+      "ok->ok": 20
+    },
+    "timing reverse sor_compatible/matrix direct_split": {
+      "no_route->no_route": 4,
+      "ok->ok": 20
+    },
+    "timing reverse sor_compatible/matrix incremental_graph": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing reverse sor_compatible/matrix path_split": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing reverse sor_compatible/matrix single_path": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing reverse sor_compatible/matrix uni_sor_port": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing reverse sor_compatible/sentinel direct": {
+      "ok->ok": 1
+    },
+    "timing reverse sor_compatible/sentinel direct_split": {
+      "ok->ok": 1
+    },
+    "timing reverse sor_compatible/sentinel incremental_graph": {
+      "ok->ok": 1
+    },
+    "timing reverse sor_compatible/sentinel path_split": {
+      "ok->ok": 1
+    },
+    "timing reverse sor_compatible/sentinel single_path": {
+      "ok->ok": 1
+    },
+    "timing reverse sor_compatible/sentinel uni_sor_port": {
+      "ok->ok": 1
+    }
+  },
+  "timing": {
+    "full_source/matrix direct": {
+      "decision_cases": {
+        "cpu": 0,
+        "wall": 0
+      },
+      "improvement": {
+        "cpu": null,
+        "wall": null
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": null,
+        "base_wall": null,
+        "cand_cpu": null,
+        "cand_wall": null
+      },
+      "reference": "direct",
+      "threshold": 0.1,
+      "verdict": "insufficient_cases"
+    },
+    "full_source/matrix direct_split": {
+      "decision_cases": {
+        "cpu": 6,
+        "wall": 6
+      },
+      "improvement": {
+        "cpu": 0.7805765691208244,
+        "wall": 0.7805830680404675
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.005953087938637802,
+        "base_wall": 0.005993371350864862,
+        "cand_cpu": 0.00919888870657637,
+        "cand_wall": 0.009187827633785117
+      },
+      "reference": "direct_split",
+      "threshold": 0.1,
+      "verdict": "faster"
+    },
+    "full_source/matrix incremental_graph": {
+      "decision_cases": {
+        "cpu": 12,
+        "wall": 12
+      },
+      "improvement": {
+        "cpu": 0.4367604078297649,
+        "wall": 0.4536897938226816
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.07158458109952881,
+        "base_wall": 0.25509156670020805,
+        "cand_cpu": 0.0007936525973168962,
+        "cand_wall": 0.0005944185190600582
+      },
+      "reference": "incremental_graph",
+      "threshold": 0.5101831334004161,
+      "verdict": "no_worthwhile_change"
+    },
+    "full_source/matrix path_split": {
+      "decision_cases": {
+        "cpu": 11,
+        "wall": 11
+      },
+      "improvement": {
+        "cpu": 0.541624621260417,
+        "wall": 0.5420717304430607
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.06038956721909594,
+        "base_wall": 0.06098944860610267,
+        "cand_cpu": 0.00570194464551399,
+        "cand_wall": 0.0055099796207847
+      },
+      "reference": "path_split",
+      "threshold": 0.12197889721220534,
+      "verdict": "faster"
+    },
+    "full_source/matrix single_path": {
+      "decision_cases": {
+        "cpu": 10,
+        "wall": 10
+      },
+      "improvement": {
+        "cpu": 0.5849631210298369,
+        "wall": 0.5850401425333576
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.007513548249487689,
+        "base_wall": 0.007538249959623489,
+        "cand_cpu": 0.011085306754441637,
+        "cand_wall": 0.011502360112443766
+      },
+      "reference": "single_path",
+      "threshold": 0.1,
+      "verdict": "faster"
+    },
+    "full_source/matrix uni_sor_port": {
+      "decision_cases": {
+        "cpu": 10,
+        "wall": 10
+      },
+      "improvement": {
+        "cpu": 0.712267584514416,
+        "wall": 0.7142558287772489
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.0338981224316528,
+        "base_wall": 0.16785120476773807,
+        "cand_cpu": 0.006340902145376859,
+        "cand_wall": 0.006357023706374809
+      },
+      "reference": "uni_sor_port",
+      "threshold": 0.33570240953547614,
+      "verdict": "faster"
+    },
+    "sor_compatible/matrix direct": {
+      "decision_cases": {
+        "cpu": 0,
+        "wall": 0
+      },
+      "improvement": {
+        "cpu": null,
+        "wall": null
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": null,
+        "base_wall": null,
+        "cand_cpu": null,
+        "cand_wall": null
+      },
+      "reference": "direct",
+      "threshold": 0.1,
+      "verdict": "insufficient_cases"
+    },
+    "sor_compatible/matrix direct_split": {
+      "decision_cases": {
+        "cpu": 6,
+        "wall": 6
+      },
+      "improvement": {
+        "cpu": 0.8077742111572226,
+        "wall": 0.80900968761677
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.030982424398126485,
+        "base_wall": 0.05653112715123032,
+        "cand_cpu": 0.005662282058744195,
+        "cand_wall": 0.005858797669669791
+      },
+      "reference": "direct_split",
+      "threshold": 0.11306225430246064,
+      "verdict": "faster"
+    },
+    "sor_compatible/matrix incremental_graph": {
+      "decision_cases": {
+        "cpu": 10,
+        "wall": 10
+      },
+      "improvement": {
+        "cpu": 0.530176692487669,
+        "wall": 0.5309376772372476
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.04984633119674342,
+        "base_wall": 0.05085608169989553,
+        "cand_cpu": 0.005406352769270262,
+        "cand_wall": 0.005369419998639824
+      },
+      "reference": "incremental_graph",
+      "threshold": 0.10171216339979106,
+      "verdict": "faster"
+    },
+    "sor_compatible/matrix path_split": {
+      "decision_cases": {
+        "cpu": 10,
+        "wall": 10
+      },
+      "improvement": {
+        "cpu": 0.5964842466306337,
+        "wall": 0.5970475031346913
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.043616273370841174,
+        "base_wall": 0.032773120114227616,
+        "cand_cpu": 0.004434639164271337,
+        "cand_wall": 0.0044167031306801
+      },
+      "reference": "path_split",
+      "threshold": 0.1,
+      "verdict": "faster"
+    },
+    "sor_compatible/matrix single_path": {
+      "decision_cases": {
+        "cpu": 10,
+        "wall": 10
+      },
+      "improvement": {
+        "cpu": 0.6879758960582437,
+        "wall": 0.7214185591658102
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.06507657826261326,
+        "base_wall": 0.8005148786967857,
+        "cand_cpu": 0.006339965407271553,
+        "cand_wall": 0.006408380648888379
+      },
+      "reference": "single_path",
+      "threshold": 1.6010297573935715,
+      "verdict": "no_worthwhile_change"
+    },
+    "sor_compatible/matrix uni_sor_port": {
+      "decision_cases": {
+        "cpu": 10,
+        "wall": 10
+      },
+      "improvement": {
+        "cpu": 0.7035042901383675,
+        "wall": 0.7035334182803884
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.02256106265844604,
+        "base_wall": 0.022847372165923252,
+        "cand_cpu": 0.0029265017147548367,
+        "cand_wall": 0.00319002462037532
+      },
+      "reference": "uni_sor_port",
+      "threshold": 0.1,
+      "verdict": "faster"
+    }
+  },
+  "verdict": "inconclusive",
+  "work_differences": []
+}

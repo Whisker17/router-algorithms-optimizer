@@ -41,6 +41,7 @@ from enum import StrEnum
 from types import MappingProxyType
 
 from pools.cl_math import (
+    FEE_PIPS_DENOMINATOR,
     MAX_SQRT_RATIO,
     MAX_TICK,
     MIN_SQRT_RATIO,
@@ -161,17 +162,54 @@ def _protocol_fee_delta(source: ConcentratedSource, fee_amount: int, fee_protoco
     return checked_mul_u256(fee_amount, fee_protocol) // PANCAKE_PROTOCOL_FEE_DENOMINATOR
 
 
+def _empty_span_limit_tick(zero_for_one: bool, sqrt_price_limit_x96: int) -> int:
+    """The tick bound of the price limit for empty-span skipping (WHI-1504).
+
+    `getSqrtRatioAtTick` is strictly increasing and `getTickAtSqrtRatio(p)` is the
+    greatest tick `t` with `getSqrtRatioAtTick(t) <= p`, so with `L` that tick:
+    zeroForOne -- `sqrtPriceNext > limit` iff `tickNext > L`;
+    oneForZero -- `sqrtPriceNext < limit` iff `tickNext < U`, where `U` is `L` when
+    `getSqrtRatioAtTick(L) == limit` and `L + 1` otherwise. A step may be skipped only
+    when its target is the tick (strictly before the limit), never the limit itself."""
+    bound = get_tick_at_sqrt_ratio(sqrt_price_limit_x96)
+    if zero_for_one or get_sqrt_ratio_at_tick(bound) == sqrt_price_limit_x96:
+        return bound
+    return bound + 1
+
+
 def swap(
     state: ConcentratedPoolState,
     zero_for_one: bool,
     amount_specified: int,
     sqrt_price_limit_x96: int,
+    *,
+    skip_empty_spans: bool = False,
 ) -> SwapOutcome:
     """Migrated pool `swap` for Exact Input (`amount_specified > 0`).
 
     Raises `SolidityRevert` where the contract reverts, `MissingState` when the
     traversal needs uncollected bitmap/tick state, and `UnsupportedState` for an
-    unadmitted source. Never mutates `state`."""
+    unadmitted source. Never mutates `state`.
+
+    `skip_empty_spans` (WHI-1504, experimental, **off by default**) executes the loop
+    iterations of a provably empty zero-liquidity span without their per-step math.
+    Every ordinary caller (`quote_exact_in`, the evaluator, all solvers) runs the
+    reference loop; only differential tests and the L02 experiment tooling select
+    `True`. Its performance adoption is deferred to WHI-1510 (owner amendment
+    2026-09-26). With `liquidity == 0` an
+    iteration whose target is an *uninitialized* tick strictly before the price limit
+    has `computeSwapStep` return `(sqrtPriceNext, 0, 0, 0)` (every delta is a
+    multiple of zero liquidity; `fee < 1e6` keeps the fee `mulDivRoundingUp` from
+    reverting), so it changes nothing but `sqrtPriceX96`/`tick`, and the next
+    iteration's liquidity is still zero. Such iterations still check their bitmap
+    word against the collected state (an uncollected word is never empty: the
+    reference iteration reads it and raises the same `MissingState`) and are still
+    counted in `steps`; the span stops at an initialized
+    tick, the price limit and the MIN/MAX tick clamp, where the unchanged reference
+    iteration runs. `fee >= 1e6` makes every zero-liquidity iteration revert, so
+    such a pool is never skipped (a skipped word read could otherwise turn that
+    revert into `MissingState`). `False` (the default) is the unmodified reference
+    loop."""
     source = _source(state)
     if amount_specified == 0:
         raise SolidityRevert("AS")
@@ -210,8 +248,55 @@ def swap(
     new_ticks: dict[int, TickInfo] = {}
     crossed: list[int] = []
     steps = 0
+    skip_empty_spans = skip_empty_spans and state.fee < FEE_PIPS_DENOMINATOR
+    limit_tick: int | None = None
+    bitmap_get = state.tick_bitmap.get
 
     while amount_remaining != 0 and sqrt_price != sqrt_price_limit_x96:
+        if liquidity == 0 and skip_empty_spans:
+            if limit_tick is None:
+                limit_tick = _empty_span_limit_tick(zero_for_one, sqrt_price_limit_x96)
+            # The span's first iteration may start mid-word: the reference search.
+            tick_next, initialized = next_initialized_tick_within_one_word(
+                read_word, tick, state.tick_spacing, zero_for_one
+            )
+            if not initialized and (
+                tick_next > limit_tick if zero_for_one else tick_next < limit_tick
+            ):
+                # Every later iteration reads one whole word: it is empty iff that
+                # word is collected and zero, and targets the word's far end tick
+                # (zeroForOne `word * W`, oneForZero `(word + 1) * W - spacing`). The
+                # first word that is nonzero, uncollected or not strictly before the
+                # limit is left to the reference iteration below (same read, same
+                # `MissingState`). `limit_tick` lies in [MIN_TICK, MAX_TICK], so a
+                # target the reference would clamp always stops the span.
+                spacing = state.tick_spacing
+                word_ticks = 256 * spacing
+                if zero_for_one:
+                    first = word = tick_next // word_ticks - 1
+                    while (
+                        word >= word_lo
+                        and not bitmap_get(word, 0)
+                        and word * word_ticks > limit_tick
+                    ):
+                        word -= 1
+                    steps += 1 + first - word
+                    tick = (word + 1) * word_ticks - 1
+                else:
+                    first = word = (tick_next + spacing) // word_ticks
+                    while (
+                        word <= word_hi
+                        and not bitmap_get(word, 0)
+                        and (word + 1) * word_ticks - spacing < limit_tick
+                    ):
+                        word += 1
+                    steps += 1 + word - first
+                    tick = word * word_ticks - spacing
+                # `sqrt_price` is deliberately left at its pre-span value: the stopping
+                # iteration below always runs with zero liquidity, and a zero-liquidity
+                # `computeSwapStep` lands on its target whatever its start price (after
+                # a non-empty span that target lies strictly beyond the pre-span
+                # price), so no skipped price is ever observable.
         steps += 1
         sqrt_price_start = sqrt_price
         tick_next, initialized = next_initialized_tick_within_one_word(
