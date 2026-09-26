@@ -1,10 +1,14 @@
 # WHI-1504 mutation check transcript (documentary; not a production script).
 # Setup: cp pools/concentrated.py /tmp/whi1504-conc.py (the unmutated 8c7337a source),
 # then run this with bash from the repo root. Each mutant is one exact text replacement;
-# the original file is restored at the end. Result on 8c7337a: all 20 mutants killed
-# (every run reports '1 failed'). Each probe has its own `timeout 120`; the EXIT trap
-# always restores the unmutated source, even on interruption.
+# the unmutated source is restored on every exit (EXIT trap; INT/TERM exit through it).
+# Each probe has its own `timeout 120` and prints the real exit status: 1 = killed by a
+# failing test, 124 = timeout, 0 = SURVIVED.
+# Recorded result on 8c7337a: all 20 mutants killed; every probe's pytest summary line
+# read '1 failed'. That recorded run printed only the summary line (its exit status was
+# not captured); none timed out.
 trap 'cp /tmp/whi1504-conc.py pools/concentrated.py' EXIT
+trap 'exit 130' INT TERM
 
 run() { name=$1; shift; python3 - "$@" <<'EOF'
 import sys
@@ -14,7 +18,8 @@ old,new=sys.argv[1],sys.argv[2]
 assert s.count(old)==1,(old, s.count(old))
 p.write_text(s.replace(old,new,1))
 EOF
-r=$(timeout 120 uv run pytest tests/pools/test_concentrated.py -q -x -p no:cacheprovider 2>&1 | tail -1); echo "$name: ${r:-TIMEOUT(hang)}"; }
+out=$(timeout 120 uv run pytest tests/pools/test_concentrated.py -q -x -p no:cacheprovider 2>&1); rc=$?
+echo "$name: exit=$rc ($( [ $rc -eq 124 ] && echo TIMEOUT || tail -1 <<<"$out"))"; }
 run M01-first-initialized "            if not initialized and (" "            if True and ("
 run M02-first-limit-zfo "tick_next > limit_tick if zero_for_one else tick_next < limit_tick" "tick_next >= limit_tick if zero_for_one else tick_next < limit_tick"
 run M03-first-limit-ofz "tick_next > limit_tick if zero_for_one else tick_next < limit_tick" "tick_next > limit_tick if zero_for_one else tick_next <= limit_tick"

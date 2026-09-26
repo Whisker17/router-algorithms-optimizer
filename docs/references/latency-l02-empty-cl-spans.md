@@ -85,8 +85,10 @@ data), crossed ticks, logical `steps` and LM-hook calls:
 ([`latency-l02/mutants.sh.txt`](latency-l02/mutants.sh.txt)). Each broke one of: the
 initialized/limit/range/nonzero conditions, the step count, the resulting tick, the span
 start, the liquidity/fee gates, the oneForZero bound, the default, or the checked first
-read. All 20 are killed by `tests/pools/test_concentrated.py` on `8c7337a`: each run reports a
-failing test, and none hangs or times out.
+read. All 20 are killed by `tests/pools/test_concentrated.py` on `8c7337a`. In every probe,
+pytest's summary line read `1 failed`, and none timed out under the per-probe
+`timeout 120`. That run printed only the summary line and did not capture exit
+statuses; the committed transcript now prints them.
 
 Mutants of the earlier word-by-word variant are recorded separately. There, two mutants
 never terminated: the oneForZero limit `>=` → `>`, and the zeroForOne span tick
