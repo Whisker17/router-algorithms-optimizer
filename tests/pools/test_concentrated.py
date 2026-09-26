@@ -17,6 +17,7 @@ import random
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
 import pytest
@@ -1142,3 +1143,345 @@ def test_ordinary_callers_never_use_tick_math_reuse(monkeypatch: pytest.MonkeyPa
         assert swap(state, zero_for_one, 10**18, limit, math_reuse=reuse) == default
         stats = reuse.stats()
         assert calls == [] and stats["hits"] + stats["misses"] == default.steps
+
+
+# ---------------------------------------------------------------------------
+# WHI-1506 / L04: exact CL traversal-prefix reuse across independent amounts
+# (explicit only; off by default). Every comparison is against the reference loop
+# (`swap` with no toggle): complete outcome or identical exception.
+# ---------------------------------------------------------------------------
+
+_D = cl_math.FEE_PIPS_DENOMINATOR
+
+
+def _limit(zero_for_one: bool) -> int:
+    return MIN_SQRT_RATIO + 1 if zero_for_one else MAX_SQRT_RATIO - 1
+
+
+def _costs(reuse: concentrated.CLPrefixReuse) -> list[int]:
+    """Recorded cumulative gross inputs (test input generation only)."""
+    return sorted({c for r in reuse._records.values() for c in r.costs if c > 0})
+
+
+def _check_amounts(
+    state: ConcentratedPoolState,
+    zero_for_one: bool,
+    amounts: list[int],
+    reuse: concentrated.CLPrefixReuse,
+    limit: int | None = None,
+    **kwargs: Any,
+) -> list[Any]:
+    limit = _limit(zero_for_one) if limit is None else limit
+    frozen = dataclasses.replace(state)
+    results = []
+    for amount in amounts:
+        expected = _swap_or_error(state, zero_for_one, amount, limit)
+        got = _swap_or_error(state, zero_for_one, amount, limit, prefix_reuse=reuse, **kwargs)
+        assert got == expected, (state.pool_id, zero_for_one, amount, limit, kwargs)
+        results.append(got)
+    assert state == frozen
+    return results
+
+
+def test_prefix_full_step_threshold_is_the_gross_step_cost() -> None:
+    # The lemma the reuse rests on: computeSwapStep takes its full branch
+    # (`mulDiv(R, 1e6 - fee, 1e6) >= amountIn`) iff R >= amountIn + fee, the step's gross
+    # cost -- so a query reuses a recorded full step iff its amount reaches the next
+    # cumulative cost. Checked on the formula and on the migrated step itself.
+    rng = random.Random(1506)
+    for _ in range(4000):
+        fee = rng.choice((0, 1, 100, 500, 3000, 10000, _D - 1, rng.randrange(_D)))
+        a = rng.choice((0, 1, 2, rng.randrange(10**6), int(10 ** rng.uniform(0, 70))))
+        cost = a + cl_math.mul_div_rounding_up(a, fee, _D - fee)
+        for r in (cost - 2, cost - 1, cost, cost + 1, cost + rng.randrange(10**9)):
+            if r >= 0:
+                assert (cl_math.mul_div(r, _D - fee, _D) >= a) == (r >= cost), (a, fee, r)
+    reached = 0
+    for _ in range(1500):
+        fee = rng.choice((0, 1, 500, 3000, 10000, _D - 1))
+        liquidity = rng.choice((0, 1, 10 ** rng.randrange(1, 30) + rng.randrange(999)))
+        tick = rng.randrange(MIN_TICK + 100, MAX_TICK - 100)
+        current = get_sqrt_ratio_at_tick(tick) + rng.randrange(3)
+        target = get_sqrt_ratio_at_tick(tick + rng.choice((-1, 1)) * rng.randrange(1, 90))
+        step = cl_math.compute_swap_step_exact_in
+        target_, amount_in, amount_out, fee_amount = step(current, target, liquidity, 2**250, fee)
+        assert target_ == target
+        cost = amount_in + fee_amount
+        assert step(current, target, liquidity, cost, fee) == (
+            target,
+            amount_in,
+            amount_out,
+            fee_amount,
+        )
+        assert step(current, target, liquidity, cost + 7, fee)[1:] == (
+            amount_in,
+            amount_out,
+            fee_amount,
+        )
+        if cost > 0:
+            short = step(current, target, liquidity, cost - 1, fee)
+            # Never a recordable full step: short of the target, or reaching it costs more.
+            assert not (short[0] == target and short[1] + short[3] <= cost - 1)
+            reached += short[0] == target
+    assert reached < 1500
+
+
+def test_prefix_reuse_generated_shuffled_amounts_match_reference() -> None:
+    # Generated sparse/dense pools (all sources, fees, protocol fees, hooks, truncated
+    # windows, random limits), both directions, L02 off/on and with/without L03: random
+    # amounts plus recorded cumulative-cost boundaries c-1, c, c+1 in shuffled order,
+    # through a primed instance, an unprimed one and a shared tiny-budget one.
+    rng = random.Random(15060)
+    shared = concentrated.CLPrefixReuse(max_keys=3, max_checkpoints=64)
+    kinds = dict.fromkeys(("ok", "error", "boundary", "tie"), 0)
+    resumed = 0
+    for salt in range(90):
+        state = _random_state(rng, salt)
+        for zero_for_one in (True, False):
+            limit = _limit(zero_for_one)
+            if rng.random() < 0.25:
+                sign = -1 if zero_for_one else 1
+                tick = state.tick + sign * rng.randrange(0, 30 * 256 * state.tick_spacing)
+                limit = get_sqrt_ratio_at_tick(max(MIN_TICK, min(MAX_TICK, tick))) + 1
+            options: dict[str, Any] = {"skip_empty_spans": rng.random() < 0.5}
+            if rng.random() < 0.3:
+                options["math_reuse"] = cl_math.TickMathReuse(capacity=256)
+            primed = concentrated.CLPrefixReuse(max_keys=4, max_checkpoints=100_000)
+            _check_amounts(state, zero_for_one, [10**40], primed, limit, **options)
+            costs = _costs(primed)
+            ties = {c for r in primed._records.values() for c in r.costs if r.costs.count(c) > 1}
+            picks = rng.sample(costs, min(8, len(costs)))
+            boundary = [c + d for c in picks for d in (-1, 0, 1) if c + d > 0]
+            amounts = [int(10 ** rng.uniform(0, 28)) + rng.randrange(3) for _ in range(6)]
+            amounts += [1, 10**40, *boundary]
+            rng.shuffle(amounts)
+            for reuse in (primed, concentrated.CLPrefixReuse(4, 100_000), shared):
+                results = _check_amounts(state, zero_for_one, amounts, reuse, limit, **options)
+            for amount, result in zip(amounts, results, strict=True):
+                kinds["error" if isinstance(result, tuple) else "ok"] += 1
+                kinds["boundary"] += amount in costs
+                kinds["tie"] += amount in ties
+            resumed += primed.stats()["resumed"]
+    assert kinds["ok"] > 800 and kinds["error"] > 50, kinds
+    assert kinds["boundary"] > 300 and kinds["tie"] > 20, kinds
+    assert resumed > 800
+    assert shared.stats()["evictions"] > 50 and shared.stats()["checkpoints"] <= 64
+
+
+@pytest.mark.parametrize("skip", [False, True])
+@pytest.mark.parametrize("zero_for_one", [True, False])
+def test_prefix_reuse_exact_exhaustion_never_advances_through_zero_cost_steps(
+    zero_for_one: bool, skip: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    counter = _StepCounter(monkeypatch)
+    lower, upper = -_WORD10 - 50, _WORD10 + 30
+    state = _cl_state(10, [(lower, upper, 10**20)], get_sqrt_ratio_at_tick(7) + 99)
+    edge = lower if zero_for_one else upper
+    limit = _limit(zero_for_one)
+    reuse = concentrated.CLPrefixReuse(max_keys=4, max_checkpoints=10_000)
+    # Record the whole traversal: the band, the edge crossing, then zero-cost empty words.
+    (whole,) = _check_amounts(state, zero_for_one, [10**30], reuse, skip_empty_spans=skip)
+    exact = whole.amount0 if zero_for_one else whole.amount1  # cost up to the edge
+    (record,) = reuse._records.values()
+    assert record.costs.count(exact) >= 2  # checkpoints tied at the exhausting cost
+    before = counter.calls
+    out = swap(state, zero_for_one, exact, limit, skip_empty_spans=skip, prefix_reuse=reuse)
+    assert counter.calls == before  # answered from the first tied checkpoint
+    assert out == swap(state, zero_for_one, exact, limit)
+    assert out.crossed_ticks == (edge,) and out.new_state.liquidity == 0
+    assert out.new_state.sqrt_price_x96 == get_sqrt_ratio_at_tick(edge)
+    assert out.steps < whole.steps  # it did not walk the later zero-cost steps
+    short, more = _check_amounts(
+        state, zero_for_one, [exact - 1, exact + 1], reuse, skip_empty_spans=skip
+    )
+    assert short.crossed_ticks == () and short.new_state.liquidity == 10**20
+    assert more == whole and (more.amount0 if zero_for_one else more.amount1) == exact
+    token_in = state.token0 if zero_for_one else state.token1
+    with monkeypatch.context() as patch:
+        patch.setattr(concentrated, "swap", functools.partial(swap, prefix_reuse=reuse))
+        assert cl_quote_exact_in(state, token_in, exact).status is QuoteStatus.OK
+        assert cl_quote_exact_in(state, token_in, exact + 1).status is (
+            QuoteStatus.INSUFFICIENT_LIQUIDITY
+        )
+
+
+@pytest.mark.parametrize("skip", [False, True])
+def test_prefix_reuse_zero_cost_first_step_at_an_initialized_tick(skip: bool) -> None:
+    # The price sits exactly on initialized tick 600: going down, the first step moves
+    # nothing, costs nothing and crosses it. Every positive amount runs that step.
+    state = _cl_state(
+        10, [(600, 1200, 10**20), (-600, 600, 5 * 10**19)], get_sqrt_ratio_at_tick(600)
+    )
+    reuse = concentrated.CLPrefixReuse(max_keys=4, max_checkpoints=10_000)
+    (first,) = _check_amounts(state, True, [10**30], reuse, skip_empty_spans=skip)
+    assert first.crossed_ticks[0] == 600
+    (record,) = reuse._records.values()
+    assert record.costs[:2] == [0, 0]
+    amounts = [1, 2, *(c + d for c in record.costs[2:6] for d in (-1, 0, 1)), 10**5, 10**18]
+    for out in _check_amounts(state, True, amounts, reuse, skip_empty_spans=skip):
+        assert out.crossed_ticks[0] == 600
+    _check_amounts(state, False, [10**18, 1, 10**9], reuse, skip_empty_spans=skip)
+
+
+@pytest.mark.parametrize(
+    ("source", "fee_protocol"),
+    [("uniswap_v3", 4 | (5 << 4)), ("agni_v3", 3300 | (2500 << 16)), ("fusionx_v3", 0)],
+)
+@pytest.mark.parametrize("fee", [0, 1, 3000, _D - 1, _D])
+def test_prefix_reuse_fee_rounding_and_protocol_fees(
+    fee: int, source: str, fee_protocol: int
+) -> None:
+    lm = "0x" + "33" * 20 if source != "uniswap_v3" else None
+    positions = [(-3 * _WORD10, 3 * _WORD10, 10**18), (-200, 400, 10**21), (1000, 1500, 3 * 10**19)]
+    state = _cl_state(
+        10, positions, get_sqrt_ratio_at_tick(3) + 777,
+        fee=fee, source=source, fee_protocol=fee_protocol, lm_pool=lm,
+    )  # fmt: skip
+    reuse = concentrated.CLPrefixReuse(max_keys=8, max_checkpoints=10_000)
+    amounts = [10**k + d for k in (0, 3, 9, 15, 18, 21, 24, 30) for d in (0, 1)]
+    for zero_for_one in (True, False):
+        _check_amounts(state, zero_for_one, amounts[::-1] + amounts, reuse)
+    if fee >= _D:  # every step reverts; the reuse is never consulted
+        assert reuse.stats()["queries"] == 0
+        return
+    boundary = [c + d for c in _costs(reuse) for d in (-1, 0, 1)]
+    for zero_for_one in (True, False):
+        _check_amounts(state, zero_for_one, boundary, reuse)
+    assert reuse.stats()["resumed"] > 30
+
+
+@pytest.mark.parametrize("zero_for_one", [True, False])
+def test_prefix_reuse_preserves_incomplete_state_and_liquidity_failures(zero_for_one: bool) -> None:
+    band = (-_WORD10 - 50, _WORD10 + 30)
+    price = get_sqrt_ratio_at_tick(7) + 99
+    windowed = _cl_state(10, [(*band, 10**20)], price, word_range=(-3, 3))
+    reuse = concentrated.CLPrefixReuse(max_keys=8, max_checkpoints=10_000)
+    # Largest first: the error is raised after recording up to the unknown word; it is
+    # never cached, and smaller or exactly-exhausting amounts never read that word.
+    big, *_ = _check_amounts(windowed, zero_for_one, [10**30, 10**9, 10**30], reuse)
+    assert big[0] == "MissingState" and "outside the collected range" in big[1]
+    edge_cost = max(_costs(reuse))
+    ok, missing = _check_amounts(windowed, zero_for_one, [edge_cost, edge_cost + 1], reuse)
+    assert not isinstance(ok, tuple) and missing == big
+    # Missing data of an initialized tick: only amounts that cross it fail.
+    full = _cl_state(10, [(*band, 10**20), (4000, 9000, 10**19), (-9000, -4000, 10**19)], price)
+    far = 4000 if not zero_for_one else -4000
+    holed = dataclasses.replace(full, ticks={t: i for t, i in full.ticks.items() if t != far})
+    results = _check_amounts(holed, zero_for_one, [10**30, 1, edge_cost, 10**30], reuse)
+    assert results[0][0] == "MissingState" and f"initialized tick {far}" in results[0][1]
+    assert not isinstance(results[1], tuple) and not isinstance(results[2], tuple)
+    # Real exhaustion over the complete range stays insufficient liquidity.
+    token_in = full.token0 if zero_for_one else full.token1
+    statuses = []
+    for amount in (10**40, 10**6, 10**40):
+        expected = cl_quote_exact_in(full, token_in, amount)
+        patched = functools.partial(swap, prefix_reuse=reuse)
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(concentrated, "swap", patched)
+            assert cl_quote_exact_in(full, token_in, amount) == expected
+        statuses.append(expected.status)
+    insufficient = QuoteStatus.INSUFFICIENT_LIQUIDITY
+    assert statuses == [insufficient, QuoteStatus.OK, insufficient]
+
+
+def test_prefix_reuse_keys_on_the_complete_state_never_on_derived_or_changed_states() -> None:
+    positions = [(-3 * _WORD10, 3 * _WORD10, 10**18), (-200, 400, 10**21)]
+    state = _cl_state(10, positions, get_sqrt_ratio_at_tick(3) + 777)
+    reuse = concentrated.CLPrefixReuse(max_keys=64, max_checkpoints=100_000)
+    (first,) = _check_amounts(state, True, [10**21], reuse)
+    assert reuse.stats()["keys"] == 1
+    # A returned state, an equal copy, the other direction and another limit: new keys.
+    assert first.new_state.sqrt_price_x96 == MIN_SQRT_RATIO + 1  # exhausted downwards
+    _check_amounts(first.new_state, False, [10**20, 10**21], reuse)
+    _check_amounts(dataclasses.replace(state), True, [10**20], reuse)
+    _check_amounts(state, False, [10**20], reuse)
+    _check_amounts(state, True, [10**20], reuse, get_sqrt_ratio_at_tick(-100))
+    assert reuse.stats()["keys"] == 5 and reuse.stats()["invalidated"] == 0
+    # In-place changes (a frozen-contract violation) are detected by the fingerprint.
+    changed_ticks = dict(state.ticks)
+    changed_ticks[400] = dataclasses.replace(changed_ticks[400], liquidity_net=-(10**20))
+    changes: list[tuple[str, Any]] = [
+        ("liquidity", state.liquidity * 3),
+        ("sqrt_price_x96", state.sqrt_price_x96 + 10**20),
+        ("fee", 500),
+        ("fee_protocol", 4 | (4 << 4)),
+        ("fee_growth_global0_x128", 5),
+        ("ticks", MappingProxyType(changed_ticks)),
+        ("tick_bitmap", MappingProxyType({})),
+        ("bitmap_word_range", (-1, 0)),
+    ]
+    for name, value in changes:
+        victim = dataclasses.replace(state)
+        (before,) = _check_amounts(victim, True, [10**21], reuse)
+        object.__setattr__(victim, name, value)
+        (after,) = _check_amounts(victim, True, [10**21], reuse)
+        assert after != before, name  # the change matters, and was not answered stale
+    assert reuse.stats()["invalidated"] == len(changes)
+    # Outputs never alias the record: a later query's result is unaffected.
+    again = swap(state, True, 10**21, _limit(True), prefix_reuse=reuse)
+    assert again == first and again.new_state.ticks is not first.new_state.ticks
+    with pytest.raises(TypeError):
+        again.new_state.ticks[0] = None  # type: ignore[index]
+
+
+def test_prefix_reuse_is_bounded_and_accounts_reused_work(monkeypatch: pytest.MonkeyPatch) -> None:
+    counter = _StepCounter(monkeypatch)
+    lo, hi = _usable(10)
+    dense = _cl_state(10, [(lo, hi, 10**18)], get_sqrt_ratio_at_tick(1234) + 5, fee=500)
+    limit = _limit(False)
+    reuse = concentrated.CLPrefixReuse(max_keys=2, max_checkpoints=40)
+    (big,) = _check_amounts(dense, False, [10**26], reuse)
+    assert big.steps > 60
+    stats = reuse.stats()
+    assert stats["checkpoints"] == 40 and stats["recorded_steps"] == 39  # stopped growing
+    before = counter.calls
+    assert swap(dense, False, 10**26, limit, prefix_reuse=reuse) == big
+    assert counter.calls - before == big.steps - 39  # logical steps unchanged, 39 reused
+    assert reuse.stats()["reused_steps"] == 39
+    (record,) = reuse._records.values()
+    inside = record.costs[10] + 1  # between checkpoints 10 and 11: one partial step
+    before = counter.calls
+    (partial,) = _check_amounts(dense, False, [inside], reuse)
+    assert partial.steps == 11  # the reference executes 11 steps, the reuse only the last
+    assert counter.calls - before == partial.steps + 1
+    for copy in (dataclasses.replace(dense) for _ in range(3)):
+        _check_amounts(copy, False, [10**25], reuse)
+        assert reuse.stats()["keys"] <= 2 and reuse.stats()["checkpoints"] <= 40
+    assert reuse.stats()["evictions"] >= 2
+    reuse.clear()
+    assert reuse.stats()["keys"] == 0 and reuse.stats()["checkpoints"] == 0
+
+
+@pytest.mark.parametrize("bad", [0, -1, None, 1.5, True, "8"])
+def test_prefix_reuse_bounds_must_be_positive_ints(bad: Any) -> None:
+    with pytest.raises(ValueError, match="positive int"):
+        concentrated.CLPrefixReuse(max_keys=bad, max_checkpoints=10)
+    with pytest.raises(ValueError, match="positive int"):
+        concentrated.CLPrefixReuse(max_keys=10, max_checkpoints=bad)
+
+
+@pytest.mark.parametrize(("source", "scenario"), ALL)
+def test_prefix_reuse_replays_contract_evidence(source: str, scenario: str) -> None:
+    reuse = concentrated.CLPrefixReuse(max_keys=64, max_checkpoints=200_000)
+    ev_all = evidence(source, scenario)
+    for _, _, ev, before, outcome in replay(ev_all):
+        for skip in (False, True):
+            args = (before, ev.zero_for_one, ev.amount_specified, ev.sqrt_price_limit_x96)
+            assert swap(*args, skip_empty_spans=skip, prefix_reuse=reuse) == outcome
+    amounts = [10**27, 10**21, 10**18, 10**15, 10**9, 1, 10**12, 10**24]
+    for zero_for_one in (True, False):
+        _check_amounts(ev_all.state, zero_for_one, amounts, reuse)
+    assert reuse.stats()["resumed"] > 0
+
+
+def test_ordinary_callers_never_reuse_prefixes(monkeypatch: pytest.MonkeyPatch) -> None:
+    from pools import quote as quote_module
+
+    for module in (cl_math, concentrated, quote_module):
+        assert not [v for v in vars(module).values() if isinstance(v, concentrated.CLPrefixReuse)]
+    counter = _StepCounter(monkeypatch)
+    state = _cl_state(10, [(-3 * _WORD10, 3 * _WORD10, 10**18)], get_sqrt_ratio_at_tick(3) + 7)
+    for quote in (cl_quote_exact_in, quote_exact_in, cl_quote_exact_in):
+        before = counter.calls
+        result = quote(state, state.token0, 10**18)
+        assert counter.calls - before == result.features["swap_steps"] > 2  # every step runs
