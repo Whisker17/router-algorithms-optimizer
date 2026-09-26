@@ -16,6 +16,9 @@ Options: `--min-samples N` (default 30; smaller paired samples are marked
 underpowered), `--allow-incomplete` (report an interrupted/running run; unrecorded
 cases count as `missing`).
 
+A `main.py quote` run (one exploratory request, WHI-1498) is rendered as a single-case
+text report instead, without distribution tables; see `single-request.md`.
+
 ## Inputs
 
 - Only the schema-2 run directory (`manifest.json`, `cases.jsonl`, `memory.jsonl`) is
