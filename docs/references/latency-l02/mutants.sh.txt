@@ -2,7 +2,9 @@
 # Setup: cp pools/concentrated.py /tmp/whi1504-conc.py (the unmutated 8c7337a source),
 # then run this with bash from the repo root. Each mutant is one exact text replacement;
 # the original file is restored at the end. Result on 8c7337a: all 20 mutants killed
-# (every run reports '1 failed').
+# (every run reports '1 failed'). Each probe has its own `timeout 120`; the EXIT trap
+# always restores the unmutated source, even on interruption.
+trap 'cp /tmp/whi1504-conc.py pools/concentrated.py' EXIT
 
 run() { name=$1; shift; python3 - "$@" <<'EOF'
 import sys

@@ -85,9 +85,23 @@ data), crossed ticks, logical `steps` and LM-hook calls:
 ([`latency-l02/mutants.sh.txt`](latency-l02/mutants.sh.txt)). Each broke one of: the
 initialized/limit/range/nonzero conditions, the step count, the resulting tick, the span
 start, the liquidity/fee gates, the oneForZero bound, the default, or the checked first
-read. All 20 are killed by `tests/pools/test_concentrated.py` on `8c7337a`. Earlier mutants
-of `3102755` also showed that the MIN/MAX clamp and the price assignment in the skip loop
-were redundant; they were removed rather than kept untested.
+read. All 20 are killed by `tests/pools/test_concentrated.py` on `8c7337a`: each run reports a
+failing test, and none hangs or times out.
+
+Mutants of the earlier word-by-word variant are recorded separately. There, two mutants
+never terminated: the oneForZero limit `>=` → `>`, and the zeroForOne span tick
+`tick_next - 1` → `tick_next`. They were caught only by the per-probe timeout (the first,
+unbounded probe was killed externally), so they count as timeout detections, not test
+failures:
+
+- In the first, a target clamped to `MAX_TICK == limit_tick` is "skipped". The next
+  search overshoots and clamps back to `MAX_TICK`, so it loops forever.
+- In the second, the search restarts from the same word.
+
+Neither can occur in `8c7337a`. There the span loop has no clamp; it walks words
+monotonically and is bounded by the collected range. The same probes also showed that
+the variant's MIN/MAX clamp and the price assignment in the skip loop were redundant.
+They were removed rather than kept untested.
 
 **Complete-solve differential.** `tools/latency/l02_empty_spans.py work` covered all 300 L01
 records: 4 derived bundles × 6 algorithms × (24 cases + sentinel). Each record ran once with
