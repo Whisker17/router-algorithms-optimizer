@@ -654,6 +654,11 @@ def _differential(bundle: SnapshotBundle, case: Case, **kw: Any) -> dict[str, in
     assert strip(got.search_stats) == strip(ref.search_stats)
     assert got_quotes == ref_quotes == ref.search_stats["quotes_executed"]
     assert got_published == ref_published
+    if got.plan is not None:  # independent, memo-free replay of the returned plan
+        assert got.evaluation is not None
+        replay = evaluate(bundle, case, got.plan, kw.get("objective") or gross_only())
+        assert replay.status is EvalStatus.OK
+        assert replay.gross_output == got.evaluation.gross_output
     assert got.search_stats["quotes_memoized"] <= ref.search_stats["quotes_memoized"]
     stats: dict[str, int] = got.search_stats["graph_reuse"]
     s = ref.search_stats
@@ -813,6 +818,11 @@ def test_closure_admission_equals_creates_cycle_and_is_atomic() -> None:
     snapshot = ({t: set(r) for t, r in reuse.reach.items()}, reuse.version)
     assert reuse.cyclic(0, path) and reuse.cyclic(0, path)  # second: the kept rejection
     assert ({t: set(r) for t, r in reuse.reach.items()}, reuse.version) == snapshot
+    # A pool (or any C -> A route) proposed against the committed direction A -> C.
+    backwards = (Edge("ac", "C", "A"),)
+    reuse = _ExactReuse([backwards])
+    reuse.commit((Edge("ac", "A", "C"),), [("A", "C")])
+    assert reuse.cyclic(0, backwards) and creates_cycle({("A", "C")}, backwards)
 
     rng = random.Random(1507)
     tokens = "ABCDEFG"
