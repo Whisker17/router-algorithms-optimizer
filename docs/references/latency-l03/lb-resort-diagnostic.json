@@ -1,0 +1,32 @@
+{
+ "full_source/sentinel:single_path": {
+  "lb_swaps": 78,
+  "resort_seconds_total": 0.000445661,
+  "solve_wall_seconds_total_instrumented": 0.224106583
+ },
+ "full_source/sentinel:path_split": {
+  "lb_swaps": 383,
+  "resort_seconds_total": 0.002607843,
+  "solve_wall_seconds_total_instrumented": 0.802112208
+ },
+ "full_source/sentinel:incremental_graph": {
+  "lb_swaps": 618,
+  "resort_seconds_total": 0.002984057,
+  "solve_wall_seconds_total_instrumented": 1.047267542
+ },
+ "full_source/matrix:single_path": {
+  "lb_swaps": 1223,
+  "resort_seconds_total": 0.004168824,
+  "solve_wall_seconds_total_instrumented": 1.44962229
+ },
+ "full_source/matrix:path_split": {
+  "lb_swaps": 6663,
+  "resort_seconds_total": 0.050470414,
+  "solve_wall_seconds_total_instrumented": 8.905535871000001
+ },
+ "full_source/matrix:incremental_graph": {
+  "lb_swaps": 26647,
+  "resort_seconds_total": 0.229547359,
+  "solve_wall_seconds_total_instrumented": 34.227192998999996
+ }
+}

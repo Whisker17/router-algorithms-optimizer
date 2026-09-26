@@ -1,0 +1,13 @@
+import cProfile, functools, pstats, sys
+from pathlib import Path
+REPO = Path.cwd(); sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "tools/latency"))
+import l02_empty_spans as l02
+from pools import concentrated as cl
+from benchmark.profile import load_profile
+from routing.algorithms.registry import get_algorithm
+EXP = Path(sys.argv[1]); exp = l02._experiment(EXP); profile = load_profile(REPO / exp["profile"]["path"])
+bundle = l02._bundle(EXP, exp, sys.argv[2]); f = get_algorithm(sys.argv[3]); prepared = l02._prepare(f, bundle, profile)
+case = bundle.cases[0]
+cl.swap = functools.partial(l02.ORIGINAL_SWAP, skip_empty_spans=True)
+pr = cProfile.Profile(); pr.enable(); l02._solve(f, prepared, bundle, profile, case); pr.disable()
+pstats.Stats(pr).sort_stats("tottime").print_stats(14)

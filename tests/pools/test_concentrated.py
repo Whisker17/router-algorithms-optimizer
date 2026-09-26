@@ -998,3 +998,147 @@ def test_empty_span_limit_tick_matches_the_sqrt_comparison() -> None:
                     sqrt_t = get_sqrt_ratio_at_tick(t)
                     skippable = sqrt_t > limit if zero_for_one else sqrt_t < limit
                     assert skippable == (t > bound if zero_for_one else t < bound)
+
+
+# ---------------------------------------------------------------------------
+# WHI-1505 / L03: bounded exact tick-math reuse (explicit only; off by default)
+# ---------------------------------------------------------------------------
+
+
+def _call(fn: Any, *args: Any) -> tuple[Any, Any]:
+    try:
+        return ("ok", fn(*args))
+    except Exception as exc:  # noqa: BLE001 -- the exact type and message are compared
+        return (type(exc), str(exc))
+
+
+class _Int(int):
+    """An int subclass with its own identity: must never share a memo entry."""
+
+    def __hash__(self) -> int:
+        return 7
+
+
+def test_tick_math_reuse_vectors_are_exact_and_lru_bounded() -> None:
+    rng = random.Random(1505)
+    ticks = [MIN_TICK, MIN_TICK + 1, -1, 0, 1, MAX_TICK - 1, MAX_TICK]
+    ticks += [rng.randrange(MIN_TICK, MAX_TICK + 1) for _ in range(400)]
+    reuse = cl_math.TickMathReuse(capacity=64)
+    for tick in ticks + ticks[-64:] + ticks[:7]:
+        assert reuse.sqrt_ratio_at_tick(tick) == get_sqrt_ratio_at_tick(tick)
+    distinct = len(set(ticks))
+    stats = reuse.stats()
+    assert stats == {"capacity": 64, "entries": 64, "hits": 64, "misses": distinct + 7}
+    # LRU order: a, b, a (hit), c evicts b, so b is a miss again; every value exact.
+    lru = cl_math.TickMathReuse(capacity=2)
+    for tick in (5, -9, 5, 887272, -9):
+        assert lru.sqrt_ratio_at_tick(tick) == get_sqrt_ratio_at_tick(tick)
+    assert lru.stats() == {"capacity": 2, "entries": 2, "hits": 1, "misses": 4}
+    lru.clear()
+    assert lru.stats() == {"capacity": 2, "entries": 0, "hits": 0, "misses": 0}
+
+
+@pytest.mark.parametrize(
+    "tick",
+    [MAX_TICK + 1, MIN_TICK - 1, 1 << 200, 1.0, 0.5, "1", None, [1], True, False, _Int(3)],
+)
+def test_tick_math_reuse_invalid_and_non_int_inputs_behave_like_reference(tick: Any) -> None:
+    reuse = cl_math.TickMathReuse(capacity=8)
+    reuse.sqrt_ratio_at_tick(3 if tick != 3 else 4)  # a populated memo must not answer
+    for _ in range(2):
+        assert _call(reuse.sqrt_ratio_at_tick, tick) == _call(get_sqrt_ratio_at_tick, tick)
+    assert reuse.stats()["entries"] == 1  # nothing invalid or non-int was stored
+
+
+@pytest.mark.parametrize("capacity", [0, -1, None, 1.5, True, "8"])
+def test_tick_math_reuse_capacity_must_be_a_positive_int(capacity: Any) -> None:
+    with pytest.raises(ValueError, match="positive int"):
+        cl_math.TickMathReuse(capacity)
+
+
+def _swap_or_error(state: ConcentratedPoolState, *args: Any, **kwargs: Any) -> Any:
+    try:
+        return swap(state, *args, **kwargs)
+    except (SolidityRevert, MissingState) as exc:
+        return (type(exc).__name__, str(exc))
+
+
+def test_tick_math_reuse_swaps_match_reference_with_l02_off_and_on() -> None:
+    # Reference (math_reuse=None) vs reuse, separately for L02 off and L02 explicitly on,
+    # with one instance shared across every pool, a thrashing capacity-1 instance and a
+    # fresh one; sequential swaps feed returned states back in.
+    shared, tiny = cl_math.TickMathReuse(capacity=4096), cl_math.TickMathReuse(capacity=1)
+    rng = random.Random(15050)
+    kinds = {"ok": 0, "error": 0}
+    for salt in range(80):
+        state = _random_state(rng, salt)
+        for _ in range(3):
+            zero_for_one = rng.random() < 0.5
+            amount = int(10 ** rng.uniform(0, 28)) + rng.randrange(3)
+            limit = MIN_SQRT_RATIO + 1 if zero_for_one else MAX_SQRT_RATIO - 1
+            if rng.random() < 0.3:
+                sign = -1 if zero_for_one else 1
+                tick = state.tick + sign * rng.randrange(0, 30 * 256 * state.tick_spacing)
+                limit = get_sqrt_ratio_at_tick(max(MIN_TICK, min(MAX_TICK, tick))) + 1
+            frozen = dataclasses.replace(state)
+            reference: Any = None
+            for skip in (False, True):
+                expected = _swap_or_error(state, zero_for_one, amount, limit, skip_empty_spans=skip)
+                for reuse in (shared, tiny, cl_math.TickMathReuse(capacity=16)):
+                    got = _swap_or_error(
+                        state, zero_for_one, amount, limit, skip_empty_spans=skip, math_reuse=reuse
+                    )
+                    assert got == expected, (salt, skip, reuse.capacity)
+                reference = expected
+            assert state == frozen
+            if isinstance(reference, tuple):
+                kinds["error"] += 1
+            else:
+                kinds["ok"] += 1
+                state = reference.new_state
+    assert kinds["ok"] > 150 and kinds["error"] > 10, kinds
+    assert shared.stats()["hits"] > 0 and shared.stats()["entries"] == 4096
+    assert tiny.stats()["entries"] == 1
+
+
+@pytest.mark.parametrize(("source", "scenario"), ALL)
+def test_tick_math_reuse_replays_contract_evidence(source: str, scenario: str) -> None:
+    reuse = cl_math.TickMathReuse(capacity=512)
+    for _, _, ev, before, outcome in replay(evidence(source, scenario)):
+        for skip in (False, True):
+            args = (before, ev.zero_for_one, ev.amount_specified, ev.sqrt_price_limit_x96)
+            assert swap(*args, skip_empty_spans=skip, math_reuse=reuse) == outcome
+    assert reuse.stats()["hits"] > 0
+
+
+def test_ordinary_callers_never_use_tick_math_reuse(monkeypatch: pytest.MonkeyPatch) -> None:
+    # No module keeps an enabled memo, and every default caller computes each step's
+    # tick price with the reference function; only an explicit instance changes that.
+    from pools import liquidity_book
+
+    for module in (cl_math, concentrated, liquidity_book):
+        assert not [n for n, v in vars(module).items() if hasattr(v, "cache_info")], module
+    calls = []
+    original = get_sqrt_ratio_at_tick
+
+    def counted(tick: int) -> int:
+        calls.append(tick)
+        return original(tick)
+
+    monkeypatch.setattr(concentrated, "get_sqrt_ratio_at_tick", counted)
+    state = _mid_gap_state()
+    for zero_for_one in (True, False):
+        token_in = state.token0 if zero_for_one else state.token1
+        limit = MIN_SQRT_RATIO + 1 if zero_for_one else MAX_SQRT_RATIO - 1
+        calls.clear()
+        default = swap(state, zero_for_one, 10**18, limit)
+        assert len(calls) == default.steps > 15
+        for quote in (cl_quote_exact_in, quote_exact_in):
+            calls.clear()
+            result = quote(state, token_in, 10**18)
+            assert len(calls) == result.features["swap_steps"] == default.steps
+        calls.clear()
+        reuse = cl_math.TickMathReuse(capacity=64)
+        assert swap(state, zero_for_one, 10**18, limit, math_reuse=reuse) == default
+        stats = reuse.stats()
+        assert calls == [] and stats["hits"] + stats["misses"] == default.steps

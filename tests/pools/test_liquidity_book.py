@@ -652,3 +652,126 @@ def test_price_and_constants_match_their_definitions() -> None:
     p = lb.get_price_from_id((1 << 23) + 1, 25)
     assert p == lb.get_base(25)
     assert lb.get_base(25) == (1 << 128) + (25 << 128) // 10_000
+
+
+# ---------------------------------------------------------------------------
+# WHI-1505 / L03: bounded exact bin-price reuse (explicit only; off by default)
+# ---------------------------------------------------------------------------
+
+
+def _call(fn: Any, *args: Any) -> tuple[Any, Any]:
+    try:
+        return ("ok", fn(*args))
+    except Exception as exc:  # noqa: BLE001 -- the exact type and message are compared
+        return (type(exc), str(exc))
+
+
+def test_bin_price_reuse_vectors_are_exact_and_keyed_by_id_and_step() -> None:
+    reuse = lb.BinMathReuse(capacity=4096)
+    ids = [1 << 23, (1 << 23) + 1, (1 << 23) - 1, (1 << 23) + (1 << 20) - 1]
+    ids += [(1 << 23) - (1 << 20) + 1] + list(range((1 << 23) - 300, (1 << 23) + 300, 7))
+    ids = sorted(set(ids))
+    steps = (1, 2, 5, 10, 15, 20, 25, 50, 100)
+    outcomes = set()
+    for _ in range(2):
+        for bin_id in ids:
+            for bin_step in steps:
+                expected = _call(lb.get_price_from_id, bin_id, bin_step)
+                assert _call(reuse.price_from_id, bin_id, bin_step) == expected
+                outcomes.add(expected[0])
+    assert outcomes == {"ok", LBRevert}  # the far ids underflow at the large steps
+    n = len(ids) * len(steps)
+    stats = reuse.stats()
+    reverts = stats["misses"] - stats["hits"]  # a revert is recomputed, never stored
+    assert stats["entries"] == stats["hits"] == n - reverts // 2 and reverts > 0
+    # The same id under another bin step is a different key and a different price.
+    fresh = lb.BinMathReuse(capacity=2)
+    a, b = fresh.price_from_id(ids[1], 10), fresh.price_from_id(ids[1], 25)
+    assert (a, b) == (lb.get_price_from_id(ids[1], 10), lb.get_price_from_id(ids[1], 25))
+    assert a != b and fresh.stats()["misses"] == 2
+    fresh.price_from_id(ids[2], 10)  # evicts (ids[1], 10)
+    assert fresh.price_from_id(ids[1], 10) == a
+    assert fresh.stats() == {"capacity": 2, "entries": 2, "hits": 0, "misses": 4}
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        (0, 25),  # |id - 2^23| >= 2^20: Uint128x128Math__PowUnderflow
+        (UINT24_MAX, 1),
+        ((1 << 23) - (1 << 20), 10),
+        ((1 << 23) + 5, 1.0),
+        (float(1 << 23), 25),
+        ("8388608", 25),
+        (None, 25),
+        (True, 25),
+        ((1 << 23) + 1, [25]),
+    ],
+)
+def test_bin_price_reuse_invalid_and_non_int_inputs_behave_like_reference(args: Any) -> None:
+    reuse = lb.BinMathReuse(capacity=8)
+    reuse.price_from_id(1 << 23, 25)
+    for _ in range(2):
+        assert _call(reuse.price_from_id, *args) == _call(lb.get_price_from_id, *args)
+    assert reuse.stats()["entries"] == 1
+
+
+@pytest.mark.parametrize("capacity", [0, -1, None, 1.5, True, "8"])
+def test_bin_price_reuse_capacity_must_be_a_positive_int(capacity: Any) -> None:
+    with pytest.raises(ValueError, match="positive int"):
+        lb.BinMathReuse(capacity)
+
+
+def _lb_swap(state: LiquidityBookPoolState, *args: Any, **kwargs: Any) -> Any:
+    try:
+        return swap(state, *args, **kwargs)
+    except (LBRevert, MissingState) as exc:
+        return (type(exc).__name__, exc.args)
+
+
+def test_bin_price_reuse_swaps_match_reference_on_contract_evidence() -> None:
+    # One instance shared across every pair and bin step, a capacity-1 instance and a
+    # fresh one; each sequence threads its returned state like the contract replay.
+    shared, tiny = lb.BinMathReuse(capacity=4096), lb.BinMathReuse(capacity=1)
+    compared = 0
+    for _, sc in all_scenarios():
+        for swaps in sc.sequences.values():
+            state = sc.state
+            for ev in swaps:
+                at = dataclasses.replace(state, block_timestamp=ev.timestamp)
+                frozen = _snapshot(at)
+                expected = _lb_swap(at, ev.swap_for_y, ev.amount_in)
+                for reuse in (shared, tiny, lb.BinMathReuse(capacity=16)):
+                    got = _lb_swap(at, ev.swap_for_y, ev.amount_in, math_reuse=reuse)
+                    assert got == expected, (sc.name, ev.rec["sequence"], ev.rec["step"])
+                assert _snapshot(at) == frozen
+                compared += 1
+                if not isinstance(expected, tuple):
+                    state = expected.new_state
+    assert compared > 50
+    assert shared.stats()["hits"] > 0 and tiny.stats()["entries"] == 1
+
+
+def test_ordinary_lb_callers_never_use_bin_price_reuse(monkeypatch: pytest.MonkeyPatch) -> None:
+    (sc,) = load("real_wmnt_usdt_25").scenarios.values()
+    reuse = lb.BinMathReuse(capacity=64)  # wraps the reference function it was built with
+    calls: list[tuple[int, int]] = []
+    original = lb.get_price_from_id
+
+    def counted(bin_id: int, bin_step: int) -> int:
+        calls.append((bin_id, bin_step))
+        return original(bin_id, bin_step)
+
+    monkeypatch.setattr(lb, "get_price_from_id", counted)
+    ev = next(e for q in sc.sequences.values() for e in q if e.ok and len(e.events) > 1)
+    state = dataclasses.replace(sc.state, block_timestamp=ev.timestamp)
+    token_in = state.token0 if ev.swap_for_y else state.token1
+    default = swap(state, ev.swap_for_y, ev.amount_in)
+    assert len(calls) == len(default.bins) > 1
+    calls.clear()
+    assert quote_exact_in(state, token_in, ev.amount_in).amount_out == default.amount_out
+    assert len(calls) == len(default.bins)
+    calls.clear()
+    assert swap(state, ev.swap_for_y, ev.amount_in, math_reuse=reuse) == default
+    stats = reuse.stats()
+    assert calls == [] and stats["hits"] + stats["misses"] == len(default.bins)
