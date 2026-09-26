@@ -87,9 +87,11 @@ e. **Hard limits** stay truthful: `max_quotes` gives `timeout` with no plan (the
    incumbent is kept only as labelled metadata and through the candidate sink).
 
 With `coarse_step == percent_step` the first table is the full grid and the result is the
-L06 result. Otherwise the search is a second, declared approximation
-(`search.sor_fast.sampling_approximation: true`; per-table entry coverage and rounds in
-`search.sampling`).
+L06 result. The L06 work bound above does not hold in general here: sampled entries are a
+subset of the reference table, but several incumbents may be replayed, so the evidence
+counts quotes against the reference per case instead of assuming the bound. Otherwise the
+search is a second, declared approximation (`search.sor_fast.sampling_approximation:
+true`; per-table entry coverage and rounds in `search.sampling`).
 """
 
 from __future__ import annotations
