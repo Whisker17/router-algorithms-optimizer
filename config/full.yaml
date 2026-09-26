@@ -1,0 +1,58 @@
+# FULL acceptance profile (WHI-1447 / I21): all six mandatory algorithms at the DESIGN
+# §2.12 trial search values, under the frozen, holdout-validated empirical cost model.
+# Its gross-only twin is config/full_gross.yaml (identical except `objective`; a test
+# enforces that). The held-out comparison runs it over the report split only:
+#   data/corpus/mantle-5src-101082044/bundle_report     (full five-source coverage)
+#   data/corpus/mantle-5src-101082044/sor_cohort_report (matched V2/V3 cohort)
+# Parameter provenance (DESIGN §2.12; evidence in docs/references/v1-acceptance.md §3,
+# calibrated on the 96-case TUNING split only, on the recorded reference machine):
+#   search.max_hops 3      DESIGN trial value, KEPT on evidence: at 2 hops path_split /
+#                          incremental_graph fall 13-15 bps (mean) short of the 3-hop best
+#                          known on the tuning split. Costs ~10x the 2-hop solve time.
+#   search.max_splits 4    DESIGN trial value, not swept (unvalidated).
+#   search.percent_step 5  DESIGN trial value, kept: at 2 hops a 2% grid gains ~0.35 bps
+#                          mean for path_split at ~2.5x the time; a 10% grid loses ~0.35.
+#   graph.chunks 50        CALIBRATED (swept 20/50/100/200 at 3 hops, step 5): lowest mean
+#                          and p95 shortfall vs the sweep's best known (0.76 / 3.7 bps;
+#                          chunks 20: 1.70 / 5.4; 200: 0.89 / 6.7 -- not monotonic).
+#   budget                 CALIBRATED from the uncapped 3-hop probes on the tuning split:
+#                          largest observed solve 99 s (incremental_graph chunks 200; 78 s
+#                          uni_sor_port, 76 s incremental_graph chunks 50) and 82,724
+#                          quotes (uni_sor_port). The hard limits leave ~9x time headroom
+#                          (the reference machine is shared) and ~3.6x quote headroom. A
+#                          case beyond them is an honest `timeout`, never dropped.
+#   measurement            One measured attempt, no warmup: a 3-hop pass of 302 cases is
+#                          hours long; latency is a single sample per case (declared).
+#                          Memory is measured by the daily profile only.
+schema_version: 2
+algorithms:
+  - direct
+  - single_path
+  - direct_split
+  - path_split
+  - incremental_graph
+  - uni_sor_port
+objective:
+  mode: empirical_cost
+  cost_model: config/costs/mantle-101082044-cost-v1.json
+  cost_model_sha256: 50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71
+search:
+  max_hops: 3
+  max_splits: 4
+  percent_step: 5
+graph:
+  chunks: 50
+budget:
+  time_limit_seconds: 900
+  max_quotes: 300000
+  max_candidates: null      # explicitly no candidate cap: quotes/time bound every search
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1447
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120   # observed prepare + start-up < 0.2 s

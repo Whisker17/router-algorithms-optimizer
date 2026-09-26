@@ -41,6 +41,8 @@ cases count as `missing`).
 | Quality vs time is a Pareto table + inline SVG over cases every algorithm solved (shortfall vs best known among the run's algorithms); no weighted score | *Pareto view* |
 | Latency (median of repeats), quote counts, memory (separate pass only), prepare/evaluation totals | *Latency* |
 | Representative traces: median gain vs direct among improved non-boundary cases, plus one example per failure status; every non-ok outcome grouped with its full error text | *Traces*, *All non-ok outcomes* |
+| Evaluation scope (WHI-1447): **held-out** only when every case is a declared `report`-split case (e.g. a `main.py corpus split --split report` bundle); tuning-only, mixed or unlabeled runs are bannered EXPLORATORY | run header |
+| Source coverage (WHI-1447): per algorithm, `ok` plans with a step through each admitted source, next to the bundle's pools per source (from the hash-verified `pools.json`) | *Source coverage of solved plans* |
 | Replay command, bundle/profile/cost-model/price hashes, experiment id, git revision + dirty diff hash, environment, SOR source pin/scope/adaptations/deviations | *Provenance*, *Source pin* |
 
 `uni_sor_port` is labeled a **scoped routing-core port** of the pinned
@@ -59,6 +61,6 @@ Output is deterministic (no timestamps) for identical inputs.
 ## CSV files
 
 `status_counts`, `paired_gross`, `vs_direct_by_stratum`, `vs_direct_by_pair`,
-`latency`, `pareto`, `cases` (one row per scheduled case × algorithm), and — when the
-run has net scores — `net_coverage`, `paired_net`. Every row carries `run_id` and
+`latency`, `pareto`, `source_coverage`, `cases` (one row per scheduled case ×
+algorithm), and — when the run has net scores — `net_coverage`, `paired_net`. Every row carries `run_id` and
 `cohort`.

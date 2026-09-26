@@ -348,6 +348,25 @@ def _csvs(runs: Sequence[RunData], out: Path, min_samples: int) -> dict[str, Pat
         ),
     )
     emit(
+        "source_coverage",
+        ["run_id", "cohort", "algorithm", "ok_plans", "source", "plans_using", "bundle_pools"],
+        (
+            [
+                r.manifest.run_id,
+                r.cohort,
+                row["algorithm"],
+                row["ok"],
+                source,
+                row[source],
+                cov["bundle_pools"][source],
+            ]
+            for r in runs
+            for cov in (agg.source_coverage(r),)
+            for row in cov["rows"]
+            for source in cov["sources"]
+        ),
+    )
+    emit(
         "cases",
         [
             "run_id",

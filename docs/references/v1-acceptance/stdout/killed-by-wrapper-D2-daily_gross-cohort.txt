@@ -1,0 +1,60 @@
+start 2026-09-25T16:08:00Z --bundle data/corpus/mantle-5src-101082044/sor_cohort_report --profile config/daily_gross.yaml
+Traceback (most recent call last):
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/benchmark/runner.py", line 629, in run_experiment
+    writer.append_memory(_measure_memory(run, slot, case, index))
+                         ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/benchmark/runner.py", line 518, in _measure_memory
+    outcome = acquired.attempt(SolveRequest(case=case, budget=profile.budget, seed=seed))
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/benchmark/worker.py", line 339, in attempt
+    message, status = self._receive(deadline)
+                      ~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/benchmark/worker.py", line 327, in _receive
+    wait([self._conn, self._process.sentinel], timeout=timeout)
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/whisker/.local/share/uv/python/cpython-3.13.13-macos-aarch64-none/lib/python3.13/multiprocessing/connection.py", line 1170, in wait
+    ready = selector.select(timeout)
+  File "/Users/whisker/.local/share/uv/python/cpython-3.13.13-macos-aarch64-none/lib/python3.13/selectors.py", line 398, in select
+    fd_event_list = self._selector.poll(timeout)
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/main.py", line 524, in _terminate
+    print(f"wrote {args.output} sha256={digest}")
+        ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt: signal 15
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/main.py", line 589, in <module>
+    return 0
+    
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/main.py", line 580, in main
+    )
+    
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/main.py", line 528, in _cmd_run
+    def _cmd_validate(args: argparse.Namespace) -> int:
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+            return 1
+            ^
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/benchmark/runner.py", line 637, in run_experiment
+    slot.kill()  # an in-flight attempt would never read a graceful stop
+    ~~~~~~~~~^^
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/benchmark/runner.py", line 355, in kill
+    self.worker.kill()
+    ~~~~~~~~~~~~~~~~^^
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/benchmark/worker.py", line 398, in kill
+    self._process.join(timeout=_KILL_JOIN_SECONDS)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/whisker/.local/share/uv/python/cpython-3.13.13-macos-aarch64-none/lib/python3.13/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/Users/whisker/.local/share/uv/python/cpython-3.13.13-macos-aarch64-none/lib/python3.13/multiprocessing/popen_fork.py", line 41, in wait
+    if not wait([self.sentinel], timeout):
+           ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/whisker/.local/share/uv/python/cpython-3.13.13-macos-aarch64-none/lib/python3.13/multiprocessing/connection.py", line 1170, in wait
+    ready = selector.select(timeout)
+  File "/Users/whisker/.local/share/uv/python/cpython-3.13.13-macos-aarch64-none/lib/python3.13/selectors.py", line 398, in select
+    fd_event_list = self._selector.poll(timeout)
+  File "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1447/main.py", line 524, in _terminate
+    print(f"wrote {args.output} sha256={digest}")
+        ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt: signal 15
+exit 124 end 2026-09-25T20:08:00Z

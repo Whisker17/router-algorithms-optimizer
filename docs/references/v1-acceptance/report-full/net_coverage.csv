@@ -1,0 +1,13 @@
+run_id,cohort,algorithm,scheduled,net_rankable,unranked
+20260925T160801118826Z-74e3e7e0,matched_sor_v2_v3,direct,302,276,"{""no plan (no_route)"": 26}"
+20260925T160801118826Z-74e3e7e0,matched_sor_v2_v3,single_path,302,288,"{""low_confidence"": 12, ""no plan (no_route)"": 2}"
+20260925T160801118826Z-74e3e7e0,matched_sor_v2_v3,direct_split,302,276,"{""no plan (no_route)"": 26}"
+20260925T160801118826Z-74e3e7e0,matched_sor_v2_v3,path_split,302,288,"{""low_confidence"": 12, ""no plan (no_route)"": 2}"
+20260925T160801118826Z-74e3e7e0,matched_sor_v2_v3,incremental_graph,302,288,"{""low_confidence"": 4, ""no plan (no_route)"": 2, ""unsupported"": 8}"
+20260925T160801118826Z-74e3e7e0,matched_sor_v2_v3,uni_sor_port,302,108,"{""low_confidence"": 91, ""no plan (invalid_plan)"": 12, ""no plan (no_route)"": 2, ""unsupported"": 89}"
+20260925T160801039139Z-d3e2144d,full_source,direct,302,277,"{""no plan (no_route)"": 25}"
+20260925T160801039139Z-d3e2144d,full_source,single_path,302,289,"{""low_confidence"": 8, ""no plan (no_route)"": 1, ""unsupported"": 4}"
+20260925T160801039139Z-d3e2144d,full_source,direct_split,302,273,"{""low_confidence"": 4, ""no plan (no_route)"": 25}"
+20260925T160801039139Z-d3e2144d,full_source,path_split,302,289,"{""low_confidence"": 8, ""no plan (no_route)"": 1, ""unsupported"": 4}"
+20260925T160801039139Z-d3e2144d,full_source,incremental_graph,302,289,"{""low_confidence"": 2, ""no plan (no_route)"": 1, ""unsupported"": 10}"
+20260925T160801039139Z-d3e2144d,full_source,uni_sor_port,302,108,"{""low_confidence"": 91, ""no plan (invalid_plan)"": 12, ""no plan (no_route)"": 2, ""unsupported"": 89}"

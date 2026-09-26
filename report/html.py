@@ -312,6 +312,32 @@ def _topology(run: RunData) -> str:
     )
 
 
+def _sources(run: RunData) -> str:
+    cov = agg.source_coverage(run)
+    if not cov["sources"]:
+        return (
+            "<h3>Source coverage of solved plans</h3><p class='note'>Unavailable: no "
+            "hash-verified bundle pool records.</p>"
+        )
+    head = ["algorithm", "ok plans", *cov["sources"], "other"]
+    body = [
+        ["<i>admitted pools in bundle</i>", ""]
+        + [esc(cov["bundle_pools"][s]) for s in cov["sources"]]
+        + [""]
+    ]
+    body += [
+        [f"<code>{esc(r['algorithm'])}</code>", esc(r["ok"])]
+        + [esc(r[s]) for s in cov["sources"]]
+        + [esc(r["other"])]
+        for r in cov["rows"]
+    ]
+    return (
+        "<h3>Source coverage of solved plans</h3><p class='note'>Number of <code>ok</code> "
+        "plans with at least one step through a pool of each source (a plan may count under "
+        "several sources).</p>" + table(head, body, left=1)
+    )
+
+
 def _grouped(run: RunData, min_samples: int) -> str:
     if "direct" not in run.algorithms:
         return ""
@@ -691,6 +717,11 @@ def _run_section(run: RunData, min_samples: int) -> str:
             f"<div class='banner bad'>Run state <b>{esc(m.state)}</b>: records do not cover the "
             "whole schedule; unrecorded cases are counted as <code>missing</code>.</div>"
         )
+    scope = run.evaluation_scope
+    banners.append(
+        f"<div class='banner{'' if scope == agg.SCOPE_HELD_OUT else ' bad'}'>"
+        f"Evaluation scope: <b>{esc(agg.SCOPE_TITLES[scope])}</b></div>"
+    )
     banners.append(f"<div class='banner'>Objective: {esc(m.objective_label)}</div>")
     return (
         f"<section class='run' id='run-{esc(m.run_id)}'>"
@@ -703,6 +734,7 @@ def _run_section(run: RunData, min_samples: int) -> str:
         + _vs_direct(run, min_samples)
         + _pairwise(run, min_samples)
         + _topology(run)
+        + _sources(run)
         + _grouped(run, min_samples)
         + _net(run, min_samples)
         + _pareto(run, min_samples)
@@ -723,7 +755,8 @@ def render_html(
 ) -> str:
     cohorts = [
         f"<li><a href='#run-{esc(r.manifest.run_id)}'>{esc(r.manifest.run_id)}</a> — "
-        f"{esc(agg.COHORT_TITLES[r.cohort])}</li>"
+        f"{esc(agg.COHORT_TITLES[r.cohort])} · <b>{esc(r.evaluation_scope)}</b> · "
+        f"{esc(r.objective_mode)}</li>"
         for r in runs
     ]
     links = "".join(f"<li><a href='{esc(name)}'>{esc(name)}</a></li>" for name in csv_files)

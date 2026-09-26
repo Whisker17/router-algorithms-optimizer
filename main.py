@@ -21,6 +21,16 @@ fee parameters over the public RPC, and `fit` writes the frozen cost-model artif
 those checked-in files alone (offline). `report` re-verifies an artifact and prints its
 holdout validation table.
 
+`corpus split` (WHI-1447) cuts the declared `tuning` or `report` split of a corpus
+bundle (every pool, that split's cases) so calibration and the held-out report run on
+disjoint declared cases. `calibrate profiles|summarize` (WHI-1447) writes one run profile
+per grid point of a base profile and summarizes saved runs of one bundle (statuses,
+time/quote distributions, shortfall vs the best known gross among them); offline.
+
+`acceptance --run LABEL=DIR ... --order-check LABEL=A,B --report DIR --output PATH`
+(WHI-1447) composes the write-once final experiment manifest from complete saved runs,
+re-running the declared order checks; offline.
+
 `run` measures every profiled algorithm in isolated worker processes under the
 profile's declared budget (WHI-1437, `benchmark.runner`); `run --order reverse|shuffle`
 plus `order-check RUN_A RUN_B` is the state-leak check. SIGTERM/Ctrl-C finalize the run
@@ -104,6 +114,7 @@ def build_parser() -> argparse.ArgumentParser:
         ("assemble", "Publish the corpus bundle from the five per-source bundles"),
         ("fixture", "Cut the checked-in regression fixture from the full corpus bundle"),
         ("cohort", "Cut the matched V2/V3 (sor_compatible) comparison bundle, every case"),
+        ("split", "Cut the declared tuning or report split of a corpus bundle, every pool"),
     ):
         sp = corpus_sub.add_parser(name, help=help_text)
         sp.add_argument("--config", default=str(DEFAULT_CORPUS_CONFIG))
@@ -127,6 +138,10 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "cohort":
             sp.add_argument("--bundle", required=True, help="A corpus bundle")
             sp.add_argument("--output", required=True)
+        if name == "split":
+            sp.add_argument("--bundle", required=True, help="A corpus bundle (full or cohort)")
+            sp.add_argument("--split", required=True, choices=["tuning", "report"])
+            sp.add_argument("--output", required=True)
 
     costs_p = subparsers.add_parser("costs", help="Calibrate the empirical execution-cost model")
     costs_sub = costs_p.add_subparsers(dest="costs_command", required=True)
@@ -149,6 +164,41 @@ def build_parser() -> argparse.ArgumentParser:
             sp.add_argument("--force", action="store_true", help="Replace saved evidence")
         if name in ("fit", "report"):
             sp.add_argument("--model", required=True, help="Cost-model artifact path")
+
+    calibrate_p = subparsers.add_parser(
+        "calibrate", help="Profile calibration: generate sweep profiles, summarize runs"
+    )
+    calibrate_sub = calibrate_p.add_subparsers(dest="calibrate_command", required=True)
+    cal_profiles = calibrate_sub.add_parser(
+        "profiles", help="Write one profile per grid point of a base profile"
+    )
+    cal_profiles.add_argument("--base", required=True, help="Base run profile YAML")
+    cal_profiles.add_argument("--output", required=True, help="Directory for the profiles")
+    cal_profiles.add_argument(
+        "--grid", action="append", required=True, help="Axis key=v1,v2 (search/graph key)"
+    )
+    cal_profiles.add_argument(
+        "--algorithms", default=None, help="Comma-separated algorithm list override"
+    )
+    cal_profiles.add_argument("--prefix", default="sweep")
+    cal_summary = calibrate_sub.add_parser(
+        "summarize", help="Per-variant statuses, time/quote distributions, best-known shortfall"
+    )
+    cal_summary.add_argument("runs", nargs="+", help="Complete runs over ONE bundle")
+    cal_summary.add_argument("--json", default=None, help="Also write the summary as JSON")
+
+    acceptance_p = subparsers.add_parser(
+        "acceptance", help="Compose the immutable final experiment manifest (WHI-1447)"
+    )
+    acceptance_p.add_argument(
+        "--run", action="append", required=True, help="LABEL=RUN_DIR (a complete run)"
+    )
+    acceptance_p.add_argument(
+        "--order-check", action="append", default=[], help="LABEL=RUN_LABEL_A,RUN_LABEL_B"
+    )
+    acceptance_p.add_argument("--report", action="append", default=[], help="Report dir")
+    acceptance_p.add_argument("--bundles", default="docs/references/v1-acceptance/bundles.json")
+    acceptance_p.add_argument("--output", required=True, help="Manifest path (write-once)")
 
     validate_p = subparsers.add_parser("validate", help="Validate a bundle directory")
     validate_p.add_argument("--bundle", required=True)
@@ -292,6 +342,19 @@ def _cmd_corpus(args: argparse.Namespace) -> int:
             )
             print(f"bundle_hash={bundle.bundle_hash}")
             return 0
+        if args.corpus_command == "split":
+            from snapshot.corpus import split_bundle
+
+            full = load_bundle(args.bundle)
+            validate_corpus_bundle(full)
+            bundle = split_bundle(full, args.split, Path(args.output))
+            validate_corpus_bundle(bundle)
+            print(
+                f"wrote {args.split} split {bundle.bundle_id!r}: {len(bundle.pools)} pool(s), "
+                f"{len(bundle.cases)} case(s) at {bundle.source_path}"
+            )
+            print(f"bundle_hash={bundle.bundle_hash}")
+            return 0
         if args.corpus_command == "fixture":
             from snapshot.corpus import fixture_selection, subset_corpus_bundle
 
@@ -408,6 +471,60 @@ def _cmd_costs(args: argparse.Namespace) -> int:
         return 1
 
 
+def _cmd_calibrate(args: argparse.Namespace) -> int:
+    import json
+
+    from benchmark import calibration as cal
+
+    try:
+        if args.calibrate_command == "profiles":
+            algorithms = args.algorithms.split(",") if args.algorithms else None
+            profiles = cal.sweep_profiles(
+                args.base, cal.parse_grid(args.grid), algorithms=algorithms, prefix=args.prefix
+            )
+            out = Path(args.output)
+            out.mkdir(parents=True, exist_ok=True)
+            for name, text in profiles.items():
+                (out / name).write_text(text, encoding="utf-8")
+                print(f"wrote {out / name}")
+            return 0
+        summaries = cal.summarize_runs(args.runs)
+    except (cal.CalibrationError, ResultError, OSError) as exc:
+        print(f"calibrate {args.calibrate_command} failed: {exc}", file=sys.stderr)
+        return 1
+    print("\n".join(cal.summary_table(summaries)))
+    if args.json:
+        Path(args.json).write_text(
+            json.dumps([s.to_dict() for s in summaries], indent=1, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(f"wrote {args.json}")
+    return 0
+
+
+def _cmd_acceptance(args: argparse.Namespace) -> int:
+    from benchmark import acceptance as acc
+
+    try:
+        document = acc.compose_manifest(
+            acc.parse_labeled(args.run, what="--run"),
+            order_checks=acc.parse_labeled(args.order_check, what="--order-check"),
+            reports=args.report,
+            bundles_record=args.bundles,
+        )
+        digest = acc.write_manifest(document, args.output)
+    except (acc.AcceptanceError, ResultError, OSError, KeyError) as exc:
+        print(f"acceptance failed: {exc}", file=sys.stderr)
+        return 1
+    for check in document["order_checks"]:
+        print(
+            f"order check {check['label']} {check['runs']}: {check['mismatches']} mismatch(es) "
+            f"over {check['compared_records']} record(s)"
+        )
+    print(f"wrote {args.output} sha256={digest}")
+    return 1 if any(c["mismatches"] for c in document["order_checks"]) else 0
+
+
 def _cmd_validate(args: argparse.Namespace) -> int:
     try:
         bundle = load_bundle(args.bundle)
@@ -495,6 +612,10 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_corpus(args)
     if args.command == "costs":
         return _cmd_costs(args)
+    if args.command == "acceptance":
+        return _cmd_acceptance(args)
+    if args.command == "calibrate":
+        return _cmd_calibrate(args)
     if args.command == "validate":
         return _cmd_validate(args)
     if args.command == "run":

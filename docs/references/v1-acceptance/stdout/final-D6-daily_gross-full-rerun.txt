@@ -1,0 +1,7 @@
+start 2026-09-25T18:55:42Z
+run '20260925T185543171981Z-6536a6e7' saved to data/results/20260925T185543171981Z-6536a6e7
+objective: gross-only (no cost model; docs/DESIGN.md §2.9 development mode)
+cases: 1812
+statuses: {'no_route': 55, 'ok': 1757}
+replay: uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/daily_gross.yaml --results-dir data/results
+exit 0 end 2026-09-25T22:57:58Z

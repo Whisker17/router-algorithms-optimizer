@@ -1,0 +1,2 @@
+start 2026-09-25T18:54:38Z
+run '20260925T185438579303Z-06c9c815' INTERRUPTED; 1812 record(s) (unfinished cases recorded as cancelled) in data/results/20260925T185438579303Z-06c9c815

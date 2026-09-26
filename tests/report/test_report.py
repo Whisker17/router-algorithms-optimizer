@@ -122,7 +122,14 @@ def rec(
     }
 
 
-def write_bundle(root: Path, *, symbol_out: str = "USDT", cohort: str | None = None) -> Path:
+def write_bundle(
+    root: Path,
+    *,
+    symbol_out: str = "USDT",
+    cohort: str | None = None,
+    splits: dict[str, str] | None = None,
+    pools: dict[str, str] | None = None,
+) -> Path:
     bundle = root / "bundle"
     bundle.mkdir(parents=True)
     cases = "".join(
@@ -130,7 +137,10 @@ def write_bundle(root: Path, *, symbol_out: str = "USDT", cohort: str | None = N
         for c in ("c1", "c2", "c3", "c4")
     )
     meta = {
-        c: {"stratum": "large" if c in ("c1", "c2") else "low", "split": "report"}
+        c: {
+            "stratum": "large" if c in ("c1", "c2") else "low",
+            "split": (splits or {}).get(c, "report"),
+        }
         for c in ("c1", "c2", "c3", "c4")
     }
     corpus = {"case_metadata": meta, **({"cohort": cohort} if cohort else {})}
@@ -145,6 +155,10 @@ def write_bundle(root: Path, *, symbol_out: str = "USDT", cohort: str | None = N
         "corpus.json": json.dumps(corpus),
         "prices.json": json.dumps(prices),
     }
+    if pools is not None:
+        files["pools.json"] = json.dumps(
+            {"pools": [{"pool_id": p, "source_key": s} for p, s in pools.items()]}
+        )
     for name, text in files.items():
         (bundle / name).write_text(text)
     manifest = {"bundle_id": "b", "checksums": {n: _sha(t.encode()) for n, t in files.items()}}
@@ -462,6 +476,73 @@ def test_bundle_labels_are_used_only_when_the_hash_matches(tmp_path: Path) -> No
     stale = load(run_dir, bundle_dirs=[other])
     assert stale.cases["c1"].stratum == agg.UNLABELED
     assert "bundle_hash mismatch" in stale.bundle_note
+
+
+def test_held_out_and_exploratory_scope_labels(tmp_path: Path) -> None:
+    """WHI-1447: a run is labeled held-out only when every case is a report-split case;
+    tuning-only, mixed and unlabeled runs are labeled exploratory in the HTML."""
+    records = [rec(c, "direct", gross=10) for c in ("c1", "c2", "c3", "c4")]
+    cases = {
+        "held": {},
+        "tune": dict.fromkeys(("c1", "c2", "c3", "c4"), "tuning"),
+        "mixed": {"c1": "tuning"},
+    }
+    expected = {
+        "held": agg.SCOPE_HELD_OUT,
+        "tune": agg.SCOPE_TUNING,
+        "mixed": agg.SCOPE_MIXED,
+    }
+    for name, splits in cases.items():
+        bundle = write_bundle(tmp_path / name, splits=splits)
+        run_dir = write_run(tmp_path / name, records, algorithms=["direct"], bundle=bundle)
+        run = load(run_dir)
+        assert run.evaluation_scope == expected[name]
+        paths = render_report(load_manifest(run_dir), tmp_path / name / "out", min_samples=MIN)
+        html = paths.html.read_text()
+        assert agg.SCOPE_TITLES[expected[name]].split(":")[0] in html
+    no_labels = load(write_run(tmp_path / "none", records, algorithms=["direct"]))
+    assert no_labels.evaluation_scope == agg.SCOPE_UNLABELED
+
+
+def test_source_coverage_counts_solved_plans_per_source(tmp_path: Path) -> None:
+    """WHI-1447 (DESIGN §2.11 "source coverage"): per algorithm, how many solved plans
+    use each admitted source; failed cases never count, and a bundle source no plan uses
+    is shown with 0."""
+    bundle = write_bundle(
+        tmp_path, pools={"pool-1": "agni_v3", "pool-2": "moe_lb_v2_2", "pool-3": "uniswap_v3"}
+    )
+    two_sources = rec("c2", "single_path", gross=10)
+    two_sources["evaluation"]["trace"].append(dict(two_sources["evaluation"]["trace"][0]))
+    two_sources["evaluation"]["trace"][1]["pool_id"] = "pool-2"
+    records = [
+        rec("c1", "direct", gross=10),
+        rec("c2", "direct", "no_route", error="none"),
+        rec("c1", "single_path", gross=10),
+        two_sources,
+    ]
+    run_dir = write_run(tmp_path, records, algorithms=["direct", "single_path"], bundle=bundle)
+    cov = agg.source_coverage(load(run_dir))
+    assert cov["sources"] == ["agni_v3", "moe_lb_v2_2", "uniswap_v3"]
+    assert cov["bundle_pools"] == {"agni_v3": 1, "moe_lb_v2_2": 1, "uniswap_v3": 1}
+    rows = by_algorithm(cov["rows"])
+    assert rows["direct"] == {
+        "algorithm": "direct",
+        "ok": 1,
+        "agni_v3": 1,
+        "moe_lb_v2_2": 0,
+        "uniswap_v3": 0,
+        "other": 0,
+    }
+    assert rows["single_path"]["ok"] == 2
+    assert rows["single_path"]["agni_v3"] == 2 and rows["single_path"]["moe_lb_v2_2"] == 1
+    paths = render_report(load_manifest(run_dir), tmp_path / "out", min_samples=MIN)
+    assert "Source coverage of solved plans" in paths.html.read_text()
+    with (tmp_path / "out" / "source_coverage.csv").open() as fh:
+        csv_rows = list(csv.DictReader(fh))
+    assert len(csv_rows) == 2 * 3
+    # Without a verified bundle there is nothing to attribute.
+    unlabeled = write_run(tmp_path / "u", records, algorithms=["direct", "single_path"])
+    assert agg.source_coverage(load(unlabeled))["rows"] == []
 
 
 # ------------------------------------------------------------------ net / fee uncertainty

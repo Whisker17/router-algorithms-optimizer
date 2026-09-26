@@ -596,3 +596,86 @@ def test_assembly_is_reproducible_from_the_source_bundles(
         prepare_dir=PREPARE_DIR,
     )
     assert bundle.bundle_hash == record["bundle_hash"]
+
+
+# ---------------------------------------------------------------------------
+# 6. declared tuning/report cuts (WHI-1447)
+# ---------------------------------------------------------------------------
+
+
+def test_split_cut_keeps_every_pool_and_exactly_that_splits_cases(tmp_path: Path) -> None:
+    from snapshot.corpus import split_bundle
+
+    fixture = load_bundle(FIXTURE)
+    assert fixture.corpus is not None
+    meta = fixture.corpus["case_metadata"]
+    for split in ("tuning", "report"):
+        cut = split_bundle(fixture, split, tmp_path / split)
+        assert cut.corpus is not None and cut.corpus["split"] == split
+        assert sorted(cut.pools) == sorted(fixture.pools)
+        assert [c.case_id for c in cut.cases] == [
+            c.case_id for c in fixture.cases if meta[c.case_id]["split"] == split
+        ]
+        assert cut.corpus["splits"]["counts"][split] == len(cut.cases) > 0
+        assert cut.corpus["subset_of"]["bundle_hash"] == fixture.bundle_hash
+        validate_corpus_bundle(load_bundle(tmp_path / split))
+        # Deterministic: the same cut has the same identity.
+        again = split_bundle(fixture, split, tmp_path / f"{split}-again")
+        assert again.bundle_hash == cut.bundle_hash
+        with pytest.raises(CorpusError, match="already a"):
+            split_bundle(cut, split, tmp_path / f"{split}-twice")
+    with pytest.raises(CorpusError, match="unknown split"):
+        split_bundle(fixture, "holdout", tmp_path / "bad")
+
+
+def test_split_cut_refuses_a_case_of_the_other_split(tmp_path: Path) -> None:
+    from snapshot.corpus import split_bundle
+
+    split_bundle(load_bundle(FIXTURE), "report", tmp_path / "cut")
+
+    def mutate(doc: dict[str, Any]) -> None:
+        doc["split"] = "tuning"
+
+    _rewrite(tmp_path / "cut", "corpus.json", mutate)
+    with pytest.raises(BundleError, match="outside split"):
+        load_bundle(tmp_path / "cut")
+
+
+def test_cli_split_cuts_a_cohort_bundle_and_keeps_its_cohort(tmp_path: Path) -> None:
+    cohort = tmp_path / "cohort"
+    assert main.main(["corpus", "cohort", "--bundle", str(FIXTURE), "--output", str(cohort)]) == 0
+    out = tmp_path / "cohort-report"
+    argv = ["corpus", "split", "--bundle", str(cohort), "--split", "report"]
+    assert main.main([*argv, "--output", str(out)]) == 0
+    cut = load_bundle(out)
+    assert cut.corpus is not None
+    assert cut.corpus["cohort"] == "sor_compatible" and cut.corpus["split"] == "report"
+    assert "moe_lb_v2_2" not in {getattr(p, "source_key", None) for p in cut.pools.values()}
+
+
+def test_acceptance_split_bundles_reproduce_their_recorded_hashes(tmp_path: Path) -> None:
+    """The WHI-1447 acceptance bundles are cut deterministically from the frozen corpus;
+    when it is present locally, re-cutting reproduces the recorded identities."""
+    from snapshot.corpus import sor_cohort_bundle, split_bundle
+
+    record_path = REPO / "docs" / "references" / "v1-acceptance" / "bundles.json"
+    record = json.loads(record_path.read_text())
+    full_record = json.loads(
+        (REPO / "tests" / "fixtures" / "corpus" / "full_bundle.json").read_text()
+    )
+    assert record["source"]["bundle_hash"] == full_record["bundle_hash"]
+    if not FULL_BUNDLE.is_dir():
+        pytest.skip("full corpus bundle not prepared locally (data/ is gitignored)")
+    full = load_bundle(FULL_BUNDLE)
+    cohort = sor_cohort_bundle(full, tmp_path / "sor_cohort")
+    assert cohort.bundle_hash == record["bundles"]["sor_cohort"]["bundle_hash"]
+    for name, (parent, split) in {
+        "bundle_tuning": (full, "tuning"),
+        "bundle_report": (full, "report"),
+        "sor_cohort_tuning": (cohort, "tuning"),
+        "sor_cohort_report": (cohort, "report"),
+    }.items():
+        cut = split_bundle(parent, split, tmp_path / name)
+        assert cut.bundle_hash == record["bundles"][name]["bundle_hash"], name
+        assert len(cut.cases) == record["bundles"][name]["cases"]
+        assert len(cut.pools) == record["bundles"][name]["pools"]

@@ -1583,7 +1583,7 @@ def parse_corpus_document(
             "cohorts",
             "case_metadata",
         },
-        {"subset_of", "cohort"},
+        {"subset_of", "cohort", "split"},
         "corpus",
     )
     if raw["schema"] != CORPUS_DOC_SCHEMA:
@@ -1691,6 +1691,13 @@ def parse_corpus_document(
     ):
         raise CorpusError("corpus: no-direct-pool cases are missing or have a direct pool")
     counts = {s: sum(1 for m in meta.values() if m["split"] == s) for s in SPLITS}
+    if raw.get("split") is not None:
+        # A declared tuning/report cut (`split_bundle`, WHI-1447): every case is of that
+        # split, and only in a declared subset.
+        if raw["split"] not in SPLITS or "subset_of" not in raw:
+            raise CorpusError(f"corpus.split: {raw['split']!r} must name a split of a subset")
+        if any(m["split"] != raw["split"] for m in meta.values()):
+            raise CorpusError(f"corpus.split: a case outside split {raw['split']!r}")
     if raw["splits"]["counts"] != counts:
         raise CorpusError(f"corpus.splits.counts: {raw['splits']['counts']} != {counts}")
     cohorts = raw["cohorts"]
@@ -1800,6 +1807,7 @@ def subset_corpus_bundle(
     *,
     id_suffix: str = "fixture",
     cohort: str | None = None,
+    split: str | None = None,
 ) -> Any:
     """A representative regression fixture from a full corpus bundle: the same block,
     the chosen pool records unchanged, the chosen cases, and a corpus descriptor whose
@@ -1834,6 +1842,8 @@ def subset_corpus_bundle(
     doc["subset_of"] = {"bundle_id": bundle.bundle_id, "bundle_hash": bundle.bundle_hash}
     if cohort is not None:
         doc["cohort"] = cohort
+    if split is not None:
+        doc["split"] = split
     provenance = json.loads((Path(bundle.source_path) / PROVENANCE_FILE).read_text())
     provenance["subset_of"] = doc["subset_of"]
     for record in provenance["sources"].values():
@@ -1865,6 +1875,31 @@ def sor_cohort_bundle(bundle: Any, output_dir: Path) -> Any:
     cases = [c.case_id for c in bundle.cases]
     return subset_corpus_bundle(
         bundle, pools, cases, output_dir, id_suffix="sor-cohort", cohort="sor_compatible"
+    )
+
+
+def split_bundle(bundle: Any, split: str, output_dir: Path) -> Any:
+    """The declared `tuning` or `report` cut of a corpus bundle (docs/DESIGN.md §2.4:
+    "Parameter tuning and final reporting use disjoint declared cases"; WHI-1447): every
+    pool unchanged and exactly the cases the frozen descriptor assigns to `split`. The
+    descriptor records `split` and names the bundle it came from (`subset_of`); a matched
+    V2/V3 cohort input stays a `sor_compatible` cohort."""
+    if bundle.corpus is None:
+        raise CorpusError("not a corpus bundle")
+    if split not in SPLITS:
+        raise CorpusError(f"unknown split {split!r}; expected one of {list(SPLITS)}")
+    if bundle.corpus.get("split") is not None:
+        raise CorpusError(f"bundle {bundle.bundle_id!r} is already a {bundle.corpus['split']} cut")
+    meta = bundle.corpus["case_metadata"]
+    cases = [c.case_id for c in bundle.cases if meta[c.case_id]["split"] == split]
+    return subset_corpus_bundle(
+        bundle,
+        bundle.pools,
+        cases,
+        output_dir,
+        id_suffix=f"{split}-split",
+        cohort=bundle.corpus.get("cohort"),
+        split=split,
     )
 
 
