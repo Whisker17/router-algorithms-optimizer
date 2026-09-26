@@ -35,8 +35,10 @@ record and tests").
 
 from __future__ import annotations
 
+from bisect import bisect_left
+from collections import OrderedDict
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from enum import StrEnum
 from types import MappingProxyType
 
@@ -163,6 +165,137 @@ def _protocol_fee_delta(source: ConcentratedSource, fee_amount: int, fee_protoco
     return checked_mul_u256(fee_amount, fee_protocol) // PANCAKE_PROTOCOL_FEE_DENOMINATOR
 
 
+# A prefix checkpoint: the loop variables after a completed step, with the cumulative
+# gross input (`amountIn + feeAmount`) in place of the amount-dependent remainder:
+# (consumed, amount_calculated, sqrt_price, tick, fee_growth_global, protocol_fee,
+#  liquidity, crossed_count, steps, lm_calls).
+_Checkpoint = tuple[int, int, int, int, int, int, int, int, int, int]
+_STATE_FIELDS = tuple(f.name for f in fields(ConcentratedPoolState))
+
+
+class _PrefixRecord:
+    __slots__ = ("costs", "crossings", "fingerprint", "points", "state")
+
+    def __init__(self, state: ConcentratedPoolState, fingerprint: tuple[object, ...]) -> None:
+        self.state = state  # held strongly: its `id` keys the record and cannot be reused
+        self.fingerprint = fingerprint
+        self.points: list[_Checkpoint] = []
+        self.costs: list[int] = []  # costs[i] == points[i][0], nondecreasing
+        self.crossings: list[tuple[int, TickInfo]] = []  # in crossing order
+
+
+class CLPrefixReuse:
+    """WHI-1506 / L04 experiment, **off unless passed explicitly**: exact reuse of
+    completed CL traversal steps across *independent* Exact Input queries on one
+    original state (never a sequence of swaps). Owned by the caller; no module state.
+
+    A record is keyed by the state object (held, so its identity is stable), direction,
+    price limit and the L02 toggle, and checked against a fingerprint of every state
+    field (the frozen mappings compare by identity first); a state changed in place is
+    re-recorded, a returned `new_state` is a different key. It holds checkpoints after
+    each completed *full* step (`computeSwapStep` reached its target with
+    `amountRemainingLessFee >= amountIn`), with the cumulative gross input `C`.
+
+    Exactness: with `fee < 1e6`, `mulDiv(R, 1e6 - fee, 1e6) >= a` iff
+    `R >= a + mulDivRoundingUp(a, fee, 1e6 - fee)`, the step's gross cost. So step `i`
+    of a query of amount `A` takes the full branch -- whose results do not depend on
+    the remainder -- iff `A >= C[i+1]`, and runs at all iff `A > C[i]`. The query
+    resumes at the first checkpoint `j` with `C[j] >= A` when `C[j] == A` (input
+    exhausted exactly: the reference stops there, never crossing later zero-cost
+    steps), else at `j - 1` and runs the remaining partial step with the reference
+    code; beyond the recorded frontier it runs the reference loop and extends the
+    record. Partial steps, errors and the epilogue (full new state) are never cached.
+
+    Bounds: at most `max_keys` records and `max_checkpoints` checkpoints in total (each
+    record's initial point counts), least recently used record evicted first; a record
+    that cannot grow stops extending and the reference loop continues. `stats()` counts
+    queries, resumed queries, reused (not executed) logical steps and evictions."""
+
+    def __init__(self, max_keys: int, max_checkpoints: int) -> None:
+        for name, value in (("max_keys", max_keys), ("max_checkpoints", max_checkpoints)):
+            if type(value) is not int or value < 1:
+                raise ValueError(f"{name} must be a positive int, got {value!r}")
+        self.max_keys = max_keys
+        self.max_checkpoints = max_checkpoints
+        self._records: OrderedDict[tuple[int, bool, int, bool], _PrefixRecord] = OrderedDict()
+        self._checkpoints = 0
+        self._counts = dict.fromkeys(
+            ("queries", "resumed", "reused_steps", "recorded_steps", "evictions", "invalidated"),
+            0,
+        )
+
+    def stats(self) -> dict[str, int]:
+        return {
+            "max_keys": self.max_keys,
+            "max_checkpoints": self.max_checkpoints,
+            "keys": len(self._records),
+            "checkpoints": self._checkpoints,
+        } | self._counts
+
+    def clear(self) -> None:
+        self._records.clear()
+        self._checkpoints = 0
+
+    def _evict_for(self, keep: _PrefixRecord, keys: int, points: int) -> bool:
+        """Evict LRU records other than `keep` until `keys`/`points` more fit."""
+        records = self._records
+        while len(records) + keys > self.max_keys or self._checkpoints + points > (
+            self.max_checkpoints
+        ):
+            victim = next((k for k, r in records.items() if r is not keep), None)
+            if victim is None:
+                return False
+            self._checkpoints -= len(records.pop(victim).points)
+            self._counts["evictions"] += 1
+        return True
+
+    def _record(
+        self, state: ConcentratedPoolState, key: tuple[int, bool, int, bool], initial: _Checkpoint
+    ) -> _PrefixRecord:
+        self._counts["queries"] += 1
+        fingerprint = tuple(getattr(state, name) for name in _STATE_FIELDS)
+        record = self._records.get(key)
+        if record is not None:
+            if record.state is state and record.fingerprint == fingerprint:
+                self._records.move_to_end(key)
+                return record
+            self._checkpoints -= len(self._records.pop(key).points)  # changed in place
+            self._counts["invalidated"] += 1
+        record = _PrefixRecord(state, fingerprint)
+        record.points.append(initial)
+        record.costs.append(0)
+        self._evict_for(record, 1, 1)
+        self._records[key] = record
+        self._checkpoints += 1
+        return record
+
+    def _resume_index(self, record: _PrefixRecord, amount: int) -> int:
+        costs = record.costs
+        j = bisect_left(costs, amount)  # amount > 0 == costs[0], so j >= 1
+        at = len(costs) - 1 if j == len(costs) else j if costs[j] == amount else j - 1
+        if at:
+            self._counts["resumed"] += 1
+            self._counts["reused_steps"] += record.points[at][8]
+        return at
+
+    def _append(
+        self,
+        record: _PrefixRecord,
+        point: _Checkpoint,
+        crossed: list[int],
+        ticks: dict[int, TickInfo],
+    ) -> bool:
+        if not self._evict_for(record, 0, 1):
+            return False
+        if len(crossed) > len(record.crossings):  # this step crossed one tick
+            record.crossings.append((crossed[-1], ticks[crossed[-1]]))
+        record.points.append(point)
+        record.costs.append(point[0])
+        self._checkpoints += 1
+        self._counts["recorded_steps"] += 1
+        return True
+
+
 def _empty_span_limit_tick(zero_for_one: bool, sqrt_price_limit_x96: int) -> int:
     """The tick bound of the price limit for empty-span skipping (WHI-1504).
 
@@ -186,6 +319,7 @@ def swap(
     *,
     skip_empty_spans: bool = False,
     math_reuse: TickMathReuse | None = None,
+    prefix_reuse: CLPrefixReuse | None = None,
 ) -> SwapOutcome:
     """Migrated pool `swap` for Exact Input (`amount_specified > 0`).
 
@@ -217,7 +351,14 @@ def swap(
     `getSqrtRatioAtTick(tickNext)` from the caller's bounded exact memo instead of
     recomputing it; every other call and the traversal itself are unchanged. `None` (the
     default, used by every ordinary caller) calls the reference function. Its performance
-    adoption is deferred to WHI-1510 as well."""
+    adoption is deferred to WHI-1510 as well.
+
+    `prefix_reuse` (WHI-1506 / L04, experimental, **None by default**) starts the loop
+    from the caller's exact checkpoint of an earlier independent query on this same
+    state/direction/limit/toggle (see `CLPrefixReuse`) and records newly completed full
+    steps. Validation, the remaining steps and the complete new state are the reference
+    code's; a pool with `fee >= 1e6` never uses it. `None` (every ordinary caller) runs
+    the loop from the state. Its performance adoption is deferred to WHI-1510."""
     source = _source(state)
     if amount_specified == 0:
         raise SolidityRevert("AS")
@@ -262,6 +403,19 @@ def swap(
     sqrt_ratio_at_tick = (
         get_sqrt_ratio_at_tick if math_reuse is None else math_reuse.sqrt_ratio_at_tick
     )
+    record = None
+    recording = False
+    if prefix_reuse is not None and state.fee < FEE_PIPS_DENOMINATOR:
+        key = (id(state), zero_for_one, sqrt_price_limit_x96, skip_empty_spans)
+        initial = (0, 0, sqrt_price, tick, fee_growth_global, 0, liquidity, 0, 0, lm_calls)
+        record = prefix_reuse._record(state, key, initial)
+        at = prefix_reuse._resume_index(record, amount_specified)
+        consumed, amount_calculated, sqrt_price, tick, fee_growth_global = record.points[at][:5]
+        protocol_fee, liquidity, crossed_count, steps, lm_calls = record.points[at][5:]
+        amount_remaining = amount_specified - consumed
+        crossed = [t for t, _ in record.crossings[:crossed_count]]
+        new_ticks = dict(record.crossings[:crossed_count])
+        recording = at == len(record.points) - 1  # only the frontier grows
 
     while amount_remaining != 0 and sqrt_price != sqrt_price_limit_x96:
         if liquidity == 0 and skip_empty_spans:
@@ -367,6 +521,21 @@ def swap(
             tick = tick_next - 1 if zero_for_one else tick_next
         elif sqrt_price != sqrt_price_start:
             tick = get_tick_at_sqrt_ratio(sqrt_price)
+
+        if recording and prefix_reuse is not None and record is not None:
+            # A full step reached its target and cost no more than the remainder (a
+            # partial step either stops short or, reaching it, costs more).
+            recording = (
+                sqrt_price == target
+                and amount_remaining >= 0
+                and prefix_reuse._append(
+                    record,
+                    (amount_specified - amount_remaining, amount_calculated, sqrt_price, tick,
+                     fee_growth_global, protocol_fee, liquidity, len(crossed), steps, lm_calls),
+                    crossed,
+                    new_ticks,
+                )
+            )  # fmt: skip
 
     protocol_fees0 = state.protocol_fees0
     protocol_fees1 = state.protocol_fees1

@@ -24,6 +24,7 @@ difference reported apart from selection parity.
 
 from __future__ import annotations
 
+import functools
 import json
 import random
 from functools import cache
@@ -33,6 +34,8 @@ from typing import Any
 import pytest
 
 from benchmark.objective import gross_only
+from pools import concentrated
+from pools.cl_math import TickMathReuse
 from routing.algorithms import uni_sor_port as sor
 from routing.algorithms.base import AlgorithmConfig, Budget, SolveContext, SolveStatus
 from routing.evaluator import EvalStatus, evaluate
@@ -445,3 +448,58 @@ def test_adapter_quote_rows_equal_the_frozen_rows(monkeypatch: pytest.MonkeyPatc
             for q in inp["quotes"]
         }
         assert captured == expected, case_id
+
+
+@pytest.mark.parametrize("l02_l03", [False, True], ids=["prefix_only", "l02_l03_prefix"])
+def test_cl_prefix_reuse_rebuilds_the_golden_rows_and_selection(
+    l02_l03: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """WHI-1506 / L04 (explicit, default-off): with CL traversal-prefix reuse selected --
+    alone, and on top of explicitly selected L02+L03 -- the port still produces every
+    frozen `raw_quote`, the golden selection and a plan whose independent evaluation
+    (after the variant is removed: the ordinary reference path) matches its own."""
+    bundle, prepared = _corpus_context()
+    captured: dict[tuple[str, tuple[str, ...], int], int | None] = {}
+    original = sor.build_route_quotes
+
+    def spy(routes: Any, percents: Any, amounts: Any, quote: sor.QuoteFn, gas: Any = None) -> Any:
+        def wrapped(route: sor.SorRoute, percent: int, amount: sor.Rational) -> int | None:
+            raw = quote(route, percent, amount)
+            captured[(route.protocol, route.pool_ids, percent)] = raw
+            return raw
+
+        return original(routes, percents, amounts, wrapped, gas)
+
+    resumed = 0
+    for case_id in ("c01_corpus_usdc_fbtc_mixed", "c02_corpus_meth_weth_parallel_pools"):
+        inp, golden = _load(f"{case_id}.input.json"), _load(f"{case_id}.golden.json")
+        case = bundle.case(inp["origin"]["corpus_case_id"])
+        captured.clear()
+        reuse = concentrated.CLPrefixReuse(max_keys=4096, max_checkpoints=1_000_000)
+        variant = functools.partial(
+            concentrated.swap,
+            skip_empty_spans=l02_l03,
+            math_reuse=TickMathReuse(16384) if l02_l03 else None,
+            prefix_reuse=reuse,
+        )
+        context = SolveContext(bundle=bundle, objective=gross_only(), prepared=prepared)
+        with monkeypatch.context() as patch:
+            patch.setattr(concentrated, "swap", variant)
+            patch.setattr(sor, "build_route_quotes", spy)
+            res = sor.solve(case, context, Budget())
+        assert res.status is SolveStatus.OK, res.error
+        expected = {
+            (q["family"], tuple(q["route_pool_ids"]), int(q["percent"])): (
+                None if q["raw_quote"] is None else int(q["raw_quote"])
+            )
+            for q in inp["quotes"]
+        }
+        assert captured == expected, case_id
+        assert res.search_stats["selection"] == golden["result"]
+        assert res.plan is not None and res.evaluation is not None
+        independent = evaluate(bundle, case, res.plan, gross_only())
+        assert independent.status is EvalStatus.OK
+        assert independent.gross_output == res.evaluation.gross_output
+        resumed += reuse.stats()["resumed"]
+    # c01's CL quotes all end inside their first step; c02's cross many boundaries.
+    assert resumed > 50
