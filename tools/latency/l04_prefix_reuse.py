@@ -19,6 +19,9 @@ the ordinary default path, so it re-checks every solved plan independently.
             compared with each other and with the L01 baseline record; CL swaps, logical
             steps (`SwapOutcome.steps`), executed `computeSwapStep` calls and the prefix
             stats. CPU times are instrumented and diagnostic only.
+    shuffle per chosen target: every CL swap call of an ordinary solve, replayed in
+            shuffled orders through a fresh prefix instance (L02 off and on), each complete
+            outcome compared with a fresh reference-loop call.
     paired  per chosen target: one prepare, then rotated l02_l03 / l02_l03_l04 (cold)
             solves, CPU and wall around `solve` only, load around each; then one
             tracemalloc pass per variant: solve peak and bytes retained by the records.
@@ -40,6 +43,7 @@ import gc
 import hashlib
 import json
 import os
+import random
 import sys
 import time
 import tracemalloc
@@ -317,6 +321,75 @@ def paired(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _outcome(swap: Callable[..., Any], call: tuple[Any, ...], **kw: Any) -> Any:
+    try:
+        return swap(*call, **kw)
+    except Exception as exc:  # noqa: BLE001 -- the exact type and message are compared
+        return (type(exc).__name__, str(exc))
+
+
+def shuffle(args: argparse.Namespace) -> dict[str, Any]:
+    """Order independence on real queries: capture every CL swap call of an ordinary
+    (default-path) solve, then replay them in shuffled orders through a fresh
+    `CLPrefixReuse` (L02 off and on) and compare each complete `SwapOutcome` -- full new
+    state included -- or exception with a fresh reference-loop call."""
+    exp_dir = Path(args.experiment)
+    experiment = l02._experiment(exp_dir)
+    profile = load_profile(REPO / experiment["profile"]["path"])
+    targets = []
+    for target in args.target:
+        key, name, case_id = target.split(":")
+        bundle = l02._bundle(exp_dir, experiment, key)
+        case = next(c for c in bundle.cases if c.case_id == case_id)
+        factory = get_algorithm(name)
+        prepared = l02._prepare(factory, bundle, profile)
+        calls: list[tuple[Any, ...]] = []
+
+        def capture(*call: Any, sink: list[tuple[Any, ...]] = calls) -> Any:
+            sink.append(call)
+            return ORIGINAL_CL(*call)
+
+        seed = case_seed(profile.measurement.seed, factory.name, case_id)
+        context = SolveContext(bundle=bundle, objective=profile.objective.bind(bundle),
+                               prepared=prepared, seed=seed)  # fmt: skip
+        cl.swap = capture  # type: ignore[assignment]
+        try:
+            with metered_quotes(profile.budget.max_quotes):
+                factory.solve(case, context, profile.budget)
+        finally:
+            cl.swap = ORIGINAL_CL
+        originals = {id(p) for p in bundle.pools.values()}
+        runs = []
+        for seed in range(args.seeds):
+            order = list(calls)
+            random.Random(seed).shuffle(order)
+            for skip in (False, True):
+                reuse = cl.CLPrefixReuse(args.max_keys, args.max_checkpoints)
+                mismatches = sum(
+                    _outcome(ORIGINAL_CL, call) != _outcome(ORIGINAL_CL, call,
+                                                            skip_empty_spans=skip,
+                                                            prefix_reuse=reuse)
+                    for call in order
+                )  # fmt: skip
+                runs.append({"seed": seed, "skip_empty_spans": skip, "mismatches": mismatches,
+                             "prefix": reuse.stats()})  # fmt: skip
+        targets.append({
+            "target": target, "cl_calls": len(calls),
+            "calls_on_original_states": sum(id(c[0]) in originals for c in calls),
+            "distinct_states": len({id(c[0]) for c in calls}),
+            "all_equal": all(r["mismatches"] == 0 for r in runs), "runs": runs,
+        })  # fmt: skip
+        print(json.dumps({k: targets[-1][k] for k in ("target", "cl_calls", "all_equal")}),
+              flush=True)  # fmt: skip
+    return {
+        "kind": "L04 shuffled-order replay of captured solver CL queries vs the reference loop",
+        "experiment": str(exp_dir),
+        "environment": l02._environment(),
+        "settings": {k: getattr(args, k) for k in ("max_keys", "max_checkpoints", "seeds")},
+        "targets": targets,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -332,13 +405,22 @@ def main() -> None:
     p.add_argument("--target", action="append", required=True, help="bundle:algorithm:case")
     p.add_argument("--pairs", type=int, default=3)
     p.add_argument("--out", required=True)
-    for s in (w, p):  # declared experiment settings, not runtime defaults
+    sh = sub.add_parser("shuffle")
+    sh.add_argument("--experiment", required=True)
+    sh.add_argument("--target", action="append", required=True, help="bundle:algorithm:case")
+    sh.add_argument("--seeds", type=int, default=2)
+    sh.add_argument("--out", required=True)
+    for s in (w, p, sh):  # declared experiment settings, not runtime defaults
         s.add_argument("--tick-capacity", type=int, default=16384)
         s.add_argument("--bin-capacity", type=int, default=4096)
         s.add_argument("--max-keys", type=int, default=4096)
         s.add_argument("--max-checkpoints", type=int, default=262144)
     args = parser.parse_args()
-    run: Callable[[argparse.Namespace], dict[str, Any]] = work if args.command == "work" else paired
+    run: Callable[[argparse.Namespace], dict[str, Any]] = {
+        "work": work,
+        "paired": paired,
+        "shuffle": shuffle,
+    }[args.command]
     result = run(args)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
