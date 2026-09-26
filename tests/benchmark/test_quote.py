@@ -198,7 +198,15 @@ def test_exactly_one_solve_attempt_per_algorithm_even_when_solvers_fail(
     assert statuses["counted_hang"]["last_valid_candidate"] is not None
     hang = out.split("[counted_hang]", 1)[1]
     assert "PARTIAL DIAGNOSTIC" in hang and "not a completed solve" in hang
-    assert "no completed route" in out.split("[counted_raise]", 1)[1].split("[counted_hang]")[0]
+    raised = out.split("[counted_raise]", 1)[1].split("[counted_hang]")[0]
+    assert "no completed route" in raised
+    # PR-F2: what the killed/raising solver never reported is N/A, not a measured zero, and
+    # an evaluated-but-untimed partial candidate is not "nothing evaluated"
+    assert "final independent evaluation not recorded (the partial candidate" in hang
+    assert "final independent evaluation N/A (no plan to evaluate)" in raised
+    for block in (hang, raised):
+        assert "candidates considered/truncated N/A (the solver returned no counters)" in block
+    assert not re.search(r"\bNone\b", out)
 
 
 @pytest.mark.parametrize(
@@ -262,6 +270,25 @@ def test_report_command_renders_a_quote_run_as_a_single_case_report(
     assert "EXPLORATORY single-request comparison" in text and "[path_split] ok" in text
     assert not STATISTICS.search(text)
     assert not (out_dir / "report.html").exists()
+
+    # PR-F1: relocated artifacts (request bundle not found) are refused, never reported
+    # through the corpus report's distribution tables; --bundle recovers the report
+    moved = tmp_path / "moved"
+    import shutil
+
+    shutil.copytree(run_dir, moved)
+    manifest_path = moved / "manifest.json"
+    raw = json.loads(manifest_path.read_text())
+    raw["replay_command"] = raw["replay_command"].replace(str(tmp_path), "/nonexistent")
+    manifest_path.write_text(json.dumps(raw, indent=2, sort_keys=True) + "\n")
+    capsys.readouterr()
+    assert main.main(["report", str(moved), "--output", str(tmp_path / "lost")]) == 1
+    assert "request bundle is unavailable" in capsys.readouterr().err
+    assert not (tmp_path / "lost").exists()
+    bundle = str(run_dir.parent.parent / "bundle")
+    found = tmp_path / "found"
+    assert main.main(["report", str(moved), "--bundle", bundle, "--output", str(found)]) == 0
+    assert "EXPLORATORY" in (found / "single_request.txt").read_text()
 
     # never pooled with a corpus run
     monkeypatch.chdir(REPO)

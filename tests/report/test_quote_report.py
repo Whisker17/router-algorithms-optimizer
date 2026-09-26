@@ -243,6 +243,13 @@ def test_failures_show_status_and_labelled_evidence_never_a_fabricated_route() -
     assert "gross output" not in timeout.split("PARTIAL DIAGNOSTIC")[0]
     crashed = section(details, "single_path")
     assert "no completed route" in crashed and "execution order" not in crashed
+    # unavailable metrics are N/A with the reason, never a fabricated zero or "None"
+    assert "evaluation not recorded (the partial candidate was evaluated" in timeout
+    assert "evaluation N/A (no plan to evaluate)" in crashed
+    for block in (timeout, crashed):
+        assert "candidates considered/truncated N/A (the solver returned no counters)" in block
+        assert "quotes counted N/A, attempted N/A" in block
+    assert not re.search(r"\bNone\b", compact + details)
 
 
 def test_relative_gain_and_net_column_follow_the_recorded_objective() -> None:

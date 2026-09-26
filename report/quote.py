@@ -31,7 +31,7 @@ from report.aggregate import (
     _verified_bundle,
     bundle_path_from_replay,
 )
-from snapshot.request import REQUEST_SCHEMA, format_amount
+from snapshot.request import EXPLORATORY_MARK, REQUEST_SCHEMA, format_amount
 
 REQUEST_FUND = "REQUEST"
 SOR = "uni_sor_port"
@@ -62,7 +62,9 @@ def load_quote_view(
     allow_incomplete: bool = False,
 ) -> QuoteView | None:
     """The view of an exploratory single-request run, or `None` when `run_dir` is an
-    ordinary run (its hash-verified bundle is not a request bundle)."""
+    ordinary run. A run whose bundle id marks it exploratory but whose request bundle cannot
+    be found and hash-verified is refused (`ReportInputError`), never reported as an
+    ordinary run with distribution statistics."""
     manifest = load_manifest(run_dir, allow_incomplete=allow_incomplete)
     candidates = [Path(p) for p in bundle_dirs]
     replay_bundle = bundle_path_from_replay(manifest.replay_command)
@@ -70,12 +72,17 @@ def load_quote_view(
         candidates.append(replay_bundle)
         if not replay_bundle.is_absolute() and repo_root is not None:
             candidates.append(repo_root / replay_bundle)
-    bundle_dir, checksums, _ = _verified_bundle(manifest, candidates)
-    if bundle_dir is None:
-        return None
-    provenance_text = _read_checked(bundle_dir, checksums, "provenance.json")
-    provenance = json.loads(provenance_text) if provenance_text else {}
+    bundle_dir, checksums, note = _verified_bundle(manifest, candidates)
+    provenance: Any = {}
+    if bundle_dir is not None:
+        provenance_text = _read_checked(bundle_dir, checksums, "provenance.json")
+        provenance = json.loads(provenance_text) if provenance_text else {}
     if not isinstance(provenance, dict) or provenance.get("schema") != REQUEST_SCHEMA:
+        if EXPLORATORY_MARK in manifest.bundle_id:
+            raise ReportInputError(
+                f"{run_dir}: exploratory single-request run (bundle {manifest.bundle_id}) whose "
+                f"request bundle is unavailable ({note}); pass --bundle <quote dir>/bundle"
+            )
         return None
     pool_sources = _pool_sources(bundle_dir, checksums)
     quote_record = None
@@ -129,6 +136,10 @@ def _percent(part: int, whole: int) -> str:
     rounded = shown.quantize(Decimal("0.000001"))
     text = format(rounded.normalize(), "f")
     return f"{text}%" if Fraction(rounded) == exact else f"≈{text}%"
+
+
+def _na(value: Any) -> str:
+    return "N/A" if value is None else str(value)
 
 
 def _seconds(value: Any) -> str:
@@ -207,7 +218,8 @@ def render_header(view: QuoteView) -> list[str]:
         f"  budget: {json.dumps(m.resolved_profile.get('budget', {}), sort_keys=True)}",
         f"environment: git {env.get('git_revision') or '?'}"
         + (" (dirty)" if env.get("git_dirty") else "")
-        + f", Python {env.get('python_version')}, {env.get('cpu_model') or env.get('machine')}",
+        + f", Python {env.get('python_version') or '?'}, "
+        f"{env.get('cpu_model') or env.get('machine') or 'CPU unknown'}",
     ]
     if SOR in m.algorithms:
         lb = sum(v for k, v in scope["sources"].items() if k.startswith("moe_lb"))
@@ -398,22 +410,31 @@ def _performance_lines(view: QuoteView, record: dict[str, Any]) -> list[str]:
             else "N/A (no solve attempt)"
         )
     )
-    quotes = record.get("quotes", {})
-    evaluation = (
-        _seconds(m["evaluation_seconds"])
-        if "evaluation_seconds" in m
-        else "N/A (nothing evaluated)"
-    )
+    quotes = record.get("quotes") or {}
+    if record.get("evaluation") is not None:
+        evaluation = _seconds(m.get("evaluation_seconds"))
+    elif record.get("last_valid_candidate"):
+        evaluation = "not recorded (the partial candidate was evaluated; its duration is not)"
+    else:
+        evaluation = "N/A (no plan to evaluate)"
+    # A solver that never returned (killed, crashed, prepare failed) reported no search
+    # counters; the record's zero defaults are not measurements.
+    if record.get("solver_reported") is not None:
+        search = (
+            f"candidates considered {record.get('candidates_considered')}, "
+            f"truncated {record.get('candidates_truncated')}"
+        )
+    else:
+        search = "candidates considered/truncated N/A (the solver returned no counters)"
     return [
         "  performance (this single execution):",
         f"    preparation {_seconds(event.get('prepare_seconds'))}, worker start-up "
         f"{_seconds(event.get('startup_seconds'))}",
         f"    solve {solve}",
         f"    final independent evaluation {evaluation}",
-        f"    quotes counted {quotes.get('counted', 'N/A')}, "
-        f"attempted {quotes.get('attempted', 'N/A')}",
-        f"    candidates considered {record.get('candidates_considered')}, truncated "
-        f"{record.get('candidates_truncated')}, reported {m.get('candidates_reported', 'N/A')}",
+        f"    quotes counted {_na(quotes.get('counted'))}, "
+        f"attempted {_na(quotes.get('attempted'))}",
+        f"    {search}, candidates reported {_na(m.get('candidates_reported'))}",
         f"    limit hit: {record.get('limit_hit') or 'none'}; solve attempts completed "
         f"{m.get('attempts_completed', 0)}",
     ]

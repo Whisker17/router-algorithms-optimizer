@@ -32,6 +32,10 @@ from snapshot.models import Case, SnapshotBundle
 
 REQUEST_SCHEMA = "exploratory-request/1"
 EXPLORATORY_LABEL = "exploratory single request; not a held-out corpus result"
+# Carried in every derived bundle id, so a saved run stays recognisable as exploratory even
+# when its request bundle files are unavailable (report.quote refuses rather than falling
+# back to the corpus report).
+EXPLORATORY_MARK = "-exploratory-"
 
 _ADDRESS = re.compile(r"^0x[0-9a-fA-F]{40}$")
 _AMOUNT = re.compile(r"^(\d+)(?:\.(\d+))?$")
@@ -202,7 +206,7 @@ def derive_request_bundle(parent: SnapshotBundle, case: Case, output_dir: Path) 
     provenance = request_provenance(parent, case)
     bundle = write_bundle(
         output_dir,
-        bundle_id=f"{parent.bundle_id}-exploratory-{case.case_id.removeprefix('quote-')}",
+        bundle_id=f"{parent.bundle_id}{EXPLORATORY_MARK}{case.case_id.removeprefix('quote-')}",
         kind=parent.kind,
         block=parent.block,
         pools=list(parent.pools.values()),
