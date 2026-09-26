@@ -148,6 +148,13 @@ def test_direct_split_dp_transition_and_remainder(teaching_bundle: SnapshotBundl
     assert res.evaluation.trace[1].amount_out == 2652
 
     # 2. Nondivisible input: 10,005 TKA with percent_step=10 (N=10)
+    # Competing quotes at 10005: P_AB1 -> 9070, P_AB2 -> 8551
+    p1 = teaching_bundle.pools["P_AB1"]
+    p2 = teaching_bundle.pools["P_AB2"]
+    assert isinstance(p1, ConstantProductPoolState) and isinstance(p2, ConstantProductPoolState)
+    assert cp_quote(p1, "TKA", 10005).amount_out == 9070
+    assert cp_quote(p2, "TKA", 10005).amount_out == 8551
+
     # Leg 1: floor(10005 * 7 / 10) = 7003
     # Leg 2: 10005 - 7003 = 3002 (ALL_REMAINING, carrying remainder 1)
     case_nondiv = Case(case_id="ex_ds_nondiv", token_in="TKA", token_out="TKB", amount_in=10_005)
@@ -238,6 +245,29 @@ def test_incremental_graph_shared_pool_and_merged_plan(
     assert res.search_stats["incremental_chunk_sequence"] == [0, 1, 1, 0, 1, 1, 1, 0, 1, 1]
 
 
+def test_incremental_graph_dust_carry_and_fallback(teaching_bundle: SnapshotBundle) -> None:
+    """Verify incremental_graph zero/dust carry with tiny input and fallback preservation."""
+    # Dust input A=3, K=20: 17 empty chunks, 1 carried, 2 allocated
+    cfg = {"max_hops": 3, "max_splits": 2, "percent_step": 10, "chunks": 20}
+    prep = incremental_graph.prepare(teaching_bundle, AlgorithmConfig("incremental_graph", cfg))
+    case_dust = Case(case_id="c_dust", token_in="TKA", token_out="TKB", amount_in=3)
+    ctx = SolveContext(bundle=teaching_bundle, objective=gross_only(), prepared=prep)
+
+    res_dust = incremental_graph.solve(case_dust, ctx, Budget())
+    assert res_dust.status == SolveStatus.OK
+    assert res_dust.search_stats["chunks_empty"] == 17
+    assert res_dust.search_stats["chunks_carried"] == 1
+    assert res_dust.search_stats["chunks_allocated"] == 2
+    assert res_dust.search_stats["incremental_status"] == "ok"
+
+    # Fallback preservation: when incremental search produces equal gross to path_split on A=10,
+    # simpler route wins the tie (retaining single_path as the chosen source).
+    case_small = Case(case_id="c_small", token_in="TKA", token_out="TKB", amount_in=10)
+    res_small = incremental_graph.solve(case_small, ctx, Budget())
+    assert res_small.status == SolveStatus.OK
+    assert res_small.search_stats["chosen_source"] == "single_path"
+
+
 def test_uni_sor_port_selection_and_parity_behavior(
     teaching_bundle: SnapshotBundle,
 ) -> None:
@@ -322,11 +352,11 @@ def test_real_state_corpus_fixture_exact_evaluation() -> None:
     # 5. incremental_graph
     ig_dict = dict(profile.search)
     ig_dict.update(profile.graph)
-    prep_ig = incremental_graph.prepare(
+    prep_real_ig = incremental_graph.prepare(
         bundle, AlgorithmConfig("incremental_graph", ig_dict)
     )
-    ctx_ig = SolveContext(bundle=bundle, objective=obj, prepared=prep_ig)
-    r_ig = incremental_graph.solve(case, ctx_ig, real_budget)
+    ctx_rig = SolveContext(bundle=bundle, objective=obj, prepared=prep_real_ig)
+    r_ig = incremental_graph.solve(case, ctx_rig, real_budget)
     assert r_ig.status == SolveStatus.OK and r_ig.evaluation is not None
     assert r_ig.evaluation.gross_output == 10000663447
     assert r_ig.search_stats["quotes_executed"] == 264
@@ -343,8 +373,8 @@ def test_real_state_corpus_fixture_exact_evaluation() -> None:
     prep_sor = uni_sor_port.prepare(
         bundle, AlgorithmConfig("uni_sor_port", profile.search)
     )
-    ctx_sor = SolveContext(bundle=bundle, objective=obj, prepared=prep_sor)
-    r_sor = uni_sor_port.solve(case, ctx_sor, real_budget)
+    ctx_rsor = SolveContext(bundle=bundle, objective=obj, prepared=prep_sor)
+    r_sor = uni_sor_port.solve(case, ctx_rsor, real_budget)
     assert r_sor.status == SolveStatus.OK and r_sor.evaluation is not None
     assert r_sor.evaluation.gross_output == 10000660449
     assert r_sor.search_stats["quotes_executed"] == 40
