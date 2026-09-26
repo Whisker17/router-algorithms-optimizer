@@ -98,3 +98,10 @@ No loader code ships with the template — write it when the first config file l
 - `calibration/` — the WHI-1447 tuning-split calibration profiles: `probe-h3-*.yaml`
   (uncapped 3-hop demand probes), `sweep-base.yaml` and the `sweep-*.yaml` grid points
   generated from it by `main.py calibrate profiles` (do not edit; regenerate).
+- `latency/l01.yaml` — the pre-registered WHI-1503 (L01) latency / quality measurement
+  protocol for the 0.1.2 optimization experiments: pinned parent bundle and
+  `daily_gross.yaml` identities, the sentinel request, the tuning / held-out case matrix,
+  cohorts, warmup / repeats / orders, cold and quote-CLI stages, the host-load threshold and
+  the acceptance rules. Read by `python -m benchmark.latency` and `python -m report.latency`;
+  it never edits the profile it pins. A changed value is a new protocol `version`. See
+  `docs/references/latency-baseline.md`.

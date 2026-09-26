@@ -9,9 +9,11 @@ never `fork`) that receives a pickled copy of the pristine bundle, the algorithm
    back and charged separately, never folded into solve latency;
 2. serves solve attempts: for each request it builds a **fresh** `SolveContext`,
    opens a `pools.quote.metered_quotes(max_quotes)` meter and times only the
-   `solve()` call with `time.perf_counter_ns` (monotonic). Candidates the solver
-   publishes through `SolveContext.report_candidate` are streamed to the parent as
-   they happen, so they survive a later kill.
+   `solve()` call with `time.perf_counter_ns` (monotonic). The same window's process
+   CPU time (`time.process_time_ns`) is reported beside it as an explicit metric;
+   the ordinary runner does not record it (WHI-1503: `benchmark.latency` does).
+   Candidates the solver publishes through `SolveContext.report_candidate` are
+   streamed to the parent as they happen, so they survive a later kill.
 
 The parent enforces the hard wall-clock limit: it waits on the pipe and the process
 sentinel with a monotonic deadline and kills the process when the deadline passes.
@@ -103,6 +105,7 @@ class AttemptOutcome:
     result: SolveResult | None = None
     error: str | None = None
     solve_ns: int | None = None  # child-measured solve() time; None if killed/crashed
+    solve_cpu_ns: int | None = None  # child process CPU over the same window (WHI-1503)
     elapsed_ns: int = 0  # parent-measured request->answer (or ->kill) time
     quotes_attempted: int | None = None
     quotes_counted: int | None = None
@@ -183,6 +186,7 @@ def _serve_attempt(  # pragma: no cover - child
     result: Any = None
     error: str | None = None
     with metered_quotes(request.budget.max_quotes) as meter:
+        cpu_start = time.process_time_ns()
         start = time.perf_counter_ns()
         try:
             result = spec.factory.solve(request.case, context, request.budget)
@@ -191,6 +195,7 @@ def _serve_attempt(  # pragma: no cover - child
         except Exception as exc:  # noqa: BLE001 - becomes algorithm_error
             kind, error = "error", _format_exception(exc)
         solve_ns = time.perf_counter_ns() - start
+        solve_cpu_ns = time.process_time_ns() - cpu_start
     peak = tracemalloc.get_traced_memory()[1] - baseline if instrumented else None
     if kind == "returned" and meter.exceeded:
         # The solver swallowed the limit and kept going: still a limit breach.
@@ -203,6 +208,7 @@ def _serve_attempt(  # pragma: no cover - child
         "result": result if kind == "returned" else None,
         "error": error,
         "solve_ns": solve_ns,
+        "solve_cpu_ns": solve_cpu_ns,
         "quotes_attempted": meter.attempted,
         "quotes_counted": meter.counted,
         "instrumented": instrumented,
@@ -381,6 +387,7 @@ class Worker:
                 result=payload["result"],
                 error=payload["error"],
                 solve_ns=payload["solve_ns"],
+                solve_cpu_ns=payload["solve_cpu_ns"],
                 elapsed_ns=elapsed,
                 quotes_attempted=payload["quotes_attempted"],
                 quotes_counted=payload["quotes_counted"],

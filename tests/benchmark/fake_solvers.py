@@ -236,6 +236,36 @@ def counted_hang_solve(case: Case, context: SolveContext, budget: Budget) -> Sol
         time.sleep(0.05)
 
 
+# WHI-1503 boundary tests: the same artificial work placed in prepare or in solve, burned
+# as CPU or slept as wall time, must show up in the stage that did it and nowhere else.
+DELAY_SECONDS = 0.3
+
+
+def _spin(seconds: float) -> None:
+    end = time.perf_counter() + seconds
+    while time.perf_counter() < end:
+        pass
+
+
+def spin_prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> Any:
+    _spin(DELAY_SECONDS)
+    return None
+
+
+def plain_prepared_solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+    return _like_direct("delay_in_prepare", case, context, budget)
+
+
+def spin_solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+    _spin(DELAY_SECONDS)
+    return _like_direct("delay_in_solve", case, context, budget)
+
+
+def sleep_solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+    time.sleep(DELAY_SECONDS)
+    return _like_direct("sleep_in_solve", case, context, budget)
+
+
 HANG = AlgorithmFactory(name="hang", solve=hang_solve)
 CANDIDATE_SPAM = AlgorithmFactory(name="candidate_spam", solve=candidate_spam_solve)
 CRASH = AlgorithmFactory(name="crash", solve=crash_solve)
@@ -254,6 +284,11 @@ LYING = AlgorithmFactory(name="lying_solver", solve=lying_solve)
 COUNTED_OK = AlgorithmFactory(name="counted_ok", solve=counted_ok_solve)
 COUNTED_RAISE = AlgorithmFactory(name="counted_raise", solve=counted_raise_solve)
 COUNTED_HANG = AlgorithmFactory(name="counted_hang", solve=counted_hang_solve)
+DELAY_IN_PREPARE = AlgorithmFactory(
+    name="delay_in_prepare", solve=plain_prepared_solve, prepare=spin_prepare
+)
+DELAY_IN_SOLVE = AlgorithmFactory(name="delay_in_solve", solve=spin_solve)
+SLEEP_IN_SOLVE = AlgorithmFactory(name="sleep_in_solve", solve=sleep_solve)
 
 ALL = (
     HANG,
@@ -274,4 +309,7 @@ ALL = (
     COUNTED_OK,
     COUNTED_RAISE,
     COUNTED_HANG,
+    DELAY_IN_PREPARE,
+    DELAY_IN_SOLVE,
+    SLEEP_IN_SOLVE,
 )
