@@ -1673,10 +1673,39 @@ def _compact(result: Mapping[str, Any]) -> dict[str, Any]:
     }  # fmt: skip
 
 
+def _heuristic_view(search: Mapping[str, Any]) -> dict[str, Any] | None:
+    """`uni_sor_fast` scope, fallback, sampling-stop and quote-phase counters (route ids,
+    selections and per-round detail stay in the raw records)."""
+    if "sor_fast" not in search:
+        return None
+    shortlist = search.get("shortlist") or {}
+    sampling = search.get("sampling") or {}
+    incumbent = sampling.get("incumbent") or {}
+    return {
+        "search_scope": search.get("search_scope"),
+        "search_completed": search.get("search_completed"),
+        "eligible_pools": shortlist.get("eligible_pools"),
+        "searched_pools": shortlist.get("searched_pools"),
+        "searched_routes": shortlist.get("searched_routes"),
+        "fallback": shortlist.get("fallback"),
+        "quotes_by_phase": shortlist.get("quotes"),
+        "sampling": None if not sampling else {
+            "stop_reason": sampling.get("stop_reason"), "rounds": sampling.get("rounds"),
+            "sampled_entries": sampling.get("sampled_entries"),
+            "grid_entries": sampling.get("grid_entries"),
+            "validations": sampling.get("validations"),
+            "rejected_incumbents": sampling.get("rejected_incumbents"),
+            "seed": sampling.get("seed"), "grid_completion": sampling.get("grid_completion"),
+            "incumbent_source": incumbent.get("source"),
+            "soft_limit_reached": (sampling.get("soft_limit") or {}).get("reached"),
+        },
+    }  # fmt: skip
+
+
 def case_records(exp: Experiment) -> list[dict[str, Any]]:
     """One machine-readable row per (bundle, algorithm, case) of an experiment: status and
     score of the fixed-order timing record, pooled solve medians, the cold charge parts and
-    the memory pass's solve peak, plus control and heuristic scope metadata."""
+    the memory pass's solve peak, plus control and heuristic scope counters."""
     name = (exp.arm or {}).get("name")
     rows: list[dict[str, Any]] = []
     for label in exp.labels("timing"):
@@ -1692,29 +1721,22 @@ def case_records(exp: Experiment) -> list[dict[str, Any]]:
                     pooled[_key(r)] += len(_samples(r, "wall"))
         for r in fixed.records if fixed else []:
             key, search = _key(r), r.get("search") or {}
-            shortlist = search.get("shortlist")
-            sampling = search.get("sampling")
+            controls = search.get(CONTROL_STATS_KEY)
             rows.append({
-                "arm": name, "experiment_id": exp.document["experiment_id"], "bundle": label,
-                "algorithm": key[0], "case_id": key[1], "split": exp.split(key[1]),
-                "status": r["status"], "score": r.get("score"), "error": r.get("error"),
+                "arm": name, "bundle": label, "algorithm": key[0], "case_id": key[1],
+                "split": exp.split(key[1]), "status": r["status"], "score": r.get("score"),
+                "error": r.get("error"),
                 "quotes_counted": (r.get("quotes") or {}).get("counted"),
                 "budget_bound": budget_bound(r), "truncated_by": search.get("truncated_by"),
                 "solve_wall_median_seconds": walls.get(key),
                 "solve_cpu_median_seconds": cpus.get(key), "samples": pooled[key],
                 "evaluation_seconds": r["measurement"].get("evaluation_seconds"),
                 "cold": parts.get(key), "solve_peak_bytes": peaks.get(key),
-                "controls": search.get(CONTROL_STATS_KEY),
-                "heuristic": None if "sor_fast" not in search else {
-                    "search_scope": search.get("search_scope"),
-                    "search_completed": search.get("search_completed"),
-                    "shortlist": None if shortlist is None else {
-                        k: v for k, v in shortlist.items() if k != "searched_route_ids"},
-                    "sampling": None if sampling is None else {
-                        **{k: v for k, v in sampling.items()
-                           if k not in ("rounds", "approximation")},
-                        "rounds": len(sampling.get("rounds") or [])},
-                },
+                "controls": None if controls is None else {
+                    k: controls.get(k) for k in ("tick_math", "bin_math", "prefix",
+                                                 "graph_reuse_bound")},
+                "graph_reuse": search.get("graph_reuse"),
+                "heuristic": _heuristic_view(search),
             })  # fmt: skip
     return rows
 
