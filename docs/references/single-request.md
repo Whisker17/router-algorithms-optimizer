@@ -105,3 +105,10 @@ uv run python main.py report data/quotes/<quote id>/runs/<run id>
 For such a run, `report` writes `single_request.txt` (the compact table and every plan's
 details) instead of the corpus HTML/CSV report and its distribution tables. It refuses to
 mix an exploratory run with corpus runs.
+
+## References and algorithm guides
+
+For first-principles explanations, mathematical derivations, pseudocode, and reproducible
+worked examples of all six routing algorithms compared here, see
+[`routing-algorithms.md`](routing-algorithms.md).
+
