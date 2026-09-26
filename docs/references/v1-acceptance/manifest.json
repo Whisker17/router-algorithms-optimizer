@@ -1,0 +1,1570 @@
+{
+ "bundles_record": {
+  "path": "docs/references/v1-acceptance/bundles.json",
+  "sha256": "34e3031e078d0341ace21e94809ed4d160f266786195a25097cc15c0c22450e9"
+ },
+ "corpus": {
+  "bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+  "bundle_id": "mantle-5src-101082044-091b0759",
+  "path": "data/corpus/mantle-5src-101082044/bundle"
+ },
+ "dirty_runs": [],
+ "git_revisions": [
+  "e64ce40c7b753ca8ec9653c083e917f338283240",
+  "fba60ccc672ba76a326160b4e067e41d8c807cc4"
+ ],
+ "notes": {},
+ "order_checks": [
+  {
+   "compared_records": 1812,
+   "label": "full-reverse",
+   "mismatch_examples": [],
+   "mismatches": 0,
+   "orders": [
+    "fixed",
+    "reverse"
+   ],
+   "runs": [
+    "F1",
+    "F5"
+   ]
+  },
+  {
+   "compared_records": 1812,
+   "label": "daily-shuffle",
+   "mismatch_examples": [],
+   "mismatches": 0,
+   "orders": [
+    "fixed",
+    "shuffle"
+   ],
+   "runs": [
+    "D6",
+    "D5"
+   ]
+  },
+  {
+   "compared_records": 1812,
+   "label": "daily-rerun",
+   "mismatch_examples": [],
+   "mismatches": 0,
+   "orders": [
+    "fixed",
+    "fixed"
+   ],
+   "runs": [
+    "D1",
+    "D6"
+   ]
+  },
+  {
+   "compared_records": 1812,
+   "label": "daily-shuffle-vs-first",
+   "mismatch_examples": [],
+   "mismatches": 0,
+   "orders": [
+    "fixed",
+    "shuffle"
+   ],
+   "runs": [
+    "D1",
+    "D5"
+   ]
+  }
+ ],
+ "reports": [
+  {
+   "path": "data/reports/whi-1447-full/cases.csv",
+   "sha256": "1c952715402268ae5dc1db90e8e1275f127ad24556b64884d8c7505230a24ecd"
+  },
+  {
+   "path": "data/reports/whi-1447-full/latency.csv",
+   "sha256": "8a72b5f7e91dbad900277f58f61fb7680f30b32c64c87f5aa13b612ecf22b659"
+  },
+  {
+   "path": "data/reports/whi-1447-full/net_coverage.csv",
+   "sha256": "cabc9c55907dab4f575096ffdec1336842c38149f7e0d0fcc4a1c316d0b2a562"
+  },
+  {
+   "path": "data/reports/whi-1447-full/paired_gross.csv",
+   "sha256": "257abf58bacfed3e2c5e4a30eb85b462a2a12b0fd766963a890bf41c4b25887c"
+  },
+  {
+   "path": "data/reports/whi-1447-full/paired_net.csv",
+   "sha256": "0e414a08071071265dbc24639b13a86c54174fa66952118576f3df6bf31ef535"
+  },
+  {
+   "path": "data/reports/whi-1447-full/pareto.csv",
+   "sha256": "310b69abb2a1f98d006afe8df978d526d52040184516c7d37804579bc23b2136"
+  },
+  {
+   "path": "data/reports/whi-1447-full/report.html",
+   "sha256": "3f7392f0cd5e1e47ce3517617c54d40d46e497299c9956fbf67eb22a2f983016"
+  },
+  {
+   "path": "data/reports/whi-1447-full/source_coverage.csv",
+   "sha256": "c56e7d28606ac597d06ea695d2147415539048e64d37c80307639003e51b81f1"
+  },
+  {
+   "path": "data/reports/whi-1447-full/status_counts.csv",
+   "sha256": "aa6187214eaf653a874a4fad85072779292d91d02b11eea7beb0102302efff0c"
+  },
+  {
+   "path": "data/reports/whi-1447-full/vs_direct_by_pair.csv",
+   "sha256": "35cb1c633986e9ede681ac101eaadeabf89307f19ee3f6b399f2db649c136bdf"
+  },
+  {
+   "path": "data/reports/whi-1447-full/vs_direct_by_stratum.csv",
+   "sha256": "96f831ab8da24adc939eef879197df32c1ab84c71987689470b96ee82db7dbf8"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/cases.csv",
+   "sha256": "33db8d96ab65d2b40fa6eec760604bb818db95aba57235b529ac855c23eb378a"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/latency.csv",
+   "sha256": "87763259a8a446d47b8120e59c4b08ee05a47f76b38a8aa27790cdc84da6a395"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/net_coverage.csv",
+   "sha256": "853b96ba5abc785a01399858acc0429b32e98f010b34b73e90f46b2608ad5192"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/paired_gross.csv",
+   "sha256": "a88fbbfb210359d5f81304a461f8a8a7787626bd52006edebcdaa15787ed19ca"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/paired_net.csv",
+   "sha256": "962b5ff6a0f057e2247b54f43ea905f9e65a059893837dafd526b61e7a2936c4"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/pareto.csv",
+   "sha256": "ca0283fcd86bedc38d1064ca6d8f29fedfb3eea71e3c4dba64b8424ba924c40f"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/report.html",
+   "sha256": "e18064a7bf00438ee99f24b97465077a608492a8d1ab41f2dc0b95fda441bb9e"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/source_coverage.csv",
+   "sha256": "527f071f2798796b82bb01c6e7e63280b2fd56be81f0788cc8cf3d6b0bf9c808"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/status_counts.csv",
+   "sha256": "d77b49f3d9e980c13ccbf917f5d09a83534467cd8f8fb37c57277368edf3b537"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/vs_direct_by_pair.csv",
+   "sha256": "1abf1f65d5b3315578a1910931f2c6ceeca7b968917d3f6667801e406814490b"
+  },
+  {
+   "path": "data/reports/whi-1447-daily/vs_direct_by_stratum.csv",
+   "sha256": "d76f5974dc602cc05c2d7193d34e04d6cd1ee61e2a882271dba053bc84074984"
+  }
+ ],
+ "runs": [
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 300000,
+    "time_limit_seconds": 900.0
+   },
+   "bundle": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "bundle_id": "mantle-5src-101082044-091b0759-report-split",
+    "cases": 302,
+    "cohort": "full_source",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "bundle_report",
+    "pools": 143,
+    "split": "report",
+    "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143"
+   },
+   "case_count": 1812,
+   "cases_sha256": "95d2dcdd38f73bdd34b259a21836a8f307a48c5e6f7b13fbb48c51b69d399013",
+   "created_at": "2026-09-25T16:08:01.078948+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "e64ce40c7b753ca8ec9653c083e917f338283240",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "experiment_id": "e0df8118602985bba80163c1e3b7e16b6ae70b1a125bbbb5a9c72f25351170ba",
+    "objective": {
+     "fixed_cost": 0,
+     "mode": "gross_only"
+    }
+   },
+   "finished_at": "2026-09-25T21:05:33.588364+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "e64ce40c7b753ca8ec9653c083e917f338283240"
+   },
+   "graph": {
+    "chunks": 50
+   },
+   "label": "F1",
+   "manifest_sha256": "52f3810c99c51b68e628c767ed92c04e3b8618426673c3df933ecaae921d7c88",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 300000,
+     "time_limit_seconds": 900.0
+    },
+    "memory_pass": false,
+    "order": "fixed",
+    "profile_order": "fixed",
+    "repeats": 1,
+    "seed": 1447,
+    "warmup": 0
+   },
+   "memory_sha256": null,
+   "objective": {
+    "fixed_cost": 0,
+    "mode": "gross_only"
+   },
+   "profile": {
+    "path": "config/full_gross.yaml",
+    "sha256": "51a8a65184ae765867fd9d7763776852b2b4576e3cf7116a8dc15ccd87028177"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/full_gross.yaml --results-dir data/results",
+   "run_id": "20260925T160801076875Z-32d039fb",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 3,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 1.085117243,
+    "direct_split": 55.079604374,
+    "incremental_graph": 4785.984120708,
+    "path_split": 2638.525761863,
+    "single_path": 769.486929676,
+    "uni_sor_port": 9578.638752299
+   },
+   "state": "complete",
+   "status_counts": {
+    "invalid_plan": 12,
+    "no_route": 55,
+    "ok": 1745
+   },
+   "wall_seconds": {
+    "memory_pass": null,
+    "timing_pass": 17852.411045917,
+    "total": 17852.411087
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 300000,
+    "time_limit_seconds": 900.0
+   },
+   "bundle": {
+    "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+    "bundle_id": "mantle-5src-101082044-091b0759-sor-cohort-report-split",
+    "cases": 302,
+    "cohort": "sor_compatible",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "sor_cohort_report",
+    "pools": 98,
+    "split": "report",
+    "subset_of": "7a4341dd1045f276303bfa767b8c67d8e34e88c2f24c7b64341e02fe47074c6f"
+   },
+   "case_count": 1812,
+   "cases_sha256": "ca59d23dc2179c94539b84bc2f91851085ad41f09a744aa4068cd3d06faf4e57",
+   "created_at": "2026-09-25T16:08:01.028347+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "e64ce40c7b753ca8ec9653c083e917f338283240",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+    "experiment_id": "73578712d3c8000ab4d49e8efaba7ad69dcf18ecdb781fd46530ec5503a4a803",
+    "objective": {
+     "fixed_cost": 0,
+     "mode": "gross_only"
+    }
+   },
+   "finished_at": "2026-09-25T20:43:24.301764+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "e64ce40c7b753ca8ec9653c083e917f338283240"
+   },
+   "graph": {
+    "chunks": 50
+   },
+   "label": "F2",
+   "manifest_sha256": "f5aff0d6912b0396cd27840f125d5ac0df2391b488eb8770496694e9b5b853cb",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 300000,
+     "time_limit_seconds": 900.0
+    },
+    "memory_pass": false,
+    "order": "fixed",
+    "profile_order": "fixed",
+    "repeats": 1,
+    "seed": 1447,
+    "warmup": 0
+   },
+   "memory_sha256": null,
+   "objective": {
+    "fixed_cost": 0,
+    "mode": "gross_only"
+   },
+   "profile": {
+    "path": "config/full_gross.yaml",
+    "sha256": "51a8a65184ae765867fd9d7763776852b2b4576e3cf7116a8dc15ccd87028177"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/sor_cohort_report --profile config/full_gross.yaml --results-dir data/results",
+   "run_id": "20260925T160801026614Z-8209a262",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 3,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 1.012219211,
+    "direct_split": 48.558805709,
+    "incremental_graph": 3454.238130839,
+    "path_split": 2207.70184959,
+    "single_path": 518.941855883,
+    "uni_sor_port": 10271.866445213
+   },
+   "state": "complete",
+   "status_counts": {
+    "invalid_plan": 12,
+    "no_route": 60,
+    "ok": 1740
+   },
+   "wall_seconds": {
+    "memory_pass": null,
+    "timing_pass": 16523.180196833,
+    "total": 16523.180221166
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 300000,
+    "time_limit_seconds": 900.0
+   },
+   "bundle": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "bundle_id": "mantle-5src-101082044-091b0759-report-split",
+    "cases": 302,
+    "cohort": "full_source",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "bundle_report",
+    "pools": 143,
+    "split": "report",
+    "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143"
+   },
+   "case_count": 1812,
+   "cases_sha256": "f309952a8a5b327594f35516b0b8dddc7bf37e790b51789001c979e7ed1e520e",
+   "created_at": "2026-09-25T16:08:01.041115+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "e64ce40c7b753ca8ec9653c083e917f338283240",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "experiment_id": "5bea057e3d04b77d9817a3072f82fb50bcd606361a5a8385fe5f5a14edd43bda",
+    "objective": {
+     "cost_model": {
+      "model_id": "mantle-101082044-cost-v1",
+      "sha256": "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+     },
+     "fixed_cost": 0,
+     "mode": "empirical_cost",
+     "price_context_sha256": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd"
+    }
+   },
+   "finished_at": "2026-09-25T21:05:50.257138+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "e64ce40c7b753ca8ec9653c083e917f338283240"
+   },
+   "graph": {
+    "chunks": 50
+   },
+   "label": "F3",
+   "manifest_sha256": "2626a064be9565d74525024460502ed27ef313a5c7caaa604915f1739c577145",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 300000,
+     "time_limit_seconds": 900.0
+    },
+    "memory_pass": false,
+    "order": "fixed",
+    "profile_order": "fixed",
+    "repeats": 1,
+    "seed": 1447,
+    "warmup": 0
+   },
+   "memory_sha256": null,
+   "objective": {
+    "cost_model": {
+     "model_id": "mantle-101082044-cost-v1",
+     "path": "config/costs/mantle-101082044-cost-v1.json",
+     "sha256": "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+    },
+    "fixed_cost": 0,
+    "mode": "empirical_cost",
+    "price_context_sha256": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd"
+   },
+   "profile": {
+    "path": "config/full.yaml",
+    "sha256": "a99f33f8547a03ec6ff16f354b409a742d61db56921c45f88cbc26eb0887fab6"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/full.yaml --results-dir data/results",
+   "run_id": "20260925T160801039139Z-d3e2144d",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 3,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 1.130756663,
+    "direct_split": 55.206112243,
+    "incremental_graph": 4794.8941039,
+    "path_split": 2645.425259949,
+    "single_path": 777.261343718,
+    "uni_sor_port": 9579.367184635
+   },
+   "state": "complete",
+   "status_counts": {
+    "invalid_plan": 12,
+    "no_route": 55,
+    "ok": 1745
+   },
+   "wall_seconds": {
+    "memory_pass": null,
+    "timing_pass": 17869.117138666,
+    "total": 17869.117158791
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 300000,
+    "time_limit_seconds": 900.0
+   },
+   "bundle": {
+    "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+    "bundle_id": "mantle-5src-101082044-091b0759-sor-cohort-report-split",
+    "cases": 302,
+    "cohort": "sor_compatible",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "sor_cohort_report",
+    "pools": 98,
+    "split": "report",
+    "subset_of": "7a4341dd1045f276303bfa767b8c67d8e34e88c2f24c7b64341e02fe47074c6f"
+   },
+   "case_count": 1812,
+   "cases_sha256": "7ad332742b80e4e408dae95a1dbee972aec30abf99142819e81e013845e0635d",
+   "created_at": "2026-09-25T16:08:01.137285+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "e64ce40c7b753ca8ec9653c083e917f338283240",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+    "experiment_id": "d5982cc2cf2fe1e4a57b33958674c00b6e66acf71b344cd71d74a3b1bc80bf9e",
+    "objective": {
+     "cost_model": {
+      "model_id": "mantle-101082044-cost-v1",
+      "sha256": "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+     },
+     "fixed_cost": 0,
+     "mode": "empirical_cost",
+     "price_context_sha256": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd"
+    }
+   },
+   "finished_at": "2026-09-25T20:43:00.487708+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "e64ce40c7b753ca8ec9653c083e917f338283240"
+   },
+   "graph": {
+    "chunks": 50
+   },
+   "label": "F4",
+   "manifest_sha256": "b06fa889a1bb4d1759f782f1bf87933736ce3a2d362bcb2c17996bc5df240030",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 300000,
+     "time_limit_seconds": 900.0
+    },
+    "memory_pass": false,
+    "order": "fixed",
+    "profile_order": "fixed",
+    "repeats": 1,
+    "seed": 1447,
+    "warmup": 0
+   },
+   "memory_sha256": null,
+   "objective": {
+    "cost_model": {
+     "model_id": "mantle-101082044-cost-v1",
+     "path": "config/costs/mantle-101082044-cost-v1.json",
+     "sha256": "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+    },
+    "fixed_cost": 0,
+    "mode": "empirical_cost",
+    "price_context_sha256": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd"
+   },
+   "profile": {
+    "path": "config/full.yaml",
+    "sha256": "a99f33f8547a03ec6ff16f354b409a742d61db56921c45f88cbc26eb0887fab6"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/sor_cohort_report --profile config/full.yaml --results-dir data/results",
+   "run_id": "20260925T160801118826Z-74e3e7e0",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 3,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 1.054097674,
+    "direct_split": 48.721755242,
+    "incremental_graph": 3452.208444998,
+    "path_split": 2205.414010331,
+    "single_path": 521.742334035,
+    "uni_sor_port": 10255.429639678
+   },
+   "state": "complete",
+   "status_counts": {
+    "invalid_plan": 12,
+    "no_route": 60,
+    "ok": 1740
+   },
+   "wall_seconds": {
+    "memory_pass": null,
+    "timing_pass": 16499.257796458,
+    "total": 16499.25781
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 300000,
+    "time_limit_seconds": 900.0
+   },
+   "bundle": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "bundle_id": "mantle-5src-101082044-091b0759-report-split",
+    "cases": 302,
+    "cohort": "full_source",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "bundle_report",
+    "pools": 143,
+    "split": "report",
+    "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143"
+   },
+   "case_count": 1812,
+   "cases_sha256": "9a732c15b064d82f2d0a1c58e2d00d633de07c0fd1a0a71592eb5c38e13735f6",
+   "created_at": "2026-09-25T16:08:01.030234+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "e64ce40c7b753ca8ec9653c083e917f338283240",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "experiment_id": "e0df8118602985bba80163c1e3b7e16b6ae70b1a125bbbb5a9c72f25351170ba",
+    "objective": {
+     "fixed_cost": 0,
+     "mode": "gross_only"
+    }
+   },
+   "finished_at": "2026-09-25T21:05:08.582601+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "e64ce40c7b753ca8ec9653c083e917f338283240"
+   },
+   "graph": {
+    "chunks": 50
+   },
+   "label": "F5",
+   "manifest_sha256": "2a9b427239e3ff373915ea85b7cfc45b02a87ee1cedbd8a9b0f9540b0616f419",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 300000,
+     "time_limit_seconds": 900.0
+    },
+    "memory_pass": false,
+    "order": "reverse",
+    "profile_order": "fixed",
+    "repeats": 1,
+    "seed": 1447,
+    "warmup": 0
+   },
+   "memory_sha256": null,
+   "objective": {
+    "fixed_cost": 0,
+    "mode": "gross_only"
+   },
+   "profile": {
+    "path": "config/full_gross.yaml",
+    "sha256": "51a8a65184ae765867fd9d7763776852b2b4576e3cf7116a8dc15ccd87028177"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/full_gross.yaml --results-dir data/results --order reverse",
+   "run_id": "20260925T160801028971Z-38a62c54",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 3,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 1.080167962,
+    "direct_split": 55.57569776,
+    "incremental_graph": 4784.935431845,
+    "path_split": 2621.183546868,
+    "single_path": 766.54060096,
+    "uni_sor_port": 9574.984720371
+   },
+   "state": "complete",
+   "status_counts": {
+    "invalid_plan": 12,
+    "no_route": 55,
+    "ok": 1745
+   },
+   "wall_seconds": {
+    "memory_pass": null,
+    "timing_pass": 17827.454640959,
+    "total": 17827.45465375
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 50000,
+    "time_limit_seconds": 120.0
+   },
+   "bundle": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "bundle_id": "mantle-5src-101082044-091b0759-report-split",
+    "cases": 302,
+    "cohort": "full_source",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "bundle_report",
+    "pools": 143,
+    "split": "report",
+    "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143"
+   },
+   "case_count": 1812,
+   "cases_sha256": "079d264dd9605c8f3f57336e89c7af100306edd3bd86bbd19c8666de718f8217",
+   "created_at": "2026-09-25T21:02:41.657570+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "experiment_id": "e0df8118602985bba80163c1e3b7e16b6ae70b1a125bbbb5a9c72f25351170ba",
+    "objective": {
+     "fixed_cost": 0,
+     "mode": "gross_only"
+    }
+   },
+   "finished_at": "2026-09-26T00:32:18.142651+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4"
+   },
+   "graph": {
+    "chunks": 200
+   },
+   "label": "D1",
+   "manifest_sha256": "6f17ca84e9e5f89920e53bb6b81c4f0d00dd13ae12627c72b63807b1ae55a96e",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 50000,
+     "time_limit_seconds": 120.0
+    },
+    "memory_pass": true,
+    "order": "fixed",
+    "profile_order": "fixed",
+    "repeats": 3,
+    "seed": 1447,
+    "warmup": 1
+   },
+   "memory_sha256": "f97bc58e93c59375d54b3387fd586de7a4a759ba5eaac4b156c31a2080e8d61c",
+   "objective": {
+    "fixed_cost": 0,
+    "mode": "gross_only"
+   },
+   "profile": {
+    "path": "config/daily_gross.yaml",
+    "sha256": "577b43ebc2d23f1d4d896501471b104013ca86e4d33f2b8315722f3bb5680c11"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/daily_gross.yaml --results-dir data/results",
+   "run_id": "20260925T210241655466Z-2efac37a",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 2,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 4.143784392,
+    "direct_split": 121.878856209,
+    "incremental_graph": 930.854344808,
+    "path_split": 454.168897995,
+    "single_path": 136.30665711,
+    "uni_sor_port": 1503.480557767
+   },
+   "state": "complete",
+   "status_counts": {
+    "no_route": 55,
+    "ok": 1757
+   },
+   "wall_seconds": {
+    "memory_pass": 8334.782584209,
+    "timing_pass": 4241.629682417,
+    "total": 12576.412283167
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 50000,
+    "time_limit_seconds": 120.0
+   },
+   "bundle": {
+    "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+    "bundle_id": "mantle-5src-101082044-091b0759-sor-cohort-report-split",
+    "cases": 302,
+    "cohort": "sor_compatible",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "sor_cohort_report",
+    "pools": 98,
+    "split": "report",
+    "subset_of": "7a4341dd1045f276303bfa767b8c67d8e34e88c2f24c7b64341e02fe47074c6f"
+   },
+   "case_count": 1812,
+   "cases_sha256": "a8591c566cc474c6c966a4ad07745b5299e88da8b8517b90e01f2a36dfd3ad72",
+   "created_at": "2026-09-25T21:02:41.566568+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+    "experiment_id": "73578712d3c8000ab4d49e8efaba7ad69dcf18ecdb781fd46530ec5503a4a803",
+    "objective": {
+     "fixed_cost": 0,
+     "mode": "gross_only"
+    }
+   },
+   "finished_at": "2026-09-26T00:15:27.227438+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4"
+   },
+   "graph": {
+    "chunks": 200
+   },
+   "label": "D2",
+   "manifest_sha256": "66987b9c73bd2b9c870b0905a794a68f48bd52270b4b6bea65bd45d6162a3285",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 50000,
+     "time_limit_seconds": 120.0
+    },
+    "memory_pass": true,
+    "order": "fixed",
+    "profile_order": "fixed",
+    "repeats": 3,
+    "seed": 1447,
+    "warmup": 1
+   },
+   "memory_sha256": "5de31b895d537b5bcc1470f8675bc9ce44214fa3de841f6278232b140f4ec91c",
+   "objective": {
+    "fixed_cost": 0,
+    "mode": "gross_only"
+   },
+   "profile": {
+    "path": "config/daily_gross.yaml",
+    "sha256": "577b43ebc2d23f1d4d896501471b104013ca86e4d33f2b8315722f3bb5680c11"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/sor_cohort_report --profile config/daily_gross.yaml --results-dir data/results",
+   "run_id": "20260925T210241565278Z-95556b57",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 2,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 3.916942381,
+    "direct_split": 117.892878283,
+    "incremental_graph": 764.119847084,
+    "path_split": 422.619739489,
+    "single_path": 114.106061382,
+    "uni_sor_port": 1510.980439512
+   },
+   "state": "complete",
+   "status_counts": {
+    "no_route": 60,
+    "ok": 1752
+   },
+   "wall_seconds": {
+    "memory_pass": 7612.03724175,
+    "timing_pass": 3953.559340209,
+    "total": 11565.596586584
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 50000,
+    "time_limit_seconds": 120.0
+   },
+   "bundle": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "bundle_id": "mantle-5src-101082044-091b0759-report-split",
+    "cases": 302,
+    "cohort": "full_source",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "bundle_report",
+    "pools": 143,
+    "split": "report",
+    "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143"
+   },
+   "case_count": 1812,
+   "cases_sha256": "4af788bedd61c9d064ee4b794e9e50b13a50f17af710b4ed8a6528a4852e8d51",
+   "created_at": "2026-09-25T21:02:41.634219+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "experiment_id": "5bea057e3d04b77d9817a3072f82fb50bcd606361a5a8385fe5f5a14edd43bda",
+    "objective": {
+     "cost_model": {
+      "model_id": "mantle-101082044-cost-v1",
+      "sha256": "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+     },
+     "fixed_cost": 0,
+     "mode": "empirical_cost",
+     "price_context_sha256": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd"
+    }
+   },
+   "finished_at": "2026-09-26T00:31:49.809671+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4"
+   },
+   "graph": {
+    "chunks": 200
+   },
+   "label": "D3",
+   "manifest_sha256": "9d92d1d6c58d7ad41b8c23f2fffc596c96d0d6116304aea216a13b64fcd7b1aa",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 50000,
+     "time_limit_seconds": 120.0
+    },
+    "memory_pass": true,
+    "order": "fixed",
+    "profile_order": "fixed",
+    "repeats": 3,
+    "seed": 1447,
+    "warmup": 1
+   },
+   "memory_sha256": "2912910f9b55a3f1e3c9c6de51347a50e02d5e0fb8c8793ebbb42766f55e7a33",
+   "objective": {
+    "cost_model": {
+     "model_id": "mantle-101082044-cost-v1",
+     "path": "config/costs/mantle-101082044-cost-v1.json",
+     "sha256": "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+    },
+    "fixed_cost": 0,
+    "mode": "empirical_cost",
+    "price_context_sha256": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd"
+   },
+   "profile": {
+    "path": "config/daily.yaml",
+    "sha256": "72cb233042014881599b43772952e685b4c1bb533d9243795b5f93c0bf4035a3"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/daily.yaml --results-dir data/results",
+   "run_id": "20260925T210241633559Z-c3ccc41a",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 2,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 4.36566402,
+    "direct_split": 121.443781145,
+    "incremental_graph": 931.792922874,
+    "path_split": 455.82973867,
+    "single_path": 137.973253294,
+    "uni_sor_port": 1504.485435475
+   },
+   "state": "complete",
+   "status_counts": {
+    "no_route": 55,
+    "ok": 1757
+   },
+   "wall_seconds": {
+    "memory_pass": 8314.76655475,
+    "timing_pass": 4233.335949667,
+    "total": 12548.102525125
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 50000,
+    "time_limit_seconds": 120.0
+   },
+   "bundle": {
+    "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+    "bundle_id": "mantle-5src-101082044-091b0759-sor-cohort-report-split",
+    "cases": 302,
+    "cohort": "sor_compatible",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "sor_cohort_report",
+    "pools": 98,
+    "split": "report",
+    "subset_of": "7a4341dd1045f276303bfa767b8c67d8e34e88c2f24c7b64341e02fe47074c6f"
+   },
+   "case_count": 1812,
+   "cases_sha256": "bb9d0afe8561e590b1deaa93bdae178c8888cdcc21b3532c1428f64e8b879c66",
+   "created_at": "2026-09-25T21:02:41.594444+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+    "experiment_id": "d5982cc2cf2fe1e4a57b33958674c00b6e66acf71b344cd71d74a3b1bc80bf9e",
+    "objective": {
+     "cost_model": {
+      "model_id": "mantle-101082044-cost-v1",
+      "sha256": "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+     },
+     "fixed_cost": 0,
+     "mode": "empirical_cost",
+     "price_context_sha256": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd"
+    }
+   },
+   "finished_at": "2026-09-26T00:15:24.743591+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4"
+   },
+   "graph": {
+    "chunks": 200
+   },
+   "label": "D4",
+   "manifest_sha256": "628f32d9f33b0afaf3d5b763c19806308477f2147ea1b1904e765cd7de702572",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 50000,
+     "time_limit_seconds": 120.0
+    },
+    "memory_pass": true,
+    "order": "fixed",
+    "profile_order": "fixed",
+    "repeats": 3,
+    "seed": 1447,
+    "warmup": 1
+   },
+   "memory_sha256": "afc9afca842283d846895b3517261d46d05223466bed5a90fdd1b0157b4a0bc4",
+   "objective": {
+    "cost_model": {
+     "model_id": "mantle-101082044-cost-v1",
+     "path": "config/costs/mantle-101082044-cost-v1.json",
+     "sha256": "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+    },
+    "fixed_cost": 0,
+    "mode": "empirical_cost",
+    "price_context_sha256": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd"
+   },
+   "profile": {
+    "path": "config/daily.yaml",
+    "sha256": "72cb233042014881599b43772952e685b4c1bb533d9243795b5f93c0bf4035a3"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/sor_cohort_report --profile config/daily.yaml --results-dir data/results",
+   "run_id": "20260925T210241589234Z-64ab5e56",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 2,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 3.939216501,
+    "direct_split": 117.90395003,
+    "incremental_graph": 765.742120265,
+    "path_split": 422.790459172,
+    "single_path": 115.310987782,
+    "uni_sor_port": 1506.897881629
+   },
+   "state": "complete",
+   "status_counts": {
+    "no_route": 60,
+    "ok": 1752
+   },
+   "wall_seconds": {
+    "memory_pass": 7626.111340541,
+    "timing_pass": 3936.971457916,
+    "total": 11563.082805
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 50000,
+    "time_limit_seconds": 120.0
+   },
+   "bundle": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "bundle_id": "mantle-5src-101082044-091b0759-report-split",
+    "cases": 302,
+    "cohort": "full_source",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "bundle_report",
+    "pools": 143,
+    "split": "report",
+    "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143"
+   },
+   "case_count": 1812,
+   "cases_sha256": "13d857aaf54d87045e71eea4578a9bb498f8167562f8a6f9aecc0363789ddbdd",
+   "created_at": "2026-09-25T18:55:41.323933+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "experiment_id": "e0df8118602985bba80163c1e3b7e16b6ae70b1a125bbbb5a9c72f25351170ba",
+    "objective": {
+     "fixed_cost": 0,
+     "mode": "gross_only"
+    }
+   },
+   "finished_at": "2026-09-25T22:58:31.685228+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4"
+   },
+   "graph": {
+    "chunks": 200
+   },
+   "label": "D5",
+   "manifest_sha256": "e77bacdfbf354fbcba1d9e9e2ec1dbd080398cc0f8c49cc1cfb3522fc6803d79",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 50000,
+     "time_limit_seconds": 120.0
+    },
+    "memory_pass": true,
+    "order": "shuffle",
+    "profile_order": "fixed",
+    "repeats": 3,
+    "seed": 1447,
+    "warmup": 1
+   },
+   "memory_sha256": "f8a379125091f6e9ff90d2070475a191ce989d590c77e5d74667b74678a00468",
+   "objective": {
+    "fixed_cost": 0,
+    "mode": "gross_only"
+   },
+   "profile": {
+    "path": "config/daily_gross.yaml",
+    "sha256": "577b43ebc2d23f1d4d896501471b104013ca86e4d33f2b8315722f3bb5680c11"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/daily_gross.yaml --results-dir data/results --order shuffle",
+   "run_id": "20260925T185541322656Z-ae61cdb7",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 2,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 4.849045972,
+    "direct_split": 188.777755279,
+    "incremental_graph": 1427.462194876,
+    "path_split": 696.547522433,
+    "single_path": 268.677279277,
+    "uni_sor_port": 1883.399599223
+   },
+   "state": "complete",
+   "status_counts": {
+    "no_route": 55,
+    "ok": 1757
+   },
+   "wall_seconds": {
+    "memory_pass": 8546.93608625,
+    "timing_pass": 6023.341840334,
+    "total": 14570.277932625
+   }
+  },
+  {
+   "algorithms": [
+    "direct",
+    "single_path",
+    "direct_split",
+    "path_split",
+    "incremental_graph",
+    "uni_sor_port"
+   ],
+   "budget": {
+    "max_candidates": null,
+    "max_quotes": 50000,
+    "time_limit_seconds": 120.0
+   },
+   "bundle": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "bundle_id": "mantle-5src-101082044-091b0759-report-split",
+    "cases": 302,
+    "cohort": "full_source",
+    "corpus_bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "name": "bundle_report",
+    "pools": 143,
+    "split": "report",
+    "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143"
+   },
+   "case_count": 1812,
+   "cases_sha256": "13f4a1d4e54f8379c729c4ad8b83041dc91fa0c95427c30743d729cc283d2eb1",
+   "created_at": "2026-09-25T18:55:43.173178+00:00",
+   "environment": {
+    "clock": {
+     "monotonic": true,
+     "name": "perf_counter_ns",
+     "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+     "prepare_time_limit_seconds": 120.0,
+     "scope": "algorithm",
+     "start_method": "spawn"
+    }
+   },
+   "experiment": {
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "experiment_id": "e0df8118602985bba80163c1e3b7e16b6ae70b1a125bbbb5a9c72f25351170ba",
+    "objective": {
+     "fixed_cost": 0,
+     "mode": "gross_only"
+    }
+   },
+   "finished_at": "2026-09-25T22:57:58.326262+00:00",
+   "git": {
+    "diff_sha256": null,
+    "dirty": false,
+    "revision": "fba60ccc672ba76a326160b4e067e41d8c807cc4"
+   },
+   "graph": {
+    "chunks": 200
+   },
+   "label": "D6",
+   "manifest_sha256": "0ddf0bc3e4f011f509dcf3a55958884f350ba73af90625323992d45c24124bc0",
+   "measurement": {
+    "budget": {
+     "max_candidates": null,
+     "max_quotes": 50000,
+     "time_limit_seconds": 120.0
+    },
+    "memory_pass": true,
+    "order": "fixed",
+    "profile_order": "fixed",
+    "repeats": 3,
+    "seed": 1447,
+    "warmup": 1
+   },
+   "memory_sha256": "a27d335914f68255b18f796afc3a06d38733ee6e5872a2b8aff6d5f96de4648f",
+   "objective": {
+    "fixed_cost": 0,
+    "mode": "gross_only"
+   },
+   "profile": {
+    "path": "config/daily_gross.yaml",
+    "sha256": "577b43ebc2d23f1d4d896501471b104013ca86e4d33f2b8315722f3bb5680c11"
+   },
+   "replay_command": "uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/daily_gross.yaml --results-dir data/results",
+   "run_id": "20260925T185543171981Z-6536a6e7",
+   "scheduled_count": 1812,
+   "search": {
+    "max_hops": 2,
+    "max_splits": 4,
+    "percent_step": 5
+   },
+   "solve_seconds_total": {
+    "direct": 5.053636587,
+    "direct_split": 189.006219332,
+    "incremental_graph": 1434.402584992,
+    "path_split": 696.502518893,
+    "single_path": 268.212375673,
+    "uni_sor_port": 1876.788976588
+   },
+   "state": "complete",
+   "status_counts": {
+    "no_route": 55,
+    "ok": 1757
+   },
+   "wall_seconds": {
+    "memory_pass": 8515.218794708,
+    "timing_pass": 6019.85030875,
+    "total": 14535.06911775
+   }
+  }
+ ],
+ "schema": "acceptance-manifest/1"
+}

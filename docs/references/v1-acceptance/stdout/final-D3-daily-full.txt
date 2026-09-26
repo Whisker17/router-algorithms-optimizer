@@ -1,0 +1,7 @@
+start 2026-09-25T21:02:41Z --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/daily.yaml
+run '20260925T210241633559Z-c3ccc41a' saved to data/results/20260925T210241633559Z-c3ccc41a
+objective: empirical cost mantle-101082044-cost-v1 sha256 50e89727d6b6 (prices sha256 1a3b5cfd9ca3); holdout-validated cohorts only, unsupported shapes unranked on net
+cases: 1812
+statuses: {'no_route': 55, 'ok': 1757}
+replay: uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/daily.yaml --results-dir data/results
+exit 0 end 2026-09-26T00:31:49Z

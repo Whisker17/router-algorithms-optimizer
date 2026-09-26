@@ -1,0 +1,7 @@
+start 2026-09-25T16:08:00Z --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/full_gross.yaml
+run '20260925T160801076875Z-32d039fb' saved to data/results/20260925T160801076875Z-32d039fb
+objective: gross-only (no cost model; docs/DESIGN.md §2.9 development mode)
+cases: 1812
+statuses: {'invalid_plan': 12, 'no_route': 55, 'ok': 1745}
+replay: uv run python main.py run --bundle data/corpus/mantle-5src-101082044/bundle_report --profile config/full_gross.yaml --results-dir data/results
+exit 0 end 2026-09-25T21:05:33Z

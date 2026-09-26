@@ -1,0 +1,7 @@
+start 2026-09-25T16:08:00Z --bundle data/corpus/mantle-5src-101082044/sor_cohort_report --profile config/full.yaml
+run '20260925T160801118826Z-74e3e7e0' saved to data/results/20260925T160801118826Z-74e3e7e0
+objective: empirical cost mantle-101082044-cost-v1 sha256 50e89727d6b6 (prices sha256 1a3b5cfd9ca3); holdout-validated cohorts only, unsupported shapes unranked on net
+cases: 1812
+statuses: {'invalid_plan': 12, 'no_route': 60, 'ok': 1740}
+replay: uv run python main.py run --bundle data/corpus/mantle-5src-101082044/sor_cohort_report --profile config/full.yaml --results-dir data/results
+exit 0 end 2026-09-25T20:43:00Z

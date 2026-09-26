@@ -1,0 +1,13 @@
+run_id,cohort,algorithm,scheduled,net_rankable,unranked
+20260925T210241589234Z-64ab5e56,matched_sor_v2_v3,direct,302,276,"{""no plan (no_route)"": 26}"
+20260925T210241589234Z-64ab5e56,matched_sor_v2_v3,single_path,302,288,"{""low_confidence"": 12, ""no plan (no_route)"": 2}"
+20260925T210241589234Z-64ab5e56,matched_sor_v2_v3,direct_split,302,276,"{""no plan (no_route)"": 26}"
+20260925T210241589234Z-64ab5e56,matched_sor_v2_v3,path_split,302,288,"{""low_confidence"": 12, ""no plan (no_route)"": 2}"
+20260925T210241589234Z-64ab5e56,matched_sor_v2_v3,incremental_graph,302,288,"{""low_confidence"": 9, ""no plan (no_route)"": 2, ""unsupported"": 3}"
+20260925T210241589234Z-64ab5e56,matched_sor_v2_v3,uni_sor_port,302,150,"{""low_confidence"": 106, ""no plan (no_route)"": 2, ""unsupported"": 44}"
+20260925T210241633559Z-c3ccc41a,full_source,direct,302,277,"{""no plan (no_route)"": 25}"
+20260925T210241633559Z-c3ccc41a,full_source,single_path,302,289,"{""low_confidence"": 12, ""no plan (no_route)"": 1}"
+20260925T210241633559Z-c3ccc41a,full_source,direct_split,302,273,"{""low_confidence"": 4, ""no plan (no_route)"": 25}"
+20260925T210241633559Z-c3ccc41a,full_source,path_split,302,289,"{""low_confidence"": 12, ""no plan (no_route)"": 1}"
+20260925T210241633559Z-c3ccc41a,full_source,incremental_graph,302,289,"{""low_confidence"": 6, ""no plan (no_route)"": 1, ""unsupported"": 6}"
+20260925T210241633559Z-c3ccc41a,full_source,uni_sor_port,302,150,"{""low_confidence"": 106, ""no plan (no_route)"": 2, ""unsupported"": 44}"
