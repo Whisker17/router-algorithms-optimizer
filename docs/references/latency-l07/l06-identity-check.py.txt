@@ -1,0 +1,34 @@
+# Documentary transcript (not a module): the one-off check that an absent `sampling`
+# section leaves the L06 solve unchanged. It compares the base (origin/dev 0d8ed87)
+# `uni_sor_fast.py` with this branch's on fixture, adversarial, CL-fallback and budget cases
+# x three shortlist settings x three budgets: full `SolveResult` equality (status, plan,
+# evaluation, score, error, counters and every `search` key) and identical candidate-sink
+# publications. Result at cd27439: "identical 945".
+#   mkdir -p /tmp/l07old && git show 0d8ed87:routing/algorithms/uni_sor_fast.py > /tmp/l07old/uni_sor_fast_old.py
+#   cp docs/references/latency-l07/l06-identity-check.py.txt /tmp/check.py && uv run python /tmp/check.py
+import sys; sys.path.insert(0,'tests/routing'); sys.path.insert(0,'.'); sys.path.insert(0,'/tmp/l07old')
+import uni_sor_fast_old as old
+import test_uni_sor_fast as t
+from routing.algorithms import uni_sor_fast as new
+from routing.algorithms.base import AlgorithmConfig, SolveContext, Budget
+from benchmark.objective import gross_only
+n=0
+def run(mod,b,c,params,budget):
+    prep=mod.prepare(b,AlgorithmConfig(mod.NAME,params)); sink=[]
+    r=mod.solve(c,SolveContext(b,gross_only(),prep,candidate_sink=sink.append),budget)
+    return r, sink
+cases=[]
+for rel in ("tests/fixtures/routing/mantle_mixed","tests/fixtures/corpus/bundle"):
+    b=t._load(rel); cases += [(b,c,t.SEARCH) for c in b.cases]
+cases += [(t.THIN_BUNDLE,t.THIN_CASE,t.SEARCH),(t.NARROW,t.NARROW_CASE,t.SEARCH),
+          (t.CL_BUNDLE,t.Case("c","A","B",4*10**10),t.CL_SEARCH),(t.CL_BUNDLE,t.Case("c","A","B",10**12),t.CL_SEARCH),
+          (t.CL_BUNDLE,t.Case("c","A","B",4*10**10),{"max_hops":1,"max_splits":2,"percent_step":25})]
+for b,c,search in cases:
+    for probes,k,d in (([100],2,0),([5,100],8,0),([100],1,1)):
+        probes=[p for p in probes if p % search["percent_step"]==0] or [100]
+        for budget in (Budget(),Budget(max_quotes=7),Budget(max_quotes=200)):
+            p=t._params(probes,k,d,search)
+            a,sa=run(old,b,c,p,budget); z,sz=run(new,b,c,p,budget)
+            assert a==z and sa==sz, (c.case_id, probes,k,d,budget)
+            n+=1
+print("identical", n)

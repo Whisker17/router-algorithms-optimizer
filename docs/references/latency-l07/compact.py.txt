@@ -1,0 +1,52 @@
+# Documentary transcript (not a module): reduces a raw tools/latency/l07_adaptive_sampling.py
+# output (gitignored data/latency-l07/) to the committed compact evidence. It only drops
+# fields and re-shapes rows; every number is copied, none is recomputed.
+#   cp docs/references/latency-l07/compact.py.txt /tmp/compact.py
+#   uv run python /tmp/compact.py data/latency-l07/<raw>.json docs/references/latency-l07/<out>.json
+import hashlib
+import json
+import sys
+
+raw_path, out_path = sys.argv[1], sys.argv[2]
+raw_bytes = open(raw_path, "rb").read()
+d = json.loads(raw_bytes)
+COLS = ["bundle", "split", "case", "setting", "arm", "transition", "regret_bps", "loss_raw",
+        "regret_vs_l06_bps", "ref_quotes", "cand_quotes", "scope", "search_completed_scope",
+        "fallback_reason", "enumerated_routes", "searched_routes", "stop_reason",
+        "truncated_by", "grid_completion", "sampled_entries", "grid_entries", "rounds",
+        "validations", "validation_quotes", "rejected_incumbents", "cand_selection",
+        "ref_selection", "independent_ok", "ref_equals_l01", "ref_solve_s", "cand_solve_s",
+        "cand_independent_eval_s", "prepare_s", "load_1m"]
+
+
+def selection(side):
+    return ["+".join(r["pool_ids"]) + f"@{r['percent']}" for r in side["selection_routes"]]
+
+
+rows = []
+for r in d["rows"]:
+    c, ref = r["candidate"], r["reference"]
+    sl = c["shortlist"]
+    s = c.get("sampling") or {}
+    rows.append([
+        r["bundle"], r["split"], r["case"], r["setting"], r["arm"], r["transition"],
+        r["regret_bps"], r["loss_raw"], r["regret_vs_l06_bps"], ref["quotes_counted"],
+        c["quotes_counted"], c["search_scope"], s.get("scope"),
+        (sl.get("fallback") or {}).get("reason"),
+        sum((c["routes_enumerated"] or {}).values()),
+        sum((sl.get("searched_routes") or {}).values()), s.get("stop_reason"),
+        c.get("truncated_by"), (s.get("grid_completion") or {}).get("triggered"),
+        s.get("sampled_entries"), s.get("grid_entries"), len(s.get("rounds") or []) or None,
+        s.get("validations"), (sl.get("quotes") or {}).get("validation"),
+        s.get("rejected_incumbents"), selection(c), selection(ref),
+        c["independent_matches_solver"], r["reference_equals_l01_baseline"],
+        ref["solve_wall_seconds"], c["solve_wall_seconds"], c["independent_eval_seconds"],
+        r["prepare_seconds"], r["loadavg_1m_before"],
+    ])
+out = {k: d[k] for k in d if k not in ("rows",)}
+out["raw_sha256"] = hashlib.sha256(raw_bytes).hexdigest()
+out["row_columns"] = COLS
+out["rows"] = rows
+with open(out_path, "w") as f:
+    json.dump(out, f, indent=None, sort_keys=True, separators=(",", ":"))
+    f.write("\n")

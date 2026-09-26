@@ -27,6 +27,15 @@ settings of the opt-in experimental `uni_sor_fast` variant of `uni_sor_port`
 (`shortlist.probe_percents`, `shortlist.routes_per_probe`, `shortlist.direct_routes`),
 required through `AlgorithmFactory.shortlist_params` under the same no-default rule. No reference
 algorithm declares them, and a profile without the section resolves exactly as before.
+
+The optional `sampling` section (WHI-1509) holds the adaptive percentage-sampling settings
+of the same opt-in `uni_sor_fast` (`sampling.coarse_step`, `sampling.refine_radius`,
+`sampling.soft_max_quotes`), declared through `AlgorithmFactory.sampling_params`. Unlike
+the sections above it is an **optional all-or-none group**: without the section
+`uni_sor_fast` runs exactly as the L06 shortlist variant (nothing is handed over, nothing
+is defaulted); with it, every key must be written explicitly (`soft_max_quotes` may be an
+explicit `null`: no soft cap declared). A profile without the section resolves exactly as
+before.
 """
 
 from __future__ import annotations
@@ -124,6 +133,7 @@ class RunProfile:
     search: dict[str, int] = field(default_factory=dict)
     graph: dict[str, int] = field(default_factory=dict)
     shortlist: dict[str, Any] = field(default_factory=dict)
+    sampling: dict[str, Any] = field(default_factory=dict)
 
     def algorithm_config(self, factory: AlgorithmFactory) -> AlgorithmConfig:
         """The `prepare` configuration for `factory`: exactly the `search.*`, `graph.*`
@@ -134,6 +144,9 @@ class RunProfile:
         params.update({key: self.graph[key] for key in factory.graph_params if key in self.graph})
         params.update(
             {key: self.shortlist[key] for key in factory.shortlist_params if key in self.shortlist}
+        )
+        params.update(
+            {key: self.sampling[key] for key in factory.sampling_params if key in self.sampling}
         )
         return AlgorithmConfig(name=factory.name, params=params)
 
@@ -152,6 +165,7 @@ class RunProfile:
             # Only a profile that declares the experimental section records it, so every
             # existing profile resolves byte-identically (WHI-1508).
             **({"shortlist": _plain(self.shortlist)} if self.shortlist else {}),
+            **({"sampling": dict(self.sampling)} if self.sampling else {}),
             "algorithm_config": {
                 name: {
                     "capabilities": ALGORITHMS[name].capabilities.to_dict(),
@@ -344,6 +358,32 @@ def _parse_shortlist(obj: Any, where: str, percent_step: int | None) -> dict[str
     return out
 
 
+# Every `sampling.*` key (WHI-1509, opt-in `uni_sor_fast` only): all or none.
+SAMPLING_KEYS = ("coarse_step", "refine_radius", "soft_max_quotes")
+
+
+def _parse_sampling(obj: Any, where: str, percent_step: int | None) -> dict[str, Any]:
+    """`coarse_step`: a multiple of `search.percent_step` that divides 100 (so the coarse
+    grid contains the 100 % full-input entry); `refine_radius` >= 1 fine grid steps;
+    `soft_max_quotes` >= 1, or an explicit `null` (no soft cap declared)."""
+    _require_keys(obj, set(SAMPLING_KEYS), set(), where)
+    if percent_step is None:
+        raise ProfileError(f"{where}.coarse_step: needs search.percent_step to define the grid")
+    coarse = _int_at_least(obj["coarse_step"], 1, f"{where}.coarse_step")
+    if coarse % percent_step or 100 % coarse:
+        raise ProfileError(
+            f"{where}.coarse_step: {coarse} must be a multiple of search.percent_step "
+            f"({percent_step}) that divides 100"
+        )
+    return {
+        "coarse_step": coarse,
+        "refine_radius": _int_at_least(obj["refine_radius"], 1, f"{where}.refine_radius"),
+        "soft_max_quotes": _optional_positive_int(
+            obj["soft_max_quotes"], f"{where}.soft_max_quotes"
+        ),
+    }
+
+
 def parse_profile(raw: Any, source_path: str) -> RunProfile:
     if isinstance(raw, dict) and raw.get("schema_version") == 1:
         raise ProfileError(
@@ -353,7 +393,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
     _require_keys(
         raw,
         {"schema_version", "algorithms", "objective", "budget", "measurement", "worker"},
-        {"search", "graph", "shortlist"},
+        {"search", "graph", "shortlist", "sampling"},
         "<root>",
     )
     if raw["schema_version"] != SUPPORTED_SCHEMA_VERSION:
@@ -381,6 +421,11 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         if "shortlist" in raw
         else {}
     )
+    sampling = (
+        _parse_sampling(raw["sampling"], "sampling", search.get("percent_step"))
+        if "sampling" in raw
+        else {}
+    )
     for name in algorithms_obj:
         factory = ALGORITHMS[name]
         missing = [f"search.{key}" for key in factory.search_params if key not in search]
@@ -403,6 +448,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         search=search,
         graph=graph,
         shortlist=shortlist,
+        sampling=sampling,
     )
 
 

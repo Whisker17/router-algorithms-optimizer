@@ -58,6 +58,11 @@ No loader code ships with the template — write it when the first config file l
   settings of the opt-in experimental `uni_sor_fast` only (`probe_percents`: distinct
   grid percents including 100; `routes_per_probe` >= 1; `direct_routes` >= 0), required
   with all three `search.*` keys when a profile lists it. No checked-in profile does.
+  An optional `sampling` section (WHI-1509) holds the adaptive percentage-sampling
+  settings of the same opt-in `uni_sor_fast` only, all or none (`coarse_step`: a
+  `search.percent_step` multiple dividing 100; `refine_radius` >= 1; `soft_max_quotes`
+  >= 1 or explicit `null`). Without it `uni_sor_fast` is the L06 shortlist variant,
+  unchanged. No checked-in profile declares it.
 - `corpus_single_path_smoke.yaml` — smoke-scale profile running `direct` and
   `single_path` (`search.max_hops: 3`) once over the frozen corpus (WHI-1438).
 - `corpus_direct_split_smoke.yaml` — smoke-scale profile running `direct` and
@@ -116,3 +121,7 @@ No loader code ships with the template — write it when the first config file l
   and held-out procedure for the opt-in `uni_sor_fast` shortlist diagnostics, read by
   `tools/latency/l06_sor_shortlist.py`. Not an L01 protocol and not an adopt rule. See
   `docs/references/latency-l06-sor-shortlist.md`.
+- `latency/l07.yaml` — the pre-registered WHI-1509 (L07) bounded sweep, ablation arms,
+  nomination rules and held-out procedure for the opt-in `uni_sor_fast` adaptive
+  sampling diagnostics, read by `tools/latency/l07_adaptive_sampling.py`. Not an L01
+  protocol and not an adopt rule. See `docs/references/latency-l07-adaptive-sampling.md`.
