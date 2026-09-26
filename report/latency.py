@@ -57,7 +57,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from benchmark.latency import STAGES, SUFFICIENT_EXPERIMENT_SCHEMA, source_identity
+from benchmark.latency import (
+    CONTROL_STATS_KEY,
+    SESSION_FILE,
+    STAGES,
+    SUFFICIENT_EXPERIMENT_SCHEMA,
+    source_identity,
+)
 from benchmark.results import RunManifest, load_case_records, load_manifest, load_memory_records
 from benchmark.runner import _deterministic_view
 
@@ -120,6 +126,11 @@ class Experiment:
 
     def labels(self, stage: str) -> list[str]:
         return sorted({label for (s, _, label) in self.runs if s == stage})
+
+    @property
+    def arm(self) -> dict[str, Any] | None:
+        """The L08 arm this experiment measured (None: a plain L01 experiment)."""
+        return self.document.get("arm")
 
 
 def load_experiment(path: str | Path) -> Experiment:
@@ -194,11 +205,18 @@ def semantic_view(record: Mapping[str, Any], fields: Sequence[str]) -> dict[str,
 
 
 def work_view(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Work counters. An L08 arm's per-solve control stats and its effective quote-path
+    label are arm labels, not search work: they are reported with the arm, not here."""
+    search = record.get("search")
+    if isinstance(search, Mapping):
+        search = {k: v for k, v in search.items() if k != CONTROL_STATS_KEY}
+        if isinstance(search.get("sor_fast"), Mapping):
+            search["sor_fast"] = {k: v for k, v in search["sor_fast"].items() if k != "quote_path"}
     return {
         "quotes_counted": (record.get("quotes") or {}).get("counted"),
         "candidates_considered": record.get("candidates_considered"),
         "candidates_truncated": record.get("candidates_truncated"),
-        "search": record.get("search"),
+        "search": search,
     }
 
 
@@ -702,6 +720,7 @@ def summarize_experiment(exp: Experiment) -> dict[str, Any]:
             "measured_source": doc["source"],
             "parent_bundle": doc["parent_bundle"],
             "profile": doc["profile"],
+            "arm": doc.get("arm"),
             "bundles": doc["bundles"],
             "runs": {
                 r["run_id"]: {
@@ -926,6 +945,10 @@ def sufficient_problems(evidence: SufficientEvidence, exp: Experiment) -> list[s
                         f"{exp.document['source'].get('git_revision')}")  # fmt: skip
     if doc["profile"] != exp.document["profile"]:
         problems.append("different pinned profile")
+    arm_pin = [(d.get("arm") or {}).get("name") for d in (doc, exp.document)]
+    arms_pin = [(d.get("arms") or {}).get("sha256") for d in (doc, exp.document)]
+    if arm_pin[0] != arm_pin[1] or arms_pin[0] != arms_pin[1]:
+        problems.append(f"measured under arm {arm_pin[0]!r}, the experiment under {arm_pin[1]!r}")
     for cohort, run in sorted(evidence.runs.items()):
         label = f"{cohort}/matrix"
         wanted = (exp.document.get("bundles") or {}).get(label, {}).get("bundle_hash")
@@ -1014,6 +1037,7 @@ def compare_experiments(
         raise LatencyReportError(f"unknown lane {lane!r}")
     if base.document["protocol"]["sha256"] != cand.document["protocol"]["sha256"]:
         raise LatencyReportError("the experiments used different protocol documents")
+    registered = registered_comparison(base, cand, lane, pairs)
     base_bundles = {k: v["bundle_hash"] for k, v in base.document["bundles"].items()}
     cand_bundles = {k: v["bundle_hash"] for k, v in cand.document["bundles"].items()}
     if base_bundles != cand_bundles:
@@ -1175,6 +1199,7 @@ def compare_experiments(
         "candidate": {"experiment_id": cand.document["experiment_id"],
                       "measured_source": cand.document["source"], "load": cand.document["load"]},
         "pairs": mapping,
+        "arms": registered,
         "protocol_sha256": base.document["protocol"]["sha256"],
         "acceptance": acc,
         "coverage_problems": coverage,
@@ -1196,6 +1221,46 @@ def compare_experiments(
         "reasons": reasons,
         "claims": NO_TAIL_CLAIM,
     }  # fmt: skip
+
+
+def registered_comparison(
+    base: Experiment, cand: Experiment, lane: str, pairs: Mapping[str, str] | None
+) -> dict[str, Any] | None:
+    """For L08 arm experiments: the pre-registered comparison this is, else refuse. Both
+    must come from the same arms file and the same measured source; the exact lane also
+    refuses different algorithm scope or heuristic (shortlist/sampling) settings, which no
+    identity of outputs could make an exact variant."""
+    if base.arm is None and cand.arm is None:
+        return None
+    if base.arm is None or cand.arm is None:
+        raise LatencyReportError("an L08 arm experiment is only compared with another arm")
+    if base.document["arms"]["sha256"] != cand.document["arms"]["sha256"]:
+        raise LatencyReportError("the experiments used different arms files")
+    pin = {k: base.document["source"].get(k) for k in SOURCE_PIN}
+    if pin != {k: cand.document["source"].get(k) for k in SOURCE_PIN}:
+        raise LatencyReportError("arm experiments of one comparison must share one source")
+    names = (base.arm["name"], cand.arm["name"])
+    for item in base.document["arms"]["document"]["comparisons"]:
+        if (
+            (item["baseline"], item["candidate"]) == names
+            and item["lane"] == lane
+            and dict(item.get("pairs") or {}) == dict(pairs or {})
+        ):
+            break
+    else:
+        raise LatencyReportError(
+            f"{names[0]} -> {names[1]} ({lane}, pairs {dict(pairs or {})}) is not a "
+            "pre-registered comparison of the arms file"
+        )
+    if lane == "exact":
+        scope = ("algorithms", "shortlist", "sampling")
+        if {k: base.arm.get(k) for k in scope} != {k: cand.arm.get(k) for k in scope}:
+            raise LatencyReportError("the exact lane refuses arms with different algorithm "
+                                     "scope or heuristic settings")  # fmt: skip
+    return {"id": item["id"], "role": item["role"], "baseline": names[0],
+            "candidate": names[1], "arms_sha256": base.document["arms"]["sha256"],
+            "baseline_controls": base.arm["controls"],
+            "candidate_controls": cand.arm["controls"]}  # fmt: skip
 
 
 def compare(
@@ -1323,6 +1388,10 @@ def render_summary(summary: Mapping[str, Any]) -> str:
         f"{load.get('samples')} samples; threshold {_f(load.get('threshold_loadavg_1m'), 2)}; "
         f"**contaminated: {load.get('contaminated')}**",
         f"- Partial: {e['partial']}. Replay: `{e['replay_command']}`",
+        *([f"- L08 arm `{e['arm']['name']}`: {e['arm']['quote_path']}; algorithms "
+           f"{e['arm']['algorithms'] or 'reference'}; shortlist {e['arm']['shortlist']}; "
+           f"sampling {e['arm']['sampling']}; stages {e['arm']['stages']}"]
+          if e.get("arm") else []),
         "",
         f"_{summary['claims']}_",
         "",
@@ -1567,6 +1636,245 @@ def render_sufficient(summary: Mapping[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+# ------------------------------------------------------------------ L08 final aggregation
+
+FINAL_SCHEMA = "latency-final/1"
+LISTED = 50  # list entries kept per problem list in the final JSON (full lists: `compare`)
+
+
+def _listed(items: Sequence[Any]) -> dict[str, Any]:
+    return {"count": len(items), "first": list(items[:LISTED])}
+
+
+def _compact(result: Mapping[str, Any]) -> dict[str, Any]:
+    """The decision facts of one `compare_experiments` result; every problem list keeps
+    its full count (the complete lists are regenerated by `report.latency compare`)."""
+    coverage = [f"{side}: {m}" for side, items in result["coverage_problems"].items()
+                for m in items]  # fmt: skip
+    internal = [f"{side} {gate}: {m}" for side, gates in result["internal_checks"].items()
+                for gate, items in gates.items() for m in items]  # fmt: skip
+    bounded = result["bounded_exactness"]
+    return {
+        "baseline": result["baseline"], "candidate": result["candidate"],
+        "pairs": result["pairs"], "arms": result["arms"],
+        "coverage_problems": _listed(coverage), "internal_checks": _listed(internal),
+        "semantic_mismatches": _listed(result["semantic_mismatches"]),
+        "fixed_budget_differences": _listed(result["fixed_budget_differences"]),
+        "bounded_exactness": {"required": bounded["required"],
+                              "established": len(bounded["established"]),
+                              "mismatches": bounded["mismatches"],
+                              "unproven": bounded["unproven"],
+                              "evidence_problems": bounded["evidence_problems"]},
+        "work_differences": _listed(result["work_differences"]),
+        "status_transitions": result["status_transitions"],
+        "status_regressions": _listed(result["status_regressions"]),
+        "regret": result["regret"], "timing": result["timing"], "charged": result["charged"],
+        "charged_costs": result["charged_costs"],
+    }  # fmt: skip
+
+
+def case_records(exp: Experiment) -> list[dict[str, Any]]:
+    """One machine-readable row per (bundle, algorithm, case) of an experiment: status and
+    score of the fixed-order timing record, pooled solve medians, the cold charge parts and
+    the memory pass's solve peak, plus control and heuristic scope metadata."""
+    name = (exp.arm or {}).get("name")
+    rows: list[dict[str, Any]] = []
+    for label in exp.labels("timing"):
+        fixed = exp.runs.get(("timing", "fixed", label))
+        cold = exp.runs.get(("cold", "fixed", label))
+        parts = cold_parts(cold) if cold else {}
+        peaks = {_key(m): m.get("solve_peak_bytes") for m in (cold.memory if cold else [])}
+        walls, cpus = _pooled_medians(exp, label, "wall"), _pooled_medians(exp, label, "cpu")
+        pooled: Counter[tuple[str, str]] = Counter()
+        for (stage, _, run_label), run in exp.runs.items():
+            if stage == "timing" and run_label == label:
+                for r in run.records:
+                    pooled[_key(r)] += len(_samples(r, "wall"))
+        for r in fixed.records if fixed else []:
+            key, search = _key(r), r.get("search") or {}
+            shortlist = search.get("shortlist")
+            sampling = search.get("sampling")
+            rows.append({
+                "arm": name, "experiment_id": exp.document["experiment_id"], "bundle": label,
+                "algorithm": key[0], "case_id": key[1], "split": exp.split(key[1]),
+                "status": r["status"], "score": r.get("score"), "error": r.get("error"),
+                "quotes_counted": (r.get("quotes") or {}).get("counted"),
+                "budget_bound": budget_bound(r), "truncated_by": search.get("truncated_by"),
+                "solve_wall_median_seconds": walls.get(key),
+                "solve_cpu_median_seconds": cpus.get(key), "samples": pooled[key],
+                "evaluation_seconds": r["measurement"].get("evaluation_seconds"),
+                "cold": parts.get(key), "solve_peak_bytes": peaks.get(key),
+                "controls": search.get(CONTROL_STATS_KEY),
+                "heuristic": None if "sor_fast" not in search else {
+                    "search_scope": search.get("search_scope"),
+                    "search_completed": search.get("search_completed"),
+                    "shortlist": None if shortlist is None else {
+                        k: v for k, v in shortlist.items() if k != "searched_route_ids"},
+                    "sampling": None if sampling is None else {
+                        **{k: v for k, v in sampling.items()
+                           if k not in ("rounds", "approximation")},
+                        "rounds": len(sampling.get("rounds") or [])},
+                },
+            })  # fmt: skip
+    return rows
+
+
+def final_report(session_dir: str | Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Every pre-registered comparison of one L08 session, judged by `compare_experiments`
+    exactly as registered (exact lane with both arms' own sufficient-budget evidence),
+    with its disposition, plus per-arm facts and per-case records. An arm the session did
+    not complete is `not_measured` in every comparison that needs it -- never a verdict."""
+    session_dir = Path(session_dir)
+    path = session_dir / SESSION_FILE
+    if not path.is_file():
+        raise LatencyReportError(f"{session_dir}: no {SESSION_FILE}")
+    session = json.loads(path.read_text(encoding="utf-8"))
+    if session.get("schema") != "latency-session/1":
+        raise LatencyReportError(f"{session_dir}: unsupported schema {session.get('schema')!r}")
+    arms_doc, arms_sha = session["arms"]["document"], session["arms"]["sha256"]
+    entries = {e["arm"]: e for e in session["entries"]}
+    experiments: dict[str, Experiment] = {}
+    evidence: dict[str, SufficientEvidence] = {}
+    missing: dict[str, str] = {}
+    for name in session["order"]:
+        entry = entries.get(name) or {}
+        if not entry.get("experiment"):
+            missing[name] = f"arm not measured (session {session['state']})"
+            continue
+        try:
+            exp = load_experiment(session_dir / entry["experiment"])
+        except LatencyReportError as exc:
+            missing[name] = str(exc)
+            continue
+        if (exp.document.get("arms") or {}).get("sha256") != arms_sha or (
+            (exp.arm or {}).get("name") != name
+        ):  # fmt: skip
+            missing[name] = "experiment is not this session's arm"
+            continue
+        experiments[name] = exp
+        if entry.get("sufficient"):
+            evidence[name] = load_sufficient(session_dir / entry["sufficient"])
+    comparisons: list[dict[str, Any]] = []
+    for item in arms_doc["comparisons"]:
+        lane, base, cand = item["lane"], item["baseline"], item["candidate"]
+        row: dict[str, Any] = {k: item.get(k) for k in ("id", "lane", "role", "baseline",
+                                                        "candidate", "pairs")}  # fmt: skip
+        absent = [n for n in (base, cand) if n not in experiments]
+        if absent:
+            row.update(verdict="not_measured",
+                       reasons=[f"{n}: {missing.get(n)}" for n in absent],
+                       disposition="not adopted (not measured)", comparison=None)  # fmt: skip
+        else:
+            sufficient = (
+                (evidence[base], evidence[cand])
+                if lane == "exact" and base in evidence and cand in evidence
+                else None
+            )
+            result = compare_experiments(
+                experiments[base], experiments[cand], lane=lane, pairs=item.get("pairs"),
+                sufficient=sufficient,
+            )  # fmt: skip
+            row.update(verdict=result["verdict"], reasons=result["reasons"],
+                       disposition=arms_doc["dispositions"][lane][result["verdict"]],
+                       comparison=_compact(result))  # fmt: skip
+        comparisons.append(row)
+    arms: dict[str, Any] = {}
+    records: list[dict[str, Any]] = []
+    for name, exp in experiments.items():
+        internal = internal_checks(exp)
+        arms[name] = {
+            "experiment_id": exp.document["experiment_id"],
+            "sufficient_id": (entries[name].get("sufficient")),
+            "created_at": exp.document["created_at"], "finished_at": exp.document["finished_at"],
+            "arm": exp.arm, "load": exp.document["load"],
+            "measured_source": exp.document["source"],
+            "coverage_problems": len(coverage_problems(exp)),
+            "internal_problems": sum(len(v) for v in internal.values()),
+            "quote_cli": _quote_cli_block(exp, exp.algorithms) if "quote_cli" in (
+                exp.document.get("stages_requested") or []) else None,
+        }  # fmt: skip
+        records += case_records(exp)
+    result = {
+        "schema": FINAL_SCHEMA,
+        "report": report_provenance(),
+        "session": {k: session.get(k) for k in ("session_id", "state", "created_at",
+                                                "finished_at", "stop_reasons", "source",
+                                                "replay_command", "order")},
+        "arms_file": {k: session["arms"][k] for k in ("path", "sha256", "key", "version")},
+        "arms": arms,
+        "not_measured": missing,
+        "comparisons": comparisons,
+        "claims": NO_TAIL_CLAIM,
+    }  # fmt: skip
+    return result, records
+
+
+def render_final(result: Mapping[str, Any]) -> str:
+    s, rep = result["session"], result["report"]
+    lines = [
+        f"# L08 final latency comparisons — session `{s['session_id']}` ({s['state']})",
+        "",
+        f"- Arms file `{result['arms_file']['path']}` {result['arms_file']['key']} "
+        f"v{result['arms_file']['version']} (sha256 `{result['arms_file']['sha256']}`)",
+        f"- Measured source: {_source(s['source'])}; {s['created_at']} → {s['finished_at']}",
+        f"- Report generated {rep['generated_at']} from {_source(rep)}",
+        f"- Replay: `{s['replay_command']}`",
+        *_problems("Session stop reasons", s.get("stop_reasons") or []),
+        *_problems("Arms not measured", [f"{k}: {v}" for k, v in result["not_measured"].items()]),
+        "",
+        "| Arm | experiment | max 1-min load | contaminated | coverage problems | "
+        "order/cold/repeat problems |",
+        "| --- | --- | ---: | --- | ---: | ---: |",
+    ]
+    for name, a in result["arms"].items():
+        load = a["load"] or {}
+        lines.append(f"| {name} | `{a['experiment_id']}` | {_f(load.get('max_loadavg_1m'), 2)} "
+                     f"| {load.get('contaminated')} | {a['coverage_problems']} | "
+                     f"{a['internal_problems']} |")  # fmt: skip
+    lines += [
+        "",
+        "| Comparison | lane | role | baseline → candidate | verdict | disposition | reason |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for c in result["comparisons"]:
+        lines.append(f"| {c['id']} | {c['lane']} | {c['role']} | {c['baseline']} → "
+                     f"{c['candidate']} | **{c['verdict']}** | {c['disposition']} | "
+                     f"{'; '.join(c['reasons'])} |")  # fmt: skip
+    for c in result["comparisons"]:
+        comp = c["comparison"]
+        if comp is None:
+            continue
+        lines += ["", f"## {c['id']} ({c['baseline']} → {c['candidate']}, {c['lane']})", "",
+                  f"- Semantic mismatches {comp['semantic_mismatches']['count']}; coverage "
+                  f"problems {comp['coverage_problems']['count']}; order/cold/repeat "
+                  f"{comp['internal_checks']['count']}; budget-bound established "
+                  f"{comp['bounded_exactness']['established']}/"
+                  f"{comp['bounded_exactness']['required']}; work differences "
+                  f"{comp['work_differences']['count']}; status regressions "
+                  f"{comp['status_regressions']['count']}",
+                  "",
+                  "| Bundle algorithm | wall impr. | CPU impr. | cases | threshold | verdict | "
+                  "cold charged impr. | charged verdict |",
+                  "| --- | ---: | ---: | ---: | ---: | --- | ---: | --- |"]  # fmt: skip
+        for key, t in comp["timing"].items():
+            ch = comp["charged"].get(key) or {}
+            lines.append(f"| {key} | {_f(t['improvement']['wall'])} | "
+                         f"{_f(t['improvement']['cpu'])} | {t['decision_cases']['wall']} | "
+                         f"{_f(t['threshold'])} | {t['verdict']} | {_f(ch.get('improvement'))} "
+                         f"| {ch.get('verdict', 'N/A')} |")  # fmt: skip
+        if c["lane"] == "heuristic":
+            lines += ["", "| Bundle algorithm | split | cases | N/A | losses | gains | "
+                      "max regret bps | mean regret bps |",
+                      "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |"]  # fmt: skip
+            for key, by_split in comp["regret"].items():
+                for split, r in sorted(by_split.items()):
+                    lines.append(f"| {key} | {split} | {r['cases']} | {r['not_applicable']} | "
+                                 f"{r['losses']} | {r['gains']} | {_f(r['max_regret_bps'], 3)} "
+                                 f"| {_f(r['mean_regret_bps'], 3)} |")  # fmt: skip
+    lines += ["", f"_{result['claims']}_"]
+    return "\n".join(lines) + "\n"
+
+
 def _write(text: str, path: str | None) -> None:
     if path:
         Path(path).write_text(text, encoding="utf-8")
@@ -1591,12 +1899,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     sb_p = sub.add_parser("sufficient")
     sb_p.add_argument("evidence")
     sb_p.add_argument("--against", help="experiment whose fixed-budget records to show")
-    for p in (s_p, c_p, sb_p):
+    f_p = sub.add_parser("final", help="Every pre-registered comparison of an L08 session")
+    f_p.add_argument("session")
+    f_p.add_argument("--records", help="write per-case records as JSON lines here")
+    for p in (s_p, c_p, sb_p, f_p):
         p.add_argument("--json")
         p.add_argument("--markdown")
     args = parser.parse_args(argv)
     try:
-        if args.command == "summarize":
+        if args.command == "final":
+            result, records = final_report(args.session)
+            text = render_final(result)
+            _write("".join(json.dumps(r, sort_keys=True) + "\n" for r in records), args.records)
+        elif args.command == "summarize":
             result = summarize(args.experiment)
             text = render_summary(result)
         elif args.command == "sufficient":

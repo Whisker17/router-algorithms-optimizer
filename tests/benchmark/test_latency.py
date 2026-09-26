@@ -9,9 +9,11 @@ stage, including `main.py quote` (still exactly one solve per algorithm per invo
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import multiprocessing
 import os
+import pickle
 import re
 import signal
 import time
@@ -32,6 +34,7 @@ from benchmark.results import load_case_records, load_manifest, load_memory_reco
 from benchmark.runner import compare_runs
 from report import latency as report
 from routing.algorithms.base import Budget
+from routing.algorithms.registry import get_algorithm
 from snapshot.bundle import load_bundle, sha256_file
 from snapshot.models import BlockRef, Case, ConstantProductPoolState, SnapshotBundle
 
@@ -818,3 +821,239 @@ def test_fixed_budget_completion_is_reported_apart_from_sufficient_exactness() -
     assert result["verdict"] == "adopt_eligible", result["reasons"]
     assert len(result["fixed_budget_differences"]) == 3  # kept, per stage/order
     assert result["bounded_exactness"]["established"]
+
+
+# ------------------------------------------------------------ L08 arms (WHI-1510)
+
+ARMS = REPO / "config" / "latency" / "l08.yaml"
+
+
+def test_checked_in_arms_file_pins_l01_and_resolves_every_arm() -> None:
+    arms = latency.load_arms(ARMS)
+    assert arms.protocol_sha256 == sha256_file(REPO / "config/latency/l01.yaml")
+    assert arms.sufficient_sha256 == sha256_file(REPO / "config/latency/l01-sufficient-budget.yaml")
+    assert list(arms.arms) == ["R", "E1", "E2", "E3", "E4", "S0", "H1", "H2", "H3", "H4"]
+    protocol = latency.load_protocol(REPO / arms.protocol_path)
+    assert protocol.acceptance["heuristic_default_loss_tolerance"] is None
+    for name, arm in arms.arms.items():
+        profile = latency.arm_profile(arm, protocol)  # the ordinary loader validates it
+        for algorithm in profile.algorithms:  # every wrapped factory crosses into a worker
+            pickle.loads(pickle.dumps(latency.arm_factory(get_algorithm(algorithm), arm)))
+        assert ("quote_cli" in arm.stages) == (name == "R")  # CLI = default path only
+        quote_path = profile.resolved()["algorithm_config"].get("uni_sor_fast", {})
+        if arm.controls and quote_path:  # never the static "controls off" label
+            assert quote_path["provenance"]["quote_path"].startswith(f"L08 arm {name}")
+    decisions = {c["id"] for c in arms.comparisons if c["role"] == "decision"}
+    assert decisions == {"L02", "L03", "L04", "L05", "L06", "L07-combined", "L07-adaptive-only"}
+    # No default profile, source pin or protocol file is touched by an arm.
+    assert sha256_file(REPO / protocol.profile_path) == protocol.profile_sha256
+
+
+def _arms_doc() -> dict[str, Any]:
+    doc: dict[str, Any] = yaml.safe_load(ARMS.read_text())
+    return doc
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda d: d["controls"]["L03"].update(tick_capacity=0), "tick_capacity"),
+        (lambda d: d["controls"]["L04"].update(lifetime="per_worker"), "per_solve"),
+        (lambda d: d["controls"].update(L09={"x": 1}), "unknown control"),
+        (lambda d: d["controls"]["L02"].update(skip_empty_spans=False), "must be true"),
+        (lambda d: d["arms"][1].update(stages=["timing", "cold", "quote_cli"]), "main.py quote"),
+        (lambda d: d["arms"][1].update(stages=["timing"]), "always required"),
+        (lambda d: d["arms"][0].update(shortlist={"routes_per_probe": 2}), "only for"),
+        (lambda d: d["arms"][1].update(controls=["L09"]), "not all registered"),
+        (lambda d: d["comparisons"][0].update(pairs={"a": "b"}), "itself"),
+        (lambda d: d["comparisons"][0].update(candidate="Z"), "unknown arm"),
+        (lambda d: d["dispositions"]["exact"].pop("reject"), "missing"),
+    ],
+)
+def test_arms_file_validation_refuses_malformed_documents(
+    tmp_path: Path, mutate: Any, message: str
+) -> None:
+    doc = _arms_doc()
+    mutate(doc)
+    path = tmp_path / "arms.yaml"
+    path.write_text(yaml.safe_dump(doc, sort_keys=False))
+    with pytest.raises(latency.LatencyError, match=message):
+        latency.load_arms(path)
+
+
+def _swap_probe(seen: list[Any]) -> Any:
+    from pools import concentrated, liquidity_book
+
+    def solve(case: Any, context: Any, budget: Any) -> Any:
+        seen.append((concentrated.swap, liquidity_book.swap))
+        from routing.algorithms.base import SolveResult, SolveStatus
+
+        return SolveResult(case_id="c", algorithm="uni_sor_fast", status=SolveStatus.NO_ROUTE,
+                           search_stats={"sor_fast": {"quote_path": "all off"}})  # fmt: skip
+
+    return solve
+
+
+def test_controls_are_fresh_per_solve_and_never_outlive_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    from pools import concentrated, liquidity_book
+
+    arm = latency.load_arms(ARMS).arms["H4"]
+    reference = (concentrated.swap, liquidity_book.swap)
+    seen: list[Any] = []
+    solve = latency.controlled_solve(dict(arm.controls), arm.name, _swap_probe(seen), None, None,
+                                     None)  # fmt: skip
+    latency.controlled_solve(dict(arm.controls), arm.name, _swap_probe(seen), None, None, None)
+    (cl1, lb1), (cl2, lb2) = seen
+    assert cl1.keywords["skip_empty_spans"] is True and cl1.func is reference[0]
+    tick, prefix, bins = cl1.keywords["math_reuse"], cl1.keywords["prefix_reuse"], lb1.keywords[
+        "math_reuse"
+    ]  # fmt: skip
+    assert (tick.capacity, bins.capacity) == (16384, 4096)
+    assert (prefix.max_keys, prefix.max_checkpoints) == (4096, 262144)
+    # a fresh instance per solve: nothing is shared across solves (state isolation)
+    assert cl2.keywords["math_reuse"] is not tick and cl2.keywords["prefix_reuse"] is not prefix
+    assert lb2.keywords["math_reuse"] is not bins
+    assert (concentrated.swap, liquidity_book.swap) == reference  # restored after the solve
+    stats = solve.search_stats[latency.CONTROL_STATS_KEY]
+    assert stats["controls"] == ["L02", "L03", "L04"] and stats["lifetime"] == "per_solve"
+    assert stats["tick_math"]["entries"] == 0  # the probe quoted nothing
+    assert solve.search_stats["sor_fast"]["quote_path"].startswith("L08 arm H4")
+    # A failing solve restores the reference too; a solve never starts from a replaced kernel.
+
+    def boom(case: Any, context: Any, budget: Any) -> Any:
+        raise RuntimeError("boom")
+
+    with pytest.raises(RuntimeError, match="boom"):
+        latency.controlled_solve(dict(arm.controls), "H4", boom, None, None, None)
+    assert (concentrated.swap, liquidity_book.swap) == reference
+    monkeypatch.setattr(concentrated, "swap", lambda *a, **k: None)
+    with pytest.raises(RuntimeError, match="already replaced"):
+        latency.controlled_solve(dict(arm.controls), "H4", boom, None, None, None)
+
+
+def test_control_construction_is_charged_inside_the_solve_window(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class SlowMemo:  # 0.2 s to build: must land in the solve, never in prepare
+        def __init__(self, capacity: int) -> None:
+            time.sleep(0.2)
+
+        def stats(self) -> dict[str, int]:
+            return {}
+
+    monkeypatch.setattr(latency, "TickMathReuse", SlowMemo)
+    arm = latency.load_arms(ARMS).arms["E2"]
+    base = dataclasses.replace(fake_solvers.ALL[0], solve=_swap_probe([]))
+    factory = latency.arm_factory(base, arm)
+    assert factory.prepare is base.prepare and factory.name == base.name  # nothing moved there
+    started = time.perf_counter()
+    factory.solve(None, None, None)  # type: ignore[arg-type]
+    assert time.perf_counter() - started >= 0.2
+    graph = latency.arm_factory(get_algorithm("incremental_graph"), latency.load_arms(
+        ARMS).arms["E4"])  # fmt: skip
+    assert graph.solve.args[2].keywords == {"graph_reuse": True}  # type: ignore[attr-defined]
+    other = latency.arm_factory(get_algorithm("path_split"), latency.load_arms(
+        ARMS).arms["E4"])  # fmt: skip
+    assert not hasattr(other.solve.args[2], "keywords")  # type: ignore[attr-defined]
+    assert latency.arm_factory(base, latency.load_arms(ARMS).arms["S0"]) is base
+
+
+def _l08_arms(tmp_path: Path, protocol: Path, sufficient: Path) -> Path:
+    doc = _arms_doc()
+    doc["protocol"] = {"path": str(protocol), "sha256": sha256_file(protocol)}
+    doc["sufficient_budget"] = {"path": str(sufficient), "sha256": sha256_file(sufficient)}
+    doc["arms"] = [a for a in doc["arms"] if a["name"] in ("R", "E3")]
+    doc["comparisons"] = [c for c in doc["comparisons"] if c["id"] == "L02-L04-cumulative"]
+    path = tmp_path / "arms.yaml"
+    path.write_text(yaml.safe_dump(doc, sort_keys=False))
+    return path
+
+
+def test_l08_session_measures_controls_in_workers_and_judges_registered_comparisons(
+    tmp_path: Path,
+) -> None:
+    protocol = _write_protocol(tmp_path, _protocol_doc(tmp_path))
+    sufficient = tmp_path / "sufficient.yaml"
+    sufficient.write_text(yaml.safe_dump({
+        "schema": "latency-sufficient-budget/1", "key": "T-SB", "version": 1,
+        "protocol": {"path": str(protocol), "sha256": sha256_file(protocol)},
+        "budget": {"time_limit_seconds": 60, "max_quotes": None, "max_candidates": None},
+        "measurement": {"warmup": 0, "repeats": 2},
+        "cases": [{"cohort": "full_source", "case": "emp-09bc4e-779ded-low-1",
+                   "algorithms": ["single_path"], "reason": "test"}],
+    }))  # fmt: skip
+    arms = _l08_arms(tmp_path, protocol, sufficient)
+    session = latency.run_session(
+        arms, str(FIXTURE), tmp_path / "l08", allow_dirty=True, echo=lambda _: None
+    )
+    doc = json.loads((session / "session.json").read_text())
+    assert doc["state"] == "complete" and [e["arm"] for e in doc["entries"]] == ["R", "E3"]
+    assert all(e.get("sufficient") for e in doc["entries"])  # own SB per arm
+    r_dir, e3_dir = (session / e["experiment"] for e in doc["entries"])
+    e3 = json.loads((e3_dir / "experiment.json").read_text())
+    assert e3["partial"] is False and e3["stages_requested"] == ["timing", "cold"]
+    assert e3["arm"]["controls"].keys() == {"L02", "L03", "L04"}
+    manifest = load_manifest(e3_dir / "runs" / "timing-fixed-full_source-matrix")
+    assert manifest.resolved_profile["l08_arm"]["name"] == "E3"
+    # The controls really ran inside the spawned workers: per-solve memo traffic recorded.
+    records = load_case_records(e3_dir / "runs" / "timing-fixed-full_source-matrix")
+    ticks = [r["search"][latency.CONTROL_STATS_KEY]["tick_math"] for r in records]
+    assert any(t["hits"] + t["misses"] > 0 for t in ticks)
+    # Registered exact comparison: identical semantics and work, controls stats aside.
+    result = report.compare(r_dir, e3_dir, lane="exact")
+    assert result["arms"]["id"] == "L02-L04-cumulative"
+    assert result["semantic_mismatches"] == [] and result["work_differences"] == []
+    assert result["coverage_problems"] == {"baseline": [], "candidate": [], "pairing": []}
+    assert result["internal_checks"]["candidate"] == {
+        "cross_order": [], "cold_warm": [], "attempts_inconsistent": []
+    }  # fmt: skip
+    with pytest.raises(report.LatencyReportError, match="pre-registered"):
+        report.compare(e3_dir, r_dir, lane="exact")  # not a registered direction
+    # Sufficient-budget evidence is pinned to its own arm.
+    r_sb, e3_sb = (report.load_sufficient(session / e["sufficient"]) for e in doc["entries"])
+    assert report.sufficient_problems(e3_sb, report.load_experiment(e3_dir)) == []
+    assert any("arm" in p for p in report.sufficient_problems(r_sb, report.load_experiment(e3_dir)))
+    # Final aggregation: verdict + disposition per registered comparison, per-case records.
+    final, rows = report.final_report(session)
+    (row,) = final["comparisons"]
+    assert row["verdict"] in ("inconclusive", "reject")  # dirty test tree: never adopt
+    assert row["disposition"] == _arms_doc()["dispositions"]["exact"][row["verdict"]]
+    assert {r["arm"] for r in rows} == {"R", "E3"} and all(r["samples"] for r in rows
+                                                           if r["status"] == "ok")  # fmt: skip
+    assert final["arms"]["R"]["quote_cli"]["one_solve_per_algorithm_per_invocation"] is True
+    assert final["arms"]["E3"]["quote_cli"] is None  # no CLI total claimed for a controlled arm
+    report.render_final(final)
+    # A missing arm experiment is `not_measured`, never a verdict.
+    doc["entries"][1]["experiment"] = "gone"
+    (session / "session.json").write_text(json.dumps(doc))
+    final, _ = report.final_report(session)
+    assert final["comparisons"][0]["verdict"] == "not_measured"
+    assert final["comparisons"][0]["disposition"] == "not adopted (not measured)"
+
+
+def _armed(wall: float, name: str, **arm: Any) -> report.Experiment:
+    exp = _experiment(wall)
+    exp.document["arms"] = {"sha256": "arms", "document": _arms_doc()}
+    exp.document["arm"] = {"name": name, "algorithms": None, "controls": {}, "shortlist": None,
+                           "sampling": None, **arm}  # fmt: skip
+    return exp
+
+
+def test_arm_comparisons_must_be_registered_and_exact_needs_equal_scope() -> None:
+    base, cand = _armed(1.0, "E2"), _armed(0.5, "E3")
+    assert report.compare_experiments(base, cand, lane="exact")["arms"]["id"] == "L04"
+    with pytest.raises(report.LatencyReportError, match="pre-registered"):
+        report.compare_experiments(base, cand, lane="heuristic")
+    cand.document["arms"] = {"sha256": "other", "document": _arms_doc()}
+    with pytest.raises(report.LatencyReportError, match="different arms files"):
+        report.compare_experiments(base, cand, lane="exact")
+    cand = _armed(0.5, "E3")
+    cand.document["source"] = {"git_revision": "def", "git_dirty": False}
+    with pytest.raises(report.LatencyReportError, match="share one source"):
+        report.compare_experiments(base, cand, lane="exact")
+    h2 = _armed(1.0, "H2", shortlist={"routes_per_probe": 8})
+    h4 = _armed(0.5, "H4", shortlist={"routes_per_probe": 2})
+    with pytest.raises(report.LatencyReportError, match="heuristic settings"):
+        report.compare_experiments(h2, h4, lane="exact")
+    with pytest.raises(report.LatencyReportError, match="only compared with another arm"):
+        report.compare_experiments(_experiment(1.0), cand, lane="exact")

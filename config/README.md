@@ -125,3 +125,9 @@ No loader code ships with the template — write it when the first config file l
   nomination rules and held-out procedure for the opt-in `uni_sor_fast` adaptive
   sampling diagnostics, read by `tools/latency/l07_adaptive_sampling.py`. Not an L01
   protocol and not an adopt rule. See `docs/references/latency-l07-adaptive-sampling.md`.
+- `latency/l08.yaml` — the pre-registered WHI-1510 (L08) final measurement: the arms
+  (explicit per-solve L02–L05 controls, the opt-in `uni_sor_fast` settings), their order,
+  stage sets and the only accepted comparisons and dispositions, on top of the unchanged
+  L01 v1 / L01-SB v1. Read by `python -m benchmark.latency run|sufficient|session --arms`
+  and `python -m report.latency compare|final`. Selects nothing by default. See
+  `docs/references/latency-optimization-results.md`.
