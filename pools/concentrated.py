@@ -51,6 +51,7 @@ from pools.cl_math import (
     UINT256_MAX,
     MissingState,
     SolidityRevert,
+    TickMathReuse,
     add_delta,
     checked_mul_u256,
     checked_sub_i256,
@@ -184,6 +185,7 @@ def swap(
     sqrt_price_limit_x96: int,
     *,
     skip_empty_spans: bool = False,
+    math_reuse: TickMathReuse | None = None,
 ) -> SwapOutcome:
     """Migrated pool `swap` for Exact Input (`amount_specified > 0`).
 
@@ -209,7 +211,13 @@ def swap(
     iteration runs. `fee >= 1e6` makes every zero-liquidity iteration revert, so
     such a pool is never skipped (a skipped word read could otherwise turn that
     revert into `MissingState`). `False` (the default) is the unmodified reference
-    loop."""
+    loop.
+
+    `math_reuse` (WHI-1505 / L03, experimental, **None by default**) takes the loop's
+    `getSqrtRatioAtTick(tickNext)` from the caller's bounded exact memo instead of
+    recomputing it; every other call and the traversal itself are unchanged. `None` (the
+    default, used by every ordinary caller) calls the reference function. Its performance
+    adoption is deferred to WHI-1510 as well."""
     source = _source(state)
     if amount_specified == 0:
         raise SolidityRevert("AS")
@@ -251,6 +259,9 @@ def swap(
     skip_empty_spans = skip_empty_spans and state.fee < FEE_PIPS_DENOMINATOR
     limit_tick: int | None = None
     bitmap_get = state.tick_bitmap.get
+    sqrt_ratio_at_tick = (
+        get_sqrt_ratio_at_tick if math_reuse is None else math_reuse.sqrt_ratio_at_tick
+    )
 
     while amount_remaining != 0 and sqrt_price != sqrt_price_limit_x96:
         if liquidity == 0 and skip_empty_spans:
@@ -303,7 +314,7 @@ def swap(
             read_word, tick, state.tick_spacing, zero_for_one
         )
         tick_next = max(MIN_TICK, min(MAX_TICK, tick_next))
-        sqrt_price_next = get_sqrt_ratio_at_tick(tick_next)
+        sqrt_price_next = sqrt_ratio_at_tick(tick_next)
 
         if zero_for_one:
             target = (

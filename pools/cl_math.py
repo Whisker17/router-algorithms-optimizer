@@ -16,6 +16,7 @@ is masked explicitly (`& UINT256_MAX`, ...) and every checked site is tested exp
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable
 
 UINT128_MAX = (1 << 128) - 1
@@ -195,6 +196,44 @@ def get_sqrt_ratio_at_tick(tick: int) -> int:
         ratio = UINT256_MAX // ratio
     # Q128.128 -> Q128.96 rounding up; always fits uint160 for |tick| <= MAX_TICK.
     return (ratio >> 32) + (0 if ratio % (1 << 32) == 0 else 1)
+
+
+class TickMathReuse:
+    """WHI-1505 / L03 experiment, **off unless passed explicitly**: a bounded exact memo
+    of `get_sqrt_ratio_at_tick` owned by this instance (no module-global cache).
+
+    The function is pure and its only input is the tick, so a hit returns exactly the
+    reference result for that tick in any pool or snapshot. Only plain `int` ticks go
+    through the memo; any other input (bool, int subclass, float, unhashable, ...) calls
+    the reference function directly, so its type/error behavior is untouched. An
+    out-of-range tick raises `SolidityRevert('T')` from the reference function on every
+    call: `functools.lru_cache` never stores an exception. Population is lazy (the first
+    use of each tick is a miss running the reference math); `capacity` bounds the entry
+    count with LRU eviction. `stats()` is the native `cache_info()`."""
+
+    def __init__(self, capacity: int) -> None:
+        # A plain positive int: `None` would make `lru_cache` unbounded, 0 disables it.
+        if type(capacity) is not int or capacity < 1:
+            raise ValueError(f"reuse capacity must be a positive int, got {capacity!r}")
+        self.capacity = capacity
+        self._memo = functools.lru_cache(maxsize=capacity, typed=True)(get_sqrt_ratio_at_tick)
+
+    def sqrt_ratio_at_tick(self, tick: int) -> int:
+        if type(tick) is not int:
+            return get_sqrt_ratio_at_tick(tick)
+        return self._memo(tick)
+
+    def stats(self) -> dict[str, int]:
+        info = self._memo.cache_info()
+        return {
+            "capacity": self.capacity,
+            "entries": info.currsize,
+            "hits": info.hits,
+            "misses": info.misses,
+        }
+
+    def clear(self) -> None:
+        self._memo.cache_clear()
 
 
 def get_tick_at_sqrt_ratio(sqrt_price_x96: int) -> int:

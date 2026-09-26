@@ -36,6 +36,7 @@ evidence executes the live hooks.
 
 from __future__ import annotations
 
+import functools
 from bisect import bisect_left, bisect_right
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
@@ -248,6 +249,41 @@ def get_price_from_id(bin_id: int, bin_step: int) -> int:
     return pow128(get_base(bin_step), bin_id - REAL_ID_SHIFT)
 
 
+class BinMathReuse:
+    """WHI-1505 / L03 experiment, **off unless passed explicitly**: a bounded exact memo
+    of `get_price_from_id` owned by this instance (no module-global cache).
+
+    The function is pure in its complete input `(bin_id, bin_step)`, which is the memo
+    key, so a hit returns exactly the reference price for that pair in any pool or
+    snapshot. Only plain `int` arguments go through the memo; anything else calls the
+    reference function directly. A reverting input (`Uint128x128Math__PowUnderflow`) is
+    recomputed and re-raised on every call: `functools.lru_cache` never stores an
+    exception. Lazy population, LRU eviction at `capacity` entries."""
+
+    def __init__(self, capacity: int) -> None:
+        if type(capacity) is not int or capacity < 1:
+            raise ValueError(f"reuse capacity must be a positive int, got {capacity!r}")
+        self.capacity = capacity
+        self._memo = functools.lru_cache(maxsize=capacity, typed=True)(get_price_from_id)
+
+    def price_from_id(self, bin_id: int, bin_step: int) -> int:
+        if type(bin_id) is not int or type(bin_step) is not int:
+            return get_price_from_id(bin_id, bin_step)
+        return self._memo(bin_id, bin_step)
+
+    def stats(self) -> dict[str, int]:
+        info = self._memo.cache_info()
+        return {
+            "capacity": self.capacity,
+            "entries": info.currsize,
+            "hits": info.hits,
+            "misses": info.misses,
+        }
+
+    def clear(self) -> None:
+        self._memo.cache_clear()
+
+
 # =========================================================================================
 # Encoded.sol / PairParameterHelper.sol (the packed `_parameters` word)
 # =========================================================================================
@@ -425,9 +461,16 @@ def get_amounts(
     swap_for_y: bool,
     active_id: int,
     amounts_in_left: int,
+    *,
+    math_reuse: BinMathReuse | None = None,
 ) -> tuple[int, int, int]:
-    """`BinHelper.getAmounts` -> packed `(amountsInWithFees, amountsOutOfBin, totalFees)`."""
-    price = get_price_from_id(active_id, bin_step)
+    """`BinHelper.getAmounts` -> packed `(amountsInWithFees, amountsOutOfBin, totalFees)`.
+    `math_reuse` (WHI-1505, experimental, default `None` = reference call) supplies the
+    bin price from a bounded exact memo."""
+    if math_reuse is None:
+        price = get_price_from_id(active_id, bin_step)
+    else:
+        price = math_reuse.price_from_id(active_id, bin_step)
     reserve_x, reserve_y = _decode(bin_reserves)
     bin_reserve_out = reserve_y if swap_for_y else reserve_x
 
@@ -569,13 +612,23 @@ def _swap_hook_calls(state: LiquidityBookPoolState, source: LBSource) -> int:
     return bin(flags).count("1") + bin(extra_flags).count("1")
 
 
-def swap(state: LiquidityBookPoolState, swap_for_y: bool, amount_in: int) -> SwapOutcome:
+def swap(
+    state: LiquidityBookPoolState,
+    swap_for_y: bool,
+    amount_in: int,
+    *,
+    math_reuse: BinMathReuse | None = None,
+) -> SwapOutcome:
     """Migrated `LBPair.swap(swapForY, to)` after `amount_in` of the input token was
     transferred to the pair (the pair's balance equals `_reserves` before the transfer).
 
     Raises `LBRevert` where the contract reverts, `MissingState` when the traversal or fee
     computation needs uncollected state, `UnsupportedState` for an unadmitted source/hook.
-    Never mutates `state`."""
+    Never mutates `state`.
+
+    `math_reuse` (WHI-1505 / L03, experimental, **None by default**) takes each bin price
+    from the caller's bounded exact memo; `None` (every ordinary caller) is the reference
+    call. Performance adoption is deferred to WHI-1510."""
     source = _source(state)
     if state.static_fee is None or state.variable_fee is None:
         raise MissingState(f"pool {state.pool_id!r}: static/variable fee parameters not collected")
@@ -618,7 +671,13 @@ def swap(state: LiquidityBookPoolState, swap_for_y: bool, amount_in: int) -> Swa
         if out_reserve != 0:  # !binReserves.isEmpty(!swapForY)
             params = update_volatility_accumulator(params, active_id)
             amounts_in_with_fees, amounts_out_of_bin, total_fees = get_amounts(
-                bin_reserves, params, bin_step, swap_for_y, active_id, amounts_left
+                bin_reserves,
+                params,
+                bin_step,
+                swap_for_y,
+                active_id,
+                amounts_left,
+                math_reuse=math_reuse,
             )
             if amounts_in_with_fees > 0:
                 amounts_left = _packed_sub(amounts_left, amounts_in_with_fees)
