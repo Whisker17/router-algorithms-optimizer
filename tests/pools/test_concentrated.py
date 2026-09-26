@@ -579,8 +579,9 @@ def test_evaluator_rejects_cl_partial_fill() -> None:
 # ---------------------------------------------------------------------------
 # WHI-1504: exact skipping of empty zero-liquidity spans
 #
-# The oracle is the unmodified reference loop (`skip_empty_spans=False`) plus the
-# deployed-bytecode evidence above (every replay test runs the default fast path).
+# The oracle is the unmodified reference loop (`skip_empty_spans=False`, the default
+# every ordinary caller uses; the deployed-bytecode replays above check it). The
+# experimental fast path is always selected explicitly (`skip_empty_spans=True`).
 # Each comparison covers the complete outcome: amounts, new state (price, tick,
 # liquidity, fee growth, protocol fees, crossed tick data), crossed ticks, the
 # logical `steps` count and LM-hook calls -- or the identical exception.
@@ -605,9 +606,7 @@ def _outcome(
     state: ConcentratedPoolState, zero_for_one: bool, amount: int, limit: int, reference: bool
 ) -> Any:
     try:
-        if reference:
-            return swap(state, zero_for_one, amount, limit, skip_empty_spans=False)
-        return swap(state, zero_for_one, amount, limit)  # the default is the fast path
+        return swap(state, zero_for_one, amount, limit, skip_empty_spans=not reference)
     except (SolidityRevert, MissingState) as exc:
         return (type(exc).__name__, str(exc))
 
@@ -869,19 +868,44 @@ def test_quote_features_and_immutability_are_unchanged_by_skipping(
         for token_in in (state.token0, state.token1):
             for amount in (10**6, 10**18, 10**30):
                 frozen = dataclasses.replace(state)
-                fast = cl_quote_exact_in(state, token_in, amount)
+                reference = cl_quote_exact_in(state, token_in, amount)  # the default path
                 with monkeypatch.context() as patch:
                     patch.setattr(
                         concentrated,
                         "swap",
-                        functools.partial(concentrated.swap, skip_empty_spans=False),
+                        functools.partial(concentrated.swap, skip_empty_spans=True),
                     )
-                    reference = cl_quote_exact_in(state, token_in, amount)
+                    fast = cl_quote_exact_in(state, token_in, amount)
                 assert fast == reference and state == frozen
                 assert fast.features["swap_steps"] == reference.features["swap_steps"]
                 if fast.new_state is not None:
                     with pytest.raises(TypeError):
                         fast.new_state.ticks[0] = None  # type: ignore[index]
+
+
+def test_ordinary_callers_run_the_reference_loop_and_only_explicit_true_skips(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Identical results cannot show which loop ran; executed `computeSwapStep` calls can.
+    # Default-off (owner amendment 2026-09-26): swap(), the family quote and the
+    # dispatcher every solver/evaluator uses execute every logical iteration.
+    counter = _StepCounter(monkeypatch)
+    state = _mid_gap_state()
+    for zero_for_one in (True, False):
+        token_in = state.token0 if zero_for_one else state.token1
+        limit = MIN_SQRT_RATIO + 1 if zero_for_one else MAX_SQRT_RATIO - 1
+        before = counter.calls
+        default = swap(state, zero_for_one, 10**18, limit)
+        assert counter.calls - before == default.steps > 15  # nothing skipped
+        for quote in (cl_quote_exact_in, quote_exact_in):
+            before = counter.calls
+            result = quote(state, token_in, 10**18)
+            assert result.status is QuoteStatus.OK
+            assert counter.calls - before == result.features["swap_steps"] == default.steps
+        before = counter.calls
+        fast = swap(state, zero_for_one, 10**18, limit, skip_empty_spans=True)
+        assert fast == default
+        assert counter.calls - before < default.steps - 15  # the fast path really ran
 
 
 def _random_state(rng: random.Random, salt: int) -> ConcentratedPoolState:

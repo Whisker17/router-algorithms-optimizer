@@ -183,7 +183,7 @@ def swap(
     amount_specified: int,
     sqrt_price_limit_x96: int,
     *,
-    skip_empty_spans: bool = True,
+    skip_empty_spans: bool = False,
 ) -> SwapOutcome:
     """Migrated pool `swap` for Exact Input (`amount_specified > 0`).
 
@@ -191,8 +191,12 @@ def swap(
     traversal needs uncollected bitmap/tick state, and `UnsupportedState` for an
     unadmitted source. Never mutates `state`.
 
-    `skip_empty_spans` (WHI-1504) executes the loop iterations of a provably empty
-    zero-liquidity span without their per-step math. With `liquidity == 0` an
+    `skip_empty_spans` (WHI-1504, experimental, **off by default**) executes the loop
+    iterations of a provably empty zero-liquidity span without their per-step math.
+    Every ordinary caller (`quote_exact_in`, the evaluator, all solvers) runs the
+    reference loop; only differential tests and the L02 experiment tooling select
+    `True`. Its performance adoption is deferred to WHI-1510 (owner amendment
+    2026-09-26). With `liquidity == 0` an
     iteration whose target is an *uninitialized* tick strictly before the price limit
     has `computeSwapStep` return `(sqrtPriceNext, 0, 0, 0)` (every delta is a
     multiple of zero liquidity; `fee < 1e6` keeps the fee `mulDivRoundingUp` from
@@ -204,8 +208,8 @@ def swap(
     tick, the price limit and the MIN/MAX tick clamp, where the unchanged reference
     iteration runs. `fee >= 1e6` makes every zero-liquidity iteration revert, so
     such a pool is never skipped (a skipped word read could otherwise turn that
-    revert into `MissingState`). `False` is the unmodified reference loop,
-    kept for differential tests and paired measurement."""
+    revert into `MissingState`). `False` (the default) is the unmodified reference
+    loop."""
     source = _source(state)
     if amount_specified == 0:
         raise SolidityRevert("AS")

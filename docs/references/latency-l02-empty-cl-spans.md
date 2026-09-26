@@ -1,13 +1,22 @@
 # L02 — exact skipping of empty zero-liquidity CL spans (WHI-1504)
 
-Status: **exactness established, performance adoption `inconclusive` (host-load blocker).**
-Both L01 attempts were blocked by host load:
+Status: **integrated default-off for correctness, by the owner's staged-integration
+amendment of 2026-09-26.**
 
-- The first back-to-back pair (§5.2) is complete but load-contaminated.
-- A second, separately authorized pair (§5.3) stopped during its baseline when the load
-  came back, before the candidate ran.
+- The fast path is `pools.concentrated.swap(..., skip_empty_spans=True)`.
+- Every ordinary caller (`quote_exact_in`, the evaluator, all six solvers) runs the
+  unchanged reference loop.
+- The performance adopt/reject decision is **deferred to WHI-1510**. It is still
+  `inconclusive`: every L01 attempt here was blocked by host load.
+  - The first back-to-back pair (§5.2) is complete but load-contaminated.
+  - The second and third pairs (§5.3, §5.4) stopped during their baselines, before the
+    candidate ran.
+- This document makes **no** adoption claim.
 
-Candidate code `8c7337a`. The branch head `4e48b72` has identical L01 code-path ids.
+The measured candidate code is `8c7337a`, where the fast path was the default (§5). Every
+timing and identity below is exactly as recorded on that source. The default-off
+integration commit changes only the default and the explicit selection in the tests and
+tooling; the skipping algorithm itself is unchanged.
 Baseline `299b88a` (release 0.1.2 `dev` base, WHI-1503
 merged). Protocol L01 v1 / L01-SB v1, unchanged. Research key L02
 ([latency-optimization-research.md](latency-optimization-research.md) §3.2).
@@ -21,10 +30,11 @@ merged). Protocol L01 v1 / L01-SB v1, unchanged. Research key L02
 | Is it faster on the measured workload? | Every paired measurement points the same way (in-process ABBA held-out solves 27–88 % faster; L01 held-out solve improvements 44–81 %, cold charged `not_slower` everywhere). **But none of that is L01 adopt evidence**, because both L01 experiments are load-contaminated | §5 |
 | L01 verdict | `inconclusive`. The only reason: `host load exceeded the protocol threshold in an experiment`. There are no coverage, determinism, semantic, sufficient-budget or work-counter problems | [comparison](latency-l02/compare-exact-08a7dfe8-e47f54fe.md) |
 
-That is **not** "reject for performance", and it is not an adoption either. Until a clean
-comparator verdict exists, this fast path must not be merged as an adopted default (the
-parent's decision). If a clean pair ever rejects it, the unconditional default must go.
-The protocol's minimum next step is still one back-to-back L01 pair on a quiet host (§6).
+That is **not** "reject for performance", and it is not an adoption either. So the fast
+path is integrated **off by default** and is used only where it is selected explicitly
+(differential tests, L02 tooling). Turning it on for ordinary quotes needs a clean L01
+comparator verdict, which WHI-1510 now owns. If a clean pair rejects the fast path, it
+stays off, or is removed.
 
 - No threshold was lowered.
 - No run was discarded.
@@ -59,8 +69,18 @@ no crossing or LM-hook call. The fast path:
 
 It never skips a positive-liquidity boundary. It adds no index, cache, preparation step or
 retained memory; its extra state is a few per-call locals. Inputs stay immutable.
-`swap(..., skip_empty_spans=False)` is the unmodified reference loop. It is kept only as the
-differential oracle and paired-measurement control. `quote_exact_in` always uses the default.
+`swap(..., skip_empty_spans=False)` is the **default**, the unmodified reference loop. The
+fast path is only selected explicitly with `skip_empty_spans=True`: by the differential
+tests, and by `tools/latency/l02_empty_spans.py` for its candidate side (the reference side
+passes `False` explicitly too). `quote_exact_in` and every solver use the default.
+
+The following test checks this through executed `computeSwapStep` calls, because
+identical results cannot show which loop ran: `test_ordinary_callers_run_the_reference_loop_and_only_explicit_true_skips`.
+
+- Default `swap`, `pools.concentrated.quote_exact_in` and the `pools.quote` dispatcher
+  execute every logical iteration.
+- An explicit `True` executes fewer iterations, with an identical outcome.
+- Forcing the default back to `True` makes this test fail.
 
 An earlier word-by-word version (`3102755`) still called the bitmap search for every
 skipped word. It was superseded before any L01 run.
@@ -79,7 +99,9 @@ pairs (§5.1) also used held-out cases.
 ## 3. Correctness evidence
 
 **Deployed-bytecode fixtures.** The existing replays in `tests/pools/test_concentrated.py`
-now run the fast path by default. They are independent Mantle-fork evidence for all three
+validate the default reference loop. The fast path is tied to them through the
+explicit-`True` differential on every fixture state (below). While the fast path was the
+default (`8c7337a`), the same replays ran it directly and passed. They are independent Mantle-fork evidence for all three
 admitted sources (Uniswap v3 / Agni / FusionX; real pools plus full-range controlled
 pools), covering exhaustion to the bound both ways. The fixtures still match amounts,
 next state, changed ticks and QuoterV2.
@@ -106,8 +128,8 @@ data), crossed ticks, logical `steps` and LM-hook calls:
 **Mutation check.** 20 single-line mutants of the fast path were tried
 ([`latency-l02/mutants.sh.txt`](latency-l02/mutants.sh.txt)). Each broke one of: the
 initialized/limit/range/nonzero conditions, the step count, the resulting tick, the span
-start, the liquidity/fee gates, the oneForZero bound, the default, or the checked first
-read. All 20 are killed by `tests/pools/test_concentrated.py` on `8c7337a`. In every probe,
+start, the liquidity/fee gates, the oneForZero bound, the then-default (`True` at
+`8c7337a`), or the checked first read. All 20 are killed by `tests/pools/test_concentrated.py` on `8c7337a`. In every probe,
 pytest's summary line read `1 failed`, and none timed out under the per-probe
 `timeout 120`. That run printed only the summary line and did not capture exit
 statuses; the committed transcript now prints them.
@@ -292,16 +314,36 @@ Nothing was retried. The raw data, manifest (`pair-manifest.jsonl`), log and rea
 note are kept under the gitignored `data/latency-l02/l01-pair2/`. The first pair's
 runs are untouched.
 
+### 5.4 Third pair (owner-reserved window; interrupted, no verdict)
+
+This attempt came after the owner paused the competing WHI-1516 rehearsal jobs.
+
+- **Readiness:** 14:33:06–14:34:51 UTC, 1-min load 4.60, 4.23, 3.77, 3.00.
+- **Baseline run:** experiment `20260926T143509787395Z-4e49878d` on `299b88a`, clean. It
+  completed its full-source matrix run (521 s) and sentinel run (55 s).
+- **Load breach:** during the `sor_compatible` matrix, 4 of 287 load samples exceeded
+  5.0 (max 5.174 at 14:46:05 UTC). No known heavy intruder was running; the load was the
+  ambient desktop plus the measured worker.
+- **Stop:** by the supervisor's decision it was stopped with SIGTERM at 14:51:00 UTC and
+  finalized as `interrupted`. The candidate, L01-SB runs and comparison never ran.
+- **Evidence:** raw data and `CHECKPOINT.txt` are kept under the gitignored
+  `data/latency-l02/l01-pair3/`.
+
 ## 6. Limitations and next step
 
-- **Blocker:** there is no uncontaminated baseline/candidate pair. Two attempts were
-  blocked by other users' load: §5.2 was contaminated, and §5.3 was interrupted within
-  11 minutes.
-- **What a verdict needs:** a host that is **guaranteed quiet**, meaning other heavy jobs
-  are paused for the whole window, not just a good readiness sample. On such a host,
-  run `run-l01-pair2.sh` once: baseline `299b88a` L01 + L01-SB, then candidate L01 +
-  L01-SB, back to back. That is about 60 minutes, going by the 57 minutes of §5.2. It
-  is the only run that can produce an `adopt_eligible` or `reject` verdict.
+- **Blocker (moved to WHI-1510):** there is no uncontaminated baseline/candidate pair.
+  §5.2 was contaminated; §5.3 and §5.4 were interrupted. The owner's 2026-09-26 amendment
+  integrates the implementation default-off and moves the adopt/reject decision to
+  WHI-1510.
+- **What WHI-1510 must measure.** On the default-off integration, an ordinary L01 run
+  measures the **reference** loop. A valid candidate measurement must therefore do one of:
+  - measure a source whose CL quotes use the fast path, such as `8c7337a` or an explicit
+    default-on candidate commit, with its own source identity; or
+  - flip the default inside a declared experiment identity.
+
+  Either way the run is back to back with the baseline, and each side has its own L01-SB,
+  on a host that is actually quiet. Only such a run can produce `adopt_eligible` or
+  `reject`.
 - A/A noise floors of the contaminated baseline are inflated (incremental graph 0.255 wall);
   they are not valid noise estimates.
 - One snapshot and block (101082044), the L01 matrix, and one shared M2 Pro host: this is

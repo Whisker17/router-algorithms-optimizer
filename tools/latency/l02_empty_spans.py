@@ -1,8 +1,9 @@
 """WHI-1504 / L02 experiment evidence: exact skipping of empty zero-liquidity CL spans.
 
 Not a production module and not part of the L01 driver. It solves L01's derived bundles
-in-process, once with the unmodified reference CL loop (`swap(..., skip_empty_spans=False)`)
-and once with the default fast path, and records:
+in-process, once with the unmodified reference CL loop (`swap(..., skip_empty_spans=False)`,
+the default) and once with the experimental fast path selected explicitly
+(`skip_empty_spans=True`), and records:
 
     work    per (bundle, algorithm, case): the full runner record of both variants
             (`benchmark.runner._independent_record`, the same independent evaluation the
@@ -60,6 +61,11 @@ WORK = ("quotes", "candidates_considered", "candidates_truncated", "search")
 ORIGINAL_SWAP = cl.swap
 
 
+def _explicit_swap(reference: bool) -> Callable[..., Any]:
+    """Both variants select the toggle explicitly; neither relies on the default."""
+    return functools.partial(ORIGINAL_SWAP, skip_empty_spans=not reference)
+
+
 class Counters:
     def __init__(self) -> None:
         self.c = dict.fromkeys(
@@ -70,11 +76,7 @@ class Counters:
     @contextmanager
     def installed(self, reference: bool) -> Iterator[None]:
         c = self.c
-        swap = (
-            functools.partial(ORIGINAL_SWAP, skip_empty_spans=False)
-            if reference
-            else (ORIGINAL_SWAP)
-        )
+        swap = _explicit_swap(reference)
         step, ratio = cl_math.compute_swap_step_exact_in, cl_math.get_sqrt_ratio_at_tick
         search = cl_math.next_initialized_tick_within_one_word
 
@@ -115,11 +117,8 @@ class Counters:
 
 @contextmanager
 def variant(reference: bool) -> Iterator[None]:
-    """Uninstrumented: only the reference toggle is patched."""
-    if not reference:
-        yield
-        return
-    cl.swap = functools.partial(ORIGINAL_SWAP, skip_empty_spans=False)  # type: ignore[assignment]
+    """Uninstrumented: only the explicit toggle is patched, for both variants."""
+    cl.swap = _explicit_swap(reference)  # type: ignore[assignment]
     try:
         yield
     finally:
