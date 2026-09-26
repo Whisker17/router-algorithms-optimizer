@@ -8,6 +8,11 @@ the upstream skills, the spec of record here is a full PRD: **`docs/DESIGN.md`**
 
 ## Before exploring, read these
 
+For current implementation status, cross-check `AGENTS.md`, the actual source tree and
+`docs/references/v1-acceptance.md`. DESIGN's original "not implemented yet" annotations
+are design-time history; its requirements remain the product contract. A process-template
+sync must not replace that contract or regenerate its frozen business evidence.
+
 - **`docs/DESIGN.md`** — background, scope, requirements, architecture, milestones,
   rejected alternatives (§7), and known risks (§8). This is the single source of truth
   for *why* the project is scoped the way it is; do not re-litigate a decision in §7
