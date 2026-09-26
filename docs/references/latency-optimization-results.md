@@ -166,7 +166,7 @@ that retained partial `299b88a` run enters no verdict here.
 ### 3.2 Exactness, defaults and state (load-independent)
 
 - **The default path is unchanged.** R (`2fda208`) uses the L01 derived bundle hashes, and all
-  900 of its records (both orders, both cohorts, cold, sentinel) have semantic fields identical to
+  750 of its records (both orders, both cohorts, cold, sentinel) have semantic fields identical to
   the L01 reference `d5061563` (`bbda6e2`): [`r-vs-l01-d5061563.json`](latency-results/r-vs-l01-d5061563.json).
 - **Every control is exact through the spawned-worker path.** In all seven exact comparisons
   (L02, L03, L04, L05, both cumulative, H2→H4): 0 semantic mismatches in every stage, order,
@@ -288,7 +288,7 @@ both):
 
 | Experiment | Disposition | Evidence / reason |
 | --- | --- | --- |
-| Six reference algorithms incl. pinned `uni_sor_port` | **Unchanged and available** | R ≡ L01 reference on 900 records; no default, profile, pin or golden changed |
+| Six reference algorithms incl. pinned `uni_sor_port` | **Unchanged and available** | R ≡ L01 reference on 750 records; no default, profile, pin or golden changed |
 | L02 empty-span skip (`skip_empty_spans=True`) | **Not adopted (inconclusive: host load)**; stays explicit, default-off | exact in every stage; comparator reason is load only |
 | L02 nonzero-bitmap-word index | Not built | only relevant after an L02 adoption, which did not happen |
 | L03 tick/bin price memo (per solve, 16,384 / 4,096) | **Not adopted (inconclusive: host load)**; stays explicit, default-off | exact; E2 ran at load ≤ 34.99, so its slower-looking readings are not interpretable |
