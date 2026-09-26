@@ -263,7 +263,7 @@ speedup evidence.
 
 **Experiment `20260926T090434484129Z-d5061563`** (complete; source `bbda6e2`, clean;
 protocol sha256 `961fb522…7f1b`; all stages; 2026-09-26 09:04–10:04 UTC). Summary
-regenerated from its saved records by the report fixed in this issue:
+regenerated (at `2147891`) from its saved records by the report fixed in this issue:
 [`latency-baseline/20260926T090434484129Z-d5061563.md`](latency-baseline/20260926T090434484129Z-d5061563.md)
 (its header names the measured and the generating source separately), and its A/A exact
 comparison with itself:
@@ -271,8 +271,11 @@ comparison with itself:
 
 - **Load-contaminated:** max sampled 1-minute load 161.4 against the 5.0 threshold (shared
   host running unrelated builds). Its timings, A/A noise floors and cold charged times are
-  diagnostic only and cannot support any adopt verdict (the A/A comparison is
-  `inconclusive` for that reason).
+  diagnostic only and cannot support any adopt verdict.
+- Its A/A exact comparison is `inconclusive`. The first reason is the budget-bound record,
+  which has no sufficient-budget evidence from the same source (`bbda6e2` predates L01-SB);
+  identical bounded outputs are not accepted as exactness. The contaminated load would
+  keep it `inconclusive` anyway.
 - **Semantic reference (load-independent):** complete coverage; fixed ≡ reverse in both
   cohorts, cold ≡ warm on the full-source matrix and sentinel, every record's attempts
   consistent; every scheduled status retained (`no_route` 11 of 144 full-source and 16 of
@@ -294,6 +297,23 @@ Same protocol sha256; all four derived bundle hashes equal the first experiment'
 `main.py quote` invocations, exit 0, exactly one solve per algorithm each, and each
 invocation's saved run has no `compare_runs` mismatch with the corresponding `bbda6e2`
 invocation. Also load-contaminated (max 11.3), so its CLI wall times are diagnostic only.
+
+**Sufficient-budget evidence `20260926T111940903706Z-c52820e8`** (L01-SB v1, sha256
+`4059506d…b43b`; source `2147891`, clean; 2026-09-26 11:19 UTC; 1-minute load ≤ 4.9, not
+contaminated, semantic evidence only):
+[`latency-baseline/20260926T111940903706Z-c52820e8-sufficient.md`](latency-baseline/20260926T111940903706Z-c52820e8-sufficient.md).
+The bounded replay of the only budget-bound baseline record re-solves
+`incremental_graph` / `bnd-78c1b0-201eba-round_at` on the same derived full-source matrix
+bundle (`72f4f4e4…`) with the quote cap removed.
+- Result: two consistent attempts, `ok`, 51,052 quotes; not budget-bound
+  (`incremental_status` `ok` instead of `truncated`).
+- Status, evaluation, score, error, limit_hit and solver-reported fields are identical to
+  the fixed-budget record. The fixed budget only cut the incremental search, whose
+  single_path fallback plan was already the best.
+- That is fixed-budget completion and is reported separately. Because the evidence comes
+  from another source than `bbda6e2`, it cannot stand in for that experiment in
+  `compare --sufficient`: the pin check reports exactly that.
+- Every future baseline/candidate pair needs its own same-source run (seconds).
 
 **Experiment `20260926T100709788238Z-b23b2ea5`** — INTERRUPTED by a user-directed stop
 during its fifth timing run (the `bbda6e2` driver had no SIGTERM handler, so its
