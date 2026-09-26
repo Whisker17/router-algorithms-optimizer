@@ -343,6 +343,34 @@ def test_experiment_over_the_corpus_fixture_records_every_stage(tmp_path: Path) 
     assert result["semantic_mismatches"] == [] and result["work_differences"] == []
     assert result["coverage_problems"] == {"baseline": [], "candidate": [], "pairing": []}
     assert result["verdict"] == "inconclusive"
+    # Sufficient-budget re-solve of one listed record, same derived bundle, raised budget.
+    sufficient = tmp_path / "sufficient.yaml"
+    sufficient.write_text(yaml.safe_dump({
+        "schema": "latency-sufficient-budget/1", "key": "T-SB", "version": 1,
+        "protocol": {"path": str(protocol), "sha256": sha256_file(protocol)},
+        "budget": {"time_limit_seconds": 60, "max_quotes": None, "max_candidates": None},
+        "measurement": {"warmup": 0, "repeats": 2},
+        "cases": [{"cohort": "full_source", "case": "emp-09bc4e-779ded-low-1",
+                   "algorithms": ["single_path"], "reason": "test"}],
+    }))  # fmt: skip
+    sb_dir = latency.run_sufficient_budget(
+        sufficient, str(FIXTURE), tmp_path / "sb", allow_dirty=True, echo=lambda _: None
+    )
+    evidence = report.load_sufficient(sb_dir)
+    assert evidence.document["budget"]["max_quotes"] is None
+    (record,) = evidence.runs["full_source"].records
+    assert record["measurement"]["attempts_completed"] == 2 and not report.budget_bound(record)
+    assert load_manifest(evidence.runs["full_source"].path).resolved_profile["budget"][
+        "max_quotes"
+    ] is None  # fmt: skip
+    experiment = report.load_experiment(out)
+    assert report.sufficient_problems(evidence, experiment) == []  # same source and bundle
+    rows = report.summarize_sufficient(evidence, experiment)["records"]
+    assert rows[0]["fixed_budget"]["status"] == rows[0]["sufficient_budget"]["status"]
+    assert rows[0]["differs_from_fixed_budget_in"] == ""  # not bound: identical semantics
+    paired = report.compare(out, out, lane="exact", sufficient=(sb_dir, sb_dir))
+    assert paired["bounded_exactness"]["required"] == 0
+    assert paired["bounded_exactness"]["evidence_problems"]["baseline"] == []
 
 
 def test_sigterm_finalizes_the_experiment_as_interrupted(
@@ -392,7 +420,7 @@ def _t(verdict: str) -> dict[str, Any]:
 
 CLEAN_FACTS: dict[str, Any] = dict(
     lane="exact", candidate_internal=0, semantic_mismatches=0, coverage_problems=0,
-    baseline_internal=0, fixed_budget_differences=0, evidence_clean=True, contaminated=False,
+    baseline_internal=0, unproven_bounded=0, evidence_clean=True, contaminated=False,
     timing={"a": _t("faster")}, charged={"a": _t("not_slower")},
 )  # fmt: skip
 
@@ -405,8 +433,11 @@ CLEAN_FACTS: dict[str, Any] = dict(
         (dict(candidate_internal=1, lane="heuristic"), "reject"),
         (dict(coverage_problems=1), "inconclusive"),
         (dict(baseline_internal=1), "inconclusive"),
-        (dict(fixed_budget_differences=1), "inconclusive"),
-        (dict(fixed_budget_differences=1, lane="heuristic"), "opt_in_only"),
+        (dict(unproven_bounded=1), "inconclusive"),
+        (dict(unproven_bounded=1, lane="heuristic"), "opt_in_only"),
+        (dict(charged={"a": _t("lost_samples")}), "reject"),
+        (dict(charged={}), "inconclusive"),  # faster without any cold charged evidence
+        (dict(charged={"a": _t("insufficient_cases")}), "inconclusive"),
         (dict(timing={"a": _t("faster"), "b": _t("slower")}), "reject"),
         (dict(timing={"a": _t("faster"), "b": _t("lost_samples")}), "reject"),
         (dict(charged={"a": _t("slower")}), "reject"),
@@ -478,15 +509,20 @@ STAGE_ORDERS = (("timing", "fixed"), ("timing", "reverse"), ("cold", "fixed"))
 RUN_KEYS = [(stage, order, label) for label in CASES for stage, order in STAGE_ORDERS]
 
 
-def _rec(algorithm: str, case: str, wall: float, **extra: Any) -> dict[str, Any]:
+def _rec(
+    algorithm: str, case: str, wall: float, *, samples: int = 5, warmup: int = 1, **extra: Any
+) -> dict[str, Any]:
+    """A record as the driver writes it: `warmup` + `samples` attempts all returned."""
     record: dict[str, Any] = {
         "algorithm": algorithm, "case_id": case, "status": "ok", "score": "1000",
         "evaluation": {"gross_output": "1000"}, "error": None, "limit_hit": None,
         "solver_reported": {"status": "ok"}, "quotes": {"attempted": 5, "counted": 5},
         "candidates_considered": 1, "candidates_truncated": 0, "search": {"truncated_by": None},
         "measurement": {"seed": 1, "attempts_consistent": True, "prepare_event": 0,
-                        "solve_seconds": [wall] * 5, "solve_cpu_seconds": [wall] * 5,
-                        "transport_seconds": [0.001] * 5, "evaluation_seconds": 0.001},
+                        "warmup": warmup, "repeats": samples,
+                        "attempts_completed": warmup + samples,
+                        "solve_seconds": [wall] * samples, "solve_cpu_seconds": [wall] * samples,
+                        "transport_seconds": [0.001] * samples, "evaluation_seconds": 0.001},
     }  # fmt: skip
     record.update(extra)
     return record
@@ -503,21 +539,23 @@ def _experiment(wall: float) -> report.Experiment:
     runs = {}
     for stage, order, label in RUN_KEYS:
         schedule = [[a, c] for a in ALGS for c in CASES[label]]
+        attempts = {"samples": 1, "warmup": 0} if stage == "cold" else {"samples": 5, "warmup": 1}
         manifest = SimpleNamespace(
             algorithms=ALGS, state="complete", bundle_hash=f"hash-{label}",
             scheduled_count=len(schedule),
-            measurement={"schedule": schedule[::-1] if order == "reverse" else schedule},
+            measurement={"schedule": schedule[::-1] if order == "reverse" else schedule,
+                         "warmup": attempts["warmup"], "repeats": attempts["samples"]},
             prepare_events=({"index": 0, "algorithm": "direct", "status": "ok",
                              "startup_seconds": 0.2, "prepare_seconds": 0.01},),
         )  # fmt: skip
-        records = [_rec(a, c, wall) for a, c in schedule]
+        records = [_rec(a, c, wall, **attempts) for a, c in schedule]
         runs[(stage, order, label)] = report.RunView({}, manifest, records, [], Path(stage))  # type: ignore[arg-type]
     document = {
         "experiment_id": f"e{wall}", "partial": False, "stages_requested": list(latency.STAGES),
         "protocol": {"sha256": "p", "document": protocol}, "algorithms": list(ALGS),
         "bundles": {label: {"bundle_hash": f"hash-{label}"} for label in CASES},
         "source": {"git_revision": "abc", "git_dirty": False}, "load": {"contaminated": False},
-        "quote_cli": [],
+        "quote_cli": [], "profile": {"path": "config/daily_gross.yaml", "sha256": "x"},
     }  # fmt: skip
     return report.Experiment(Path("."), document, runs)
 
@@ -533,7 +571,9 @@ COLD, FIXED, REVERSE = (("cold", "fixed", "full_source/matrix"),
 
 def _failed(record: dict[str, Any], status: str = "algorithm_error") -> None:
     record.update(status=status, score=None, evaluation=None, error="boom")
-    record["measurement"].update(solve_seconds=[], solve_cpu_seconds=[], transport_seconds=[])
+    m = record["measurement"]  # the first measured attempt failed
+    m.update(solve_seconds=[], solve_cpu_seconds=[], transport_seconds=[],
+             attempts_completed=m["warmup"])  # fmt: skip
 
 
 def _cold_error(e: report.Experiment) -> None:
@@ -563,6 +603,26 @@ def _budget_bound(e: report.Experiment) -> None:  # truncated by the quote cap, 
         )
 
 
+def _one_sample(e: report.Experiment) -> None:  # 1 sample where the protocol schedules 5
+    for run in e.runs.values():
+        for record in run.records:
+            for key in report.SAMPLE_FIELDS:
+                record["measurement"][key] = record["measurement"][key][:1]
+
+
+def _no_cold_cost(e: report.Experiment) -> None:  # cold solves without their charge
+    for key, run in e.runs.items():
+        if key[0] == "cold":
+            for record in run.records:
+                record["measurement"].update(solve_seconds=[], solve_cpu_seconds=[])
+
+
+def _all_bound(e: report.Experiment) -> None:  # identical outputs, all cut by the budget
+    for run in e.runs.values():
+        for record in run.records:
+            record["search"]["truncated_by"] = "max_quotes"
+
+
 def _prepare_moved(e: report.Experiment) -> None:  # 2 s of work moved into prepare
     for key in (COLD,):
         e.runs[key].manifest.prepare_events[0].update(startup_seconds=2.2, prepare_seconds=2.0)
@@ -578,6 +638,9 @@ def _prepare_moved(e: report.Experiment) -> None:  # 2 s of work moved into prep
         (_missing_record, "inconclusive", lambda r: r["coverage_problems"]["candidate"], True),
         (_missing_run, "inconclusive", lambda r: r["coverage_problems"]["candidate"], True),
         (_budget_bound, "inconclusive", lambda r: r["fixed_budget_differences"], True),
+        (_one_sample, "inconclusive", lambda r: r["coverage_problems"]["candidate"], True),
+        (_no_cold_cost, "inconclusive", lambda r: r["coverage_problems"]["candidate"], True),
+        (_all_bound, "inconclusive", lambda r: r["bounded_exactness"]["unproven"], True),
         (_prepare_moved, "reject",  # a slower baseline prepare is fine: not symmetric
          lambda r: r["charged"]["full_source/matrix direct"]["verdict"] == "slower", False),
     ],
@@ -633,3 +696,124 @@ def test_algorithm_pairing_cannot_drop_algorithms() -> None:
     candidate.document["algorithms"] = ["direct"]  # a candidate that skipped an algorithm
     with pytest.raises(report.LatencyReportError, match="never compared"):
         report.compare_experiments(base, candidate, lane="exact")
+
+
+def test_sample_completeness_follows_the_declared_attempts() -> None:
+    complete = _rec("direct", "c", 1.0)  # warmup 1 + 5 measured, all returned
+    assert report.sample_problem(complete, 1, 5) is None
+    short = _rec("direct", "c", 1.0)
+    short["measurement"]["transport_seconds"] = [0.001]
+    assert "samples" in (report.sample_problem(short, 1, 5) or "")
+    assert "declares" in (report.sample_problem(complete, 1, 3) or "")  # a different schedule
+    failed = _rec("direct", "c", 1.0)
+    _failed(failed, "timeout")  # the first measured attempt was killed: no sample is right
+    assert report.sample_problem(failed, 1, 5) is None
+    early_ok = _rec("direct", "c", 1.0)
+    early_ok["measurement"]["attempts_completed"] = 3  # only a failure may stop early
+    assert "attempt(s) completed" in (report.sample_problem(early_ok, 1, 5) or "")
+
+
+def test_a_lost_cold_charge_is_a_rejection_not_a_skip() -> None:
+    base, candidate = _experiment(1.0), _experiment(0.5)
+    _record(candidate, COLD, "single_path", "h1")["measurement"]["prepare_event"] = 99
+    verdict = report._charged_verdict(
+        base.runs[COLD], candidate.runs[COLD], "single_path", "single_path", base.split_of,
+        base.acceptance, 0.1,
+    )  # fmt: skip
+    assert verdict["verdict"] == "lost_samples" and verdict["lost_decision_cases"] == ["h1"]
+    result = report.compare_experiments(base, candidate, lane="exact")
+    assert result["verdict"] == "inconclusive"
+    assert any("cold charge evidence" in m for m in result["coverage_problems"]["candidate"])
+
+
+# ------------------------------------------------------------ sufficient-budget exactness
+
+BOUND = ("full_source/matrix", "single_path", "h2")
+
+
+def _bound_pair() -> tuple[report.Experiment, report.Experiment]:
+    """Both sides: single_path/h2 cut by the quote cap with IDENTICAL outputs."""
+    base, candidate = _experiment(1.0), _experiment(0.5)
+    for exp in (base, candidate):
+        for key in (FIXED, REVERSE, COLD):
+            _record(exp, key, "single_path", "h2")["search"] = {"truncated_by": "max_quotes"}
+    return base, candidate
+
+
+def _evidence(exp: report.Experiment, *records: dict[str, Any]) -> report.SufficientEvidence:
+    schedule = [[r["algorithm"], r["case_id"]] for r in records]
+    manifest = SimpleNamespace(bundle_hash="hash-full_source/matrix", state="complete",
+                               measurement={"schedule": schedule})  # fmt: skip
+    document = {
+        "protocol": {"sha256": exp.document["protocol"]["sha256"]},
+        "source": dict(exp.document["source"]), "profile": dict(exp.document["profile"]),
+        "bundles": {"full_source/matrix": {"bundle_hash": "hash-full_source/matrix"}},
+        "sufficient_budget": {"sha256": "sb"},
+    }  # fmt: skip
+    run = report.RunView({}, manifest, list(records), [], Path("sb"))  # type: ignore[arg-type]
+    return report.SufficientEvidence(Path("."), document, {"full_source": run})
+
+
+def _unbounded(**extra: Any) -> dict[str, Any]:  # re-solved with the quote cap raised
+    return _rec("single_path", "h2", 2.0, samples=2, warmup=0, **extra)
+
+
+def _still_bound() -> dict[str, Any]:
+    return _unbounded(search={"truncated_by": "max_quotes"})
+
+
+def _inconsistent_sb() -> dict[str, Any]:
+    record = _unbounded()
+    record["measurement"]["attempts_consistent"] = False
+    return record
+
+
+@pytest.mark.parametrize(
+    ("base_sb", "cand_sb", "verdict", "outcome"),
+    [
+        (None, None, "inconclusive", "unproven"),  # identical bounded outputs are not enough
+        (_unbounded, _unbounded, "adopt_eligible", "established"),
+        (_unbounded, lambda: _unbounded(score="999"), "reject", "mismatches"),
+        (_unbounded, _still_bound, "inconclusive", "unproven"),
+        (_unbounded, _inconsistent_sb, "inconclusive", "unproven"),
+        (_unbounded, lambda: _rec("direct", "h2", 1.0, samples=2, warmup=0), "inconclusive",
+         "unproven"),  # the bound record was not re-solved
+    ],
+)  # fmt: skip
+def test_budget_bound_exactness_needs_sufficient_budget_evidence(
+    base_sb: Any, cand_sb: Any, verdict: str, outcome: str
+) -> None:
+    base, candidate = _bound_pair()
+    evidence = None
+    if base_sb is not None:
+        evidence = (_evidence(base, base_sb()), _evidence(candidate, cand_sb()))
+    result = report.compare_experiments(base, candidate, lane="exact", sufficient=evidence)
+    assert result["verdict"] == verdict, result["reasons"]
+    bounded = result["bounded_exactness"]
+    assert bounded["required"] == 1 and len(bounded[outcome]) == 1
+    assert result["fixed_budget_differences"] == []  # the bounded outputs were identical
+
+
+def test_sufficient_evidence_is_pinned_to_each_experiments_source_and_bundle() -> None:
+    base, candidate = _bound_pair()
+    stale = _evidence(candidate, _unbounded())
+    stale.document["source"]["git_revision"] = "older"  # measured on another source
+    result = report.compare_experiments(
+        base, candidate, lane="exact", sufficient=(_evidence(base, _unbounded()), stale)
+    )
+    assert result["verdict"] == "inconclusive"
+    assert result["bounded_exactness"]["evidence_problems"]["candidate"]
+    other = _evidence(candidate, _unbounded())
+    other.runs["full_source"].manifest.bundle_hash = "another-bundle"  # type: ignore[misc]
+    assert report.sufficient_problems(other, candidate)
+
+
+def test_fixed_budget_completion_is_reported_apart_from_sufficient_exactness() -> None:
+    base, candidate = _bound_pair()
+    for key in (FIXED, REVERSE, COLD):  # the candidate completes more under the fixed cap
+        _record(candidate, key, "single_path", "h2").update(score="1001")
+    evidence = (_evidence(base, _unbounded()), _evidence(candidate, _unbounded()))
+    result = report.compare_experiments(base, candidate, lane="exact", sufficient=evidence)
+    assert result["verdict"] == "adopt_eligible", result["reasons"]
+    assert len(result["fixed_budget_differences"]) == 3  # kept, per stage/order
+    assert result["bounded_exactness"]["established"]

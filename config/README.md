@@ -105,3 +105,7 @@ No loader code ships with the template — write it when the first config file l
   the acceptance rules. Read by `python -m benchmark.latency` and `python -m report.latency`;
   it never edits the profile it pins. A changed value is a new protocol `version`. See
   `docs/references/latency-baseline.md`.
+- `latency/l01-sufficient-budget.yaml` — its sufficient-budget companion (L01-SB): the
+  budget-bound records re-solved with the quote cap removed so exact comparisons can
+  establish exactness beyond what the fixed budget completed. Read by
+  `python -m benchmark.latency sufficient` and `report.latency compare --sufficient`.

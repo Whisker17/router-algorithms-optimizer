@@ -1,0 +1,43 @@
+# L01-SB (WHI-1503): the sufficient-budget companion of the L01 protocol. Exact-lane
+# identity on a record whose search the fixed 50,000-quote budget cut (a limit hit, a
+# timeout or a declared `search.truncated_by`) says only that both sides completed the
+# same prefix; it does not establish exactness of the search. `report.latency compare
+# --sufficient BASE_SB CAND_SB` requires, for EVERY budget-bound record, a re-solve of it
+# under this budget in both experiments' own source, on the same derived bundle, that is
+# not budget-bound and is semantically identical. Records not listed here have no such
+# evidence, so an exact comparison touching them stays inconclusive (fail closed).
+# Changing a value is a new `version` (and sha256). Read by `python -m benchmark.latency
+# sufficient` and `python -m report.latency`; docs/references/latency-baseline.md §7.
+schema: latency-sufficient-budget/1
+key: L01-SB
+version: 1
+
+# The L01 protocol whose derived matrix bundles, pinned parent bundle and pinned
+# config/daily_gross.yaml profile are reused unchanged (only the budget below replaces the
+# profile's fixed budget for these records).
+protocol:
+  path: config/latency/l01.yaml
+  sha256: 961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b
+
+# No quote cap; a wall limit 5x the profile's 120 s. Sufficiency is not assumed: a record
+# that still hits a limit or reports a declared truncation is not evidence.
+budget:
+  time_limit_seconds: 600
+  max_quotes: null
+  max_candidates: null
+
+# One warm worker per algorithm, fixed order; two attempts so attempt consistency is checked.
+measurement:
+  warmup: 0
+  repeats: 2
+
+# Every budget-bound record of the L01 baseline (experiment 20260926T090434484129Z-d5061563:
+# the only one in either cohort's matrix or sentinel).
+cases:
+  - cohort: full_source
+    case: bnd-78c1b0-201eba-round_at
+    algorithms: [incremental_graph]
+    reason: >-
+      CL tick-rounding boundary; incremental_graph stops at the 50,000-quote cap
+      (search.truncated_by max_quotes, incremental_status truncated) and falls back to its
+      single_path plan under the fixed budget.

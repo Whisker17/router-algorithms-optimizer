@@ -35,6 +35,11 @@ window). Solve time excludes worker start-up (process start -> ready, which incl
 prepare; prepare is also reported alone), IPC and the parent's independent final
 evaluation, each recorded separately.
 
+`python -m benchmark.latency sufficient --sufficient config/latency/l01-sufficient-budget.yaml
+--bundle ... --out ...` re-solves only the listed budget-bound records on the same derived
+matrix bundles and pinned profile with the budget raised (the sufficient-budget evidence
+exact comparisons need; docs/references/latency-baseline.md §7).
+
 SIGTERM is handled like Ctrl-C: the current run's unfinished cases are recorded as
 `cancelled`, its manifest and the experiment are finalized as `interrupted` (never
 `complete`), and the command exits 130.
@@ -57,7 +62,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from benchmark.profile import RunProfile, load_profile
+from benchmark.profile import ProfileError, RunProfile, _parse_budget, load_profile
 from benchmark.results import (
     REPO_ROOT,
     STATE_COMPLETE,
@@ -81,6 +86,7 @@ from benchmark.runner import (
     _WorkerSlot,
 )
 from benchmark.worker import AttemptOutcome, SolveRequest, Worker
+from routing.algorithms.base import Budget
 from routing.algorithms.registry import get_algorithm
 from snapshot.bundle import load_bundle, sha256_bytes, sha256_file
 from snapshot.corpus import subset_corpus_bundle
@@ -402,9 +408,11 @@ def measure_run(
     replay_command: str,
     environment: Mapping[str, Any] | None = None,
     on_record: Callable[[str, str], None] | None = None,
+    pairs: frozenset[tuple[str, str]] | None = None,
 ) -> RunManifest:
     """One ordinary schema-2 run of `profile.algorithms` over `bundle` with the given
-    schedule order, attempts and worker scope (see module docstring)."""
+    schedule order, attempts and worker scope (see module docstring). `pairs`, if given,
+    restricts the schedule to those (algorithm, case id) pairs."""
     if order not in ORDERS:
         raise LatencyError(f"unknown order {order!r}")
     profile = replace(
@@ -417,7 +425,12 @@ def measure_run(
         worker=replace(profile.worker, scope=scope),  # type: ignore[arg-type]
     )  # fmt: skip
     factories = [get_algorithm(name) for name in profile.algorithms]
-    schedule = [(factory, case) for factory in factories for case in bundle.cases]
+    schedule = [
+        (factory, case)
+        for factory in factories
+        for case in bundle.cases
+        if pairs is None or (factory.name, case.case_id) in pairs
+    ]
     if order == "reverse":
         schedule.reverse()
     writer = RunWriter.create(
@@ -604,6 +617,21 @@ def _quote_cli(
     return results
 
 
+def _checked_inputs(protocol: Protocol, allow_dirty: bool) -> tuple[dict[str, Any], RunProfile]:
+    """The measured source identity (refusing a dirty tree unless allowed) and the pinned
+    profile (refusing a different sha256)."""
+    source = source_identity()
+    if source["git_dirty"] and not allow_dirty:
+        raise LatencyError(
+            "the source tree is dirty; commit first (or pass --allow-dirty to record an "
+            f"honest dirty-patch identity): {source['dirty_paths']}"
+        )
+    profile_path = REPO_ROOT / protocol.profile_path
+    if sha256_file(profile_path) != protocol.profile_sha256:
+        raise LatencyError(f"{protocol.profile_path}: sha256 differs from the protocol's")
+    return source, load_profile(profile_path)
+
+
 def run_latency_experiment(
     protocol_path: str | Path,
     bundle_path: str,
@@ -618,16 +646,7 @@ def run_latency_experiment(
     if not stages or not set(stages) <= set(STAGES):
         raise LatencyError(f"stages must be a non-empty subset of {list(STAGES)}")
     protocol = load_protocol(protocol_path)
-    source = source_identity()
-    if source["git_dirty"] and not allow_dirty:
-        raise LatencyError(
-            "the source tree is dirty; commit first (or pass --allow-dirty to record an "
-            f"honest dirty-patch identity): {source['dirty_paths']}"
-        )
-    profile_path = REPO_ROOT / protocol.profile_path
-    if sha256_file(profile_path) != protocol.profile_sha256:
-        raise LatencyError(f"{protocol.profile_path}: sha256 differs from the protocol's")
-    profile = load_profile(profile_path)
+    source, profile = _checked_inputs(protocol, allow_dirty)
     parent = load_bundle(bundle_path)
     out = Path(out_dir) / (experiment_id or new_run_id())
     out.mkdir(parents=True)  # exclusive: an experiment is never overwritten
@@ -724,6 +743,154 @@ def run_latency_experiment(
     return out
 
 
+# ------------------------------------------------------------------ sufficient budget
+
+SUFFICIENT_SCHEMA = "latency-sufficient-budget/1"
+SUFFICIENT_EXPERIMENT_SCHEMA = "latency-sufficient-budget-experiment/1"
+
+
+@dataclass(frozen=True)
+class SufficientBudget:
+    """Which (cohort, matrix case, algorithm) records are re-solved under a raised budget,
+    so exactness is established on the whole search scope rather than on what a fixed
+    budget happened to complete."""
+
+    path: str
+    sha256: str
+    document: dict[str, Any]
+    key: str
+    version: int
+    protocol_path: str
+    protocol_sha256: str
+    budget: Budget
+    warmup: int
+    repeats: int
+    pairs: tuple[tuple[str, str, str], ...]  # (cohort, case id, algorithm)
+
+
+def load_sufficient_budget(path: str | Path) -> SufficientBudget:
+    import yaml
+
+    path = Path(path)
+    data = path.read_bytes()
+    raw = yaml.safe_load(data)
+    try:
+        top = _keys(raw, {"schema", "key", "version", "protocol", "budget", "measurement",
+                          "cases"}, "<root>")  # fmt: skip
+        if top["schema"] != SUFFICIENT_SCHEMA:
+            raise LatencyError(f"schema: expected {SUFFICIENT_SCHEMA!r}, got {top['schema']!r}")
+        protocol = _keys(top["protocol"], {"path", "sha256"}, "protocol")
+        try:
+            budget = _parse_budget(top["budget"], "budget")
+        except ProfileError as exc:
+            raise LatencyError(str(exc)) from exc
+        measurement = _keys(top["measurement"], {"warmup", "repeats"}, "measurement")
+        if not isinstance(top["cases"], list) or not top["cases"]:
+            raise LatencyError("cases: expected a non-empty list")
+        pairs: list[tuple[str, str, str]] = []
+        for i, entry in enumerate(top["cases"]):
+            item = _keys(entry, {"cohort", "case", "algorithms", "reason"}, f"cases[{i}]")
+            algorithms = item["algorithms"]
+            if not isinstance(algorithms, list) or not algorithms:
+                raise LatencyError(f"cases[{i}].algorithms: expected a non-empty list")
+            pairs += [(str(item["cohort"]), str(item["case"]), str(a)) for a in algorithms]
+        if len(set(pairs)) != len(pairs):
+            raise LatencyError("cases: duplicate (cohort, case, algorithm)")
+        return SufficientBudget(
+            path=str(path), sha256=sha256_bytes(data), document=raw, key=str(top["key"]),
+            version=_int(top["version"], 1, "version"), protocol_path=str(protocol["path"]),
+            protocol_sha256=str(protocol["sha256"]), budget=budget,
+            warmup=_int(measurement["warmup"], 0, "measurement.warmup"),
+            repeats=_int(measurement["repeats"], 2, "measurement.repeats"),
+            pairs=tuple(pairs),
+        )  # fmt: skip
+    except LatencyError as exc:
+        raise LatencyError(f"{path}: {exc}") from exc
+
+
+def run_sufficient_budget(
+    sufficient_path: str | Path,
+    bundle_path: str,
+    out_dir: str | Path,
+    *,
+    allow_dirty: bool = False,
+    experiment_id: str | None = None,
+    echo: Callable[[str], None] = print,
+) -> Path:
+    """Re-solve the listed records on the main protocol's derived matrix bundles (same
+    bundle hashes) and pinned profile, with only the budget replaced; fixed order, one warm
+    worker per algorithm, `repeats` attempts (so attempt consistency is checked)."""
+    sufficient = load_sufficient_budget(sufficient_path)
+    protocol = load_protocol(REPO_ROOT / sufficient.protocol_path)
+    if protocol.sha256 != sufficient.protocol_sha256:
+        raise LatencyError(f"{sufficient.protocol_path}: sha256 differs from the pinned one")
+    source, profile = _checked_inputs(protocol, allow_dirty)
+    matrix = {m.case_id for m in protocol.matrix}
+    for cohort, case_id, algorithm in sufficient.pairs:
+        if cohort not in protocol.cohorts or case_id not in matrix:
+            raise LatencyError(f"{cohort}/{case_id}: not a protocol cohort/matrix case")
+        if algorithm not in profile.algorithms:
+            raise LatencyError(f"{algorithm}: not an algorithm of the pinned profile")
+    parent = load_bundle(bundle_path)
+    out = Path(out_dir) / (experiment_id or new_run_id())
+    out.mkdir(parents=True)
+    log = _LoadLog(out / LOAD_FILE, protocol.max_loadavg_1m_per_cpu)
+    environment = environment_record(profile.worker.to_dict())
+    replay = shlex.join(["uv", "run", "python", "-m", "benchmark.latency", "sufficient",
+                         "--sufficient", sufficient.path, "--bundle", bundle_path,
+                         "--out", str(out_dir)])  # fmt: skip
+    bundles = build_bundles(protocol, parent, out / "bundles")
+    measured = replace(profile, budget=sufficient.budget)
+    document: dict[str, Any] = {
+        "schema": SUFFICIENT_EXPERIMENT_SCHEMA,
+        "experiment_id": out.name,
+        "state": "running",
+        "created_at": _now(),
+        "finished_at": None,
+        "replay_command": replay,
+        "sufficient_budget": {"path": sufficient.path, "sha256": sufficient.sha256,
+                              "key": sufficient.key, "version": sufficient.version,
+                              "document": sufficient.document},
+        "protocol": {"path": protocol.path, "sha256": protocol.sha256},
+        "source": source,
+        "environment": environment,
+        "parent_bundle": {"path": bundle_path, "bundle_id": parent.bundle_id,
+                          "bundle_hash": parent.bundle_hash},
+        "profile": {"path": protocol.profile_path, "sha256": protocol.profile_sha256},
+        "budget": sufficient.budget.to_dict(),
+        "fixed_budget": profile.budget.to_dict(),
+        "bundles": {f"{c}/matrix": {"bundle_hash": bundles[f"{c}/matrix"].bundle_hash}
+                    for c in protocol.cohorts},
+        "runs": [],
+        "load": None,
+    }  # fmt: skip
+    _atomic_json(out / EXPERIMENT_FILE, document)
+    try:
+        for cohort in sorted({c for c, _, _ in sufficient.pairs}):
+            run_id = f"sufficient-{cohort}"
+            pairs = frozenset((a, k) for c, k, a in sufficient.pairs if c == cohort)
+            log.sample(stage="sufficient_budget", run_id=run_id, point="before")
+            echo(f"[{_now()}] {run_id}: start ({len(pairs)} record(s))")
+            manifest = measure_run(
+                bundles[f"{cohort}/matrix"], measured, results_dir=out / "runs",
+                run_id=run_id, stage="sufficient_budget", order="fixed",
+                warmup=sufficient.warmup, repeats=sufficient.repeats, scope="algorithm",
+                memory=False, replay_command=replay, environment=environment, pairs=pairs,
+            )  # fmt: skip
+            log.sample(stage="sufficient_budget", run_id=run_id, point="after")
+            document["runs"].append({"run_id": run_id, "cohort": cohort,
+                                     "status_counts": manifest.status_counts})  # fmt: skip
+            _atomic_json(out / EXPERIMENT_FILE, document)
+            echo(f"[{_now()}] {run_id}: {manifest.status_counts}")
+    except BaseException:
+        document.update(state="interrupted", finished_at=_now(), load=log.summary())
+        _atomic_json(out / EXPERIMENT_FILE, document)
+        raise
+    document.update(state="complete", finished_at=_now(), load=log.summary())
+    _atomic_json(out / EXPERIMENT_FILE, document)
+    return out
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m benchmark.latency")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -733,6 +900,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     run_p.add_argument("--out", default="data/latency")
     run_p.add_argument("--stages", default=",".join(STAGES))
     run_p.add_argument("--allow-dirty", action="store_true")
+    sb_p = sub.add_parser("sufficient", help="Re-solve listed records under a raised budget")
+    sb_p.add_argument("--sufficient", required=True, help="Sufficient-budget protocol")
+    sb_p.add_argument("--bundle", required=True, help="Frozen parent corpus bundle")
+    sb_p.add_argument("--out", default="data/latency")
+    sb_p.add_argument("--allow-dirty", action="store_true")
     args = parser.parse_args(argv)
 
     def _terminate(signum: int, frame: object) -> None:
@@ -740,10 +912,15 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     previous = signal.signal(signal.SIGTERM, _terminate)
     try:
-        out = run_latency_experiment(
-            args.protocol, args.bundle, args.out,
-            stages=[s for s in args.stages.split(",") if s], allow_dirty=args.allow_dirty,
-        )  # fmt: skip
+        if args.command == "sufficient":
+            out = run_sufficient_budget(
+                args.sufficient, args.bundle, args.out, allow_dirty=args.allow_dirty
+            )
+        else:
+            out = run_latency_experiment(
+                args.protocol, args.bundle, args.out,
+                stages=[s for s in args.stages.split(",") if s], allow_dirty=args.allow_dirty,
+            )  # fmt: skip
     except LatencyError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

@@ -2,7 +2,9 @@
 
     uv run python -m report.latency summarize EXPERIMENT_DIR [--json F] [--markdown F]
     uv run python -m report.latency compare BASELINE_DIR CANDIDATE_DIR --lane exact|heuristic
-        [--pair candidate_algorithm=reference_algorithm ...] [--json F] [--markdown F]
+        [--pair candidate_algorithm=reference_algorithm ...] [--sufficient BASE_SB CAND_SB]
+        [--json F] [--markdown F]
+    uv run python -m report.latency sufficient SB_DIR [--against EXPERIMENT_DIR] [...]
 
 Everything is read from saved, checksum-verified run records (`benchmark.results`); nothing
 re-runs a solver. Every summary/comparison records its own report provenance (the source
@@ -27,9 +29,12 @@ docs/references/latency-baseline.md):
   slower by that threshold, so work moved out of the solve window is still charged;
 - exact lane: every scheduled record's semantic fields identical in every stage (timing
   in both orders, cold), cohort and bundle; work counters may differ and are listed; a
-  difference on a budget-bound record (limit hit, timeout or declared budget truncation) is
-  a fixed-budget completion difference, reported separately and inconclusive until a
-  sufficient-budget comparison establishes exactness;
+  budget-bound record (limit hit, timeout or declared budget truncation) on either side,
+  even with identical outputs, is inconclusive until sufficient-budget evidence
+  (`--sufficient`, config/latency/l01-sufficient-budget.yaml) shows it unbounded and
+  identical on both sides; fixed-budget completion differences are reported separately;
+- coverage includes sampling completeness: each case holds the protocol's declared samples
+  and each cold case its charge evidence;
 - heuristic lane: paired regret against the same-scope reference per split (held-out
   decides), N/A where a score is unknown; there is no default loss tolerance, so the
   verdict is at most "opt-in".
@@ -52,7 +57,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from benchmark.latency import STAGES, source_identity
+from benchmark.latency import STAGES, SUFFICIENT_EXPERIMENT_SCHEMA, source_identity
 from benchmark.results import RunManifest, load_case_records, load_manifest, load_memory_records
 from benchmark.runner import _deterministic_view
 
@@ -249,6 +254,41 @@ def _required_runs(exp: Experiment) -> set[tuple[str, str, str]]:
     return required
 
 
+ATTEMPT_FAILURES = {"timeout", "algorithm_error"}  # may end a case before its last attempt
+SAMPLE_FIELDS = ("solve_seconds", "solve_cpu_seconds", "transport_seconds")
+
+
+def declared_attempts(exp: Experiment, stage: str) -> tuple[int, int]:
+    """(warmup, repeats) the protocol schedules per case in a stage."""
+    timing = exp.protocol["timing"]
+    return (timing["warmup"], timing["repeats"]) if stage == "timing" else (0, 1)
+
+
+def sample_problem(record: Mapping[str, Any], warmup: int, repeats: int) -> str | None:
+    """Why a record does not hold the declared samples: every case whose attempts all
+    returned has exactly `repeats` wall, CPU and transport samples; only an attempt
+    failure (timeout / algorithm_error, incl. a failed prepare) may end it early, with one
+    sample per measured attempt that returned before it."""
+    m = record.get("measurement", {})
+    if (m.get("warmup"), m.get("repeats")) != (warmup, repeats):
+        return (f"declares warmup/repeats {m.get('warmup')}/{m.get('repeats')}, protocol "
+                f"{warmup}/{repeats}")  # fmt: skip
+    completed = m.get("attempts_completed")
+    if completed == warmup + repeats:
+        expected = repeats
+    elif record["status"] in ATTEMPT_FAILURES and (completed or 0) < warmup + repeats:
+        expected = max(0, (completed or 0) - warmup)
+    else:
+        return (f"{completed} attempt(s) completed with status {record['status']!r}; "
+                f"protocol schedules {warmup} + {repeats}")  # fmt: skip
+    counts = {f: len(m.get(f) or []) for f in SAMPLE_FIELDS}
+    if any(n != expected for n in counts.values()) or any(
+        v is None for f in SAMPLE_FIELDS for v in m.get(f) or []
+    ):
+        return f"samples {counts}, expected {expected} each"
+    return None
+
+
 def coverage_problems(exp: Experiment) -> list[str]:
     """Everything the protocol schedule requires but the experiment does not hold exactly
     once. Empty means complete coverage; anything else can never support a verdict."""
@@ -288,9 +328,27 @@ def coverage_problems(exp: Experiment) -> list[str]:
             problems.append(f"{where}: {a}/{c}: scheduled record missing")
         for a, c in sorted(extra):
             problems.append(f"{where}: {a}/{c}: unscheduled or duplicate record")
+        warmup, repeats = declared_attempts(exp, key[0])
+        declared = (manifest.measurement.get("warmup"), manifest.measurement.get("repeats"))
+        if declared != (warmup, repeats):
+            problems.append(f"{where}: declares warmup/repeats {declared}, protocol "
+                            f"{(warmup, repeats)}")  # fmt: skip
+        events = {e["index"]: e for e in manifest.prepare_events}
         for r in run.records:
+            pair = f"{where}: {r['algorithm']}/{r['case_id']}"
             if r["status"] == "cancelled":
-                problems.append(f"{where}: {r['algorithm']}/{r['case_id']}: cancelled")
+                problems.append(f"{pair}: cancelled")
+                continue
+            problem = sample_problem(r, warmup, repeats)
+            if problem is not None:
+                problems.append(f"{pair}: {problem}")
+            m = r.get("measurement", {})
+            if key[0] == "cold" and m.get("attempts_completed") == warmup + repeats:
+                event = events.get(m.get("prepare_event")) or {}
+                if (event.get("startup_seconds") is None or event.get("prepare_seconds") is None
+                        or m.get("evaluation_seconds") is None):  # fmt: skip
+                    problems.append(f"{pair}: cold charge evidence (start-up, prepare, "
+                                    "evaluation) missing")  # fmt: skip
     stages = exp.document.get("stages_requested") or list(STAGES)
     wanted = exp.protocol["quote_cli"]["invocations"] if "quote_cli" in stages else 0
     if len(exp.document.get("quote_cli") or []) != wanted:
@@ -691,7 +749,7 @@ def judge(
     semantic_mismatches: int,
     coverage_problems: int,
     baseline_internal: int,
-    fixed_budget_differences: int,
+    unproven_bounded: int,
     evidence_clean: bool,
     contaminated: bool,
     timing: Mapping[str, Mapping[str, Any]],
@@ -700,7 +758,8 @@ def judge(
     """The pre-registered verdict from already-computed facts, in order. `timing` maps
     "<label> <algorithm>" to a dict with `verdict` in {faster, slower, no_worthwhile_change,
     insufficient_cases, lost_samples}; `charged` to one in {slower, not_slower,
-    insufficient_cases}."""
+    insufficient_cases, lost_samples}. `unproven_bounded` counts exact-lane budget-bound
+    records without valid identical sufficient-budget evidence."""
     if candidate_internal:
         return "reject", [f"{candidate_internal} candidate order/cold/repeat inconsistency(ies):"
                           " state leaks or nondeterminism"]  # fmt: skip
@@ -714,10 +773,11 @@ def judge(
             f"{baseline_internal} baseline order/cold/repeat inconsistency(ies): the "
             "reference is not deterministic"
         ]
-    if lane == "exact" and fixed_budget_differences:
+    if lane == "exact" and unproven_bounded:
         return "inconclusive", [
-            f"{fixed_budget_differences} fixed-budget completion difference(s): exactness "
-            "needs a sufficient-budget comparison (quote cap raised on those cases)"
+            f"{unproven_bounded} budget-bound record(s) without identical sufficient-budget "
+            "evidence: identity under a fixed budget does not establish exactness "
+            "(compare --sufficient BASE_SB CAND_SB, config/latency/l01-sufficient-budget.yaml)"
         ]
     if not evidence_clean:
         return "inconclusive", ["an experiment is partial, or ran from a dirty source tree"]
@@ -729,13 +789,26 @@ def judge(
     slower = sorted(k for k, t in timing.items() if t["verdict"] == "slower")
     if slower:
         return "reject", ["slower: " + ", ".join(slower)]
-    moved = sorted(k for k, t in charged.items() if t["verdict"] == "slower")
+    moved = sorted(k for k, t in charged.items() if t["verdict"] in ("slower", "lost_samples"))
     if moved:
-        return "reject", ["cold charged time slower (cost moved out of the solve): "
+        return "reject", ["cold charged time slower or lost (cost moved out of the solve): "
                           + ", ".join(moved)]  # fmt: skip
     faster = sorted(k for k, t in timing.items() if t["verdict"] == "faster")
     if not faster:
         return "reject", ["no algorithm reached the minimum worthwhile improvement"]
+    # Cold charge is measured on the protocol's cold cohorts: every faster algorithm needs a
+    # `not_slower` charged verdict there (a sor_compatible speedup is charged on full_source).
+    by_alg: dict[str, list[str]] = defaultdict(list)
+    for k, t in charged.items():
+        by_alg[k.rsplit(" ", 1)[-1]].append(t["verdict"])
+    uncharged = sorted({
+        k.rsplit(" ", 1)[-1] for k in faster
+        if not by_alg.get(k.rsplit(" ", 1)[-1])
+        or any(v != "not_slower" for v in by_alg[k.rsplit(" ", 1)[-1]])
+    })  # fmt: skip
+    if uncharged:
+        return "inconclusive", ["no cold charged-time evidence for faster: "
+                                + ", ".join(uncharged)]  # fmt: skip
     reasons = ["faster: " + ", ".join(faster)]
     if lane == "heuristic":
         reasons.append("no default loss tolerance: owner must accept the reported regret")
@@ -784,24 +857,149 @@ def _charged_verdict(
 ) -> dict[str, Any]:  # fmt: skip
     b_parts, c_parts = cold_parts(base_run), cold_parts(cand_run)
     ratios = []
+    lost = []
     for (alg, case), parts in b_parts.items():
         b_charged = parts["charged_seconds"]
+        if (alg != b_alg or split_of.get(case) != acc["decision_split"] or b_charged is None
+                or b_charged < acc["min_timed_solve_seconds"]):  # fmt: skip
+            continue
         c_charged = (c_parts.get((c_alg, case)) or {}).get("charged_seconds")
-        if (alg == b_alg and split_of.get(case) == acc["decision_split"]
-                and b_charged is not None and c_charged is not None
-                and b_charged >= acc["min_timed_solve_seconds"]):  # fmt: skip
+        if c_charged is None:
+            lost.append(case)  # a charged baseline case the candidate has no charge for
+        else:
             ratios.append(c_charged / b_charged)
     g = _geomean(ratios)
     improvement = None if g is None else 1 - g
-    verdict = (
-        "insufficient_cases"
-        if improvement is None
-        else "slower"
-        if improvement <= -threshold
-        else "not_slower"
-    )
+    if lost:
+        verdict = "lost_samples"
+    elif improvement is None:
+        verdict = "insufficient_cases"
+    else:
+        verdict = "slower" if improvement <= -threshold else "not_slower"
     return {"improvement": improvement, "decision_cases": len(ratios), "threshold": threshold,
-            "verdict": verdict}  # fmt: skip
+            "lost_decision_cases": sorted(lost), "verdict": verdict}  # fmt: skip
+
+
+@dataclass(frozen=True)
+class SufficientEvidence:
+    """A `benchmark.latency sufficient` experiment: listed records re-solved under the
+    L01-SB raised budget on the main protocol's derived matrix bundles."""
+
+    path: Path
+    document: dict[str, Any]
+    runs: dict[str, RunView]  # cohort -> run
+
+
+def load_sufficient(path: str | Path) -> SufficientEvidence:
+    path = Path(path)
+    doc_path = path / "experiment.json"
+    if not doc_path.is_file():
+        raise LatencyReportError(f"{path}: no experiment.json")
+    document = json.loads(doc_path.read_text(encoding="utf-8"))
+    if document.get("schema") != SUFFICIENT_EXPERIMENT_SCHEMA:
+        raise LatencyReportError(f"{path}: not a sufficient-budget experiment")
+    if document.get("state") != "complete":
+        raise LatencyReportError(f"{path}: experiment is {document.get('state')!r}")
+    runs = {}
+    for entry in document["runs"]:
+        run_dir = path / "runs" / entry["run_id"]
+        manifest = load_manifest(run_dir)
+        runs[entry["cohort"]] = RunView(entry, manifest, load_case_records(run_dir), [], run_dir)
+    return SufficientEvidence(path, document, runs)
+
+
+SOURCE_PIN = ("git_revision", "git_dirty", "dirty_patch_sha256")
+
+
+def sufficient_problems(evidence: SufficientEvidence, exp: Experiment) -> list[str]:
+    """Why `evidence` cannot stand in for `exp`'s budget-bound records: it must be for the
+    same main protocol, from the same measured source, on the same derived bundles, with
+    every scheduled record present once, consistent, and actually unbounded."""
+    doc, problems = evidence.document, []
+    if doc["protocol"]["sha256"] != exp.document["protocol"]["sha256"]:
+        problems.append("different main protocol document")
+    if {k: doc["source"].get(k) for k in SOURCE_PIN} != {
+        k: exp.document["source"].get(k) for k in SOURCE_PIN
+    }:
+        problems.append(f"measured source {doc['source'].get('git_revision')} (dirty "
+                        f"{doc['source'].get('git_dirty')}) is not the experiment's "
+                        f"{exp.document['source'].get('git_revision')}")  # fmt: skip
+    if doc["profile"] != exp.document["profile"]:
+        problems.append("different pinned profile")
+    for cohort, run in sorted(evidence.runs.items()):
+        label = f"{cohort}/matrix"
+        wanted = (exp.document.get("bundles") or {}).get(label, {}).get("bundle_hash")
+        if run.manifest.bundle_hash != wanted or doc["bundles"].get(label, {}).get(
+            "bundle_hash"
+        ) != wanted:  # fmt: skip
+            problems.append(f"{label}: bundle differs from the experiment's derived bundle")
+        schedule = Counter(tuple(p) for p in run.manifest.measurement.get("schedule") or [])
+        if Counter(_key(r) for r in run.records) != schedule or run.manifest.state != "complete":
+            problems.append(f"{label}: records do not match the complete schedule")
+    return problems
+
+
+def _sufficient_record(evidence: SufficientEvidence, cohort: str, alg: str, case: str) -> Any:
+    run = evidence.runs.get(cohort)
+    found = [r for r in (run.records if run else []) if _key(r) == (alg, case)]
+    return found[0] if len(found) == 1 else None
+
+
+def bounded_exactness(
+    bound: Mapping[tuple[str, str, str, str], list[str]],
+    base: Experiment,
+    cand: Experiment,
+    sufficient: tuple[SufficientEvidence, SufficientEvidence] | None,
+    fields: Sequence[str],
+) -> dict[str, Any]:
+    """Map every budget-bound (label, candidate alg, reference alg, case) of an exact
+    comparison to sufficient-budget evidence: `established` only if both experiments'
+    own evidence holds the record unbounded, repeat-consistent and semantically identical;
+    a difference there is a real semantic mismatch; anything else is `unproven`."""
+    out: dict[str, Any] = {"required": len(bound), "established": [], "mismatches": [],
+                           "unproven": [], "evidence_problems": {}}  # fmt: skip
+    problems: list[str] = []
+    if sufficient is not None:
+        b_sb, c_sb = sufficient
+        out["evidence_problems"] = {
+            "baseline": sufficient_problems(b_sb, base),
+            "candidate": sufficient_problems(c_sb, cand),
+            "pairing": [] if b_sb.document["sufficient_budget"]["sha256"]
+            == c_sb.document["sufficient_budget"]["sha256"]
+            else ["the two evidence experiments used different sufficient-budget protocols"],
+        }  # fmt: skip
+        problems = [m for v in out["evidence_problems"].values() for m in v]
+    for (label, c_alg, b_alg, case), wheres in sorted(bound.items()):
+        what = f"{label} {c_alg}/{case} ({len(wheres)} bound record(s))"
+        cohort, _, kind = label.partition("/")
+        if sufficient is None or problems or kind != "matrix":
+            reason = (
+                "no sufficient-budget evidence supplied"
+                if sufficient is None
+                else "evidence invalid"
+                if problems
+                else "no evidence for a sentinel"
+            )
+            out["unproven"].append(f"{what}: {reason}")
+            continue
+        b_r = _sufficient_record(sufficient[0], cohort, b_alg, case)
+        c_r = _sufficient_record(sufficient[1], cohort, c_alg, case)
+        missing = [side for side, r in (("baseline", b_r), ("candidate", c_r)) if r is None]
+        if missing:
+            out["unproven"].append(f"{what}: not re-solved in the {'/'.join(missing)} evidence")
+            continue
+        still = [side for side, r in (("baseline", b_r), ("candidate", c_r))
+                 if budget_bound(r) or r["status"] in KILLED
+                 or r["measurement"].get("attempts_consistent") is not True]  # fmt: skip
+        if still:
+            out["unproven"].append(f"{what}: still budget-bound or inconsistent under the "
+                                   f"sufficient budget ({'/'.join(still)})")  # fmt: skip
+        elif semantic_view(b_r, fields) != semantic_view(c_r, fields):
+            diff = _differing(semantic_view(b_r, fields), semantic_view(c_r, fields))
+            out["mismatches"].append(f"{what}: sufficient-budget results differ in {diff}")
+        else:
+            out["established"].append(what)
+    return out
 
 
 def compare_experiments(
@@ -810,6 +1008,7 @@ def compare_experiments(
     *,
     lane: str,
     pairs: Mapping[str, str] | None = None,
+    sufficient: tuple[SufficientEvidence, SufficientEvidence] | None = None,
 ) -> dict[str, Any]:
     if lane not in ("exact", "heuristic"):
         raise LatencyReportError(f"unknown lane {lane!r}")
@@ -831,6 +1030,7 @@ def compare_experiments(
     internal = {"baseline": internal_checks(base), "candidate": internal_checks(cand)}
     semantic: list[str] = []
     fixed_budget: list[str] = []
+    bound: dict[tuple[str, str, str, str], list[str]] = defaultdict(list)
     work: list[str] = []
     transitions: dict[str, Counter[str]] = defaultdict(Counter)
     status_regressions: list[str] = []
@@ -857,10 +1057,12 @@ def compare_experiments(
                     status_regressions.append(f"{where}: ok -> {c_r['status']}")
                 if lane == "exact":
                     b_view, c_view = semantic_view(b_r, fields), semantic_view(c_r, fields)
+                    is_bound = budget_bound(b_r) or budget_bound(c_r)
+                    if is_bound:  # identical or not: exactness needs sufficient evidence
+                        bound[(label, c_alg, b_alg, case_id)].append(where)
                     if b_view != c_view:
                         line = f"{where}: differs in {_differing(b_view, c_view)}"
-                        bound = budget_bound(b_r) or budget_bound(c_r)
-                        (fixed_budget if bound else semantic).append(line)
+                        (fixed_budget if is_bound else semantic).append(line)
                     if work_view(b_r) != work_view(c_r):
                         work.append(f"{where}: work counters differ")
                 if stage == "timing" and order == "fixed":
@@ -944,13 +1146,19 @@ def compare_experiments(
     )
     contaminated = any((e.document["load"] or {}).get("contaminated") for e in (base, cand))
     n_coverage = sum(len(v) for v in coverage.values())
+    bounded: dict[str, Any] = (
+        bounded_exactness(bound, base, cand, sufficient, fields)
+        if lane == "exact"
+        else {"required": 0, "established": [], "mismatches": [], "unproven": [],
+              "evidence_problems": {}}
+    )  # fmt: skip
     verdict, reasons = judge(
         lane=lane,
         candidate_internal=sum(len(v) for v in internal["candidate"].values()),
-        semantic_mismatches=len(semantic),
+        semantic_mismatches=len(semantic) + len(bounded["mismatches"]),
         coverage_problems=n_coverage,
         baseline_internal=sum(len(v) for v in internal["baseline"].values()),
-        fixed_budget_differences=len(fixed_budget),
+        unproven_bounded=len(bounded["unproven"]),
         evidence_clean=clean,
         contaminated=contaminated,
         timing=timing,
@@ -973,6 +1181,7 @@ def compare_experiments(
         "internal_checks": internal,
         "semantic_mismatches": semantic,
         "fixed_budget_differences": fixed_budget,
+        "bounded_exactness": bounded,
         "work_differences": work,
         "status_transitions": {k: dict(v) for k, v in sorted(transitions.items())},
         "status_regressions": status_regressions,
@@ -995,10 +1204,68 @@ def compare(
     *,
     lane: str,
     pairs: Mapping[str, str] | None = None,
+    sufficient: tuple[str | Path, str | Path] | None = None,
 ) -> dict[str, Any]:
+    evidence = None if sufficient is None else (
+        load_sufficient(sufficient[0]), load_sufficient(sufficient[1])
+    )  # fmt: skip
     return compare_experiments(
-        load_experiment(baseline), load_experiment(candidate), lane=lane, pairs=pairs
-    )
+        load_experiment(baseline), load_experiment(candidate), lane=lane, pairs=pairs,
+        sufficient=evidence,
+    )  # fmt: skip
+
+
+def _brief(record: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "status": record["status"],
+        "score": record.get("score"),
+        "quotes_counted": (record.get("quotes") or {}).get("counted"),
+        "limit_hit": record.get("limit_hit"),
+        "truncated_by": (record.get("search") or {}).get("truncated_by"),
+        "budget_bound": budget_bound(record),
+        "attempts_consistent": record.get("measurement", {}).get("attempts_consistent"),
+        "solve_seconds": record.get("measurement", {}).get("solve_seconds"),
+    }
+
+
+def summarize_sufficient(
+    evidence: SufficientEvidence, against: Experiment | None = None
+) -> dict[str, Any]:
+    """Each re-solved record under the raised budget, beside its fixed-budget counterpart
+    (the `against` experiment's fixed-order timing record): fixed-budget completion is
+    reported separately from sufficient-budget semantics, never merged."""
+    doc = evidence.document
+    fields = list(against.acceptance["exact_semantic_fields"]) if against else []
+    rows = []
+    for cohort, run in sorted(evidence.runs.items()):
+        fixed_run = against.runs.get(("timing", "fixed", f"{cohort}/matrix")) if against else None
+        fixed = {_key(r): r for r in fixed_run.records} if fixed_run else {}
+        for record in run.records:
+            f = fixed.get(_key(record))
+            rows.append({
+                "cohort": cohort, "algorithm": record["algorithm"], "case_id": record["case_id"],
+                "sufficient_budget": _brief(record),
+                "fixed_budget": None if f is None else _brief(f),
+                "differs_from_fixed_budget_in": None if f is None else _differing(
+                    semantic_view(f, fields), semantic_view(record, fields)
+                ),
+            })  # fmt: skip
+    return {
+        "schema": "latency-sufficient-summary/1",
+        "report": report_provenance(),
+        "experiment": {k: doc[k] for k in ("experiment_id", "created_at", "finished_at",
+                                            "replay_command", "protocol", "source", "profile",
+                                            "budget", "fixed_budget", "bundles")},
+        "sufficient_budget": {k: doc["sufficient_budget"][k]
+                              for k in ("path", "sha256", "key", "version")},
+        "load": doc["load"],
+        "records": rows,
+        "against": None if against is None else {
+            "experiment_id": against.document["experiment_id"],
+            "measured_source": against.document["source"],
+            "pin_problems": sufficient_problems(evidence, against),
+        },
+    }  # fmt: skip
 
 
 # ------------------------------------------------------------------ rendering
@@ -1211,7 +1478,13 @@ def render_comparison(result: Mapping[str, Any]) -> str:
         *_problems("Coverage problems", coverage),
         *_problems("Order/cold/repeat inconsistencies", internal),
         *_problems("Semantic mismatches", result["semantic_mismatches"]),
-        *_problems("Fixed-budget completion differences", result["fixed_budget_differences"]),
+        *_problems("Fixed-budget completion differences (reported apart from exactness)",
+                   result["fixed_budget_differences"]),
+        f"- Budget-bound records needing sufficient-budget exactness: "
+        f"{result['bounded_exactness']['required']}; established "
+        f"{len(result['bounded_exactness']['established'])}",
+        *_problems("Unproven budget-bound exactness", result["bounded_exactness"]["unproven"]),
+        *_problems("Sufficient-budget mismatches", result["bounded_exactness"]["mismatches"]),
         f"- Work-counter differences: {len(result['work_differences'])}; status "
         f"regressions ok → failure: {len(result['status_regressions'])}",
         "",
@@ -1245,6 +1518,55 @@ def render_comparison(result: Mapping[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_sufficient(summary: Mapping[str, Any]) -> str:
+    e, sb, rep = summary["experiment"], summary["sufficient_budget"], summary["report"]
+    load = summary["load"] or {}
+    lines = [
+        f"# L01 sufficient-budget evidence — experiment `{e['experiment_id']}`",
+        "",
+        f"- Sufficient-budget protocol: `{sb['path']}` {sb['key']} v{sb['version']} (sha256 "
+        f"`{sb['sha256']}`); main protocol sha256 `{e['protocol']['sha256']}`",
+        f"- Budget: {e['budget']} (fixed budget replaced: {e['fixed_budget']})",
+        f"- Measured source: {_source(e['source'])}; measured {e['created_at']} → "
+        f"{e['finished_at']}; bundles {e['bundles']}",
+        f"- Report generated {rep['generated_at']} from {_source(rep)}",
+        f"- Load: max 1-min load {_f(load.get('max_loadavg_1m'), 2)}; **contaminated: "
+        f"{load.get('contaminated')}** (semantic evidence only; no timing claim)",
+        f"- Replay: `{e['replay_command']}`",
+    ]
+    against = summary["against"]
+    if against is not None:
+        lines += [
+            f"- Fixed-budget counterpart: experiment `{against['experiment_id']}` measured on "
+            f"{_source(against['measured_source'])}",
+            *_problems("Pin problems (this evidence cannot stand in for that experiment in "
+                       "`compare --sufficient`)", against["pin_problems"]),
+        ]  # fmt: skip
+    lines += [
+        "",
+        "| Cohort | Algorithm | Case | budget | status | score | quotes counted | "
+        "truncated_by / limit | budget-bound | attempts consistent | solve s |",
+        "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | --- |",
+    ]
+    for row in summary["records"]:
+        for name in ("fixed_budget", "sufficient_budget"):
+            b = row[name]
+            if b is None:
+                continue
+            solve = ", ".join(f"{v:.3f}" for v in b["solve_seconds"] or [])
+            lines.append(
+                f"| {row['cohort']} | {row['algorithm']} | {row['case_id']} | {name} | "
+                f"{b['status']} | {b['score']} | {b['quotes_counted']} | "
+                f"{b['truncated_by'] or b['limit_hit'] or '—'} | {b['budget_bound']} | "
+                f"{b['attempts_consistent']} | {solve} |"
+            )
+        if row["differs_from_fixed_budget_in"] is not None:
+            differs = row["differs_from_fixed_budget_in"] or "none"
+            lines.append(f"| | | | semantic fields differing from the fixed budget: {differs} "
+                         "| | | | | | | |")  # fmt: skip
+    return "\n".join(lines) + "\n"
+
+
 def _write(text: str, path: str | None) -> None:
     if path:
         Path(path).write_text(text, encoding="utf-8")
@@ -1260,7 +1582,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     c_p.add_argument("candidate")
     c_p.add_argument("--lane", required=True, choices=("exact", "heuristic"))
     c_p.add_argument("--pair", action="append", default=[], metavar="CANDIDATE=REFERENCE")
-    for p in (s_p, c_p):
+    c_p.add_argument(
+        "--sufficient",
+        nargs=2,
+        metavar=("BASELINE_SB", "CANDIDATE_SB"),
+        help="sufficient-budget evidence of each experiment (exact lane)",
+    )
+    sb_p = sub.add_parser("sufficient")
+    sb_p.add_argument("evidence")
+    sb_p.add_argument("--against", help="experiment whose fixed-budget records to show")
+    for p in (s_p, c_p, sb_p):
         p.add_argument("--json")
         p.add_argument("--markdown")
     args = parser.parse_args(argv)
@@ -1268,9 +1599,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "summarize":
             result = summarize(args.experiment)
             text = render_summary(result)
+        elif args.command == "sufficient":
+            against = load_experiment(args.against) if args.against else None
+            result = summarize_sufficient(load_sufficient(args.evidence), against)
+            text = render_sufficient(result)
         else:
             pairs = dict(item.split("=", 1) for item in args.pair) or None
-            result = compare(args.baseline, args.candidate, lane=args.lane, pairs=pairs)
+            sufficient = (args.sufficient[0], args.sufficient[1]) if args.sufficient else None
+            result = compare(args.baseline, args.candidate, lane=args.lane, pairs=pairs,
+                             sufficient=sufficient)  # fmt: skip
             text = render_comparison(result)
     except LatencyReportError as exc:
         print(f"error: {exc}", file=sys.stderr)

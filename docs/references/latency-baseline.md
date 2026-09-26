@@ -156,7 +156,13 @@ order; cold: every cold cohort × {matrix, sentinel}), each `complete`, over the
 experiment's derived bundle, with a schedule of every algorithm × case exactly once (the
 matrix = the protocol's cases; the sentinel = one case), exactly one record per scheduled
 pair, no `cancelled` record, the experiment's full algorithm set, and the protocol's number
-of quote-CLI invocations. In a comparison both experiments must hold the same runs and
+of quote-CLI invocations. **Sampling completeness:** every run and record declares the
+protocol's attempts (timing: warmup 1 + 5 measured; cold: 0 + 1), and every case whose
+attempts all returned holds exactly that many wall, CPU and transport samples; only an
+attempt failure (`timeout` / `algorithm_error`, incl. a failed prepare) may end a case
+early, with one sample per measured attempt that returned before it. Every such cold case
+also carries its charge evidence (start-up, prepare, evaluation). A short sample array or a
+cold solve without its charge is a coverage problem, never a smaller sample. In a comparison both experiments must hold the same runs and
 every record pairs with one on the other side. Algorithm pairing never drops an algorithm:
 every candidate algorithm has a reference and every baseline algorithm is compared (the
 exact lane pairs each algorithm with itself only). A missing run or record is a coverage
@@ -186,19 +192,34 @@ otherwise `no_worthwhile_change` (or `insufficient_cases`).
 (solve and prepare) of both experiments are reported side by side. The cold charged time
 (one fresh-worker attempt per case: start-up incl. prepare + solve + transport +
 evaluation) is gated on the same held-out cases and threshold: charged `slower` rejects,
-so work moved into `prepare`, start-up or the evaluation never counts as a solve-time
-gain. Peak-memory growth has no pre-registered tolerance; it is reported and must be
+and so does a held-out baseline case the candidate has no charge for (`lost_samples`), so
+work moved into `prepare`, start-up or the evaluation never counts as a solve-time gain.
+Every algorithm judged `faster` needs a `not_slower` charged verdict on every cold cohort
+(a matched-cohort speedup is charged on the full-source cold run); without one the result
+is `inconclusive`. Peak-memory growth has no pre-registered tolerance; it is reported and must be
 justified in the adopt/reject record.
 
 **Exact lane** (L02–L05). Every scheduled record of every stage (timing in both orders and
 cold), cohort and bundle must keep identical `status`, `evaluation` (gross output, full
 trace, route features, residuals), `score`, `error`, `limit_hit` and solver-reported
 diagnostics. Work counters (`quotes counted`, candidates considered/truncated, `search`) may
-differ and are listed. A difference on a **budget-bound** record — `timeout`, a
-`limit_hit`, or a declared `search.truncated_by` (e.g. the `round_at` case where
-`incremental_graph` stops at the 50,000-quote cap) — is a *fixed-budget completion
-difference*: reported separately, not a same-scope exact mismatch, and `inconclusive` until
-a sufficient-budget comparison (quote cap raised on those cases) shows semantic identity.
+differ and are listed. A **budget-bound** record — `timeout`, a `limit_hit`, or a declared
+`search.truncated_by` (e.g. the `round_at` case where `incremental_graph` stops at the
+50,000-quote cap) — on either side proves nothing about exactness, **even if both sides
+are identical**: they may only have completed the same prefix. Every budget-bound
+(bundle, algorithm, case) of an exact comparison therefore needs *sufficient-budget
+evidence*: `compare --sufficient BASELINE_SB CANDIDATE_SB`, where each is a
+`benchmark.latency sufficient` experiment under
+[`config/latency/l01-sufficient-budget.yaml`](../../config/latency/l01-sufficient-budget.yaml)
+(L01-SB v1: no quote cap, 600 s wall limit, warmup 0 + 2 attempts, the listed records only).
+Evidence counts only if it is for the same main protocol, measured on **that experiment's
+own source** (revision, dirty state, patch identity) with the same pinned profile, over the
+same derived matrix bundle, with the record re-solved once, repeat-consistent and **not**
+budget-bound; then the two sides' sufficient-budget semantic fields must be identical
+(else a semantic mismatch → `reject`). A bound record without such evidence, a sentinel
+record, or a record L01-SB does not list is `inconclusive` (fail closed). What each side
+completed *under* the fixed budget is reported separately as fixed-budget completion
+differences; they are not same-scope mismatches once sufficient-budget identity holds.
 
 **Heuristic lane** (L06/L07, separately named opt-in variants only, e.g. `uni_sor_fast` via
 `--pair uni_sor_fast=uni_sor_port`). Paired regret per case =
@@ -213,19 +234,24 @@ so the best verdict is `opt_in_only`; becoming a default requires the owner's ex
 acceptance of the reported trade-off. `uni_sor_port` and its goldens stay unchanged.
 
 **Verdict order.** Candidate determinism-gate failure → `reject`; exact-lane semantic
-mismatch → `reject`; coverage problem → `inconclusive`; baseline determinism-gate failure
-→ `inconclusive`; exact-lane fixed-budget difference → `inconclusive`; partial or dirty
-evidence → `inconclusive`; contaminated host → `inconclusive`; `lost_samples`, any
-algorithm `slower` or cold charged `slower` → `reject`; no algorithm `faster` → `reject`;
-otherwise `adopt_eligible` (exact) or `opt_in_only` (heuristic). Adoption still needs the
+mismatch (incl. at the sufficient budget) → `reject`; coverage problem → `inconclusive`;
+baseline determinism-gate failure → `inconclusive`; exact-lane budget-bound record without
+valid identical sufficient-budget evidence → `inconclusive`; partial or dirty evidence →
+`inconclusive`; contaminated host → `inconclusive`; `lost_samples`, any algorithm `slower`,
+cold charged `slower` or lost → `reject`; no algorithm `faster` → `reject`; a faster
+algorithm without a `not_slower` cold charge → `inconclusive`; otherwise `adopt_eligible`
+(exact) or `opt_in_only` (heuristic). Adoption still needs the
 full test suite, the SOR parity goldens and the orchestrator's decision.
 
 `tests/benchmark/test_latency.py` builds complete paired experiments (five 1.0 s baseline
 vs five 0.5 s candidate samples per case in both orders, identical semantics, clean,
 uncontaminated) that are `adopt_eligible`, and checks that each single defect — a cold
 `algorithm_error`, inconsistent attempts, an order-dependent result, a missing record or
-run, a budget-bound difference, work moved into prepare, lost held-out samples — stops
-that verdict, and that a tuning-only loss never enters held-out regret.
+run, a budget-bound difference, one sample where five are declared, cold solves without
+their charge, every record budget-bound with identical outputs, work moved into prepare,
+lost held-out samples — stops that verdict on either side, that sufficient-budget evidence
+establishes bounded exactness only when valid, unbounded, pinned and identical, and that a
+tuning-only loss never enters held-out regret.
 
 Every experiment ends with an explicit adopt or reject disposition. A rejected idea is
 recorded as rejected, not described as a speedup.
@@ -287,9 +313,17 @@ uv run python -m benchmark.latency run --protocol config/latency/l01.yaml \
   --bundle data/corpus/mantle-5src-101082044/bundle --out data/latency
 uv run python -m report.latency summarize data/latency/<experiment id> \
   --json summary.json --markdown summary.md
+uv run python -m benchmark.latency sufficient \
+  --sufficient config/latency/l01-sufficient-budget.yaml \
+  --bundle data/corpus/mantle-5src-101082044/bundle --out data/latency
+uv run python -m report.latency sufficient data/latency/<sufficient id> \
+  --against data/latency/<experiment id> --markdown sufficient.md
 uv run python -m report.latency compare data/latency/<baseline> data/latency/<candidate> \
-  --lane exact
+  --lane exact --sufficient data/latency/<baseline sufficient> data/latency/<candidate sufficient>
 ```
+
+Each experiment (baseline and candidate) needs its own sufficient-budget run on the same
+source; the sufficient run replays only the listed records (seconds, not a campaign).
 
 Experiments are written under the gitignored `data/`; small summaries are checked in under
 [`latency-baseline/`](latency-baseline/). A summary or comparison can be regenerated from
