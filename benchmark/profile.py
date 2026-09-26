@@ -21,6 +21,12 @@ The optional `graph` section (WHI-1441) holds `graph.chunks` (docs/DESIGN.md §2
 explicit per profile, swept alongside percentage granularity), required by
 `incremental_graph` through `AlgorithmFactory.graph_params` under the same no-default
 rule; its values join the `search.*` values in `AlgorithmConfig.params`.
+
+The optional `shortlist` section (WHI-1508) holds the pre-registered candidate-shortlist
+settings of the opt-in experimental `uni_sor_fast` variant of `uni_sor_port`
+(`shortlist.probe_percents`, `shortlist.routes_per_probe`, `shortlist.direct_routes`),
+required through `AlgorithmFactory.shortlist_params` under the same no-default rule. No reference
+algorithm declares them, and a profile without the section resolves exactly as before.
 """
 
 from __future__ import annotations
@@ -117,13 +123,18 @@ class RunProfile:
     worker: WorkerSettings
     search: dict[str, int] = field(default_factory=dict)
     graph: dict[str, int] = field(default_factory=dict)
+    shortlist: dict[str, Any] = field(default_factory=dict)
 
     def algorithm_config(self, factory: AlgorithmFactory) -> AlgorithmConfig:
-        """The `prepare` configuration for `factory`: exactly the `search.*` and
-        `graph.*` values it declares it needs (the loader already guaranteed they are
-        present)."""
+        """The `prepare` configuration for `factory`: exactly the `search.*`, `graph.*`
+        and `shortlist.*` values it declares it needs (the loader already guaranteed they
+        are present; every value is an int or a tuple of ints, so nothing mutable is
+        shared with the prepared state)."""
         params = {key: self.search[key] for key in factory.search_params if key in self.search}
         params.update({key: self.graph[key] for key in factory.graph_params if key in self.graph})
+        params.update(
+            {key: self.shortlist[key] for key in factory.shortlist_params if key in self.shortlist}
+        )
         return AlgorithmConfig(name=factory.name, params=params)
 
     def resolved(self) -> dict[str, Any]:
@@ -138,10 +149,13 @@ class RunProfile:
             "worker": self.worker.to_dict(),
             "search": dict(self.search),
             "graph": dict(self.graph),
+            # Only a profile that declares the experimental section records it, so every
+            # existing profile resolves byte-identically (WHI-1508).
+            **({"shortlist": _plain(self.shortlist)} if self.shortlist else {}),
             "algorithm_config": {
                 name: {
                     "capabilities": ALGORITHMS[name].capabilities.to_dict(),
-                    "params": dict(self.algorithm_config(ALGORITHMS[name]).params),
+                    "params": _plain(self.algorithm_config(ALGORITHMS[name]).params),
                     **(
                         {
                             "provenance": json.loads(
@@ -156,6 +170,11 @@ class RunProfile:
                 if name in ALGORITHMS
             },
         }
+
+
+def _plain(values: Any) -> dict[str, Any]:
+    """JSON-shaped copy (tuples become lists) of a parameter mapping."""
+    return {k: list(v) if isinstance(v, tuple) else v for k, v in dict(values).items()}
 
 
 def _is_int(value: Any) -> bool:
@@ -288,6 +307,43 @@ def _parse_graph(obj: Any, where: str) -> dict[str, int]:
     }
 
 
+# Every `shortlist.*` key the loader knows (WHI-1508, opt-in `uni_sor_fast` only).
+SHORTLIST_KEYS = ("probe_percents", "routes_per_probe", "direct_routes")
+
+
+def _parse_shortlist(obj: Any, where: str, percent_step: int | None) -> dict[str, Any]:
+    """`probe_percents`: a non-empty list of distinct grid percents (multiples of
+    `search.percent_step`, at most 100) that must include 100 -- the full-input
+    incumbent is always ranked -- stored ascending as a tuple; `routes_per_probe` >= 1;
+    `direct_routes` >= 0."""
+    _require_keys(obj, set(), set(SHORTLIST_KEYS), where)
+    out: dict[str, Any] = {}
+    if "routes_per_probe" in obj:
+        out["routes_per_probe"] = _int_at_least(
+            obj["routes_per_probe"], 1, f"{where}.routes_per_probe"
+        )
+    if "direct_routes" in obj:
+        out["direct_routes"] = _int_at_least(obj["direct_routes"], 0, f"{where}.direct_routes")
+    if "probe_percents" in obj:
+        probes = obj["probe_percents"]
+        at = f"{where}.probe_percents"
+        if not isinstance(probes, list) or not probes:
+            raise ProfileError(f"{at}: expected a non-empty list, got {probes!r}")
+        if percent_step is None:
+            raise ProfileError(f"{at}: needs search.percent_step to define the grid")
+        for p in probes:
+            if not _is_int(p) or not 1 <= p <= 100 or p % percent_step:
+                raise ProfileError(
+                    f"{at}: {p!r} is not a percent of the {percent_step}% grid (1..100)"
+                )
+        if len(set(probes)) != len(probes):
+            raise ProfileError(f"{at}: duplicate entries in {probes!r}")
+        if 100 not in probes:
+            raise ProfileError(f"{at}: must include 100 (the full-input incumbent)")
+        out["probe_percents"] = tuple(sorted(probes))
+    return out
+
+
 def parse_profile(raw: Any, source_path: str) -> RunProfile:
     if isinstance(raw, dict) and raw.get("schema_version") == 1:
         raise ProfileError(
@@ -297,7 +353,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
     _require_keys(
         raw,
         {"schema_version", "algorithms", "objective", "budget", "measurement", "worker"},
-        {"search", "graph"},
+        {"search", "graph", "shortlist"},
         "<root>",
     )
     if raw["schema_version"] != SUPPORTED_SCHEMA_VERSION:
@@ -320,10 +376,16 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
     objective = _parse_objective(raw["objective"], "objective")
     search = _parse_search(raw["search"], "search") if "search" in raw else {}
     graph = _parse_graph(raw["graph"], "graph") if "graph" in raw else {}
+    shortlist = (
+        _parse_shortlist(raw["shortlist"], "shortlist", search.get("percent_step"))
+        if "shortlist" in raw
+        else {}
+    )
     for name in algorithms_obj:
         factory = ALGORITHMS[name]
         missing = [f"search.{key}" for key in factory.search_params if key not in search]
         missing += [f"graph.{key}" for key in factory.graph_params if key not in graph]
+        missing += [f"shortlist.{key}" for key in factory.shortlist_params if key not in shortlist]
         if missing:
             raise ProfileError(
                 f"algorithms: {name!r} requires "
@@ -340,6 +402,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         worker=_parse_worker(raw["worker"], "worker"),
         search=search,
         graph=graph,
+        shortlist=shortlist,
     )
 
 

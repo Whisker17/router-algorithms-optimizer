@@ -141,8 +141,9 @@ class AlgorithmConfig:
     """The per-algorithm configuration handed to `prepare()`: the validated profile
     `search.*` values the algorithm declared in `AlgorithmFactory.search_params`
     (e.g. `{"max_hops": 3}` for `single_path`) plus the `graph.*` values it declared in
-    `AlgorithmFactory.graph_params` (e.g. `{"chunks": 20}`), empty for algorithms that
-    declare none."""
+    `AlgorithmFactory.graph_params` (e.g. `{"chunks": 20}`) and the `shortlist.*` values
+    it declared in `AlgorithmFactory.shortlist_params` (the opt-in `uni_sor_fast`
+    experiment, WHI-1508), empty for algorithms that declare none."""
 
     name: str
     params: Mapping[str, Any] = field(default_factory=dict)
@@ -210,3 +211,7 @@ class AlgorithmFactory:
     # §2.11: "algorithm/source pins and all deviations"; `uni_sor_port`, WHI-1444),
     # copied into the run's resolved profile. JSON-serializable; `None` for native ones.
     provenance: Mapping[str, Any] | None = None
+    # Profile `shortlist.*` keys (the pre-registered candidate-shortlist settings of the
+    # opt-in `uni_sor_fast` experiment, WHI-1508), validated and handed over exactly like
+    # `search_params`. Empty for every reference algorithm.
+    shortlist_params: tuple[str, ...] = ()
