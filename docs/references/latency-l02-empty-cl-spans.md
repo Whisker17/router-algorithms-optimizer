@@ -1,7 +1,14 @@
 # L02 — exact skipping of empty zero-liquidity CL spans (WHI-1504)
 
 Status: **exactness established, performance adoption `inconclusive` (host-load blocker).**
-Candidate source `8c7337a` (code); baseline `299b88a` (release 0.1.2 `dev` base, WHI-1503
+Both L01 attempts were blocked by host load:
+
+- The first back-to-back pair (§5.2) is complete but load-contaminated.
+- A second, separately authorized pair (§5.3) stopped during its baseline when the load
+  came back, before the candidate ran.
+
+Candidate code `8c7337a`. The branch head `4e48b72` has identical L01 code-path ids.
+Baseline `299b88a` (release 0.1.2 `dev` base, WHI-1503
 merged). Protocol L01 v1 / L01-SB v1, unchanged. Research key L02
 ([latency-optimization-research.md](latency-optimization-research.md) §3.2).
 
@@ -14,8 +21,15 @@ merged). Protocol L01 v1 / L01-SB v1, unchanged. Research key L02
 | Is it faster on the measured workload? | Every paired measurement points the same way (in-process ABBA held-out solves 27–88 % faster; L01 held-out solve improvements 44–81 %, cold charged `not_slower` everywhere). **But none of that is L01 adopt evidence**, because both L01 experiments are load-contaminated | §5 |
 | L01 verdict | `inconclusive`. The only reason: `host load exceeded the protocol threshold in an experiment`. There are no coverage, determinism, semantic, sufficient-budget or work-counter problems | [comparison](latency-l02/compare-exact-08a7dfe8-e47f54fe.md) |
 
-That is **not** "reject for performance". The protocol's minimum next step is one back-to-back
-L01 pair on a quiet host (§6). No threshold was lowered and no run was repeated or discarded.
+That is **not** "reject for performance", and it is not an adoption either. Until a clean
+comparator verdict exists, this fast path must not be merged as an adopted default (the
+parent's decision). If a clean pair ever rejects it, the unconditional default must go.
+The protocol's minimum next step is still one back-to-back L01 pair on a quiet host (§6).
+
+- No threshold was lowered.
+- No run was discarded.
+- Exactly one extra pair was attempted, on explicit authorization, and it was stopped
+  rather than retried.
 
 ## 2. The change
 
@@ -49,10 +63,18 @@ retained memory; its extra state is a few per-call locals. Inputs stay immutable
 differential oracle and paired-measurement control. `quote_exact_in` always uses the default.
 
 An earlier word-by-word version (`3102755`) still called the bitmap search for every
-skipped word. It was superseded before any L01 run. An instrumented cProfile showed that
-per-word search taking most of the remaining solve CPU; the case was the held-out
-`emp-78c1b0-deadde-large-1` / `uni_sor_port`, a structural diagnosis rather than parameter
-tuning. The candidate has no tunable parameters.
+skipped word. It was superseded before any L01 run.
+
+**Disclosure — a held-out case informed a design choice.** The choice of the v2 structure
+(whole-word skipping instead of per-word search) came from inspecting one **held-out**
+L01 case: an instrumented cProfile of `emp-78c1b0-deadde-large-1` / `uni_sor_port`, which
+showed the per-word search taking most of the remaining solve CPU. The in-process timing
+pairs (§5.1) also used held-out cases.
+
+- The candidate has no tunable parameter, so nothing was fitted.
+- But a structural choice was made after looking at held-out data.
+- So the held-out split is **not** fully untouched evidence for this candidate, and a
+  verdict on it should be read with that caveat.
 
 ## 3. Correctness evidence
 
@@ -232,13 +254,54 @@ Prepare and prepare memory are unchanged, since the candidate adds no preparatio
 Median solve peak grows by at most 49 bytes (per-call locals). The rest is in the
 comparison JSON.
 
+### 5.3 Second authorized L01 pair (interrupted; no verdict)
+
+The parent authorized exactly one more pair after the host changed materially.
+
+**Before launch:**
+
+- Final-head checks passed: ruff, mypy, and 1475 passed / 3 skipped.
+- Readiness window 13:43:56–13:46:26 UTC: 6 samples of 1-min load between 1.43 and
+  1.94 (threshold 5.0), and no rustc/cargo among the top CPU users.
+- The local wrapper was hardened, then dry-tested on stand-in steps. It aborts on a
+  step's real exit status; the dry test checked exit 7. On INT/TERM/EXIT it terminates
+  and waits for the active child before restoring the checkout; the dry test checked
+  exit 130 with the branch restored. Transcript:
+  [`latency-l02/run-l01-pair2.sh.txt`](latency-l02/run-l01-pair2.sh.txt).
+
+**The baseline run:** experiment `20260926T134712405805Z-01e21065`, measurement-only
+detached checkout of `299b88a`, clean. It started at 13:47:12 UTC with load 1.04.
+
+- Its `timing-fixed` full-source matrix and sentinel runs finished uncontaminated by
+  13:53:45.
+- From 13:56:02 the 1-min load rose from 5.2 to 55.6. The cause was an unrelated
+  concurrent `node --test` job and its publish scripts; the pair did not touch them.
+- 20 of 278 samples exceeded 5.0. That makes the experiment contaminated for good, so
+  it could not support an adopt verdict whatever followed.
+
+**The stop:** at 13:58:00 UTC the wrapper was sent SIGTERM.
+
+- The driver finalized the experiment as **`interrupted`**, which `report.latency`
+  refuses.
+- No worktree Python process remained.
+- The checkout was restored to the branch at `4e48b72`, clean, with the
+  `pools/concentrated.py` sha256 unchanged.
+- The candidate L01, both L01-SB runs and the comparison **never ran**.
+
+Nothing was retried. The raw data, manifest (`pair-manifest.jsonl`), log and readiness
+note are kept under the gitignored `data/latency-l02/l01-pair2/`. The first pair's
+runs are untouched.
+
 ## 6. Limitations and next step
 
-- **Blocker:** there is no uncontaminated baseline/candidate pair. The minimum run that
-  can produce an `adopt_eligible` / `reject` verdict is exactly §7's
-  `run-l01-pair.sh` on a quiesced host: baseline `299b88a` L01 + L01-SB, then candidate
-  L01 + L01-SB, back to back. That took about 57 minutes here. It is not a repeated
-  campaign.
+- **Blocker:** there is no uncontaminated baseline/candidate pair. Two attempts were
+  blocked by other users' load: §5.2 was contaminated, and §5.3 was interrupted within
+  11 minutes.
+- **What a verdict needs:** a host that is **guaranteed quiet**, meaning other heavy jobs
+  are paused for the whole window, not just a good readiness sample. On such a host,
+  run `run-l01-pair2.sh` once: baseline `299b88a` L01 + L01-SB, then candidate L01 +
+  L01-SB, back to back. That is about 60 minutes, going by the 57 minutes of §5.2. It
+  is the only run that can produce an `adopt_eligible` or `reject` verdict.
 - A/A noise floors of the contaminated baseline are inflated (incremental graph 0.255 wall);
   they are not valid noise estimates.
 - One snapshot and block (101082044), the L01 matrix, and one shared M2 Pro host: this is
@@ -248,8 +311,10 @@ comparison JSON.
   for WHI-1505.
 - The counters in §4 come from wrapped functions, so the process CPU in those rows is
   instrumented.
-- Held-out cases were used for one structural diagnostic profile (§2) and for the
-  in-process pairs. No parameter was tuned; there is none.
+- The held-out split is not fully untouched. One held-out case was inspected to choose
+  the v2 structure (§2), and the in-process pairs used held-out cases. No parameter was
+  tuned, since there is none, but the structural choice was made with held-out
+  visibility.
 
 ## 7. Reproduction
 
@@ -267,8 +332,10 @@ uv run pytest tests/pools/test_concentrated.py -q
 uv run python tools/latency/l02_empty_spans.py work --experiment <bbda6e2 L01 dir> --out data/latency-l02/work.json
 uv run python tools/latency/l02_empty_spans.py paired --experiment <bbda6e2 L01 dir> --pairs 5 \
   --target full_source/sentinel:uni_sor_port:quote-b5feb74821d5 --out data/latency-l02/paired.json
-# run-l01-pair.sh: clean tree; detach to 299b88a; L01 run + L01-SB; back to the branch;
-# L01 run + L01-SB (trap always returns to the branch):
+# run-l01-pair2.sh (latency-l02/run-l01-pair2.sh.txt): refuses a dirty tree or an unexpected
+# HEAD; detaches to 299b88a; runs L01 + L01-SB; returns to the branch; runs L01 + L01-SB.
+# Each step aborts on its real exit status. INT/TERM stops the child and waits for it
+# before the checkout is restored.
 uv run python -m benchmark.latency run --protocol config/latency/l01.yaml --bundle <parent bundle> --out data/latency-l02/l01
 uv run python -m benchmark.latency sufficient --sufficient config/latency/l01-sufficient-budget.yaml --bundle <parent bundle> --out data/latency-l02/l01
 uv run python -m report.latency compare <baseline> <candidate> --lane exact --sufficient <baseline SB> <candidate SB>
