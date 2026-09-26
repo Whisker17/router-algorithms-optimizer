@@ -36,6 +36,12 @@ profile's declared budget (WHI-1437, `benchmark.runner`); `run --order reverse|s
 plus `order-check RUN_A RUN_B` is the state-leak check. SIGTERM/Ctrl-C finalize the run
 as `interrupted` with every unfinished case recorded as `cancelled` (exit code 130).
 
+`quote --bundle B --profile P --token-in X --token-out Y --amount N [--details]`
+(WHI-1498) compares the profile's algorithms on one exploratory exact-input request with
+exactly one solve attempt each (`benchmark.quote`: a derived single-case bundle and an
+effective profile with warmup 0 / repeats 1 / memory_pass false, run by the unchanged
+runner). `report` renders such a run as a single-case text report (`report.quote`).
+
 `validate` and `run` are always offline: they read only the bundle directory
 (docs/DESIGN.md §4.5: "Ordinary offline commands require no RPC/Dune access").
 `prepare --source synthetic` is offline too. `prepare --source agni --block N` is the
@@ -51,6 +57,7 @@ import argparse
 import signal
 import sys
 from pathlib import Path
+from typing import Any
 
 from benchmark.profile import ProfileError, load_profile
 from benchmark.results import ResultError
@@ -244,6 +251,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report an interrupted/running run (unrecorded cases shown as missing)",
     )
 
+    quote_p = subparsers.add_parser(
+        "quote",
+        help="Compare the profile's algorithms on one exploratory exact-input request "
+        "(one solve attempt each)",
+    )
+    quote_p.add_argument("--bundle", required=True, help="Frozen corpus bundle (read only)")
+    quote_p.add_argument("--profile", required=True, help="Source run profile (not modified)")
+    quote_p.add_argument("--token-in", required=True, help="Symbol or token address")
+    quote_p.add_argument("--token-out", required=True, help="Symbol or token address")
+    quote_p.add_argument("--amount", required=True, help="Exact input in whole tokens, e.g. 1.5")
+    quote_p.add_argument(
+        "--details", action="store_true", help="Explain every final plan and its timings"
+    )
+    quote_p.add_argument("--quotes-dir", default="data/quotes")
+
     return parser
 
 
@@ -266,6 +288,22 @@ def _cmd_report(args: argparse.Namespace) -> int:
     if args.allow_incomplete:
         command.append("--allow-incomplete")
     try:
+        from report.quote import load_quote_view
+
+        root = Path(__file__).resolve().parent
+        views = [
+            load_quote_view(
+                r, bundle_dirs=args.bundle, repo_root=root, allow_incomplete=args.allow_incomplete
+            )
+            for r in args.runs
+        ]
+        if any(v is not None for v in views):
+            if not all(views):
+                raise ReportInputError(
+                    "exploratory single-request runs are reported on their own, not mixed "
+                    "with corpus runs"
+                )
+            return _write_quote_reports([v for v in views if v is not None], args.output)
         manifests = [load_manifest(r, allow_incomplete=args.allow_incomplete) for r in args.runs]
         paths = render_report(
             manifests,
@@ -589,6 +627,65 @@ def _cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def _write_quote_reports(views: list[Any], output: str | None) -> int:
+    """Single-request runs get the single-case text report (report.quote), never the corpus
+    report's distribution statistics."""
+    from report.quote import render_compact, render_details
+
+    for view in views:
+        out = Path(output) if output else Path("data/reports") / view.manifest.run_id
+        if output and len(views) > 1:
+            out = out / view.manifest.run_id
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / "single_request.txt"
+        path.write_text(render_compact(view) + render_details(view), encoding="utf-8")
+        print(f"wrote {path}")
+    return 0
+
+
+def _cmd_quote(args: argparse.Namespace) -> int:
+    from benchmark.quote import QuoteError, prepare_quote, run_quote
+    from report.quote import load_quote_view, render_compact, render_details
+    from snapshot.request import RequestError
+
+    try:
+        prepared = prepare_quote(
+            bundle=args.bundle,
+            profile=args.profile,
+            token_in=args.token_in,
+            token_out=args.token_out,
+            amount=args.amount,
+        )
+    except (BundleError, ProfileError, QuoteError, RequestError, OSError) as exc:
+        print(f"quote failed: {exc}", file=sys.stderr)
+        return 1
+
+    def _terminate(signum: int, frame: object) -> None:
+        raise KeyboardInterrupt(f"signal {signum}")
+
+    previous = signal.signal(signal.SIGTERM, _terminate)
+    try:
+        result = run_quote(prepared, args.quotes_dir)
+    except RunInterrupted as exc:
+        print(f"quote run INTERRUPTED; partial records in {exc.manifest.run_dir}", file=sys.stderr)
+        return 130
+    except (BundleError, ProfileError, RequestError, ResultError, OSError) as exc:
+        print(f"quote failed: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+    view = load_quote_view(result.manifest.run_dir)
+    assert view is not None  # a quote run's bundle is always a request bundle
+    sys.stdout.write(render_compact(view))
+    if args.details:
+        sys.stdout.write(render_details(view))
+    print()
+    print(f"saved: {result.quote_dir} (run {result.manifest.run_dir})")
+    print(f"replay: {result.manifest.replay_command}")
+    print(f"report: uv run python main.py report {result.manifest.run_dir}")
+    return 0
+
+
 def _cmd_order_check(args: argparse.Namespace) -> int:
     try:
         mismatches = compare_runs(args.run_a, args.run_b)
@@ -624,6 +721,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_order_check(args)
     if args.command == "report":
         return _cmd_report(args)
+    if args.command == "quote":
+        return _cmd_quote(args)
     raise AssertionError(f"unreachable: unknown command {args.command!r}")  # pragma: no cover
 
 

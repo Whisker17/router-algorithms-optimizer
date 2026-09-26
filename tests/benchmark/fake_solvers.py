@@ -210,6 +210,32 @@ def lying_solve(case: Case, context: SolveContext, budget: Budget) -> SolveResul
     )
 
 
+def _log_attempt(name: str) -> None:
+    """WHI-1498: append one line per solve call to $FAKE_SOLVE_LOG (inherited by spawned
+    workers), so a test counts real solve attempts across processes."""
+    path = os.environ.get("FAKE_SOLVE_LOG")
+    if path:
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(f"{name}\n")
+
+
+def counted_ok_solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+    _log_attempt("counted_ok")
+    return _like_direct("counted_ok", case, context, budget)
+
+
+def counted_raise_solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+    _log_attempt("counted_raise")
+    raise RuntimeError("deliberate failure (counted)")
+
+
+def counted_hang_solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+    _log_attempt("counted_hang")
+    context.report_candidate(direct.solve(case, context, budget).plan)  # type: ignore[arg-type]
+    while True:
+        time.sleep(0.05)
+
+
 HANG = AlgorithmFactory(name="hang", solve=hang_solve)
 CANDIDATE_SPAM = AlgorithmFactory(name="candidate_spam", solve=candidate_spam_solve)
 CRASH = AlgorithmFactory(name="crash", solve=crash_solve)
@@ -225,6 +251,9 @@ SEED_ECHO = AlgorithmFactory(name="seed_echo", solve=seed_echo_solve)
 GARBAGE = AlgorithmFactory(name="garbage", solve=garbage_solve)
 WRONG_CASE = AlgorithmFactory(name="wrong_case", solve=wrong_case_solve)
 LYING = AlgorithmFactory(name="lying_solver", solve=lying_solve)
+COUNTED_OK = AlgorithmFactory(name="counted_ok", solve=counted_ok_solve)
+COUNTED_RAISE = AlgorithmFactory(name="counted_raise", solve=counted_raise_solve)
+COUNTED_HANG = AlgorithmFactory(name="counted_hang", solve=counted_hang_solve)
 
 ALL = (
     HANG,
@@ -242,4 +271,7 @@ ALL = (
     GARBAGE,
     WRONG_CASE,
     LYING,
+    COUNTED_OK,
+    COUNTED_RAISE,
+    COUNTED_HANG,
 )

@@ -90,7 +90,11 @@ No loader code ships with the template — write it when the first config file l
   repeats and a memory pass. Each header records which values are DESIGN trial values
   and which were calibrated on the tuning split of this machine; the evidence is
   `docs/references/v1-acceptance.md` §3. Run them over the report-split bundles
-  (`main.py corpus split`) for the held-out comparison.
+  (`main.py corpus split`) for the held-out comparison. `main.py quote` (WHI-1498) reads a
+  gross-only profile for its algorithms, objective, search, seed, budget and worker
+  values but always runs it with `warmup: 0`, `repeats: 1`, `memory_pass: false`, saving
+  that effective copy next to its results; the source YAML is never edited
+  (`docs/references/single-request.md`).
 - `calibration/` — the WHI-1447 tuning-split calibration profiles: `probe-h3-*.yaml`
   (uncapped 3-hop demand probes), `sweep-base.yaml` and the `sweep-*.yaml` grid points
   generated from it by `main.py calibrate profiles` (do not edit; regenerate).

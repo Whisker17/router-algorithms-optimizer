@@ -343,7 +343,22 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
     )
 
 
-def load_profile(path: str | Path) -> RunProfile:
+# WHI-1498 single-request comparison: exactly one solve attempt per algorithm and no
+# separate memory pass, whatever the source profile's measurement counts say. The owner's
+# requirement for that command, not a search or budget default.
+SINGLE_RUN_MEASUREMENT: dict[str, Any] = {"warmup": 0, "repeats": 1, "memory_pass": False}
+
+
+def single_run_document(raw: dict[str, Any]) -> dict[str, Any]:
+    """A copy of a profile document with `SINGLE_RUN_MEASUREMENT` applied; every other
+    value (algorithms, objective, search, budget, seed, worker) is the source's."""
+    document: dict[str, Any] = json.loads(json.dumps(raw))
+    document["measurement"] = {**document["measurement"], **SINGLE_RUN_MEASUREMENT}
+    return document
+
+
+def read_profile_document(path: str | Path) -> dict[str, Any]:
+    """The raw YAML mapping of a profile file (not yet validated)."""
     text = Path(path).read_text(encoding="utf-8")
     try:
         raw = yaml.safe_load(text)
@@ -351,6 +366,11 @@ def load_profile(path: str | Path) -> RunProfile:
         raise ProfileError(f"{path}: invalid YAML: {exc}") from exc
     if not isinstance(raw, dict):
         raise ProfileError(f"{path}: top-level YAML document must be a mapping")
+    return raw
+
+
+def load_profile(path: str | Path) -> RunProfile:
+    raw = read_profile_document(path)
     try:
         return parse_profile(raw, str(path))
     except ProfileError as exc:
