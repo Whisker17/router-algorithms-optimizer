@@ -337,12 +337,13 @@ def test_experiment_over_the_corpus_fixture_records_every_stage(tmp_path: Path) 
     assert held_out["cases"] + held_out["not_applicable"] == 2  # held-out cases only
     rendered = report.render_summary(summary).replace(report.NO_TAIL_CLAIM, "")
     assert not re.search(r"p9\d|percentile|\bSLA\b", rendered, re.IGNORECASE)
-    # A/A comparison of the experiment with itself: exact semantics, but a dirty test tree
-    # can never yield an adopt verdict.
+    # A/A comparison of the experiment with itself: exact semantics, never an adopt verdict
+    # -- inconclusive from a dirty tree or a loaded host, otherwise rejected (no speedup).
     result = report.compare(out, out, lane="exact")
     assert result["semantic_mismatches"] == [] and result["work_differences"] == []
     assert result["coverage_problems"] == {"baseline": [], "candidate": [], "pairing": []}
-    assert result["verdict"] == "inconclusive"
+    unusable = doc["source"]["git_dirty"] or doc["load"]["contaminated"]
+    assert result["verdict"] == ("inconclusive" if unusable else "reject"), result["reasons"]
     # Sufficient-budget re-solve of one listed record, same derived bundle, raised budget.
     sufficient = tmp_path / "sufficient.yaml"
     sufficient.write_text(yaml.safe_dump({
