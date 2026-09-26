@@ -260,6 +260,15 @@ comparison with itself:
   (`benchmark.runner`, `benchmark.worker`, `measure_run`) is unchanged since `bbda6e2`: the
   later driver changes are the SIGTERM handling and the recorded algorithm set.
 
+**Experiment `20260926T105347059906Z-e9cb4d65`** (complete, **partial**: `--stages
+quote_cli` only; source `1c09343`, clean; 2026-09-26 10:53 UTC) — the bounded real-corpus
+replay of the corrected driver:
+[`latency-baseline/20260926T105347059906Z-e9cb4d65-quote-cli.md`](latency-baseline/20260926T105347059906Z-e9cb4d65-quote-cli.md).
+Same protocol sha256; all four derived bundle hashes equal the first experiment's; five
+`main.py quote` invocations, exit 0, exactly one solve per algorithm each, and each
+invocation's saved run has no `compare_runs` mismatch with the corresponding `bbda6e2`
+invocation. Also load-contaminated (max 11.3), so its CLI wall times are diagnostic only.
+
 **Experiment `20260926T100709788238Z-b23b2ea5`** — INTERRUPTED by a user-directed stop
 during its fifth timing run (the `bbda6e2` driver had no SIGTERM handler, so its
 `experiment.json` still reads `running`; a sidecar `INTERRUPTED.md` records the stop). Also
