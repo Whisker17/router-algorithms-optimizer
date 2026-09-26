@@ -1,9 +1,9 @@
 # Triage Labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to
-the actual label strings used in this repo's issue tracker (Linear labels).
+Skills speak in terms of five canonical triage roles. This file maps those roles to the
+actual label strings used in this repo's issue tracker (Linear labels).
 
-| Label in mattpocock/skills | Label in our tracker | Meaning                                  |
+| Canonical role             | Label in our tracker | Meaning                                  |
 | -------------------------- | -------------------- | ---------------------------------------- |
 | `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
 | `needs-info`               | `needs-info`         | Waiting on reporter for more information |
@@ -34,6 +34,6 @@ whatever state the issue is in.
 
 ## High-risk-path extra caution (this repo)
 
-Treat any issue touching high-risk paths (**none** configured for this repo) as **never** `ready-for-agent` by
+Treat any issue touching **configured high-risk paths (none for this offline benchmark)** as **never** `ready-for-agent` by
 default — route it to `ready-for-human` unless the issue explicitly says otherwise and a
 human has reviewed the plan first.

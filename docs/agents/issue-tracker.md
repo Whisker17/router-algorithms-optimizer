@@ -3,6 +3,13 @@
 Issues and PRDs for this repo live in **Linear**, project **"Mantle Router Algorithm Optimizer"**, team
 `Whisker-Personal`.
 
+Project binding (preserve on template updates): project UUID
+`29829418-7ca6-43c9-bf03-a49f05c76b1a`, team UUID
+`37abcce9-0070-470b-a57b-d8213047c418`, prefix `WHI`, pipeline
+`router-algorithms-optimizer` (`3ae52bda-d2f7-4a18-9cd7-15dff9f8a8ed`). Discover actual
+Release IDs through the API; template v0.2 is a workflow-contract version, not a product
+Release assignment.
+
 ## How to reach Linear
 
 Tracker state moves in lockstep with the PR (below), so this access path is **mandatory,
@@ -23,26 +30,54 @@ workflow. Take the first rung of this ladder that your runtime actually offers:
    operation named below exists as a GraphQL mutation/query (`issueCreate`,
    `issueUpdate`, `commentCreate`, `issues`, `workflowStates`). Use this when your runtime
    has shell/network access but no MCP.
-3. **Neither available:** stop and tell the user. Do **not** silently switch to a
+3. **Neither available:** stop and report the step as blocked. Do **not** switch to a
    local-markdown tracker or `gh issue` — the tracker is shared state, and a divergent
-   local copy is worse than an honest block. If the project genuinely has no Linear
-   access, re-run `/setup-matt-pocock-skills` to install a different tracker binding
-   (`issue-tracker-github.md` / `-gitlab.md` / `-local.md`) so *all* skills agree on
-   where issues live. Any replacement binding must also define
-   [§ Release ↔ version binding](#release--version-binding), or declare that it has
-   no release entity — git routing reads that section.
+   shadow copy is worse than an honest block. A project that genuinely uses another
+   tracker replaces **this file** with a binding for it, so every skill agrees on where
+   issues live. That binding must define the same operations, including
+   [§ Release ↔ version binding](#release--version-binding) (or declare that it has no
+   release entity — git routing reads that section) and
+   [§ Release orchestration document](#release-orchestration-document).
+
+Verify every operation you rely on — Release lookup, issue ↔ Release binding, native
+relations, documents — against the target workspace's actual tools or API before depending
+on it. Do not guess from a field name. A write you could not confirm is reported as not
+done.
 
 The rest of this file names Linear MCP tools (namespace `linear`); under rung 2, read each
-as its GraphQL equivalent. Core tools:
+as its GraphQL equivalent. Tool names and argument shapes differ between servers and
+versions, so **discover the schema first** and use the calls below only where it matches.
+
+### Reference calls (Linear MCP)
+
+These were checked against the reference Linear MCP server. "Exercised" means a real call
+succeeded; "schema-verified" means the argument or field was confirmed in the tool schema
+but not called.
+
+| Need | Call | Status |
+| --- | --- | --- |
+| Page through a project's or Release's issues | `list_issues({ project, release, limit, cursor })` — repeat with the returned `cursor` while `hasNextPage` | exercised |
+| One issue with its Release and native relations | `get_issue({ id, includeRelations: true, includeReleases: true })` → `releases[]`, `relations.blocks` / `relations.blockedBy` | exercised |
+| Bind an issue to a Release | `save_issue({ id, setReleases: [<release>] })` (also `addReleases` / `removeReleases`), then re-read with `get_issue` | exercised |
+| Wire native dependencies | `save_issue({ id, blocks: [...], blockedBy: [...] })` | schema-verified, not exercised |
+| Find a project document | `list_documents({ projectId, query, limit, cursor, fields })` — the filter is `projectId`, not `project` | exercised |
+| Create / update a document | `save_document({ title, project, content })` creates; `save_document({ id, content })` updates | create exercised |
+
+**`list_issues` results do not include Release or relations.** Never infer those from a
+list page: call `get_issue` for each issue whose Release or dependencies matter. After a
+write, re-read to confirm it.
+
+Other core tools:
 
 - **Create / update an issue**: `linear.save_issue({...})`. When creating, `title` and
   `team` are required; also set `project` to `"Mantle Router Algorithm Optimizer"` so it's scoped
   correctly. Omit `id` on create; pass `id` to update. Use `assignee` (a user id, name,
   email, or `"me"`) — not `assigneeId`. Set labels via the `labels` field (see
-  `triage-labels.md` for the canonical strings).
-- **Read / list issues**: `linear.list_issues({...})`. Filter by `assignee`
-  (`"me"` / `"null"`), team, project, state, or label. For a single issue, list with the
-  id/filter and read the returned record.
+  `triage-labels.md` for the canonical strings), the Release via `setReleases`, and
+  dependencies via `blocks` / `blockedBy` (table above).
+- **Read one issue**: `linear.get_issue({ id, includeRelations: true, includeReleases:
+  true })`. **List issues**: `linear.list_issues({...})` with the filters its schema
+  offers (project, release, assignee, state, label), paging with `cursor`.
 - **Comment**: `linear.save_comment({ issueId, body })` to start a thread;
   `linear.save_comment({ parentId, body })` to reply. Read with
   `linear.list_comments({ issueId })`.
@@ -66,13 +101,21 @@ state in lockstep with the PR:
 
 | When | Linear `state` |
 | --- | --- |
-| Claimed / coding in worktree | `In Progress` |
-| PR opened against the resolved base (awaiting review) | **`In Review`** |
-| PR squash-merged into the resolved base | **`Done`** |
+| Claimed, implementation started | `In Progress` |
+| PR opened against the resolved base | **`In Review`** |
+| PR merged into the resolved base and the required cleanup (and fan-out) done | **`Done`** |
+| Waiting for a human, or verification failed | stays **`In Review`**, reason in a comment |
 | Abandoned | `Canceled` |
 
-Do not mark `Done` when the PR is only opened. Do not leave an open PR in `In Progress`.
-Triage labels (`ready-for-agent`, etc.) stay orthogonal to these states.
+**Who moves it.** Under `/orchestrate` the orchestrator owns every transition; implementers
+return facts and PR links. In standalone `/implement`, the implementing agent owns them.
+`Done` means merged, not released.
+
+Do not mark `Done` when the PR is only opened, or because an agent reported it finished.
+Do not leave an open PR in `In Progress`. If a PR opened before the orchestrator heard
+about it, sync the state as soon as it does. On resume, read the real PR state first and
+repair drift — never re-create or re-merge a PR. Triage labels (`ready-for-agent`, etc.)
+stay orthogonal to these states.
 
 ## Release ↔ version binding
 
@@ -95,15 +138,14 @@ all of which have already caused a real mis-resolution in the source project
   shipped with the field empty. The enforcement is the agent's **refusal**, not
   the tracker.
 - **Read it through the same access ladder as everything else** (above): via MCP,
-  `discover_tools({ query: "linear issue release", detail: "typescript" })` then
-  the returned `codeApi.path` from `execute_code`; under rung 2, the GraphQL
-  `issue` query — select the release/version field explicitly and confirm you did
-  not select the milestone by accident. If the tracker is unreachable, the
+  `get_issue({ id, includeReleases: true })` and read `releases[]` (a list page does not
+  carry it); under rung 2, the GraphQL `issue` query — select the release field
+  explicitly and confirm you did not select the milestone by accident. If the tracker is unreachable, the
   cross-check has not been performed: say so and stop, rather than proceeding on
   the title prefix alone as though both signals had agreed.
 
-**Swapping trackers:** an alternative binding (`issue-tracker-github.md` /
-`-gitlab.md` / `-local.md`) must define this section too — naming its own release
+**Swapping trackers:** a replacement binding for another tracker must define this
+section too — naming its own release
 entity and how to read it — or state explicitly that it has **no** release
 entity, which drops the cross-check per `docs/GIT_WORKFLOW.md` § Version
 determination and leaves the title prefix standing alone. A missing or ambiguous
@@ -112,7 +154,7 @@ prefix still refuses.
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** Code review happens on GitHub; the Linear queue is not
-fed from pull requests. `/triage` processes Linear issues only.
+fed from pull requests.
 
 ## When a skill says "publish to the issue tracker"
 
@@ -129,56 +171,66 @@ like this:
 1. **Order**: create issues in dependency order — blockers first — so each later issue
    can reference real identifiers.
 2. **Blocking edges**: wire them as Linear's native **`blocked-by` / `blocks`
-   relations** (via `linear.save_issue`'s relations support, or the dedicated relation
-   tool if `discover_tools` surfaces one — query `"linear issue relation"`). Also mirror
+   relations** (`save_issue({ id, blocks, blockedBy })`, or the dedicated relation tool
+   if your server's schema has one), then confirm with `get_issue({ id,
+   includeRelations: true })`. Also mirror
    each edge as a human-readable `## Blocked By` line in the body per
    `issue-template.md`; the native relation is the source of truth, the body line is the
    mirror.
 3. **Scoping**: every issue gets `project: "Mantle Router Algorithm Optimizer"` and, if the
-   set belongs to a version, the matching **Release** (title carries the `[X.Y.Z]`
-   prefix per `issue-template.md`). Milestone is orthogonal — attach it when the
+   set belongs to a version, the matching **Release** (`setReleases`, confirmed with
+   `get_issue({ id, includeReleases: true })`; title carries the `[X.Y.Z]` prefix per
+   `issue-template.md`). Milestone is orthogonal — attach it when the
    set is a capability stage, but do not put it in the title.
 4. **State + labels**: state `Todo`, triage label `ready-for-agent` (unless the user
    says otherwise) — the tickets are agent-grabbable by construction.
-5. **Body**: use the copy-paste skeleton in `issue-template.md`, not the skill's generic
-   local-file template.
+5. **Body**: use the copy-paste skeleton in `issue-template.md`, including a filled
+   `## Execution` section (one complexity value, reason, expected scope).
 
 ## When a skill says "fetch the relevant ticket"
 
-Read it with `linear.list_issues` (filter to the id/identifier), then pull discussion
-with `linear.list_comments({ issueId })`.
+Read it with `linear.get_issue({ id, includeRelations: true, includeReleases: true })`,
+then pull discussion with `linear.list_comments({ issueId })`.
 
-## Wayfinding operations
+## Adoption of completed legacy work
 
-Used by `/wayfinder`. The **map** is a single issue; its tickets are **sub-issues** of it.
-Without this section the skill falls back to a local-markdown tracker — so keep it
-accurate.
+The existing 0.1.0 implementation predates this workflow contract. Do not reopen or
+rewrite completed issues merely to add `## Execution`. Recover their actual scope and
+acceptance from committed PRs/evidence for release review, recording the legacy contract.
+New work and unfinished issues selected for scheduling need Complexity/Reason/Expected
+scope first; do not invent missing metadata or silently dispatch them at default effort.
 
-- **Map**: one Linear issue labelled `wayfinder:map`, holding the Notes /
-  Decisions-so-far / Fog body. Create with `linear.save_issue({ title, team,
-  project: "Mantle Router Algorithm Optimizer", labels: ["wayfinder:map"] })`. Create the label first
-  with `linear.create_issue_label` if `linear.list_issue_labels` doesn't have it.
-- **Child ticket**: an issue whose **`parent`** is the map — Linear's native sub-issue
-  relationship, visible in the map's own UI:
-  `linear.save_issue({ title, team, project: "Mantle Router Algorithm Optimizer", parent: <map-id>,
-  labels: ["wayfinder:<type>"] })`, where `<type>` is `research` / `prototype` /
-  `grilling` / `task`. Once claimed, set `assignee` to the driving dev (`"me"` for the
-  agent's own session).
-- **Blocking**: Linear's **native `blocked-by` / `blocks` relations** — the canonical,
-  UI-visible representation, same mechanism as
-  [§ Publishing ticket sets](#publishing-ticket-sets-eg-from-to-tickets). Wire edges via
-  `linear.save_issue`'s relations support, or the dedicated relation tool if
-  `discover_tools({ query: "linear issue relation" })` surfaces one. Wire edges in a
-  **second pass**, after the issues exist and have ids. A ticket is unblocked when every
-  issue blocking it is closed.
-- **Frontier query**: `linear.list_issues` filtered to the map's children
-  (`parent: <map-id>`) and open states, then drop any ticket that still has an open
-  `blocked-by` relation or a non-empty `assignee`. First in map order wins.
-- **Claim**: `linear.save_issue({ id, assignee: "me" })` — the session's first write.
-- **Resolve**: post the answer with `linear.save_comment({ issueId, body })`, set the
-  ticket's `state` to a completed workflow state via `linear.save_issue`, then append a
-  context pointer to the map's Decisions-so-far.
+WHI-1425 is a completed governance bootstrap issue historically associated with Release
+0.1.0 at the owner's request. Preserve that dated metadata exception when reconstructing
+the release; it is not a model for new governance issues and must not be dispatched as
+unversioned product work. New governance issues carry no Release. Do not start planned
+0.1.1 or 0.2.0 product work solely because the template was updated.
 
-Wayfinder tickets are **decision** tickets, not build slices — they are orthogonal to the
-`[X.Y.Z]` version prefix in `issue-template.md`. Don't attach them to a Release
-(`docs/GIT_WORKFLOW.md` § Version axis): nothing ships from resolving one.
+## Reading a release
+
+`/orchestrate` works from an explicit project and Release — never a similar title or a
+milestone. Page through **every** page of `list_issues({ project, release, limit,
+cursor })` until `hasNextPage` is false. Then, for each issue, `get_issue({ id,
+includeRelations: true, includeReleases: true })` for its state, `releases[]`,
+`relations.blocks` / `relations.blockedBy`, the `## Execution` section and acceptance
+criteria, plus `list_comments` for amendments. A list page alone is not enough. Native relations are the dependency source of truth; the body lines
+mirror them — fix whichever is wrong before scheduling.
+
+## Release orchestration document
+
+Release-level state lives in **one** Linear project document named
+`Release X.Y.Z — orchestration`, reused for the whole release (never one per round) and
+linked from the issues it concerns. It records:
+
+- workflow contract version (`v0.2`), and which issues, if any, started under an older one;
+- the planned issue set, the fixed review baseline **B** and the integration branch;
+- each review round: candidate SHA **H**, reviewer role/model/effort, outcome;
+- every finding id → the fix issue that owns it (or its disposition), including
+  governance fixes tracked as external blockers (no Release, routed to `dev`);
+- current blocker, if any.
+
+Look it up first with `list_documents({ projectId, query: "Release X.Y.Z — orchestration" })`.
+Update it with `save_document({ id, content })` (or the server's patch form). Only if none
+exists, create it with `save_document({ title, project, content })`, then link it from the
+issues. GraphQL equivalents: `documents` / `documentCreate` / `documentUpdate`. If documents cannot be written, say so and stop the step that needed it —
+do not keep the state only in chat or a temp file.

@@ -26,7 +26,9 @@ can open it cold and know *what* to build, *why*, *where* in the codebase, what 
    checkable (a test passes, a log shows the expected decision, a value appears in the
    data store).
 4. **Dependencies explicit.** State what blocks this and what this unblocks, so the
-   work can be ordered and parallelized.
+   work can be ordered and parallelized. Also state the files, modules and shared
+   contracts it expects to touch (`## Execution`) — two issues with no `blocks` edge can
+   still collide there.
 5. **Scoped.** Say what is *out* of scope as clearly as what is in.
 6. **No new parameters without a source.** Anything that reads as a tunable parameter
    must cite where in `docs/DESIGN.md` §2 / `references/` it comes from, or be
@@ -76,7 +78,7 @@ as `0.2.0` and have already disagreed in practice (title `[0.2.0]`, milestone
 
 | Priority   | Use when…                                                                      |
 | ---------- | ------------------------------------------------------------------------------ |
-| **Urgent** | Blocks a milestone, or is a safety item on a high-risk path (none configured). Do first. |
+| **Urgent** | Blocks a milestone, or is a safety item on a configured high-risk paths (none for this offline benchmark) path. Do first. |
 | **High**   | Core deliverable of the milestone; needed for it to be "done."                 |
 | **Medium** | Valuable but not blocking; can slip a milestone without derailing it.          |
 | **Low**    | Nice-to-have, polish, or opportunistic cleanup.                                |
@@ -100,6 +102,26 @@ Dependency graph. List issue identifiers (e.g. `WHI-42`) and a short
 reason. Prefer to *also* wire these as Linear `blocked-by` / `blocks` relations; the
 body lines are the human-readable mirror. Use `None (entry point)` when there are no
 blockers.
+
+### `## Execution`
+Required. Drives scheduling and the implementer's effort (`docs/agents/runtime.md`).
+
+- **Complexity:** exactly one of `medium` | `high`.
+  - `medium` — local, the pattern is clear, acceptance is direct, no real cross-module
+    reasoning.
+  - `high` — cross-module behaviour, concurrency or recovery logic, data consistency, a
+    security boundary, a complex migration, or a root cause that is hard to locate.
+  Complexity is separate from priority, size and human-review risk: a tiny change can be
+  `high`, a large mechanical one need not be.
+- **Reason:** one sentence on what makes it hard (or not).
+- **Expected scope:** the files, modules and shared contracts (schema, public interface,
+  generated file) it expects to change.
+
+The designer sets it in `/to-tickets`. The orchestrator may raise it to `high` on
+evidence and records why on the issue; it is never silently lowered. An unfinished issue missing this section must be completed before it is scheduled — no
+guessing. Completed legacy issues are preserved as historical records; do not reopen or
+rewrite them just to backfill execution metadata (see `issue-tracker.md` § Adoption of
+completed legacy work).
 
 ### `## Implementation`
 The plan of record. Numbered steps, each anchored to a concrete file/module. Include:
@@ -142,6 +164,13 @@ Bare URLs are fine.
 
 ## Blocks
 > _Issue ids this unblocks, or `None`._
+
+## Execution
+> _Keep exactly one Complexity value. Reason: one sentence on the hard part. Expected
+> scope: files, modules and shared contracts this changes._
+- Complexity: medium | high
+- Reason:
+- Expected scope:
 
 ## Implementation
 > _Numbered, file-anchored plan. Signatures, config keys, schema, code blocks._

@@ -42,9 +42,9 @@ human approval** applies to both.
 |---|---|---|
 | Example | `release/v0.1.4` | `release/v0.2.0` |
 | Cut from | `dev`. A multi-commit hotfix *batch* may also cut from `main`. That is not the `hotfix/*` lane — a single `hotfix/*` PR still goes straight to `main` per [§ Hotfix](#hotfix). | `dev` |
-| Receives feature PRs? | **No** | **Yes** — this is the version's integration branch |
+| Receives feature PRs? | **No** | **Yes** — this is the version's integration branch. It may hold work that has not passed release review yet, so it is **not releasable** until it does |
 | Lifetime | Until the `main` PR merges, then deleted | The whole version's development |
-| When done | PR → `main` (human gate), delete | **Merge into `dev`** (merge commit, **human gate** — `dev` is the shippable trunk). Then promote `dev` → `main` via a **fresh** temporary cut. If the integration branch still occupies `release/vX.Y.Z`, delete it first (its history is on `dev`). Do **not** PR the integration branch to `main` directly — that leaves `dev` vestigial. |
+| When done | PR → `main` (human gate), delete | Once the **current** SHA passed full acceptance and the release review (`/orchestrate` § Release review), **merge into `dev`** (merge commit, **human gate** — `dev` is the shippable trunk). If that merge needs a new conflict resolution or code change, verify the merge result and review the changed part; the earlier pass does not cover it. Then promote `dev` → `main` via a **fresh** temporary cut. If the integration branch still occupies `release/vX.Y.Z`, delete it first (its history is on `dev`). Do **not** PR the integration branch to `main` directly — that leaves `dev` vestigial. |
 
 Cutting a version-integration branch is a **deliberate act** (it comes with the
 merge-back decision above). An agent must not create `release/v*` as a side
@@ -82,7 +82,7 @@ and surface it.** Do not guess. Do not fall back to `dev`.
 These files govern **every** branch. Pinning them to one release would mean
 hotfix branches run under stale rules:
 
-- `AGENTS.md` (`CLAUDE.md` is a symlink — edit `AGENTS.md` only)
+- `AGENTS.md` (canonical; this project retains `CLAUDE.md` as a compatibility symlink, not a second instruction source)
 - `docs/GIT_WORKFLOW.md`
 - `docs/agents/` (issue template, tracker binding, triage labels, runtime)
 - `.githooks/`
@@ -154,13 +154,14 @@ Aligned with the tracker workflow states: `Todo` → `In Progress` → `In Revie
          tracker: state = In Review
                       │
                       ▼
-              acceptance + validation green
+         merge authorization for this lane
+         (§ Merge authorization; fail closed)
                       │
                       ▼
-         squash-merge PR → <resolved-base>
+         merge PR → <resolved-base> (lane's strategy)
+         remove worktree + prune branch
          fan-out if that base was dev
          tracker: state = Done
-         remove worktree + prune branch
 ```
 
 ### 1. Start: new worktree off the resolved base
@@ -209,7 +210,18 @@ and never a guessed `dev`.
 
 - **One worktree / one branch / one issue / one PR** (never bundle unrelated issues)
 - Small commits (`feat:` `fix:` `chore:` `docs:` `refactor:` `test:`)
-- Run the relevant tests inside the worktree; the full gate runs again before merge
+- Verification has three tiers. Every result must come from the final HEAD; an
+  earlier HEAD's result does not carry over:
+  1. **Required project checks.** CI required checks, plus any check the project declares
+     for every merge in `AGENTS.md` § Build, test, run. These always pass before any
+     merge. Nothing in this workflow overrides or skips them.
+  2. **Relevant issue checks.** The affected tests, lint/type checks and targeted E2E that
+     can catch a failure in what changed. Run them for every PR.
+  3. **Full suite.** The project's complete test suite and lint, including any full E2E,
+     plus every acceptance criterion in scope. Run it at each release candidate and after
+     each fix batch (`/orchestrate` § Release review). PRs that no release acceptance will
+     cover (governance, standalone `/implement`, hotfix) also run it before merge.
+     Ordinary version issues under `/orchestrate` do not repeat it per issue.
 - Never commit secrets, `.env`, large logs, or local data files
 
 ### 3. Open PR → the resolved base, enter review
@@ -231,8 +243,10 @@ Closes WHI-123
 - Worktree base: origin/<resolved-base>
 - PR base: <resolved-base>
 
-## Test plan
-- [ ] ...
+## Evidence
+- Commit: <sha>
+- Commands + results: ...
+- Role / model / effort: ...
 EOF
 )"
 ```
@@ -257,99 +271,75 @@ PR conventions:
   `release/v*` (per-lane rules:
   [§ Merge strategy](#merge-strategy-per-lane))
 - Remote branch is auto-deleted on merge (`delete_branch_on_merge`)
+- `gh` must target the right repo and head: if `gh repo view --json nameWithOwner`
+  differs from `origin`, pass `--repo <owner/repo>` on every `gh` call; from a worktree
+  nested under the primary clone, also pass `--head <owner/repo>:<branch>` and confirm
+  `gh pr view <N> --json headRefName` equals the worktree branch. A PR whose head is the
+  trunk is closed and recreated, never pushed onto
 
-### 4. Validate, merge → Done
+### 4. Merge authorization
 
-**Ordinary development lane:** issue PRs into `dev` or a live version-integration
-branch may self-squash-merge once their acceptance criteria and required tests, lint,
-type checks, scope checks and semantic-conflict checks pass and GitHub reports
-MERGEABLE/CLEAN. This includes governance PRs. No fixed per-issue review count or
-automatic escalation ladder is required. An author checks their own diff and evidence;
-that is implementation validation, not a claim of independent review.
+What must hold before a PR merges, and whether an agent may merge it. **Fail closed:** if a
+PR fits no row, or fits a row whose conditions you cannot show, it stays at `In Review`.
 
-Focused independent review remains available when the owner requests it or a concrete
-uncertainty warrants it. Its scope and any explicit gate must be stated. Do not turn
-optional review into an unconditional checkpoint, and do not silently skip a review
-explicitly required by a particular issue. Merely not running a reviewer, or an optional
-reviewer being unavailable, does not block an otherwise validated ordinary issue PR.
+| Work | Before merge | Agent may merge? |
+| --- | --- | --- |
+| Ordinary version issue → an existing version-integration `release/v*`, under `/orchestrate` | The issue's acceptance, the required project checks and the relevant issue checks pass on the final HEAD; PR MERGEABLE/CLEAN; the orchestrator has verified the evidence | **Yes** (the orchestrator). Independent review is deferred to the release review of the whole version |
+| Bootstrap issue → `dev`, before the first production tag, under `/orchestrate` | Same as above; `dev` is explicitly the first version's integration branch | **Yes**. The first release still needs a full release review |
+| Repo-wide governance → `dev` | Required project checks, relevant checks and the full suite, plus **one independent PR review** (`/code-review`, `REVIEWER`) that passed on the final commit | **Yes**, then fan out |
+| Standalone `/implement`, no release orchestration taking over | Required project checks, relevant checks and the full suite, plus **one independent PR review** that passed on the final commit | **Yes**, unless a human-gated row below applies. A promised future review does not count |
+| Anything touching **configured high-risk paths (none for this offline benchmark)** | The checks of its lane, plus a documented verification approach | **No** — human |
+| `hotfix/*` → `main` | Required project checks, relevant checks, the full suite and one independent review, then a human | **No** — every production entry is human-approved |
+| Finished version-integration `release/v*` → `dev` | The full suite (complete acceptance) and a passed release review on the **current** SHA (`/orchestrate` § Release review), then a human | **No** |
+| Temporary `release/*` cut → `main` | Existing release flow ([§ Releasing to `main`](#releasing-to-main)) | **No** — human |
 
-**Whole-release review is mandatory** before release, as defined below. Tests passing
-for individual issues do not substitute for integrated release evidence.
-
-**Exceptions that still stop at `In Review` for a human:**
-
-- Changes touching configured high-risk paths (none configured for this offline benchmark)
-- `release/*` → `main` promotions
-- Finished version-integration `release/v*` → `dev` (the merge-back that makes `dev`
-  shippable again)
+- "Passed" means no unresolved blocking finding and acceptance valid on the reviewed SHA
+  — not zero suggestions (`/code-review` § Findings). A review of an earlier commit does not
+  cover a later one: if anything changed after the review, the reviewer checks the final
+  commit before merge.
+- A human-gated or unreviewable PR stays at `In Review` with the reason recorded. If
+  `REVIEWER` is unavailable, see `docs/agents/runtime.md` § Reviewer unavailable.
+- Who merges: under `/orchestrate`, the orchestrator (serially, from the primary clone);
+  in standalone `/implement`, the implementing agent. Either way, run the post-merge
+  cleanup below.
 
 ### Release review gate
 
-Apply this gate before finishing a version integration or promoting a production release,
-including a hotfix release. It is a release-wide check, not a loop repeated on every issue.
-The existing human gates and per-lane merge strategies still apply after review passes.
-
-1. **Pin the full scope.** Record the candidate commit/tree, actual Linear Release,
-   originating spec/issues and comparison baseline. Normally the baseline is the last
-   production tag dereferenced to its commit; before the first production tag, record the
-   verified bootstrap baseline. Review the entire integrated release delta, not only the
-   final issue PR. Check the range includes every intended change and no unrelated release.
-2. **Independent review.** Run Standards and Spec reviews in separate fresh contexts using
-   the configured REVIEWER role (at least as capable as the implementer; cross-vendor
-   preferred). Prove dispatch/authentication works with a real call. Add focused specialist
-   examination only where the actual release needs it. For this benchmark, cover protocol
-   integer/state correctness, source-parity evidence, shared-pool funding, frozen data,
-   cost-model/measurement fairness, integration boundaries, failure handling and regressions.
-3. **Validate the integrated candidate.** Run the full relevant test/lint/type suite and
-   the release's end-to-end, snapshot replay and acceptance experiments. Record actual
-   results, dataset/config identities and environment. Template smoke success alone is
-   not product or release validation.
-4. **Resolve findings.** Fix release blockers (including P0/P1 and any unmet correctness,
-   security or release acceptance requirement regardless of label). Verify fixes with
-   targeted independent follow-up and affected tests; review the changed delta and its
-   integration impact. There is no predetermined round count or mandatory escalation
-   stage. Record genuinely nonblocking residual findings in `docs/DEFERRED_ISSUES.md`
-   with rationale and tracking; they cannot conceal an unmet release requirement.
-5. **Bind evidence to what ships.** Summarize scope, reviewer outcomes, fixes, residuals
-   and validation in the release PR. Pin the reviewed candidate and artifacts. If the
-   candidate changes, verify the new delta and rerun affected checks; do not reuse stale
-   approval. A merge commit with the identical reviewed tree may reuse the evidence only
-   after that identity and the intended comparison range are checked.
-6. **Hold incomplete releases.** If required review or validation is unavailable/failing,
-   keep the release/promotion PR open and its tracking issue at `In Review`; the Linear
-   Release stays in an existing Planned/In Progress pipeline stage, never Released.
-   Do not promote, tag or deploy. Ordinary development is not globally frozen by that
-   failure. Once the gate passes,
-   obtain the human approval required by the promotion/integration lane and follow its
-   merge/tag/deployment procedure.
-
-This gate also protects the first release and applies even if all individual issues are
-already Done. Issue completion and release readiness are distinct states.
+This compatibility anchor preserves existing project links. The authoritative procedure
+is `.claude/skills/orchestrate/SKILL.md` § Release review: pin the version baseline and
+candidate, run full acceptance and one fresh reviewer covering all review concerns,
+then use its bounded candidate-review/fix process. It does not require multiple reviews
+for every issue. For this benchmark, retain protocol integer/state checks, SOR parity,
+frozen-data provenance, cost applicability and honest measurement/coverage evidence from
+`docs/DESIGN.md` and the acceptance record. Hotfix and standalone/governance paths use
+their pre-merge review requirements in the authorization table above. Human promotion
+and finished-integration gates remain unchanged.
 
 #### Waiving an exception (owner decision)
 
-An owner may waive one of these exceptions for a bounded issue set. A waiver that
+An owner may waive one human-gated row of the table above for a bounded issue set. A waiver that
 lives only in tracker labels does not work — agents obey these docs, not labels —
 so a waiver is a **PR against every doc site that states the rule it overrides**,
 and it must carry, explicitly: **(1) scope** recognized by the same
 machine-checkable signals as the [base-resolution table](#resolving-the-base-branch)
 (title prefix + tracker release + label — never prose alone); **(2) expiry** bound
 to that tracker Release closing — it does not carry into the next version;
-**(3) what it does not relax** — every other gate in this list, and any
+**(3) what it does not relax** — every other row of the table, and any
 runtime/operational gate, named one by one; **(4) the compensating control**:
 because no human reads the waived diffs, *no acceptance criterion in a waived issue
 may depend on a reviewer noticing anything — every criterion must be
 machine-checkable* (a test asserting the invariant, a CI check, an exit code);
 **(5) a rationale document** under `docs/references/` that the waiver cites.
 
-For the non-waived cases above, a human reviewer:
+For the human-gated rows, a human reviewer:
 
 1. Reviews the PR (code + whether it stays within the issue's scope)
 2. Verifies against the latest resolved base before merging (primary clone or a
    clean worktree): run the relevant tests / dry-run
-3. Squash-merges the PR into the resolved base
-4. Tracker: set the issue to **`Done`**
-5. Cleans up the local worktree (see below)
+3. Merges the PR with the lane's strategy ([§ Merge strategy](#merge-strategy-per-lane))
+4. Runs the post-merge cleanup below, plus the lane's own follow-ups (fan-out; for a
+   hotfix the tag, deploy and backmerge in [§ Hotfix](#hotfix))
+5. Only then sets the tracker to **`Done`** (merged and cleaned up — not released)
 
 ### Post-merge cleanup (mandatory, in order)
 
@@ -365,7 +355,10 @@ documented exceptions — they are not PR-gated and they push with
    branched): inside the feature worktree,
    `git merge origin/<resolved-base>`, resolve, rerun the affected tests,
    and `git push`. The PR must read **MERGEABLE / CLEAN** before you merge.
-1. **Squash-merge + drop the remote branch:** `gh pr merge <N> --squash --delete-branch`
+1. **Merge with the lane's strategy + drop the remote branch**
+   ([§ Merge strategy](#merge-strategy-per-lane)): `gh pr merge <N> --squash
+   --delete-branch` into `dev` or a long-lived `release/v*`; `--merge` (a merge commit)
+   for `hotfix/*` or `release/*` → `main` and a finished integration branch → `dev`
 2. **Remove the worktree:** `git worktree remove <worktree-path>` then
    `git worktree prune`
 3. **Delete the local branch:** `git branch -D feat/whi-123-topic`
@@ -387,8 +380,9 @@ documented exceptions — they are not PR-gated and they push with
 |-------|---------------|-----|
 | Not started | `Backlog` / `Todo` | no branch |
 | Implementing | `In Progress` | worktree + branch exist, no PR (or draft) |
-| PR open, awaiting review | **`In Review`** | open PR → resolved base |
-| Merged | **`Done`** | squash-merged into the resolved base, fan-out done if that base was `dev`, worktree removed |
+| PR open, awaiting verification / merge | **`In Review`** | open PR → resolved base |
+| Waiting for a human, or verification failed | **`In Review`**, reason recorded on the issue | open PR, not merged |
+| Merged | **`Done`** | merged into the resolved base with the lane's strategy, cleanup done, fan-out done if that base was `dev`, worktree removed |
 | Abandoned | `Canceled` | PR closed, worktree removed, not merged |
 
 Triage labels (`ready-for-agent` / `ready-for-human` / …) are **orthogonal** to workflow
@@ -397,8 +391,11 @@ state: labels say *who* does the work, state says *how far along* it is.
 ## Parallel issues
 
 - One worktree per issue → naturally parallel, no dirty-workspace collisions
-- Issues touching the **same module** must not run in parallel; serialize, or wait for
-  the earlier PR to merge and branch the next worktree off the new resolved base
+- Issues touching the **same module, shared schema, public interface or shared generated
+  file** must not run in parallel; serialize, or wait for the earlier PR to merge and
+  branch the next worktree off the new resolved base. "Git would merge it cleanly" is not
+  evidence that two issues are independent, and a missing `blocks` relation is not either
+- An issue whose work builds on another issue's code starts only after that PR merged
 - Always `git fetch` + base on `origin/<resolved-base>` before opening a new worktree
 - Version-scoped issues on different `release/v*` branches do not collide with
   each other in git; they still collide in the tracker if they share a module
@@ -534,8 +531,7 @@ no way to tell this temporary cut from a live integration branch — it discrimi
 on the open PR into `main` — and a concurrent fan-out in that window would merge
 `dev`'s unreleased work into the branch you are about to ship.
 
-After the PR reads MERGEABLE/CLEAN, the [Release review gate](#release-review-gate)
-passes for the exact candidate, and a human has approved it (`release/*` → `main` is
+After the PR reads MERGEABLE/CLEAN and a human has approved it (`release/*` → `main` is
 **always** a human gate):
 
 1. **Merge with a merge commit, not squash** (see
@@ -571,8 +567,11 @@ Then:
    `v0.1.5.1` points at a tree that calls itself `0.1.5`
 3. `gh pr create --base main`, title/body carry `WHI-NNN`; tracker →
    `In Review`
-4. **Merge with a merge commit, not squash** (see
-   [§ Merge strategy](#merge-strategy-per-lane))
+4. Required project checks, relevant checks, the full suite and one independent review
+   (`/code-review`) pass, then **a human
+   approves** — every hotfix is a production entry
+   ([§ Merge authorization](#4-merge-authorization)). **Merge with a merge commit, not
+   squash** (see [§ Merge strategy](#merge-strategy-per-lane))
 5. Tag `v0.1.5.1` + create the GitHub Release
 6. **Deploy from the tag**, not from a branch
 7. **Merge `main` back into `dev` — and push it.** From the **primary clone** (inside
@@ -593,8 +592,9 @@ Then:
 9. Tracker: issue → `Done`, the corresponding Release → `Released`, and fill in that
    Release's `commitSha`
 
-When production is live, hotfixes outrank regular issues — anything on a
-high-risk path takes this route.
+When production is live, hotfixes outrank regular issues. No high-risk paths are currently
+configured for this offline benchmark; an eventual high-risk change still follows its
+human-gated authorization row.
 
 ## Version axis
 
@@ -711,30 +711,33 @@ Implementing agents (including unattended ones) **must**:
 
 1. Change code only inside a worktree — never commit directly to `dev` in the primary clone
 2. Move the tracker in lockstep: `In Progress` on start → `In Review` when the PR opens →
-   `Done` only after confirming the squash-merge
+   `Done` only after confirming the merge and the post-merge cleanup
+   (under `/orchestrate` the orchestrator owns these transitions and the implementer
+   reports facts — `docs/agents/issue-tracker.md` § Issue lifecycle)
 3. Resolve the PR base from the [resolution table](#resolving-the-base-branch)
    **before** creating the worktree. Open the PR against that base.
    Version-scoped work targets `release/v{version}`; governance targets
    `dev`; `hotfix` targets `main`. **Never default to `dev`.** If the
    issue does not fall into exactly one row, refuse to start. State the
    resolved base and the signals in the PR body
-4. For ordinary issue PRs into `dev` or a live version-integration branch, passing
-   issue acceptance, required tests/lint/type checks, scope checks, semantic-conflict
-   checks and MERGEABLE/CLEAN authorizes self-squash-merge and mandatory cleanup.
-   No fixed per-issue review loop or reviewer-availability gate applies. Honor any
-   explicitly requested focused review. Before release, complete the independent
-   [Release review gate](#release-review-gate); unavailable required reviewers block
-   release, not all ordinary development.
+4. Merge only what [§ Merge authorization](#4-merge-authorization) lets an agent merge,
+   with the evidence that row requires on the final HEAD; then run post-merge cleanup and
+   set the tracker to `Done`. Everything else stops at `In Review` with the reason.
+   **Independent review means a context other than the implementing one**
+   (`docs/agents/runtime.md`); if `REVIEWER` is unavailable, a row that needs it is not
+   satisfied — stop at `In Review` and say which role was missing. A report of "done"
+   without a merged PR is not `Done`
 5. Respect module isolation when several issues run in parallel (see
    [§ Parallel issues](#parallel-issues))
-6. **Never** self-merge or deploy a change touching high-risk paths (none configured for this repo), even with a
-   green test run — stop at `In Review` for human confirmation. This gate **overrides the
-   self-merge pre-authorization in #4.** No waiver of it is in force; if the owner ever
+6. **Never** self-merge or deploy a change touching **configured high-risk paths (none for this offline benchmark)**, even with a
+   green test run — stop at `In Review` for human confirmation. This gate **overrides every
+   agent-merge row in #4.** No waiver of it is in force; if the owner ever
    grants one it must take the shape in
    [§ Waiving an exception](#waiving-an-exception-owner-decision) and amend this rule
    here, not merely a tracker label
-7. Never merge `release/*` → `main` without human approval. Never merge a
-   finished version-integration branch into `dev` without human approval.
+7. Never merge `release/*` → `main` or `hotfix/*` → `main` without human approval.
+   Never merge a finished version-integration branch into `dev` without human approval
+   and a passed release review on its current SHA.
 
 ## Branch protection
 
