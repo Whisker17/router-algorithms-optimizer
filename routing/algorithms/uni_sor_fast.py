@@ -56,11 +56,45 @@ same-scope `uni_sor_port` result (docs/references/latency-l06-sor-shortlist.md).
 **Exact controls.** The quote path is the ordinary default (`pools.quote.quote_exact_in`,
 L02/L03/L04 off). Those exact controls reduce work without changing the search scope; this
 variant changes the scope. Composing the two is WHI-1510's decision.
+
+**Adaptive percentage sampling (WHI-1509 / research key L07), explicit opt-in.** Only when
+the profile declares the `sampling` section (`coarse_step`, `refine_radius`,
+`soft_max_quotes`, all explicit; `PreparedUniSorFast.sampling`) does a table search stop
+quoting every grid percent. Without it the solve above runs unchanged, with identical
+metadata. With it, each table search (shortlist, or full-cohort fallback) is:
+
+a. **Coarse.** Every searched route at the grid percents that are multiples of
+   `coarse_step` (100 always among them). The unchanged SOR core combines this partial
+   table (a missing percent group is simply absent, as B-S4/B-S6 already allow), so its
+   B-S3 baseline makes the best full-input single route the first incumbent.
+b. **Incumbent.** Every new selection is D-1 integer-filled, built as a pool-disjoint plan
+   that funds the whole input (`split_path_plan` refuses shared pools) and replayed by the
+   evaluator (charged as `validation`) **before** it is published through
+   `report_candidate`; only a valid, strictly better-scoring plan replaces the incumbent.
+c. **Refine.** Around the percents of the incumbent and of the latest selection, the fine
+   percents `p +/- j*percent_step` and the freed shares `j*percent_step`
+   (`j <= refine_radius`) are added for every searched route, and the core re-combines
+   the grown table (canonical B-Q1 order, so ties resolve as in the reference). This
+   repeats until no new percent is proposed (`converged`: a local fixed point, not a
+   global optimum) or, before a round, the solve's executed quotes (all phases) reach
+   `soft_max_quotes` (`soft_limit`: status `ok` with the valid incumbent, labelled
+   `truncated_by: soft_max_quotes`). The soft cap never stops a search that has no
+   complete selection yet.
+d. **Grid completion.** If the sampled table yields no complete selection, the rest of the
+   full grid is quoted (charged, same phase) before the L06 logic concludes anything, so
+   the fallback and `no_route` / `incomplete_snapshot` rules above are unchanged.
+e. **Hard limits** stay truthful: `max_quotes` gives `timeout` with no plan (the last valid
+   incumbent is kept only as labelled metadata and through the candidate sink).
+
+With `coarse_step == percent_step` the first table is the full grid and the result is the
+L06 result. Otherwise the search is a second, declared approximation
+(`search.sor_fast.sampling_approximation: true`; per-table entry coverage and rounds in
+`search.sampling`).
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
@@ -83,6 +117,13 @@ from snapshot.models import Case, PoolState, SnapshotBundle
 NAME = "uni_sor_fast"
 REFERENCE = sor.NAME
 SHORTLIST_PARAMS = ("probe_percents", "routes_per_probe", "direct_routes")
+SAMPLING_PARAMS = ("coarse_step", "refine_radius", "soft_max_quotes")
+SAMPLING_APPROXIMATION = (
+    "coarse-to-fine percentage sampling (L07): the SOR core combines only the sampled "
+    "(route, percent) entries -- a coarse grid, then fine entries next to the incumbent's "
+    "allocation -- so an optimum between samples can be missed; a fixed point or a soft-cap "
+    "stop is a local result over the sampled table, not the full-grid search"
+)
 SEARCH_APPROXIMATION = (
     "candidate-route shortlist: the SOR core searches only the routes ranked into the "
     "shortlist by exact multi-amount probe quotes (with a full-table fallback); the result "
@@ -181,12 +222,62 @@ def _settings(params: Mapping[str, Any], percent_step: int) -> ShortlistSettings
 
 
 @dataclass(frozen=True)
+class SamplingSettings:
+    coarse_step: int
+    refine_radius: int
+    soft_max_quotes: int | None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "coarse_step": self.coarse_step,
+            "refine_radius": self.refine_radius,
+            "soft_max_quotes": self.soft_max_quotes,
+        }
+
+
+def _sampling_settings(params: Mapping[str, Any], percent_step: int) -> SamplingSettings | None:
+    """None when no `sampling.*` key is given (the L06 behaviour); otherwise all keys, by
+    the profile loader's rules (`benchmark.profile._parse_sampling`)."""
+    given = [k for k in SAMPLING_PARAMS if k in params]
+    if not given:
+        return None
+    missing = [k for k in SAMPLING_PARAMS if k not in params]
+    if missing:
+        raise UniSorFastConfigError(f"{NAME}: sampling settings are all-or-none; missing {missing}")
+    coarse, radius, soft = (params[k] for k in SAMPLING_PARAMS)
+    if not _is_int(coarse) or coarse < 1 or coarse % percent_step or 100 % coarse:
+        raise UniSorFastConfigError(
+            f"{NAME}: coarse_step {coarse!r} must be a multiple of percent_step "
+            f"({percent_step}) that divides 100"
+        )
+    if not _is_int(radius) or radius < 1:
+        raise UniSorFastConfigError(f"{NAME}: refine_radius must be an int >= 1, got {radius!r}")
+    if soft is not None and (not _is_int(soft) or soft < 1):
+        raise UniSorFastConfigError(
+            f"{NAME}: soft_max_quotes must be an int >= 1 or null, got {soft!r}"
+        )
+    return SamplingSettings(coarse, radius, soft)
+
+
+def refine_percents(selected: Iterable[int], step: int, radius: int) -> set[int]:
+    """Step c's proposal: for each selected percent `p`, the grid percents `p +/- j*step`
+    and the freed share `j*step` (another route may take it), `1 <= j <= radius`, kept
+    inside `[step, 100]`."""
+    out: set[int] = set()
+    for p in selected:
+        for j in range(1, radius + 1):
+            out.update(q for q in (p - j * step, p + j * step, j * step) if step <= q <= 100)
+    return out
+
+
+@dataclass(frozen=True)
 class PreparedUniSorFast:
     """`uni_sor_port`'s own preparation (cohort lists, universe, parameters) plus the
-    validated shortlist settings."""
+    validated shortlist settings and, only when declared, the sampling settings."""
 
     port: sor.PreparedUniSorPort
     settings: ShortlistSettings
+    sampling: SamplingSettings | None = None
 
 
 def prepare(
@@ -197,7 +288,11 @@ def prepare(
         port = sor.prepare(bundle, AlgorithmConfig(sor.NAME, search), catalog=catalog)
     except sor.UniSorPortConfigError as exc:
         raise UniSorFastConfigError(f"{NAME}: {exc}") from exc
-    return PreparedUniSorFast(port, _settings(config.params, port.percent_step))
+    return PreparedUniSorFast(
+        port,
+        _settings(config.params, port.percent_step),
+        _sampling_settings(config.params, port.percent_step),
+    )
 
 
 @dataclass(frozen=True)
@@ -262,7 +357,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
     prepared = context.prepared
     if not isinstance(prepared, PreparedUniSorFast):
         raise TypeError(f"{NAME}.solve needs the PreparedUniSorFast returned by prepare()")
-    port, settings = prepared.port, prepared.settings
+    port, settings, sampling = prepared.port, prepared.settings, prepared.sampling
     bundle = context.bundle
     cache = QuoteCache(bundle)
     params = {
@@ -330,11 +425,24 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
         "quotes_executed": 0,
         "quotes_memoized": 0,
     }
+    # L07: present only when the profile declared the `sampling` section, so an L06 solve's
+    # metadata is unchanged. Describes the last table search started (its `completed` flag
+    # says whether it finished); entry coverage counts completed rounds only.
+    sampling_stats: dict[str, Any] = {}
+    if sampling is not None:
+        stats["sor_fast"]["sampling_approximation"] = True
+        sampling_stats = {
+            "research_key": "L07",
+            "issue": "WHI-1509",
+            "approximation": SAMPLING_APPROXIMATION,
+            "settings": sampling.to_dict(),
+        }
+        stats["sampling"] = sampling_stats
     phase_start = 0
 
     def charge(phase: str) -> None:
         nonlocal phase_start
-        shortlist_stats["quotes"][phase] = cache.misses - phase_start
+        shortlist_stats["quotes"][phase] += cache.misses - phase_start
         phase_start = cache.misses
 
     def result(status: SolveStatus, **kw: Any) -> SolveResult:
@@ -477,25 +585,206 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
     )
     whole = short.size == n_routes
 
+    # ---- L07 (only with `sampling`): coarse-to-fine table, validated anytime incumbent.
+    incumbent: dict[str, Any] | None = None  # the best validated, published plan
+    rejected: dict[str, Any] | None = None  # the last selection whose plan failed validation
+
+    def validate(selection: sor.SwapSelection, phase: str) -> dict[str, Any]:
+        """Step b: build and replay the selection's plan. Returns the candidate with
+        `error` None only when it is complete, funded, pool-disjoint and replays ok."""
+        allocation = sor.integer_fill(case.amount_in, selection)
+        out: dict[str, Any] = {"selection": selection, "allocation": allocation, "plan": None,
+                               "evaluation": None, "score": None, "error": None}  # fmt: skip
+        if sum(allocation) != case.amount_in or any(a <= 0 for a in allocation):
+            out["error"] = f"allocation {list(allocation)} does not fund the input"
+            return out
+        try:
+            out["plan"] = split_path_plan(
+                case,
+                tuple(legs[r.route] for r in selection.routes),
+                tuple(r.percent for r in selection.routes),
+            )
+        except ValueError as exc:  # shared physical pool or disconnected leg
+            out["error"] = f"plan construction refused: {exc}"
+            return out
+        charge(phase)
+        sampling_stats["validations"] += 1
+        try:
+            evaluation = evaluate(bundle, case, out["plan"], context.objective, quote=guarded)
+        finally:
+            charge("validation")
+        out["evaluation"] = evaluation
+        if evaluation.status is not EvalStatus.OK:
+            out["error"] = evaluation.error or evaluation.status.value
+            return out
+        out["score"] = context.objective.score(evaluation)
+        return out
+
+    def summary(cand: dict[str, Any], round_index: int) -> dict[str, Any]:
+        return {
+            "round": round_index,
+            "selection": [
+                {"route_id": _route_label(r.route), "percent": r.percent}
+                for r in cand["selection"].routes
+            ],
+            "allocation": [str(a) for a in cand["allocation"]],
+            "evaluated_gross": str(cand["evaluation"].gross_output),
+            "score": str(cand["score"]),
+            "validated": True,
+        }
+
+    def sampled_search(
+        table_routes: Mapping[str, Sequence[sor.SorRoute]], phase: str, quote: sor.QuoteFn
+    ) -> tuple[sor.SwapSelection | None, list[sor.RouteQuote], int]:
+        """Steps a-d over one table scope; returns the incumbent's selection (or the last
+        selection when none validated), the final sampled table and its entry count."""
+        assert sampling is not None
+        step = port.percent_step
+        memo: dict[tuple[sor.SorRoute, int], int | None] = {}
+
+        def entry(route: sor.SorRoute, percent: int, amount: sor.Rational) -> int | None:
+            if (route, percent) not in memo:
+                memo[(route, percent)] = quote(route, percent, amount)
+            return memo[(route, percent)]
+
+        n_scope = sum(len(rs) for rs in table_routes.values())
+        coarse = [p for p in percents if p % sampling.coarse_step == 0]
+        sampling_stats.update(
+            scope=stats["search_scope"],
+            completed=False,
+            grid_percents=len(percents),
+            grid_entries=n_scope * len(percents),
+            coarse_percents=coarse,
+            sampled_percents=[],
+            sampled_entries=0,
+            skipped_entries=n_scope * len(percents),
+            rounds=[],
+            stop_reason=None,
+            soft_limit={
+                "max_quotes": sampling.soft_max_quotes,
+                "reached": False,
+                "quotes_at_stop": None,
+            },
+            grid_completion={"triggered": False, "completed": None},
+            validations=0,
+            rejected_incumbents=0,
+            rejection_errors=[],
+            incumbent=None,
+        )
+        rounds: list[dict[str, Any]] = sampling_stats["rounds"]
+        sampled: set[int] = set()
+        table: list[sor.RouteQuote] = []
+        seen: set[tuple[tuple[sor.SorRoute, int], ...]] = set()
+
+        def run_round(new: set[int], kind: str) -> sor.SwapSelection | None:
+            nonlocal table
+            start = cache.misses
+            grid = sorted(sampled | new)
+            table = sor.build_route_quotes(
+                table_routes, grid, [amounts[percents.index(p)] for p in grid], entry
+            )
+            sampled.update(new)  # only now: an interrupted round's entries never count
+            sel = sor.get_best_swap_route(
+                case.amount_in, percents, table, max_splits=port.max_splits
+            )
+            sampling_stats.update(
+                sampled_percents=grid,
+                sampled_entries=n_scope * len(grid),
+                skipped_entries=n_scope * (len(percents) - len(grid)),
+            )
+            rounds.append({
+                "round": len(rounds),
+                "kind": kind,
+                "added_percents": sorted(new),
+                "added_entries": n_scope * len(new),
+                "table_quotes": cache.misses - start,
+                "selection": None if sel is None else [
+                    f"{_route_label(r.route)}@{r.percent}" for r in sel.routes],
+                "incumbent": None,
+            })  # fmt: skip
+            return sel
+
+        def consider(sel: sor.SwapSelection) -> None:
+            nonlocal incumbent, rejected
+            key = tuple((r.route, r.percent) for r in sel.routes)
+            if key in seen:
+                rounds[-1]["incumbent"] = "unchanged"
+                return
+            seen.add(key)
+            cand = validate(sel, phase)
+            if cand["error"] is not None:
+                rejected = cand
+                sampling_stats["rejected_incumbents"] += 1
+                sampling_stats["rejection_errors"].append(cand["error"])
+                rounds[-1]["incumbent"] = "rejected"
+            elif incumbent is None or cand["score"] > incumbent["score"]:
+                incumbent = cand
+                sampling_stats["incumbent"] = summary(cand, len(rounds) - 1)
+                context.report_candidate(cand["plan"])  # published only after validation
+                rounds[-1]["incumbent"] = "improved"
+            else:
+                rounds[-1]["incumbent"] = "not_better"
+
+        latest = run_round(set(coarse), "coarse")
+        if latest is not None:
+            consider(latest)
+        while True:
+            if incumbent is None and latest is None:
+                missing = set(percents) - sampled
+                if not missing:
+                    sampling_stats["stop_reason"] = "no_selection_full_grid"
+                    break
+                sampling_stats["grid_completion"]["triggered"] = True
+                sampling_stats["grid_completion"]["completed"] = False
+                latest = run_round(missing, "grid_completion")
+                sampling_stats["grid_completion"]["completed"] = True
+                if latest is not None:
+                    consider(latest)
+                continue
+            basis = {r.percent for r in latest.routes} if latest is not None else set()
+            if incumbent is not None:
+                basis |= {r.percent for r in incumbent["selection"].routes}
+            new = refine_percents(basis, step, sampling.refine_radius) - sampled
+            if not new:
+                sampling_stats["stop_reason"] = "converged"
+                break
+            soft = sampling.soft_max_quotes
+            if soft is not None and cache.misses >= soft:
+                sampling_stats["stop_reason"] = "soft_limit"
+                sampling_stats["soft_limit"]["reached"] = True
+                break
+            latest = run_round(new, "refine")
+            if latest is not None:
+                consider(latest)
+        sampling_stats["soft_limit"]["quotes_at_stop"] = cache.misses
+        sampling_stats["completed"] = True
+        best = incumbent["selection"] if incumbent is not None else latest
+        return best, table, n_scope * len(sampled)
+
     # ---- 4: the unchanged SOR core on the shortlisted routes.
     def search(
         table_routes: Mapping[str, Sequence[sor.SorRoute]], phase: str
     ) -> sor.SwapSelection | None:
         failures: dict[str, int] = {}
         incomplete: list[str] = []
-        route_quotes = sor.build_route_quotes(
-            table_routes, percents, amounts, quoter(failures, incomplete)
-        )
-        n_entries = sum(len(rs) for rs in table_routes.values()) * len(percents)
+        if sampling is None:
+            route_quotes = sor.build_route_quotes(
+                table_routes, percents, amounts, quoter(failures, incomplete)
+            )
+            n_entries = sum(len(rs) for rs in table_routes.values()) * len(percents)
+            selection = sor.get_best_swap_route(
+                case.amount_in, percents, route_quotes, max_splits=port.max_splits
+            )
+        else:
+            selection, route_quotes, n_entries = sampled_search(
+                table_routes, phase, quoter(failures, incomplete)
+            )
         stats["quote_entries"] = n_entries
         stats["quote_entries_null"] = n_entries - len(route_quotes)
         stats["entry_failures"] = dict(sorted(failures.items()))
         stats["entries_incomplete"] = len(incomplete)
         stats["incomplete_example"] = incomplete[0] if incomplete else None
         stats["route_quotes"] = len(route_quotes)
-        selection = sor.get_best_swap_route(
-            case.amount_in, percents, route_quotes, max_splits=port.max_splits
-        )
         charge(phase)
         searched = pools_of(table_routes)
         shortlist_stats.update(
@@ -529,9 +818,17 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
     except _BudgetExhausted:
         in_fallback = shortlist_stats["fallback"]["triggered"]
         charge("fallback_table" if in_fallback else "shortlist_table")
-        return timeout(
-            "full-table fallback quote table" if in_fallback else "shortlist quote table"
-        )
+        where = "full-table fallback quote table" if in_fallback else "shortlist quote table"
+        if sampling is not None:
+            sampling_stats["stop_reason"] = "hard_limit"
+            sampling_stats["soft_limit"]["quotes_at_stop"] = cache.misses
+            where = f"sampled {where}" + (
+                " (the last valid incumbent is kept as search.sampling.incumbent, not as "
+                "a completed solve)"
+                if incumbent is not None
+                else " (no valid incumbent yet)"
+            )
+        return timeout(where)
     candidates_truncated = 0 if stats["search_scope"] != "shortlist" else n_routes - short.size
 
     if selection is None:
@@ -553,6 +850,37 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
             ),
         )
     stats["selection"] = selection.to_dict()
+
+    if sampling is not None:
+        # The incumbent was replayed (charged) before it was published; nothing is
+        # re-quoted here. No valid incumbent: the last rejected plan, never published.
+        cand = incumbent or rejected
+        assert cand is not None
+        stats["allocation"] = [str(a) for a in cand["allocation"]]
+        stats["d1_residual"] = str(cand["allocation"][-1] - selection.amounts[-1].quotient)
+        stats["cached_quote"] = str(selection.swap.quote)
+        if incumbent is None:
+            return result(
+                SolveStatus.INVALID_PLAN,
+                plan=cand["plan"],
+                evaluation=cand["evaluation"],
+                candidates_considered=n_routes,
+                candidates_truncated=candidates_truncated,
+                error=cand["error"],
+            )
+        evaluation = incumbent["evaluation"]
+        stats["evaluated_gross"] = str(evaluation.gross_output)
+        stats["requote_delta"] = str(evaluation.gross_output - selection.swap.quote)
+        if sampling_stats["soft_limit"]["reached"]:
+            stats["truncated_by"] = "soft_max_quotes"
+        return result(
+            SolveStatus.OK,
+            plan=incumbent["plan"],
+            evaluation=evaluation,
+            score=incumbent["score"],
+            candidates_considered=n_routes,
+            candidates_truncated=candidates_truncated,
+        )
 
     # ---- D-1 integer fill; D-3 in-solve replay (charged), then the runner's own replay.
     allocation = sor.integer_fill(case.amount_in, selection)
@@ -600,4 +928,5 @@ FACTORY = AlgorithmFactory(
     search_params=sor.SEARCH_PARAMS,
     provenance=PROVENANCE,
     shortlist_params=SHORTLIST_PARAMS,
+    sampling_params=SAMPLING_PARAMS,
 )

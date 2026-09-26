@@ -143,7 +143,9 @@ class AlgorithmConfig:
     (e.g. `{"max_hops": 3}` for `single_path`) plus the `graph.*` values it declared in
     `AlgorithmFactory.graph_params` (e.g. `{"chunks": 20}`) and the `shortlist.*` values
     it declared in `AlgorithmFactory.shortlist_params` (the opt-in `uni_sor_fast`
-    experiment, WHI-1508), empty for algorithms that declare none."""
+    experiment, WHI-1508) and, only when the profile declares them, the `sampling.*` values
+    of `AlgorithmFactory.sampling_params` (WHI-1509); empty for algorithms that declare
+    none."""
 
     name: str
     params: Mapping[str, Any] = field(default_factory=dict)
@@ -215,3 +217,9 @@ class AlgorithmFactory:
     # opt-in `uni_sor_fast` experiment, WHI-1508), validated and handed over exactly like
     # `search_params`. Empty for every reference algorithm.
     shortlist_params: tuple[str, ...] = ()
+    # Profile `sampling.*` keys (the adaptive percentage-sampling settings of the same
+    # opt-in experiment, WHI-1509). An optional all-or-none group: handed over only when
+    # the profile declares the section (the loader then requires every key); without it
+    # nothing is passed and the algorithm keeps its non-sampling behaviour. Empty for
+    # every reference algorithm.
+    sampling_params: tuple[str, ...] = ()

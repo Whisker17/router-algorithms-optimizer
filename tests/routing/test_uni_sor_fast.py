@@ -186,6 +186,7 @@ def test_no_checked_in_profile_selects_the_variant(path: Path) -> None:
     assert "uni_sor_fast" not in profile.algorithms
     resolved = profile.resolved()
     assert "shortlist" not in resolved and profile.shortlist == {}
+    assert "sampling" not in resolved and profile.sampling == {}
     assert all(
         set(cfg["params"]) <= {"max_hops", "max_splits", "percent_step", "chunks"}
         for cfg in resolved["algorithm_config"].values()
@@ -619,3 +620,349 @@ def test_isolated_runner_records_the_variant_with_its_provenance(tmp_path: Path)
             assert rec["search"]["evaluated_gross"] == rec["evaluation"]["gross_output"]
         else:
             assert rec["status"] == ref["status"]
+
+
+# ============================================================= WHI-1509 / L07 sampling
+#
+# Adaptive percentage sampling is an explicit opt-in on top of the shortlist: absent
+# `sampling.*` settings the solve is the L06 one above; with them, every returned plan is
+# a validated incumbent and every loss, soft/hard stop and grid completion stays visible.
+
+SAMPLING = {"coarse_step": 50, "refine_radius": 1, "soft_max_quotes": None}
+SAMPLING_PROFILE = {
+    **PROFILE,
+    "sampling": {"coarse_step": 25, "refine_radius": 2, "soft_max_quotes": 5000},
+}
+
+
+def _adaptive(
+    bundle: SnapshotBundle,
+    case: Case,
+    params: dict[str, Any],
+    sampling: dict[str, Any] | None = None,
+    budget: Budget | None = None,
+    sink: list[Any] | None = None,
+) -> SolveResult:
+    prepared = fast.prepare(
+        bundle, AlgorithmConfig(fast.NAME, {**params, **(sampling or SAMPLING)})
+    )
+    context = SolveContext(
+        bundle, gross_only(), prepared, candidate_sink=None if sink is None else sink.append
+    )
+    return fast.solve(case, context, budget or Budget())
+
+
+def _pool_disjoint(res: SolveResult) -> None:
+    assert res.plan is not None
+    legs: dict[str, set[str]] = {}
+    for step in res.plan.steps:
+        leg = step.output_fund_id.split("H")[0].replace("OUT", "L")
+        legs.setdefault(leg, set()).add(step.pool_id)
+    pools = [p for ps in legs.values() for p in ps]
+    assert len(pools) == len(set(pools)), legs
+
+
+# Four CPMM routes (one two-hop) whose full-grid SOR optimum is d1@90 + d0@5 + ax>xb@5:
+# from a 50 % coarse grid, radius-1 refinement walks to d1@80 / d0@10 / ax>xb@10, where no
+# single-step neighbour improves SOR's selection -- a local fixed point short of the optimum.
+NARROW = _bundle(
+    _cp("d0", "A", "B", 10**6, 896533),
+    _cp("d1", "A", "B", 10**7, 11182254),
+    _cp("ax", "A", "X", 10**6, 10**9),
+    _cp("xb", "X", "B", 10**6, 10**7),
+)
+NARROW_CASE = Case("narrow", "A", "B", 10**8)
+KEEP_ALL = _params([100], 100, 100)
+
+
+def test_sampling_settings_are_opt_in_and_strictly_validated() -> None:
+    for name in REFERENCE_IDS:
+        assert ALGORITHMS[name].sampling_params == ()
+    assert ALGORITHMS["uni_sor_fast"].sampling_params == fast.SAMPLING_PARAMS
+    # Absent: nothing handed over, nothing defaulted, the L06 settings unchanged.
+    l06 = parse_profile(PROFILE, "p.yaml")
+    assert l06.sampling == {} and "sampling" not in l06.resolved()
+    assert set(l06.algorithm_config(fast.FACTORY).params) == set(SEARCH) | set(
+        fast.SHORTLIST_PARAMS
+    )
+    twin = _bundle(_cp("p1", "A", "B", 10**6, 10**6))
+    assert fast.prepare(twin, AlgorithmConfig(fast.NAME, _params([100], 2, 0))).sampling is None
+    # Present: every key explicit, handed only to the declaring factory.
+    profile = parse_profile(SAMPLING_PROFILE, "p.yaml")
+    params = profile.algorithm_config(fast.FACTORY).params
+    assert {k: params[k] for k in fast.SAMPLING_PARAMS} == SAMPLING_PROFILE["sampling"]
+    assert set(profile.algorithm_config(sor.FACTORY).params) == set(SEARCH)
+    assert profile.resolved()["sampling"] == SAMPLING_PROFILE["sampling"]
+    assert json.dumps(profile.resolved())
+    nulled = parse_profile(
+        {**PROFILE, "sampling": {"coarse_step": 50, "refine_radius": 1, "soft_max_quotes": None}},
+        "p.yaml",
+    )
+    assert nulled.sampling["soft_max_quotes"] is None
+
+
+@pytest.mark.parametrize(
+    ("sampling", "match"),
+    [
+        ({"coarse_step": 25, "refine_radius": 1}, "soft_max_quotes"),
+        ({"coarse_step": 25, "soft_max_quotes": None}, "refine_radius"),
+        ({"coarse_step": 25, "refine_radius": 1, "soft_max_quotes": None, "x": 1}, "unknown"),
+        ({"coarse_step": 30, "refine_radius": 1, "soft_max_quotes": None}, "divides 100"),
+        ({"coarse_step": 2, "refine_radius": 1, "soft_max_quotes": None}, "multiple"),
+        ({"coarse_step": 0, "refine_radius": 1, "soft_max_quotes": None}, "coarse_step"),
+        ({"coarse_step": 25, "refine_radius": 0, "soft_max_quotes": None}, "refine_radius"),
+        ({"coarse_step": 25, "refine_radius": True, "soft_max_quotes": None}, "refine_radius"),
+        ({"coarse_step": 25, "refine_radius": 1, "soft_max_quotes": 0}, "soft_max_quotes"),
+        ({"coarse_step": 25, "refine_radius": 1, "soft_max_quotes": 1.5}, "soft_max_quotes"),
+        ([25, 1, None], "mapping"),
+    ],
+)
+def test_profile_rejects_partial_or_invalid_sampling(sampling: Any, match: str) -> None:
+    with pytest.raises(ProfileError, match=match):
+        parse_profile({**PROFILE, "sampling": sampling}, "p.yaml")
+
+
+@pytest.mark.parametrize(
+    "sampling",
+    [
+        {"coarse_step": 25},
+        {"coarse_step": 30, "refine_radius": 1, "soft_max_quotes": None},
+        {"coarse_step": 25, "refine_radius": 0, "soft_max_quotes": None},
+        {"coarse_step": 25, "refine_radius": 1, "soft_max_quotes": -1},
+        {"coarse_step": 25, "refine_radius": 1, "soft_max_quotes": False},
+    ],
+)
+def test_prepare_rejects_partial_or_invalid_sampling(sampling: dict[str, Any]) -> None:
+    twin = _bundle(_cp("p1", "A", "B", 10**6, 10**6))
+    with pytest.raises(fast.UniSorFastConfigError):
+        fast.prepare(twin, AlgorithmConfig(fast.NAME, {**_params([100], 2, 0), **sampling}))
+
+
+def test_refinement_proposes_neighbours_and_freed_shares_inside_the_grid() -> None:
+    assert fast.refine_percents({100}, 5, 1) == {95, 5}
+    assert fast.refine_percents({50}, 5, 2) == {40, 45, 55, 60, 5, 10}
+    assert fast.refine_percents({5, 95}, 5, 1) == {10, 90, 100, 5}
+    assert fast.refine_percents({50}, 50, 1) == {100, 50}  # never 0, never above 100
+
+
+@pytest.mark.parametrize(
+    "rel", ["tests/fixtures/routing/mantle_mixed", "tests/fixtures/corpus/bundle"]
+)
+def test_coarse_step_equal_to_the_grid_is_the_l06_result(rel: str) -> None:
+    """A vacuous sampling restriction (the first table is the full grid) reproduces the
+    L06 solve exactly, including quotes; nothing else is claimed about equality."""
+    bundle = _load(rel)
+    params = _params([5, 100], 2, 1)
+    for case in bundle.cases[:: max(1, len(bundle.cases) // 12)]:
+        l06 = _fast(bundle, case, params)
+        got = _adaptive(
+            bundle, case, params, {"coarse_step": 5, "refine_radius": 1, "soft_max_quotes": None}
+        )
+        assert (got.status, got.plan, got.evaluation, got.score, got.error) == (
+            l06.status,
+            l06.plan,
+            l06.evaluation,
+            l06.score,
+            l06.error,
+        )
+        s, r = got.search_stats, l06.search_stats
+        for key in (
+            "selection",
+            "allocation",
+            "d1_residual",
+            "quotes_executed",
+            "search_scope",
+            "entry_failures",
+            "quote_entries",
+            "route_quotes",
+            "shortlist",
+        ):
+            assert s[key] == r[key], key
+        assert "sampling" not in r and "sampling_approximation" not in r["sor_fast"]
+        assert s["sor_fast"]["sampling_approximation"] is True
+        if got.status is SolveStatus.OK:
+            assert s["sampling"]["skipped_entries"] == 0
+            assert s["sampling"]["stop_reason"] == "converged"
+
+
+def test_local_refinement_can_miss_a_narrow_optimum_and_the_loss_is_retained() -> None:
+    """An actual, asserted sampling loss (not hidden by the exact final replay): radius 1
+    converges at a local fixed point; radius 2 reaches the reference optimum."""
+    ref = _ref(NARROW, NARROW_CASE)
+    sel = [(r["pool_ids"], r["percent"]) for r in ref.search_stats["selection"]["routes"]]
+    assert sel == [(["d1"], 90), (["d0"], 5), (["ax", "xb"], 5)]
+    sink: list[Any] = []
+    one = _adaptive(NARROW, NARROW_CASE, KEEP_ALL, sink=sink)
+    s = one.search_stats["sampling"]
+    assert one.status is SolveStatus.OK and one.search_stats["search_scope"] == "full_cohort"
+    assert s["stop_reason"] == "converged" and s["completed"] is True
+    assert s["incumbent"]["selection"] == [
+        {"route_id": "V2:d1", "percent": 80},
+        {"route_id": "V2:d0", "percent": 10},
+        {"route_id": "V2:ax>xb", "percent": 10},
+    ]
+    assert 90 not in s["sampled_percents"] and s["skipped_entries"] > 0
+    assert s["sampled_entries"] + s["skipped_entries"] == s["grid_entries"] == 3 * 20
+    assert ref.score is not None and one.score is not None and one.score < ref.score
+    assert one.search_stats["truncated_by"] is None
+    _independently_valid(NARROW, NARROW_CASE, one)
+    # Anytime: every published plan was valid when published and strictly improved.
+    scores = [gross_only().score(evaluate(NARROW, NARROW_CASE, p, gross_only())) for p in sink]
+    assert scores == sorted(set(scores)) and scores[-1] == one.score
+    improved = [r for r in s["rounds"] if r["incumbent"] == "improved"]
+    assert len(improved) == len(sink) and s["rounds"][0]["kind"] == "coarse"
+    two = _adaptive(NARROW, NARROW_CASE, KEEP_ALL, {**SAMPLING, "refine_radius": 2})
+    assert (two.plan, two.score) == (ref.plan, ref.score)
+
+
+def test_small_profitable_share_is_reached_by_refinement() -> None:
+    """The thin pool is best only as a 10 % share, which a 50 % coarse grid never samples:
+    the freed-share proposals reach it and the result equals the reference here."""
+    ref = _ref(THIN_BUNDLE, THIN_CASE)
+    got = _adaptive(THIN_BUNDLE, THIN_CASE, _params([5, 100], 3, 0))
+    s = got.search_stats["sampling"]
+    assert s["coarse_percents"] == [50, 100]
+    assert {"route_id": f"V2:{THIN}", "percent": 10} in s["incumbent"]["selection"]
+    assert (got.plan, got.score) == (ref.plan, ref.score)
+    assert s["skipped_entries"] > 0
+    _independently_valid(THIN_BUNDLE, THIN_CASE, got)
+
+
+def test_soft_cap_returns_the_valid_incumbent_with_explicit_metadata() -> None:
+    sink: list[Any] = []
+    got = _adaptive(NARROW, NARROW_CASE, KEEP_ALL, {**SAMPLING, "soft_max_quotes": 20}, sink=sink)
+    s = got.search_stats
+    assert got.status is SolveStatus.OK and s["truncated_by"] == "soft_max_quotes"
+    assert s["sampling"]["stop_reason"] == "soft_limit"
+    assert s["sampling"]["soft_limit"] == {"max_quotes": 20, "reached": True, "quotes_at_stop": 20}
+    assert s["quotes_executed"] == 20
+    _independently_valid(NARROW, NARROW_CASE, got)
+    assert sink[-1] == got.plan
+    # Soft stops never precede a first complete selection: cap 1 still returns the
+    # coarse incumbent (8 quotes), labelled.
+    first = _adaptive(NARROW, NARROW_CASE, KEEP_ALL, {**SAMPLING, "soft_max_quotes": 1})
+    assert first.status is SolveStatus.OK and len(first.search_stats["sampling"]["rounds"]) == 1
+    assert first.search_stats["sampling"]["soft_limit"]["quotes_at_stop"] == 8
+    _independently_valid(NARROW, NARROW_CASE, first)
+
+
+def test_hard_quote_limit_is_a_timeout_and_keeps_the_incumbent_only_as_labelled_metadata() -> None:
+    sink: list[Any] = []
+    cut = _adaptive(NARROW, NARROW_CASE, KEEP_ALL, budget=Budget(max_quotes=30), sink=sink)
+    s = cut.search_stats
+    assert cut.status is SolveStatus.TIMEOUT and cut.plan is None and cut.score is None
+    assert s["truncated_by"] == "max_quotes" and s["search_completed"] is False
+    assert cut.error is not None and "not as a completed solve" in cut.error
+    samp = s["sampling"]
+    assert samp["stop_reason"] == "hard_limit" and samp["completed"] is False
+    # Only completed rounds count as sampled: the interrupted round's percents are absent.
+    assert samp["sampled_percents"] == [5, 10, 40, 45, 50, 55, 100]
+    assert samp["sampled_entries"] == 3 * 7
+    assert samp["incumbent"]["validated"] is True and samp["incumbent"]["round"] == 2
+    # The runner would take the last published plan as `last_valid_candidate`: it is valid.
+    assert sink and evaluate(NARROW, NARROW_CASE, sink[-1], gross_only()).status is EvalStatus.OK
+    assert (
+        str(evaluate(NARROW, NARROW_CASE, sink[-1], gross_only()).gross_output)
+        == samp["incumbent"]["evaluated_gross"]
+    )
+    assert s["quotes_executed"] == 30 == sum(s["shortlist"]["quotes"].values())
+
+
+def test_no_incumbent_from_the_sampled_table_completes_the_grid_before_any_conclusion() -> None:
+    """CL pools with a bounded collected band: the coarse grid is {100} only, where every
+    route needs uncollected state, so the sampled table has no selection. The rest of the
+    grid (50 %) is quoted and charged before anything is concluded -- here after the
+    unchanged L06 fallback -- and a case with no selection anywhere is the reference's
+    `incomplete_snapshot`, stated only after the full grid."""
+    case = Case("c", "A", "B", 4 * 10**10)
+    ref = _ref(CL_BUNDLE, case, CL_SEARCH)
+    got = _adaptive(
+        CL_BUNDLE,
+        case,
+        _params([100], 2, 2, CL_SEARCH),
+        {"coarse_step": 100, "refine_radius": 1, "soft_max_quotes": 1},
+    )
+    s = got.search_stats
+    assert s["shortlist"]["fallback"]["reason"] == "no_ranked_route"
+    samp = s["sampling"]
+    assert samp["scope"] == "full_cohort_fallback"
+    assert samp["grid_completion"] == {"triggered": True, "completed": True}
+    assert [r["kind"] for r in samp["rounds"]][:2] == ["coarse", "grid_completion"]
+    assert s["truncated_by"] is None  # the soft cap never stops before a first selection
+    assert (got.status, got.plan, got.score) == (ref.status, ref.plan, ref.score)
+    _independently_valid(CL_BUNDLE, case, got)
+    too_big = Case("c", "A", "B", 10**12)
+    none = _adaptive(
+        CL_BUNDLE,
+        too_big,
+        _params([100], 2, 0, CL_SEARCH),
+        {"coarse_step": 100, "refine_radius": 1, "soft_max_quotes": None},
+    )
+    assert none.status is SolveStatus.INCOMPLETE_SNAPSHOT
+    assert none.search_stats["sampling"]["stop_reason"] == "no_selection_full_grid"
+    assert none.search_stats["sampling"]["incumbent"] is None
+
+
+@pytest.mark.parametrize("amount", [1, 13, 21, 10**5 + 1])
+def test_tiny_nondivisible_inputs_and_ties_fund_the_whole_input(amount: int) -> None:
+    """Twin pools tie; dust floors every entry to zero (no_route only after the full grid
+    and fallback); odd inputs put the integer remainder on the last route."""
+    twin = _bundle(_cp("p1", "A", "B", 10**6, 10**6), _cp("p2", "A", "B", 10**6, 10**6))
+    case = Case("c", "A", "B", amount)
+    ref = _ref(twin, case)
+    got = _adaptive(twin, case, _params([100], 2, 0))
+    again = _adaptive(twin, case, _params([100], 2, 0))
+    assert got.search_stats == again.search_stats and got.plan == again.plan
+    assert got.status is ref.status
+    if amount == 1:
+        assert got.status is SolveStatus.NO_ROUTE
+        assert got.search_stats["sampling"]["stop_reason"] == "no_selection_full_grid"
+        return
+    _independently_valid(twin, case, got)
+    assert got.score == ref.score
+    if amount == 10**5 + 1:
+        assert got.search_stats["allocation"] == ["50000", "50001"]
+
+
+def test_sampled_solves_are_valid_pool_disjoint_and_charged_on_fixtures() -> None:
+    bundle = _load("tests/fixtures/corpus/bundle")
+    params = _params([5, 100], 2, 1)
+    for case in bundle.cases[::6]:
+        with metered_quotes(None) as meter:
+            got = _adaptive(
+                bundle,
+                case,
+                params,
+                {"coarse_step": 25, "refine_radius": 1, "soft_max_quotes": None},
+            )
+        s = got.search_stats
+        assert s["quotes_executed"] == meter.counted == sum(s["shortlist"]["quotes"].values())
+        l06 = _fast(bundle, case, params)
+        if got.status is SolveStatus.OK:
+            _independently_valid(bundle, case, got)
+            _pool_disjoint(got)
+            samp = s["sampling"]
+            assert samp["sampled_entries"] + samp["skipped_entries"] == samp["grid_entries"]
+            assert samp["incumbent"]["evaluated_gross"] == s["evaluated_gross"]
+        else:  # a sampling miss is never a status of its own
+            assert got.status is l06.status
+        _coverage_is_the_completed_search(got)
+
+
+def test_isolated_runner_records_the_sampling_metadata(tmp_path: Path) -> None:
+    from benchmark.results import load_case_records
+    from benchmark.runner import run_experiment
+
+    bundle = _load("tests/fixtures/routing/mantle_mixed")
+    doc = {**SAMPLING_PROFILE, "algorithms": ["uni_sor_fast"]}
+    manifest = run_experiment(
+        bundle, parse_profile(doc, "p.yaml"), results_dir=tmp_path, replay_command="cmd"
+    )
+    assert manifest.complete
+    run = json.loads((Path(manifest.run_dir) / "manifest.json").read_text())
+    assert '"sampling"' in json.dumps(run)
+    for rec in load_case_records(manifest.run_dir):
+        assert rec["search"]["sampling"]["settings"] == SAMPLING_PROFILE["sampling"]
+        assert rec["quotes"]["counted"] == rec["search"]["quotes_executed"]
+        if rec["status"] == "ok":
+            assert rec["search"]["evaluated_gross"] == rec["evaluation"]["gross_output"]

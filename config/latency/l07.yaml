@@ -1,0 +1,91 @@
+# L07 (WHI-1509): PRE-REGISTERED bounded quality/work diagnostics of the opt-in adaptive
+# percentage sampling of `uni_sor_fast` (profile section `sampling`), with the ablation
+# arms that separate the L06 shortlist from the L07 sampling.
+#
+# Registered and committed BEFORE any L01-matrix or sentinel solve of the sampling path
+# (before this commit it had only run on checked-in test fixtures, as unit tests).
+# Changing any value below is a new `version`, never a reinterpretation.
+#
+# Prior visibility, disclosed: the L06 tuning and held-out rows (docs/references/
+# latency-l06-sor-shortlist.md, including the per-case held-out losses of its nomination)
+# were visible when this file was written. The L06 shortlist used below is the committed
+# L06 tuning nomination, fixed a priori here and NOT re-tuned; no L07 knob and no rule
+# below was chosen from those held-out losses or from any L07 result.
+#
+# Read by tools/latency/l07_adaptive_sampling.py. This is NOT an L01 experiment and gives
+# no adopt verdict: there is no loss tolerance, and timing is a single-shot in-process
+# diagnostic on the declared host. The performance / quality trade-off and any adoption
+# belong to WHI-1510.
+schema: l07-sampling/1
+key: L07
+version: 1
+
+# Inputs, all read-only and identical to L06's: the L01 protocol (matrix and splits), the
+# L01 experiment whose derived bundles and uni_sor_port baseline records are reused, and
+# the unchanged daily gross profile (max_hops 2 / max_splits 4 / percent_step 5, budget
+# 50,000 quotes, seed, objective).
+l01_protocol:
+  path: config/latency/l01.yaml
+  sha256: 961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b
+l01_experiment: 20260926T090434484129Z-d5061563
+profile:
+  path: config/daily_gross.yaml
+  sha256: 577b43ebc2d23f1d4d896501471b104013ca86e4d33f2b8315722f3bb5680c11
+bundles: [full_source/matrix, sor_compatible/matrix, full_source/sentinel, sor_compatible/sentinel]
+
+reference: uni_sor_port
+candidate: uni_sor_fast
+
+# Arms (setting ids are derived by the tool from these values):
+#   l06_only       the L06 nomination, no `sampling` section (the unchanged L06 solve).
+#   combined       the same L06 shortlist + every `sampling` setting of the sweep.
+#   adaptive_only  sampling over a vacuous shortlist: probe percents = the coarse grid (so
+#                  probing costs no quote the coarse table would not make) and
+#                  routes_per_probe large enough to keep every ranked route. A route with
+#                  no valid entry at any coarse percent is unranked and not searched, so
+#                  this arm is "adaptive only where applicable"; every row records its
+#                  scope (full_cohort vs shortlist).
+l06_shortlist: {probe_percents: [5, 100], routes_per_probe: 8, direct_routes: 0}
+adaptive_only_shortlist: {routes_per_probe: 1000000, direct_routes: 0}
+
+# The complete bounded sweep, in this order (the order is the final nomination tie-break).
+# Chosen a priori: coarse grids of 2, 4 and 5 points (all include 100), refinement radius of
+# one or two fine steps, and no soft cap vs one fixed soft cap of 250 counted quotes (all
+# phases). 250 is a fixed a-priori exercise value (well under the 50,000 hard cap), not
+# tuned; it exists so the held-out split also shows soft-limit outcomes.
+sweep:
+  combined:
+    coarse_step: [50, 25, 20]
+    refine_radius: [1, 2]
+    soft_max_quotes: [null, 250]
+  adaptive_only:
+    coarse_step: [50, 25, 20]
+    refine_radius: [1, 2]
+    soft_max_quotes: [null]
+
+phases:
+  # Every setting of every arm, plus the reference, on the L01 tuning split, both cohorts.
+  # The sentinel (both cohorts) is run too but reported apart and never enters a nomination.
+  tuning: {split: tuning, sentinel: true}
+  # Run once, after the tuning results are committed, on the L01 held-out split (both
+  # cohorts): the reference, l06_only, the combined nomination, the adaptive_only
+  # nomination and the fixed aggressive setting. Held-out results cannot change any choice;
+  # the tool refuses a changed code tree or registration.
+  held_out: {split: held_out, sentinel: false}
+
+# Nomination, per sampling arm (combined; adaptive_only), from the tuning split only,
+# lexicographically, with NO loss tolerance: (1) fewest reference-ok -> candidate-non-ok
+# status regressions, (2) smallest maximum regret vs the reference (bps), (3) smallest
+# summed regret vs the reference (bps), (4) fewest counted quotes, (5) sweep order.
+# Quality-first by construction; not an adoption recommendation.
+nomination: [status_regressions, max_regret_bps, sum_regret_bps, quotes_counted, sweep_order]
+# Fixed a priori (not from any result): the cheapest combined setting.
+aggressive: {arm: combined, coarse_step: 50, refine_radius: 1, soft_max_quotes: 250}
+
+# Regret per (bundle, case) = (reference score - candidate score) x 10,000 / reference score
+# on the same bundle, cohort, objective (gross) and budget; N/A (never 0) when the reference
+# is not ok or not positive, or the candidate is not ok (then a status regression).
+# Negative regret is reported as is. For the combined arm a second paired regret against
+# l06_only on the same case isolates the sampling's own effect (N/A under the same rules).
+# Tuning, sentinel and held-out are never pooled.
+heuristic_default_loss_tolerance: null
