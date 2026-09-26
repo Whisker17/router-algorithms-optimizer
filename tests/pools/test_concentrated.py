@@ -11,7 +11,9 @@ under test. Regenerate with `tools/cl_evidence/regen.sh` (see its README).
 from __future__ import annotations
 
 import dataclasses
+import functools
 import json
+import random
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -21,12 +23,13 @@ import pytest
 import yaml
 
 from benchmark.objective import gross_only
-from pools import cl_math
+from pools import cl_math, concentrated
 from pools.cl_math import (
     MAX_SQRT_RATIO,
     MAX_TICK,
     MIN_SQRT_RATIO,
     MIN_TICK,
+    MissingState,
     SolidityRevert,
     add_delta,
     get_sqrt_ratio_at_tick,
@@ -571,3 +574,399 @@ def test_evaluator_rejects_cl_partial_fill() -> None:
     evaluation = evaluate(bundle, case, plan, gross_only())
     assert evaluation.status is EvalStatus.INVALID_PLAN
     assert evaluation.error is not None and "insufficient_liquidity" in evaluation.error
+
+
+# ---------------------------------------------------------------------------
+# WHI-1504: exact skipping of empty zero-liquidity spans
+#
+# The oracle is the unmodified reference loop (`skip_empty_spans=False`) plus the
+# deployed-bytecode evidence above (every replay test runs the default fast path).
+# Each comparison covers the complete outcome: amounts, new state (price, tick,
+# liquidity, fee growth, protocol fees, crossed tick data), crossed ticks, the
+# logical `steps` count and LM-hook calls -- or the identical exception.
+# ---------------------------------------------------------------------------
+
+
+class _StepCounter:
+    """Counts executed `computeSwapStep` calls inside `pools.concentrated.swap`."""
+
+    def __init__(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self.calls = 0
+        original = cl_math.compute_swap_step_exact_in
+
+        def counted(*args: int) -> tuple[int, int, int, int]:
+            self.calls += 1
+            return original(*args)
+
+        monkeypatch.setattr(concentrated, "compute_swap_step_exact_in", counted)
+
+
+def _outcome(
+    state: ConcentratedPoolState, zero_for_one: bool, amount: int, limit: int, reference: bool
+) -> Any:
+    try:
+        if reference:
+            return swap(state, zero_for_one, amount, limit, skip_empty_spans=False)
+        return swap(state, zero_for_one, amount, limit)  # the default is the fast path
+    except (SolidityRevert, MissingState) as exc:
+        return (type(exc).__name__, str(exc))
+
+
+def _differential(
+    state: ConcentratedPoolState,
+    zero_for_one: bool,
+    amount: int,
+    limit: int | None = None,
+    counter: _StepCounter | None = None,
+) -> tuple[Any, int]:
+    """Assert fast == reference; return (outcome, skipped logical steps)."""
+    if limit is None:
+        limit = MIN_SQRT_RATIO + 1 if zero_for_one else MAX_SQRT_RATIO - 1
+    frozen = dataclasses.replace(state)
+    reference = _outcome(state, zero_for_one, amount, limit, reference=True)
+    before = counter.calls if counter is not None else 0
+    fast = _outcome(state, zero_for_one, amount, limit, reference=False)
+    executed = (counter.calls - before) if counter is not None else 0
+    assert fast == reference, (state.pool_id, zero_for_one, amount, limit)
+    assert state == frozen  # immutable input
+    skipped = fast.steps - executed if counter is not None and not isinstance(fast, tuple) else 0
+    return fast, skipped
+
+
+def _usable(spacing: int) -> tuple[int, int]:
+    return -(MAX_TICK // spacing) * spacing, (MAX_TICK // spacing) * spacing
+
+
+def _full_word_range(spacing: int) -> tuple[int, int]:
+    lo, hi = _usable(spacing)
+    return (lo // spacing) >> 8, (hi // spacing) >> 8
+
+
+def _cl_state(
+    spacing: int,
+    positions: list[tuple[int, int, int]],
+    sqrt_price: int,
+    *,
+    word_range: tuple[int, int] | None = None,
+    fee: int = 3000,
+    source: str = "uniswap_v3",
+    fee_protocol: int = 0,
+    lm_pool: str | None = None,
+    salt: int = 1,
+) -> ConcentratedPoolState:
+    """A consistent pool: bitmap bits and tick data of every position edge, active
+    liquidity of the current tick (`lower <= tick < upper`), non-zero fee growth."""
+    tick = get_tick_at_sqrt_ratio(sqrt_price)
+    gross: dict[int, int] = {}
+    net: dict[int, int] = {}
+    for lower, upper, liq in positions:
+        for t, delta in ((lower, liq), (upper, -liq)):
+            gross[t] = gross.get(t, 0) + liq
+            net[t] = net.get(t, 0) + delta
+    rng_words = word_range or _full_word_range(spacing)
+    bitmap: dict[int, int] = {}
+    ticks: dict[int, TickInfo] = {}
+    for t in gross:
+        compressed = t // spacing
+        word = compressed >> 8
+        if rng_words[0] <= word <= rng_words[1]:
+            bitmap[word] = bitmap.get(word, 0) | (1 << (compressed & 0xFF))
+            ticks[t] = TickInfo(
+                liquidity_gross=gross[t],
+                liquidity_net=net[t],
+                fee_growth_outside0_x128=(t * 7919 + salt) % (1 << 200),
+                fee_growth_outside1_x128=(t * 104729 + salt) % (1 << 190),
+            )
+    return ConcentratedPoolState(
+        pool_id=f"0xsynthetic{salt}",
+        source_key=source,
+        token0="0xtoken0",
+        token1="0xtoken1",
+        fee=fee,
+        tick_spacing=spacing,
+        sqrt_price_x96=sqrt_price,
+        tick=tick,
+        liquidity=sum(liq for lower, upper, liq in positions if lower <= tick < upper),
+        fee_protocol=fee_protocol,
+        fee_growth_global0_x128=(1 << 140) + salt,
+        fee_growth_global1_x128=(1 << 150) + 3 * salt,
+        protocol_fees0=11,
+        protocol_fees1=13,
+        bitmap_word_range=rng_words,
+        tick_bitmap=bitmap,
+        ticks=ticks,
+        lm_pool=lm_pool,
+    )
+
+
+# Two bands 40 words apart at spacing 10: between them, zero liquidity and 38 empty words.
+_WORD10 = 256 * 10
+_BANDS = [(-2 * _WORD10, -_WORD10 - 50, 10**20), (40 * _WORD10 + 70, 42 * _WORD10, 3 * 10**19)]
+
+
+def _mid_gap_state(**kwargs: Any) -> ConcentratedPoolState:
+    return _cl_state(10, _BANDS, get_sqrt_ratio_at_tick(20 * _WORD10 + 3) + 12345, **kwargs)
+
+
+@pytest.mark.parametrize(("source", "scenario"), ALL)
+def test_empty_span_skip_matches_reference_on_contract_evidence(
+    source: str, scenario: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    counter = _StepCounter(monkeypatch)
+    ev_all = evidence(source, scenario)
+    states = [ev_all.state] + [out.new_state for _, _, _, _, out in replay(ev_all)]
+    skipped = 0
+    for state in states:
+        for zero_for_one in (True, False):
+            for amount in (1, 10**9, 10**15, 10**18, 10**21, 10**27):
+                skipped += _differential(state, zero_for_one, amount, counter=counter)[1]
+        for _, _, ev, before, _ in replay(ev_all):
+            skipped += _differential(
+                before, ev.zero_for_one, ev.amount_specified, ev.sqrt_price_limit_x96, counter
+            )[1]
+    if scenario == "controlled":
+        # Full-range captures: exhaustion walks hundreds of empty words both ways.
+        assert skipped > 300  # ~346 words to the bound at spacing 10
+
+
+@pytest.mark.parametrize("zero_for_one", [True, False])
+def test_long_empty_span_then_initialized_liquidity(
+    zero_for_one: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    counter = _StepCounter(monkeypatch)
+    state = _mid_gap_state()
+    assert state.liquidity == 0
+    out, skipped = _differential(state, zero_for_one, 10**18, counter=counter)
+    assert skipped >= 15  # about half of the 38-word gap in each direction
+    assert out.amount0 != 0 and out.amount1 != 0
+    edge = _BANDS[0][1] if zero_for_one else _BANDS[1][0]
+    assert out.crossed_ticks[0] == edge and out.new_state.liquidity > 0
+    # The first executed step after the span starts exactly at the skipped-to boundary.
+    for source, lm in (("agni_v3", "0x" + "11" * 20), ("fusionx_v3", ZERO)):
+        hooked = _mid_gap_state(source=source, lm_pool=lm, fee_protocol=3300 | (2500 << 16))
+        _differential(hooked, zero_for_one, 10**18, counter=counter)
+    _differential(_mid_gap_state(fee_protocol=4 | (6 << 4)), zero_for_one, 10**18)
+
+
+@pytest.mark.parametrize("zero_for_one", [True, False])
+def test_exact_exhaustion_at_an_edge_then_zero_cost_transitions_both_ways(
+    zero_for_one: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    counter = _StepCounter(monkeypatch)
+    # Price inside a band; the input exactly reaches the band edge (the edge tick is
+    # crossed and liquidity drops to zero). The reference loop stops there because the
+    # input is exhausted; it must not continue into the following empty span.
+    lower, upper = -_WORD10 - 50, _WORD10 + 30
+    state = _cl_state(10, [(lower, upper, 10**20)], get_sqrt_ratio_at_tick(7) + 99)
+    edge = lower if zero_for_one else upper
+    to_edge = swap(state, zero_for_one, 10**30, get_sqrt_ratio_at_tick(edge))
+    exact = to_edge.amount0 if zero_for_one else to_edge.amount1
+    out, _ = _differential(state, zero_for_one, exact, counter=counter)
+    assert (out.amount0, out.amount1) == (to_edge.amount0, to_edge.amount1)
+    assert out.new_state.sqrt_price_x96 == get_sqrt_ratio_at_tick(edge)
+    assert out.new_state.liquidity == 0 and out.crossed_ticks == (edge,)
+    # One more unit continues across every empty word to the bound: a partial fill.
+    beyond, skipped = _differential(state, zero_for_one, exact + 1, counter=counter)
+    assert skipped > 300  # ~346 words to the bound at spacing 10
+    assert (beyond.amount0 if zero_for_one else beyond.amount1) == exact
+    # From the zero-liquidity edge state: onward (empty span) and back (re-cross the edge).
+    parked = out.new_state
+    _, onward_skipped = _differential(parked, zero_for_one, 10**18, counter=counter)
+    assert onward_skipped > 300
+    back, back_skipped = _differential(parked, not zero_for_one, 10**18, counter=counter)
+    assert back_skipped == 0 and back.crossed_ticks[0] == edge
+
+
+@pytest.mark.parametrize("zero_for_one", [True, False])
+def test_price_limits_inside_an_empty_span(
+    zero_for_one: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    counter = _StepCounter(monkeypatch)
+    state = _mid_gap_state()
+    sign = -1 if zero_for_one else 1
+    hit_limit = 0
+    for words in (0, 1, 2, 7, 18):
+        boundary = 20 * _WORD10 + sign * words * _WORD10 + (0 if zero_for_one else -10)
+        for tick in (boundary - 1, boundary, boundary + 1, boundary + sign * 123):
+            for offset in (-1, 0, 1):
+                limit = get_sqrt_ratio_at_tick(tick) + offset
+                out, _ = _differential(state, zero_for_one, 10**18, limit, counter)
+                if not isinstance(out, tuple):
+                    assert out.new_state.sqrt_price_x96 == limit
+                    assert out.amount0 == 0 and out.amount1 == 0 and out.crossed_ticks == ()
+                    hit_limit += 1
+    assert hit_limit >= 50
+
+
+@pytest.mark.parametrize("zero_for_one", [True, False])
+def test_incomplete_range_inside_an_empty_span(
+    zero_for_one: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    counter = _StepCounter(monkeypatch)
+    # The collected window ends inside the gap: the span is empty only up to its edge.
+    state = _mid_gap_state(word_range=(5, 45) if zero_for_one else (-3, 35))
+    missing, _ = _differential(state, zero_for_one, 10**18, counter=counter)
+    assert missing[0] == "MissingState" and "outside the collected range" in missing[1]
+    token_in = state.token0 if zero_for_one else state.token1
+    assert quote_exact_in(state, token_in, 10**18).status is QuoteStatus.INCOMPLETE_SNAPSHOT
+    # A limit before the uncollected word is an ordinary (zero-output) fill.
+    limit = get_sqrt_ratio_at_tick(20 * _WORD10 + (-5 if zero_for_one else 5) * _WORD10)
+    out, skipped = _differential(state, zero_for_one, 10**18, limit, counter)
+    assert out.new_state.sqrt_price_x96 == limit and skipped >= 4
+
+
+@pytest.mark.parametrize("zero_for_one", [True, False])
+def test_span_ends_at_an_initialized_tick_on_the_word_edge(
+    zero_for_one: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Spacing 1: the next initialized tick is the first bit the next word search reads
+    # (bit 255 going down, bit 0 going up); an off-by-one span end would miss it.
+    counter = _StepCounter(monkeypatch)
+    word = 256
+    band = (-30 * word - 40, -20 * word + 255) if zero_for_one else (20 * word, 30 * word + 7)
+    state = _cl_state(1, [(*band, 10**18)], get_sqrt_ratio_at_tick(77) + 1)
+    out, skipped = _differential(state, zero_for_one, 10**15, counter=counter)
+    assert skipped >= 19 and out.crossed_ticks[0] == band[1 if zero_for_one else 0]
+
+
+def test_dense_positive_liquidity_word_boundaries_are_never_skipped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    counter = _StepCounter(monkeypatch)
+    lo, hi = _usable(10)
+    state = _cl_state(10, [(lo, hi, 10**18)], get_sqrt_ratio_at_tick(1234) + 5, fee=500)
+    for zero_for_one in (True, False):
+        out, skipped = _differential(state, zero_for_one, 10**24, counter=counter)
+        assert skipped == 0 and out.steps > 20  # every uninitialized boundary executes
+    # Counterexample: one computeSwapStep across the same uninitialized boundaries is not
+    # the per-word result -- rounding up per step and the per-step fee differ.
+    target = get_sqrt_ratio_at_tick(1234 + 30 * _WORD10)
+    per_word = swap(state, False, 10**30, target, skip_empty_spans=False)
+    assert per_word.steps == 31 and per_word.new_state.sqrt_price_x96 == target
+    _, amount_in, amount_out, fee_amount = cl_math.compute_swap_step_exact_in(
+        state.sqrt_price_x96, target, state.liquidity, 10**30, state.fee
+    )
+    assert (amount_in + fee_amount, -amount_out) != (per_word.amount1, per_word.amount0)
+
+
+def test_fee_at_the_pips_denominator_is_not_skipped() -> None:
+    # computeSwapStep's `mulDivRoundingUp(amountIn, fee, 1e6 - fee)` reverts at
+    # fee == 1e6 even for zero liquidity; skipping must not hide that revert.
+    for word_range in (None, (5, 45)):  # (5, 45): the empty span meets an unknown word
+        out, _ = _differential(_mid_gap_state(fee=1_000_000, word_range=word_range), True, 10**18)
+        assert out == ("SolidityRevert", "FullMath.mulDiv: denominator == 0")
+
+
+def test_quote_features_and_immutability_are_unchanged_by_skipping(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    states = [_mid_gap_state(), evidence("fusionx_v3", "controlled").state]
+    for state in states:
+        for token_in in (state.token0, state.token1):
+            for amount in (10**6, 10**18, 10**30):
+                frozen = dataclasses.replace(state)
+                fast = cl_quote_exact_in(state, token_in, amount)
+                with monkeypatch.context() as patch:
+                    patch.setattr(
+                        concentrated,
+                        "swap",
+                        functools.partial(concentrated.swap, skip_empty_spans=False),
+                    )
+                    reference = cl_quote_exact_in(state, token_in, amount)
+                assert fast == reference and state == frozen
+                assert fast.features["swap_steps"] == reference.features["swap_steps"]
+                if fast.new_state is not None:
+                    with pytest.raises(TypeError):
+                        fast.new_state.ticks[0] = None  # type: ignore[index]
+
+
+def _random_state(rng: random.Random, salt: int) -> ConcentratedPoolState:
+    spacing = rng.choice((1, 10, 10, 60, 200))
+    word = 256 * spacing
+    lo, hi = _usable(spacing)
+    centre = rng.randrange(lo // word + 12, hi // word - 12) * word if rng.random() < 0.3 else 0
+    positions = []
+    for _ in range(rng.randrange(0, 6)):
+        kind = rng.random()
+        if kind < 0.15:
+            lower, upper = lo, hi
+        else:
+            width = rng.randrange(1, 6) if kind < 0.6 else rng.randrange(6, 20 * 256)
+            lower = centre + rng.randrange(-10 * 256, 10 * 256) * spacing
+            upper = min(hi, lower + width * spacing)
+            lower = max(lo, lower)
+            if lower >= upper:
+                continue
+        positions.append((lower, upper, 10 ** rng.randrange(3, 25) + rng.randrange(10**3)))
+    tick = max(MIN_TICK, min(MAX_TICK - 1, centre + rng.randrange(-12 * word, 12 * word)))
+    base = get_sqrt_ratio_at_tick(tick)
+    step = get_sqrt_ratio_at_tick(tick + 1) - base
+    sqrt_price = base if rng.random() < 0.2 else base + rng.randrange(step)
+    word_range = None
+    if rng.random() < 0.3:
+        current = (tick // spacing) >> 8
+        word_range = (current - rng.randrange(0, 15), current + rng.randrange(0, 15))
+    source = rng.choice(SOURCE_KEYS)
+    pancake = source != "uniswap_v3"
+    return _cl_state(
+        spacing,
+        positions,
+        sqrt_price,
+        word_range=word_range,
+        fee=rng.choice((100, 500, 3000, 10000)),
+        source=source,
+        fee_protocol=rng.choice((0, 3300 | (2500 << 16), 10000))
+        if pancake
+        else rng.choice((0, 4 | (4 << 4), 10 << 4)),
+        lm_pool=rng.choice((None, ZERO, "0x" + "22" * 20)) if pancake else None,
+        salt=salt,
+    )
+
+
+def test_generated_sparse_and_dense_pools_match_reference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    counter = _StepCounter(monkeypatch)
+    rng = random.Random(1504)
+    kinds: dict[str, int] = {"ok": 0, "skipped": 0, "missing": 0, "limit": 0, "revert": 0}
+    for salt in range(160):
+        state = _random_state(rng, salt)
+        for _ in range(4):
+            zero_for_one = rng.random() < 0.5
+            amount = int(10 ** rng.uniform(0, 28)) + rng.randrange(3)
+            limit = None
+            if rng.random() < 0.3:
+                sign = -1 if zero_for_one else 1
+                spread = rng.randrange(0, 30 * 256 * state.tick_spacing)
+                tick = max(MIN_TICK, min(MAX_TICK, state.tick + sign * spread))
+                limit = get_sqrt_ratio_at_tick(tick) + rng.choice((-1, 0, 1))
+                kinds["limit"] += 1
+            out, skipped = _differential(state, zero_for_one, amount, limit, counter)
+            if isinstance(out, tuple):
+                kinds["missing" if out[0] == "MissingState" else "revert"] += 1
+                continue
+            kinds["ok"] += 1
+            kinds["skipped"] += skipped > 0
+            if rng.random() < 0.5:
+                state = out.new_state  # sequential swaps on the returned state
+    assert kinds["ok"] > 300 and kinds["skipped"] > 60, kinds
+    assert kinds["missing"] > 20 and kinds["revert"] > 5, kinds
+
+
+def test_empty_span_limit_tick_matches_the_sqrt_comparison() -> None:
+    rng = random.Random(2)
+    ticks = [MIN_TICK, MIN_TICK + 1, -1, 0, 1, MAX_TICK - 1, MAX_TICK]
+    ticks += [rng.randrange(MIN_TICK, MAX_TICK) for _ in range(200)]
+    for tick in ticks:
+        for offset in (-1, 0, 1):
+            limit = get_sqrt_ratio_at_tick(tick) + offset
+            if not (MIN_SQRT_RATIO < limit < MAX_SQRT_RATIO):
+                continue
+            for zero_for_one in (True, False):
+                bound = concentrated._empty_span_limit_tick(zero_for_one, limit)
+                for t in (bound - 1, bound, bound + 1):
+                    if not MIN_TICK <= t <= MAX_TICK:
+                        continue
+                    sqrt_t = get_sqrt_ratio_at_tick(t)
+                    skippable = sqrt_t > limit if zero_for_one else sqrt_t < limit
+                    assert skippable == (t > bound if zero_for_one else t < bound)
