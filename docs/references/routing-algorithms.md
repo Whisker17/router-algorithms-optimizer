@@ -438,8 +438,8 @@ Input $A = 10\,005$ TKA, $\text{percent\_step} = 10 \implies N = 10$ units, $\te
 
 ### 4.8 Computational and Memory Cost
 - Pool Quotes: $P_{\text{direct}}$ full quotes $+ P_{\text{direct}} \cdot (G - 1)$ grid samples, plus on-demand quotes for non-grid remainder amounts (up to $P_{\text{direct}} \cdot \lvert \text{reachable non-grid remainders} \rvert$). On our $P=2, G=10, S=2$ teaching example ($A=10005$), this executes $2 + 18 + 5 = 25$ pool quotes.
-- DP Transitions: $\mathcal{O}(P_{\text{direct}} \cdot S \cdot G^2)$ state expansions.
-- Re-scoring: Exactly $S$ candidate plans re-evaluated under `ObjectiveContext`.
+- DP Transitions: In addition to the $(l, u)$ grid state, the dynamic program tracks the accumulated remainder residue $r = \sum (A \cdot u_i \bmod G)$. Let $R$ denote the reachable residue multiplicity at any $(l, u)$ pair. Because each non-final leg accumulates integer residue from floored grid division, $R = \mathcal{O}(S)$ in the worst case (with $R = 1$ when $A$ is divisible by $G$). Total DP state transitions are therefore bounded by $\mathcal{O}(P_{\text{direct}} \cdot S \cdot G^2 \cdot R)$.
+- Re-scoring: At most $S$ candidate finalist plans (one per split count $m \in \{1, \dots, S\}$) are re-evaluated under `ObjectiveContext`, subject to feasibility and candidate budgets.
 
 ### 4.9 Guarantees and Limitations
 - **Guarantee:** Best evaluated direct split allocation on the declared finite grid under additive gross output.
@@ -526,7 +526,7 @@ def solve_path_split(case, bundle, max_hops, max_splits, percent_step, cache):
         for u in range(min(cap, r), 0, -1):
             if u * legs_left < r:
                 break  # Non-increasing sizes cannot cover remaining units
-            if legs_left == 1 and u != r:
+            if u not in kept_table or (legs_left == 1 and u != r):
                 continue
                 
             lst = kept_table[u]
@@ -588,11 +588,11 @@ Request: $10\,000$ TKA $\to$ TKB, $\text{percent\_step} = 10, \text{max\_splits}
      - Next path at size 2: Path 5 ($v = 2093$): gross $+ v = 10288 + 2093 = 12381 \le 12581 \implies$ **PRUNED!**
      - Next candidate at size 8: Path 4 ($v = 9433$): bound is $2919$, total $= 9433 + 2919 = 12352 \le 12581 \implies$ **PRUNED!**
    - **Sizes $u \in \{7, 6, 5\}$ (Remaining $r = 10 - u$ units):**
-     At each of these sizes, the root candidate has bound $\text{ub}[u][1][10 - u]$ exceeding $12581$ (e.g. at $u=7$, Path 2 has $9160 + 4220 = 13380 > 12581$, entering DFS node; Path 4 has $8527 + 4220 = 12747 > 12581$, entering DFS node).
-     However, when evaluating the second leg at remaining units $r = 10 - u$, the best disjoint route yields less than required to beat $12581$:
-     - For $u = 7$ ($r = 3$): Path 2 combines with Path 3 ($3376$): $9160 + 3376 = 12536 \le 12581 \implies$ pruned! Path 4 combines with Path 3: $8527 + 3376 = 11903 \le 12581 \implies$ pruned!
-     - For $u = 6$ ($r = 4$): Path 2 ($7990$) and Path 4 ($7559$) combine with Path 3 ($4418$): totals $12408$ and $11977 \le 12581 \implies$ pruned!
-     - For $u = 5$ ($r = 5$): Path 2 ($6779$) and Path 4 ($6522$) combine with Path 3 ($5423$): totals $12202$ and $11945 \le 12581 \implies$ pruned!
+     At each of these sizes, the root candidate has an upper bound exceeding $12581$ (e.g. at $u=7$, Path 2 has $9160 + 4220 = 13380 > 12581$, entering DFS node 6; Path 4 has $8527 + 4220 = 12747 > 12581$, entering DFS node 7).
+     Crucially, `promising()` tests whether `gross + v + ub[u][1][r - u]` can beat the incumbent **before** checking whether candidate paths share physical pools. The bound check therefore evaluates an optimistic, conflict-unconstrained upper bound. For Path 4 (which uses `P_DB`), the upper bound assumes the best quote at $r$ units (Path 3, which also uses `P_DB`). Even under this optimistic, pool-conflicting combination, the totals fail to beat $12581$:
+     - For $u = 7$ ($r = 3$): Path 2 combines with disjoint Path 3 ($3376$): $9160 + 3376 = 12536 \le 12581 \implies$ pruned! Path 4 bound test with Path 3: $8527 + 3376 = 11903 \le 12581 \implies$ pruned before conflict check!
+     - For $u = 6$ ($r = 4$): Path 2 combines with disjoint Path 3 ($4418$): $7990 + 4418 = 12408 \le 12581 \implies$ pruned! Path 4 bound test with Path 3: $7559 + 4418 = 11977 \le 12581 \implies$ pruned before conflict check!
+     - For $u = 5$ ($r = 5$): Path 2 combines with disjoint Path 3 ($5423$): $6779 + 5423 = 12202 \le 12581 \implies$ pruned! Path 4 bound test with Path 3: $6522 + 5423 = 11945 \le 12581 \implies$ pruned before conflict check!
    - **Loop termination for $u \le 4$:**
      Since $u \cdot \text{legs\_left} < r \iff 4 \cdot 2 = 8 < 10$, non-increasing size allocations can no longer cover the 10 units, terminating the loop.
    - **Summary:** Across the search, exactly 12 DFS nodes are visited (`bnb_nodes = 12`) and 13 candidate branches are excluded by pool conflicts (`bnb_conflicts_excluded = 13`), proving $12581$ optimal.
