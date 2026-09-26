@@ -1,20 +1,18 @@
-> **Canonical home.** This file is the trap registry. `/orchestrate` pastes it into
-> every implementer launch prompt. `.claude/skills/orchestrate/traps.md` is a
-> pointer, not the list — append entries here (a version-scoped docs PR, not a
-> governance PR). Downstream projects seed this file with *their* measured traps;
-> do not copy another repo's numbered list in wholesale.
+> **Canonical home.** This file is the on-demand project trap registry. Include only
+> entries relevant to the current issue in an implementer handoff; do not paste the
+> complete registry into every prompt. Append durable findings here (a version-scoped
+> docs PR, not a governance PR). The former skill-local pointer was removed by the
+> code-template v0.2 synchronization.
 
 # Trap registry — append-only, repo-specific
 
-This registry is the **durable channel** by which a trap reaches every implementer after the
-first one it's handed to — `implementer-prompt.md`'s launch prompt pastes it verbatim into
-every issue's prompt. (`SKILL.md`'s "Feed forward" step already names the other, immediate
-channel: mentioning a fresh trap directly in the very next launch prompt, which takes effect
-with no commit at all but doesn't outlive that one issue.) An entry that never makes it into
-this file does not survive past whichever single issue it may have been mentioned to by hand.
-Carry every entry into each launch prompt. Cost is why they are here. Each entry below is
-cited against the repo so it stays checkable; an entry that stops being true belongs in
-`docs/DEFERRED_ISSUES.md`'s own resolved section, not silently deleted here.
+This registry preserves reusable project evidence across sessions. Feed a relevant new
+trap directly into the next affected issue/handoff and retain it here when it outlives
+that task. The current orchestrator reads this file on demand and selects applicable
+entries instead of injecting all historical material. Each entry stays checkable; an
+obsolete lesson belongs in the resolved section of `docs/DEFERRED_ISSUES.md`, not in a
+silent deletion. WHI-1500 adapts the process wording to template v0.2 and preserves all
+seven numbered entries.
 
 **A trim is self-declaring.** An entry leaves this file in one of exactly two ways: it
 graduates to `docs/DEFERRED_ISSUES.md`'s resolved section once it stops being true (the
@@ -53,19 +51,21 @@ Entries 4 and 7 retain their measured lessons with that scope; no numbered entry
    discovery. Authentication, quota and flags need a real bounded dispatch (for example,
    one that prints `DISPATCH-OK` and exits 0; see runtime § Preflight). If required
    release review cannot run, keep its PR open and tracking issue at `In Review`; do not
-   claim self-review as independent evidence. This does not block ordinary issue work
-   whose own validation gates pass, and it is not the orchestrator's per-issue G1.
+   claim self-review as independent evidence. Governance, standalone and hotfix lanes
+   that require pre-merge review also remain blocked on that review. Ordinary version
+   issues under release orchestration can continue after their own validation gates.
+   Use the configured role and explicit `--effort high`, without model/effort substitution.
 5. **Empty reviewer stdout is a vacuous gate, not a clean pass.** Exit 0 with no
    findings-shaped content is indistinguishable from "the dispatch never ran." Inline
-   the three-dot diff (and any file the spec needs) in both axis prompts rather than
-   depending on the reviewer to run git; if stdout is empty or a transport error,
-   retry once, then stop and report.
+   the three-dot diff (and any file the spec needs) in the single reviewer prompt rather
+   than relying on a later git invocation. Empty or transport-error output is not a pass:
+   record it, diagnose the dispatch and stop the gated step; no blind retry or fallback.
 6. **`pgrep -fl` dumps this machine's entire shell-snapshot environment** instead of the
    one process you meant to find. Use `pgrep -f <pat> | head -1` to get the pid, then
    `ps -o pid,etime,command -p <pid>`.
-7. **Generate final measurement artifacts from the validated candidate and bind them
-   to its commit/data/config identities.** Ordinary issue work need not wait for an
-   independent-review loop. During release review, provide existing evidence, then
-   regenerate only when a changed candidate or finding invalidates the measurement;
-   a prose-only correction does not automatically require a full rerun. If generation
-   uses a dirty tree, stamp that provenance instead of attributing it to a clean commit.
+7. **Generate measurement artifacts from the validated candidate and bind them to its
+   commit/data/config identities.** Run the full acceptance required for each release
+   candidate/fix batch by `docs/GIT_WORKFLOW.md` and `/orchestrate`; do not substitute
+   evidence from an older SHA. Ordinary version issues under orchestration do not rerun
+   full E2E or regenerate reports merely to populate a handoff. If generation uses a
+   dirty tree, record that provenance rather than attributing it to a clean commit.
