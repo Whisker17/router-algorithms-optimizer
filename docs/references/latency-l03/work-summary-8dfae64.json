@@ -1,0 +1,331 @@
+{
+ "all_baseline_semantic_equal": true,
+ "all_baseline_work_equal": true,
+ "all_semantic_equal": true,
+ "all_work_equal": true,
+ "capacities": {
+  "bin": 4096,
+  "tick": 16384
+ },
+ "environment": {
+  "cpu_count": 10,
+  "git_dirty": false,
+  "git_revision": "747382a5eed223f255697dfc962733a98ffe477d",
+  "loadavg_start": [
+   13.3759765625,
+   17.93408203125,
+   16.87353515625
+  ],
+  "python": "3.13.13 (main, May 10 2026, 19:20:37) [Clang 22.1.3 ]"
+ },
+ "experiment": "data/latency-012/whi-1503/20260926T090434484129Z-d5061563 (primary clone, gitignored)",
+ "experiment_source": "bbda6e2f47872fbd4dcb4cca88da816240c4a1cd",
+ "kind": "L03 work diagnostic (post-L02 l02_only vs l02_l03 cold; single-shot times)",
+ "measured_tree": "8dfae64dac890771d825320e2114d0e2752af7cf (commit 747382a, since amended to 866392a with the same tree)",
+ "per_bundle_algorithm": {
+  "full_source/matrix:direct": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 5,
+   "bin_misses": 38,
+   "cpu_single_shot_l02_l03": 0.0257,
+   "cpu_single_shot_l02_only": 0.0268,
+   "records": 24,
+   "tick_hits": 365,
+   "tick_max_entries": 541,
+   "tick_misses": 1619
+  },
+  "full_source/matrix:direct_split": {
+   "all_equal": true,
+   "bin_hits": 862,
+   "bin_max_entries": 5,
+   "bin_misses": 38,
+   "cpu_single_shot_l02_l03": 0.7337,
+   "cpu_single_shot_l02_only": 0.8419,
+   "records": 24,
+   "tick_hits": 67311,
+   "tick_max_entries": 541,
+   "tick_misses": 1619
+  },
+  "full_source/matrix:incremental_graph": {
+   "all_equal": true,
+   "bin_hits": 107519,
+   "bin_max_entries": 1079,
+   "bin_misses": 4220,
+   "cpu_single_shot_l02_l03": 11.7416,
+   "cpu_single_shot_l02_only": 12.863,
+   "records": 24,
+   "tick_hits": 404452,
+   "tick_max_entries": 8577,
+   "tick_misses": 32635
+  },
+  "full_source/matrix:path_split": {
+   "all_equal": true,
+   "bin_hits": 97600,
+   "bin_max_entries": 1079,
+   "bin_misses": 4220,
+   "cpu_single_shot_l02_l03": 5.2439,
+   "cpu_single_shot_l02_only": 6.213,
+   "records": 24,
+   "tick_hits": 327320,
+   "tick_max_entries": 8577,
+   "tick_misses": 32635
+  },
+  "full_source/matrix:single_path": {
+   "all_equal": true,
+   "bin_hits": 8054,
+   "bin_max_entries": 1079,
+   "bin_misses": 4220,
+   "cpu_single_shot_l02_l03": 1.2564,
+   "cpu_single_shot_l02_only": 1.4418,
+   "records": 24,
+   "tick_hits": 87910,
+   "tick_max_entries": 8577,
+   "tick_misses": 32635
+  },
+  "full_source/matrix:uni_sor_port": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 10.5568,
+   "cpu_single_shot_l02_only": 12.5454,
+   "records": 24,
+   "tick_hits": 1128826,
+   "tick_max_entries": 8577,
+   "tick_misses": 32627
+  },
+  "full_source/sentinel:direct": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 3,
+   "bin_misses": 3,
+   "cpu_single_shot_l02_l03": 0.0047,
+   "cpu_single_shot_l02_only": 0.005,
+   "records": 1,
+   "tick_hits": 165,
+   "tick_max_entries": 533,
+   "tick_misses": 533
+  },
+  "full_source/sentinel:direct_split": {
+   "all_equal": true,
+   "bin_hits": 47,
+   "bin_max_entries": 3,
+   "bin_misses": 3,
+   "cpu_single_shot_l02_l03": 0.0529,
+   "cpu_single_shot_l02_only": 0.0622,
+   "records": 1,
+   "tick_hits": 7675,
+   "tick_max_entries": 533,
+   "tick_misses": 533
+  },
+  "full_source/sentinel:incremental_graph": {
+   "all_equal": true,
+   "bin_hits": 12325,
+   "bin_max_entries": 349,
+   "bin_misses": 349,
+   "cpu_single_shot_l02_l03": 0.9146,
+   "cpu_single_shot_l02_only": 1.0757,
+   "records": 1,
+   "tick_hits": 62155,
+   "tick_max_entries": 6789,
+   "tick_misses": 6789
+  },
+  "full_source/sentinel:path_split": {
+   "all_equal": true,
+   "bin_hits": 12037,
+   "bin_max_entries": 349,
+   "bin_misses": 349,
+   "cpu_single_shot_l02_l03": 0.6367,
+   "cpu_single_shot_l02_only": 0.7738,
+   "records": 1,
+   "tick_hits": 59058,
+   "tick_max_entries": 6789,
+   "tick_misses": 6789
+  },
+  "full_source/sentinel:single_path": {
+   "all_equal": true,
+   "bin_hits": 828,
+   "bin_max_entries": 349,
+   "bin_misses": 349,
+   "cpu_single_shot_l02_l03": 0.1903,
+   "cpu_single_shot_l02_only": 0.2287,
+   "records": 1,
+   "tick_hits": 18253,
+   "tick_max_entries": 6789,
+   "tick_misses": 6789
+  },
+  "full_source/sentinel:uni_sor_port": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 2.7113,
+   "cpu_single_shot_l02_only": 3.5528,
+   "records": 1,
+   "tick_hits": 424162,
+   "tick_max_entries": 6789,
+   "tick_misses": 6789
+  },
+  "sor_compatible/matrix:direct": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 0.0227,
+   "cpu_single_shot_l02_only": 0.0231,
+   "records": 24,
+   "tick_hits": 365,
+   "tick_max_entries": 541,
+   "tick_misses": 1619
+  },
+  "sor_compatible/matrix:direct_split": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 0.6539,
+   "cpu_single_shot_l02_only": 0.7372,
+   "records": 24,
+   "tick_hits": 63626,
+   "tick_max_entries": 541,
+   "tick_misses": 1619
+  },
+  "sor_compatible/matrix:incremental_graph": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 10.4074,
+   "cpu_single_shot_l02_only": 11.8395,
+   "records": 24,
+   "tick_hits": 768700,
+   "tick_max_entries": 8577,
+   "tick_misses": 32627
+  },
+  "sor_compatible/matrix:path_split": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 6.0705,
+   "cpu_single_shot_l02_only": 7.2084,
+   "records": 24,
+   "tick_hits": 694750,
+   "tick_max_entries": 8577,
+   "tick_misses": 32627
+  },
+  "sor_compatible/matrix:single_path": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 0.7936,
+   "cpu_single_shot_l02_only": 0.8703,
+   "records": 24,
+   "tick_hits": 48680,
+   "tick_max_entries": 8577,
+   "tick_misses": 32627
+  },
+  "sor_compatible/matrix:uni_sor_port": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 10.5193,
+   "cpu_single_shot_l02_only": 12.4101,
+   "records": 24,
+   "tick_hits": 1128826,
+   "tick_max_entries": 8577,
+   "tick_misses": 32627
+  },
+  "sor_compatible/sentinel:direct": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 0.0046,
+   "cpu_single_shot_l02_only": 0.0046,
+   "records": 1,
+   "tick_hits": 165,
+   "tick_max_entries": 533,
+   "tick_misses": 533
+  },
+  "sor_compatible/sentinel:direct_split": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 0.0483,
+   "cpu_single_shot_l02_only": 0.0593,
+   "records": 1,
+   "tick_hits": 7675,
+   "tick_max_entries": 533,
+   "tick_misses": 533
+  },
+  "sor_compatible/sentinel:incremental_graph": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 0.9344,
+   "cpu_single_shot_l02_only": 1.0821,
+   "records": 1,
+   "tick_hits": 98167,
+   "tick_max_entries": 6789,
+   "tick_misses": 6789
+  },
+  "sor_compatible/sentinel:path_split": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 0.7187,
+   "cpu_single_shot_l02_only": 0.8692,
+   "records": 1,
+   "tick_hits": 95036,
+   "tick_max_entries": 6789,
+   "tick_misses": 6789
+  },
+  "sor_compatible/sentinel:single_path": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 0.1694,
+   "cpu_single_shot_l02_only": 0.2012,
+   "records": 1,
+   "tick_hits": 18252,
+   "tick_max_entries": 6789,
+   "tick_misses": 6789
+  },
+  "sor_compatible/sentinel:uni_sor_port": {
+   "all_equal": true,
+   "bin_hits": 0,
+   "bin_max_entries": 0,
+   "bin_misses": 0,
+   "cpu_single_shot_l02_l03": 2.7859,
+   "cpu_single_shot_l02_only": 3.4546,
+   "records": 1,
+   "tick_hits": 424162,
+   "tick_max_entries": 6789,
+   "tick_misses": 6789
+  }
+ },
+ "raw": "data/latency-l03/work.json in the WHI-1505 worktree (gitignored, 300 rows)",
+ "records": 300,
+ "reuse_totals": {
+  "bin": {
+   "hits": 239272,
+   "max_entries": 1079,
+   "misses": 13789,
+   "records_with_eviction": 0
+  },
+  "tick": {
+   "hits": 5936056,
+   "max_entries": 8577,
+   "misses": 323960,
+   "records_with_eviction": 0
+  }
+ }
+}

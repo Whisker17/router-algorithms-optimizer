@@ -1,0 +1,25 @@
+import functools, sys, time, json
+from pathlib import Path
+REPO = Path.cwd(); sys.path.insert(0, str(REPO)); sys.path.insert(0, str(REPO / "tools/latency"))
+import l03_math_reuse as l03, l02_empty_spans as l02
+from pools import liquidity_book as lb
+from benchmark.profile import load_profile
+from routing.algorithms.registry import get_algorithm
+EXP = Path(sys.argv[1]); exp = l02._experiment(EXP); profile = load_profile(REPO / exp["profile"]["path"])
+res = {}
+for key in ("full_source/sentinel", "full_source/matrix"):
+    bundle = l02._bundle(EXP, exp, key)
+    for name in ("single_path", "path_split", "incremental_graph"):
+        f = get_algorithm(name); prepared = l02._prepare(f, bundle, profile)
+        swaps = []; orig = l03.ORIGINAL_LB
+        def rec(state, *a, **k):
+            t = time.perf_counter_ns(); tuple(sorted(state.bins)); swaps.append(time.perf_counter_ns() - t)
+            return orig(state, *a, **k)
+        l03.ORIGINAL_LB = rec
+        solve = 0.0
+        for case in bundle.cases:
+            r = l03._solve(f, prepared, bundle, profile, case, None); solve += r.get("_wall_seconds", 0)
+        l03.ORIGINAL_LB = orig
+        res[f"{key}:{name}"] = {"lb_swaps": len(swaps), "resort_seconds_total": sum(swaps)/1e9, "solve_wall_seconds_total_instrumented": solve}
+        print(key, name, res[f"{key}:{name}"], flush=True)
+json.dump(res, open("/tmp/whi1505/lbsort.json", "w"), indent=1)
