@@ -1,0 +1,232 @@
+{
+ "environment": {
+  "cpu_count": 10,
+  "git_dirty": false,
+  "git_revision": "0963f4da1c2305ad7b71bc559d4112fd657765bb",
+  "loadavg_start": [
+   4.60986328125,
+   21.14892578125,
+   30.24169921875
+  ],
+  "python": "3.13.13 (main, May 10 2026, 19:20:37) [Clang 22.1.3 ]"
+ },
+ "experiment": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/latency-012/whi-1503/20260926T090434484129Z-d5061563",
+ "kind": "L05 in-process paired timing (l04 control vs l04_l05, cold per solve; uninstrumented solve window; not an L01 verdict)",
+ "load_threshold": 5.0,
+ "pairs": 3,
+ "settings": {
+  "bin_capacity": 4096,
+  "max_checkpoints": 262144,
+  "max_keys": 4096,
+  "tick_capacity": 16384
+ },
+ "targets": [
+  {
+   "fields_equal": true,
+   "max_load": 4.68359375,
+   "median": {
+    "l04": {
+     "cpu": 0.436976,
+     "wall": 0.437043875
+    },
+    "l04_l05": {
+     "cpu": 0.300381,
+     "wall": 0.300457584
+    }
+   },
+   "median_ratio": {
+    "cpu": 0.687408461791952,
+    "wall": 0.6874769358110784
+   },
+   "memory_instrumented": {
+    "l04": {
+     "solve_and_evaluation_peak_traced_bytes_over_start": 82203906
+    },
+    "l04_l05": {
+     "solve_and_evaluation_peak_traced_bytes_over_start": 82260514
+    }
+   },
+   "samples": {
+    "l04": [
+     {
+      "cpu": 0.441247,
+      "load_after": 4.68359375,
+      "load_before": 4.68359375,
+      "wall": 0.441376334
+     },
+     {
+      "cpu": 0.436976,
+      "load_after": 4.68359375,
+      "load_before": 4.68359375,
+      "wall": 0.437043875
+     },
+     {
+      "cpu": 0.431074,
+      "load_after": 4.68359375,
+      "load_before": 4.68359375,
+      "wall": 0.431587083
+     }
+    ],
+    "l04_l05": [
+     {
+      "cpu": 0.302071,
+      "load_after": 4.68359375,
+      "load_before": 4.68359375,
+      "wall": 0.302158041
+     },
+     {
+      "cpu": 0.298832,
+      "load_after": 4.68359375,
+      "load_before": 4.68359375,
+      "wall": 0.29887725
+     },
+     {
+      "cpu": 0.300381,
+      "load_after": 4.68359375,
+      "load_before": 4.68359375,
+      "wall": 0.300457584
+     }
+    ]
+   },
+   "target": "full_source/sentinel:quote-b5feb74821d5"
+  },
+  {
+   "fields_equal": true,
+   "max_load": 4.70849609375,
+   "median": {
+    "l04": {
+     "cpu": 1.635676,
+     "wall": 1.636041875
+    },
+    "l04_l05": {
+     "cpu": 1.670237,
+     "wall": 1.670856708
+    }
+   },
+   "median_ratio": {
+    "cpu": 1.0211294901924342,
+    "wall": 1.0212799155889576
+   },
+   "memory_instrumented": {
+    "l04": {
+     "solve_and_evaluation_peak_traced_bytes_over_start": 508533436
+    },
+    "l04_l05": {
+     "solve_and_evaluation_peak_traced_bytes_over_start": 508712624
+    }
+   },
+   "samples": {
+    "l04": [
+     {
+      "cpu": 1.715201,
+      "load_after": 4.6513671875,
+      "load_before": 4.70849609375,
+      "wall": 1.735496
+     },
+     {
+      "cpu": 1.635676,
+      "load_after": 4.43896484375,
+      "load_before": 4.6513671875,
+      "wall": 1.636041875
+     },
+     {
+      "cpu": 1.632971,
+      "load_after": 4.43896484375,
+      "load_before": 4.43896484375,
+      "wall": 1.633429959
+     }
+    ],
+    "l04_l05": [
+     {
+      "cpu": 1.733458,
+      "load_after": 4.6513671875,
+      "load_before": 4.6513671875,
+      "wall": 1.733772208
+     },
+     {
+      "cpu": 1.632513,
+      "load_after": 4.6513671875,
+      "load_before": 4.6513671875,
+      "wall": 1.632736875
+     },
+     {
+      "cpu": 1.670237,
+      "load_after": 4.43896484375,
+      "load_before": 4.43896484375,
+      "wall": 1.670856708
+     }
+    ]
+   },
+   "target": "full_source/matrix:bnd-78c1b0-201eba-round_at"
+  },
+  {
+   "fields_equal": true,
+   "max_load": 4.576171875,
+   "median": {
+    "l04": {
+     "cpu": 0.412417,
+     "wall": 0.412473
+    },
+    "l04_l05": {
+     "cpu": 0.326914,
+     "wall": 0.32699675
+    }
+   },
+   "median_ratio": {
+    "cpu": 0.7926782843578223,
+    "wall": 0.7927712844234653
+   },
+   "memory_instrumented": {
+    "l04": {
+     "solve_and_evaluation_peak_traced_bytes_over_start": 62246861
+    },
+    "l04_l05": {
+     "solve_and_evaluation_peak_traced_bytes_over_start": 62453545
+    }
+   },
+   "samples": {
+    "l04": [
+     {
+      "cpu": 0.415773,
+      "load_after": 4.576171875,
+      "load_before": 4.576171875,
+      "wall": 0.415883583
+     },
+     {
+      "cpu": 0.412417,
+      "load_after": 4.576171875,
+      "load_before": 4.576171875,
+      "wall": 0.412473
+     },
+     {
+      "cpu": 0.409242,
+      "load_after": 4.576171875,
+      "load_before": 4.576171875,
+      "wall": 0.4093155
+     }
+    ],
+    "l04_l05": [
+     {
+      "cpu": 0.342844,
+      "load_after": 4.576171875,
+      "load_before": 4.576171875,
+      "wall": 0.34294975
+     },
+     {
+      "cpu": 0.326914,
+      "load_after": 4.576171875,
+      "load_before": 4.576171875,
+      "wall": 0.32699675
+     },
+     {
+      "cpu": 0.324561,
+      "load_after": 4.576171875,
+      "load_before": 4.576171875,
+      "wall": 0.324620958
+     }
+    ]
+   },
+   "target": "full_source/matrix:emp-78c1b0-deadde-large-1"
+  }
+ ]
+}

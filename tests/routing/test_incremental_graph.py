@@ -15,7 +15,9 @@ Expected values are independent of the code under test:
 
 from __future__ import annotations
 
+import dataclasses
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -604,3 +606,289 @@ def test_isolated_runner_records_the_incremental_search(tmp_path: Path) -> None:
         assert ig["status"] == "ok"  # the runner's own independent re-evaluation
         assert ig["quotes"]["counted"] == ig["search"]["quotes_executed"]
         assert int(ig["score"]) >= int(records[("path_split", case.case_id)]["score"])
+
+
+# ------------------------------------------------------------ WHI-1507 / L05 exact reuse
+#
+# `solve(..., graph_reuse=True)` is an explicit, default-off experiment. Its contract: the
+# same plan, evaluation, status/error and search counters as the reference loop, except
+# the physical `quotes_memoized` (fewer cache lookups) and its own `graph_reuse` counters.
+
+PHYSICAL = ("quotes_memoized", "graph_reuse")
+
+
+def _run(
+    bundle: SnapshotBundle,
+    case: Case,
+    *,
+    reuse: bool,
+    budget: Budget | None = None,
+    objective: ObjectiveContext | None = None,
+    **params: int,
+) -> tuple[SolveResult, int, list[Any]]:
+    prepared = incremental_graph.prepare(
+        bundle, AlgorithmConfig(incremental_graph.NAME, _params(**params))
+    )
+    published: list[Any] = []
+    context = SolveContext(
+        bundle, objective or gross_only(), prepared, candidate_sink=published.append
+    )
+    with metered_quotes(None) as meter:
+        result = incremental_graph.solve(case, context, budget or Budget(), graph_reuse=reuse)
+    return result, meter.counted, published
+
+
+def _differential(bundle: SnapshotBundle, case: Case, **kw: Any) -> dict[str, int]:
+    """Reference vs reuse: everything equal but the physical fields; returns the reuse
+    counters."""
+    ref, ref_quotes, ref_published = _run(bundle, case, reuse=False, **kw)
+    got, got_quotes, got_published = _run(bundle, case, reuse=True, **kw)
+    assert "graph_reuse" not in ref.search_stats
+    for field in dataclasses.fields(SolveResult):
+        if field.name != "search_stats":
+            assert getattr(got, field.name) == getattr(ref, field.name), field.name
+
+    def strip(stats: Mapping[str, Any]) -> dict[str, Any]:
+        return {k: v for k, v in stats.items() if k not in PHYSICAL}
+
+    assert strip(got.search_stats) == strip(ref.search_stats)
+    assert got_quotes == ref_quotes == ref.search_stats["quotes_executed"]
+    assert got_published == ref_published
+    if got.plan is not None:  # independent, memo-free replay of the returned plan
+        assert got.evaluation is not None
+        replay = evaluate(bundle, case, got.plan, kw.get("objective") or gross_only())
+        assert replay.status is EvalStatus.OK
+        assert replay.gross_output == got.evaluation.gross_output
+    assert got.search_stats["quotes_memoized"] <= ref.search_stats["quotes_memoized"]
+    stats: dict[str, int] = got.search_stats["graph_reuse"]
+    s = ref.search_stats
+    scores = stats["scores_reused"] + stats["scores_recomputed"]
+    admissions = stats["cycle_decisions_reused"] + stats["cycle_checks_executed"]
+    assert stats["score_entries_peak"] <= 2 * s["paths_enumerated"]  # two amounts kept
+    if s["incremental_status"] == "truncated":  # the aborted chunk is not in paths_scored
+        assert scores > s["paths_scored"] and admissions > s["paths_scored"]
+    else:
+        assert scores == s["paths_scored"]
+        assert admissions == s["paths_scored"] + s["paths_rejected_cycle"]
+    return stats
+
+
+def _random_bundle(seed: int) -> tuple[SnapshotBundle, list[Case]]:
+    """A small random CPMM graph (parallel pools, reverse directions, cycles through
+    intermediate tokens) and cases from dust to large, divisible or not."""
+    import random
+
+    rng = random.Random(seed)
+    tokens = ["A", "B", "C", "D", "E"][: rng.randint(3, 5)]
+    pools = []
+    for n in range(rng.randint(4, 9)):
+        t0, t1 = rng.sample(tokens, 2)
+        r0, r1 = (10 ** rng.randint(5, 12) * rng.randint(1, 9) for _ in range(2))
+        pools.append(_cp(f"p{n}", t0, t1, r0, r1, fee_bps=rng.choice([0, 1, 5, 30, 100])))
+    amounts = [rng.randint(1, 60), rng.randint(10**5, 10**7), 10 ** rng.randint(6, 11) + 7]
+    return _bundle(*pools), [Case(f"c{a}", "A", "B", a) for a in amounts]
+
+
+def _random_differentials(**kw: Any) -> dict[str, int]:
+    totals: dict[str, int] = {}
+    for seed in range(40):
+        bundle, cases = _random_bundle(seed)
+        for case in cases:
+            for hops, chunks in ((2, 1), (3, 7), (4, 20)):
+                stats = _differential(bundle, case, max_hops=hops, chunks=chunks, **kw)
+                for k, v in stats.items():
+                    totals[k] = totals.get(k, 0) + v
+    return totals
+
+
+def test_reuse_matches_the_reference_on_random_graphs() -> None:
+    totals = _random_differentials()
+    # The generated cases exercise every reuse rule, not just the easy path.
+    assert totals["scores_reused"] > 0 and totals["score_invalidations"] > 0
+    assert totals["cycle_decisions_reused"] > 0 and totals["closure_edges_added"] > 0
+    assert totals["score_amounts_evicted"] > 0
+    rejected = carried = 0
+    for seed in range(40):
+        bundle, cases = _random_bundle(seed)
+        for case in cases:
+            s = _solve(bundle, case, max_hops=4, chunks=20).search_stats
+            rejected += s["paths_rejected_cycle"]
+            carried += s["chunks_carried"]
+    assert rejected > 0 and carried > 0
+
+
+@pytest.mark.parametrize(
+    "budget",
+    [Budget(max_candidates=1), Budget(max_candidates=3), Budget(max_quotes=40)],
+    ids=["cand1", "cand3", "quotes40"],
+)
+def test_reuse_preserves_declared_budgets(budget: Budget) -> None:
+    """Budgets are logical (candidates scored, quotes executed): the same truncation."""
+    for seed in range(12):
+        bundle, cases = _random_bundle(seed)
+        for case in cases:
+            _differential(bundle, case, budget=budget, max_hops=4, chunks=20)
+    ref, _, _ = _run(PREFIX, CASE, reuse=False, budget=Budget(max_quotes=60))
+    assert ref.search_stats["incremental_status"] == "truncated"
+    _differential(PREFIX, CASE, budget=Budget(max_quotes=60))
+
+
+@pytest.mark.parametrize("case_id", [c.case_id for c in fixture("mantle_mixed").cases])
+@pytest.mark.parametrize("hops", [2, 3])
+def test_reuse_matches_the_reference_on_real_mixed_state(case_id: str, hops: int) -> None:
+    bundle = fixture("mantle_mixed")
+    stats = _differential(bundle, bundle.case(case_id), max_hops=hops, chunks=37)
+    assert stats["scores_reused"] > 0
+
+
+def test_reuse_preserves_fixtures_fallback_and_statuses() -> None:
+    for bundle in (PREFIX, SUFFIX, SINGLE):
+        for amount in (3, 19, 10**8 + 7, 4 * 10**8):
+            _differential(bundle, Case("c", "A", "B", amount), chunks=13)
+    # The simpler route wins under a per-call cost: same fallback choice.
+    cost = PerCallCost(mode="synthetic_fixed_cost", per_call=10**8)
+    _differential(PREFIX, CASE, objective=cost)
+    unreachable = _bundle(_cp("ab", "A", "B", 10**6, 10**6), _cp("cd", "C", "D", 10**6, 10**6))
+    got, _, _ = _run(unreachable, Case("c", "A", "D", 1000), reuse=True)
+    assert got.status is SolveStatus.NO_ROUTE
+    assert got.search_stats["graph_reuse"]["scores_reused"] == 0
+    only_incomplete = _bundle(fixture("mantle_mixed").pools[UNI_USDT_WMNT])
+    _differential(only_incomplete, Case("huge", USDT, WMNT, 10**18))
+
+
+def test_reuse_counts_shared_failing_prefixes_where_the_reference_does() -> None:
+    """Two paths share an incomplete-state first hop: the reference counts the failure
+    once per chunk, at the first path reaching it, with that path's label -- a kept
+    failure must be counted the same way, not once, and not once per path."""
+    bundle = _bundle(
+        fixture("mantle_mixed").pools[UNI_USDT_WMNT],
+        _cp("w1", WMNT, "B", 10**24, 10**24),
+        _cp("w2", WMNT, "B", 10**24, 10**24),
+        _cp("ub", USDT, "B", 10**12, 10**12),
+    )
+    case = Case("c", USDT, "B", 10**18)
+    stats = _differential(bundle, case, chunks=5)
+    assert stats["scores_reused"] > 0
+    ref = _solve(bundle, case, chunks=5).search_stats
+    assert ref["marginal_failures"] == {"incomplete_snapshot": 5}
+    assert "-[w1]->" in ref["incomplete_example"]
+
+
+def test_reuse_is_explicit_and_per_solve() -> None:
+    """Default off everywhere ordinary callers reach; no state survives a solve; the
+    prepared object and bundle are not changed by a reuse solve."""
+    import inspect
+
+    assert inspect.signature(incremental_graph.solve).parameters["graph_reuse"].default is False
+    assert ALGORITHMS["incremental_graph"].solve is incremental_graph.solve
+    assert "graph_reuse" not in _solve(PREFIX, CASE).search_stats
+    bundle = fixture("mantle_mixed")
+    prepared = incremental_graph.prepare(
+        bundle, AlgorithmConfig(incremental_graph.NAME, _params(max_hops=2, chunks=20))
+    )
+    before = (dict(bundle.pools), prepared.chunks, prepared.path_split)
+    context = SolveContext(bundle, gross_only(), prepared)
+    cases = list(bundle.cases)
+    forward = [incremental_graph.solve(c, context, Budget(), graph_reuse=True) for c in cases]
+    backward = [
+        incremental_graph.solve(c, context, Budget(), graph_reuse=True) for c in reversed(cases)
+    ][::-1]
+    fresh = [incremental_graph.solve(c, context, Budget()) for c in cases]
+    for f, b, r in zip(forward, backward, fresh, strict=True):
+        assert f == b and f.plan == r.plan and f.score == r.score
+    assert (dict(bundle.pools), prepared.chunks, prepared.path_split) == before
+
+
+# Admission: the closure check against `creates_cycle` on growing random DAGs.
+
+
+def test_closure_admission_equals_creates_cycle_and_is_atomic() -> None:
+    import random
+
+    from routing.algorithms.incremental_graph import _ExactReuse
+
+    # Each edge alone is safe against the committed C -> A, together they close a cycle.
+    committed = {("C", "A")}
+    path = (Edge("x", "A", "B"), Edge("y", "B", "C"))
+    for edge in path:
+        assert not creates_cycle(committed, (edge,))
+    assert creates_cycle(committed, path)
+    reuse = _ExactReuse([path])
+    reuse.commit((Edge("z", "C", "A"),), [("C", "A")])
+    snapshot = ({t: set(r) for t, r in reuse.reach.items()}, reuse.version)
+    assert reuse.cyclic(0, path) and reuse.cyclic(0, path)  # second: the kept rejection
+    assert ({t: set(r) for t, r in reuse.reach.items()}, reuse.version) == snapshot
+    # A pool (or any C -> A route) proposed against the committed direction A -> C.
+    backwards = (Edge("ac", "C", "A"),)
+    reuse = _ExactReuse([backwards])
+    reuse.commit((Edge("ac", "A", "C"),), [("A", "C")])
+    assert reuse.cyclic(0, backwards) and creates_cycle({("A", "C")}, backwards)
+
+    rng = random.Random(1507)
+    tokens = "ABCDEFG"
+    checked = rejected = 0
+    for _ in range(200):
+        paths = []
+        for _ in range(30):
+            hops = rng.sample(tokens, rng.randint(2, 5))
+            pairs = zip(hops, hops[1:], strict=False)
+            paths.append(tuple(Edge(f"p{a}{b}", a, b) for a, b in pairs))
+        reuse, edges = _ExactReuse(paths), set[tuple[str, str]]()
+        for _ in range(60):
+            j = rng.randrange(len(paths))
+            expected = creates_cycle(edges, paths[j])
+            assert reuse.cyclic(j, paths[j]) is expected
+            checked, rejected = checked + 1, rejected + expected
+            if not expected and rng.random() < 0.3:
+                new = [(e.token_in, e.token_out) for e in paths[j]]
+                reuse.commit(paths[j], [t for t in new if t not in edges])
+                edges.update(new)
+    assert 0 < rejected < checked
+
+
+# Sensitivity: a reuse that dropped one invalidation rule would be caught above.
+
+
+def _mutant_differs(monkeypatch: pytest.MonkeyPatch, mutate: Any) -> bool:
+    from routing.algorithms.incremental_graph import _ExactReuse
+
+    original = _ExactReuse.__init__
+
+    def init(self: Any, paths: Any) -> None:
+        original(self, paths)
+        mutate(self)
+
+    monkeypatch.setattr(_ExactReuse, "__init__", init)
+    for seed in range(40):
+        bundle, cases = _random_bundle(seed)
+        for case in cases:
+            try:
+                _differential(bundle, case, max_hops=4, chunks=20)
+            except (AssertionError, ValueError):
+                return True
+    return False
+
+
+def test_differentials_catch_dropped_invalidation_rules(monkeypatch: pytest.MonkeyPatch) -> None:
+    def no_pool_invalidation(r: Any) -> None:
+        r.pool_paths = {p: [] for p in r.pool_paths}
+
+    def amount_blind(r: Any) -> None:
+        entries_for = r.entries_for
+        r.entries_for = lambda amount: entries_for(0)
+
+    def admitted_forever(r: Any) -> None:
+        r.commit = _keep_version(r.commit, r)
+
+    for mutant in (no_pool_invalidation, amount_blind, admitted_forever):
+        with monkeypatch.context() as m:
+            assert _mutant_differs(m, mutant), mutant.__name__
+
+
+def _keep_version(commit: Any, reuse: Any) -> Any:
+    def wrapped(path: Any, new_edges: Any) -> None:
+        version = reuse.version
+        commit(path, new_edges)
+        reuse.version = version  # admitted paths are never re-checked
+
+    return wrapped
