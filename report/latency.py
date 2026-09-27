@@ -59,13 +59,24 @@ from typing import Any
 
 from benchmark.latency import (
     CONTROL_STATS_KEY,
+    OVERLAY_ALGORITHM,
     SESSION_FILE,
     STAGES,
     SUFFICIENT_EXPERIMENT_SCHEMA,
+    LatencyError,
+    parse_arms,
     source_identity,
 )
-from benchmark.results import RunManifest, load_case_records, load_manifest, load_memory_records
+from benchmark.profile import read_profile_document
+from benchmark.results import (
+    REPO_ROOT,
+    RunManifest,
+    load_case_records,
+    load_manifest,
+    load_memory_records,
+)
 from benchmark.runner import _deterministic_view
+from snapshot.bundle import sha256_file
 
 SUMMARY_SCHEMA = "latency-summary/2"
 COMPARISON_SCHEMA = "latency-comparison/2"
@@ -949,6 +960,9 @@ def sufficient_problems(evidence: SufficientEvidence, exp: Experiment) -> list[s
     arms_pin = [(d.get("arms") or {}).get("sha256") for d in (doc, exp.document)]
     if arm_pin[0] != arm_pin[1] or arms_pin[0] != arms_pin[1]:
         problems.append(f"measured under arm {arm_pin[0]!r}, the experiment under {arm_pin[1]!r}")
+    elif exp.arm is not None:  # the same registered arm, by its settings, not only its name
+        problems += [f"arm {arm_pin[0]}: {p}"
+                     for p in arm_problems(doc, evidence.runs, experiment=False)]  # fmt: skip
     for cohort, run in sorted(evidence.runs.items()):
         label = f"{cohort}/matrix"
         wanted = (exp.document.get("bundles") or {}).get(label, {}).get("bundle_hash")
@@ -1223,13 +1237,97 @@ def compare_experiments(
     }  # fmt: skip
 
 
+def _canonical(value: Any) -> Any:
+    """The JSON form the driver records (tuples become lists)."""
+    return json.loads(json.dumps(value))
+
+
+def _pinned_algorithms(document: Mapping[str, Any]) -> list[str] | None:
+    """`algorithms: reference` resolved offline: the pinned profile's algorithm list, read
+    only if the checked-in file still has the experiment's pinned sha256."""
+    pin = document.get("profile") or {}
+    path = REPO_ROOT / str(pin.get("path"))
+    if not path.is_file() or sha256_file(path) != pin.get("sha256"):
+        return None
+    return list(read_profile_document(path).get("algorithms") or [])
+
+
+def arm_problems(
+    document: Mapping[str, Any], runs: Mapping[Any, RunView], *, experiment: bool = True
+) -> list[str]:
+    """Why an L08 arm experiment (`experiment=False`: its sufficient-budget run) did not
+    measure its registered arm. The declared arm must be the canonical record resolved from
+    the embedded arms document -- controls with their values, algorithm scope, shortlist/
+    sampling overlays, stages and quote path -- and every run's recorded effective profile
+    must agree with it. Only arm-bound fields are compared: each stage's measurement
+    settings, worker scope and the sufficient-budget raise legitimately differ."""
+    declared = _canonical(document.get("arm"))
+    declared = declared if isinstance(declared, dict) else {}
+    try:
+        arms = parse_arms(document["arms"]["document"], "embedded arms document",
+                          document["arms"]["sha256"])  # fmt: skip
+    except (LatencyError, KeyError, TypeError) as exc:
+        return [f"the embedded arms document does not resolve: {exc}"]
+    name = str(declared.get("name"))
+    arm = arms.arms.get(name)
+    if arm is None:
+        return [f"arm {name!r} is not registered in the embedded arms document"]
+    want = _canonical(arm.record())
+    missing = "<missing>"
+    problems = [
+        f"declared {key} {declared.get(key, missing)!r}, registered {want.get(key, missing)!r}"
+        for key in sorted(want.keys() | declared.keys())
+        if declared.get(key, missing) != want.get(key, missing)
+    ]
+    algorithms = list(arm.algorithms) if arm.algorithms is not None else _pinned_algorithms(
+        document)  # fmt: skip
+    if algorithms is None:
+        problems.append(f"`algorithms: reference` unresolvable: pinned profile "
+                        f"{document.get('profile')} is not available")  # fmt: skip
+    if experiment:
+        if document.get("stages_requested") != want["stages"]:
+            problems.append(f"stages_requested {document.get('stages_requested')}, "
+                            f"registered {want['stages']}")  # fmt: skip
+        if algorithms is not None and document.get("algorithms") != algorithms:
+            problems.append(f"algorithms {document.get('algorithms')}, registered {algorithms}")
+    for key, run in sorted(runs.items()):
+        where = key if isinstance(key, str) else " ".join(key)
+        resolved = run.manifest.resolved_profile
+        recorded = {"measurement arm": run.manifest.measurement.get("arm"),
+                    "effective profile l08_arm": resolved.get("l08_arm")}  # fmt: skip
+        problems += [f"{where}: {what} is not the registered arm"
+                     for what, value in recorded.items() if _canonical(value) != want]  # fmt: skip
+        scopes = {"run algorithms": list(run.manifest.algorithms),
+                  "effective profile algorithms": resolved.get("algorithms")}  # fmt: skip
+        problems += [f"{where}: {what} {value}, registered {algorithms}"
+                     for what, value in scopes.items()
+                     if algorithms is not None and value != algorithms]  # fmt: skip
+        configs = resolved.get("algorithm_config") or {}
+        params = (configs.get(OVERLAY_ALGORITHM) or {}).get("params") or {}
+        for overlay in ("shortlist", "sampling"):
+            if _canonical(resolved.get(overlay)) != want[overlay]:
+                problems.append(f"{where}: effective {overlay} {resolved.get(overlay)}, "
+                                f"registered {want[overlay]}")  # fmt: skip
+            wrong = sorted(k for k, v in (want[overlay] or {}).items()
+                           if _canonical(params.get(k, missing)) != v)  # fmt: skip
+            if wrong:
+                problems.append(f"{where}: effective {OVERLAY_ALGORITHM} params {wrong} are "
+                                f"not the registered {overlay}")  # fmt: skip
+        for alg, config in sorted(configs.items()):
+            path = (config.get("provenance") or {}).get("quote_path")
+            if arm.controls and path is not None and path != want["quote_path"]:
+                problems.append(f"{where}: effective {alg} quote path is not the arm's controls")
+    return problems
+
+
 def registered_comparison(
     base: Experiment, cand: Experiment, lane: str, pairs: Mapping[str, str] | None
 ) -> dict[str, Any] | None:
     """For L08 arm experiments: the pre-registered comparison this is, else refuse. Both
-    must come from the same arms file and the same measured source; the exact lane also
-    refuses different algorithm scope or heuristic (shortlist/sampling) settings, which no
-    identity of outputs could make an exact variant."""
+    must come from the same arms file and the same measured source, and each must have
+    measured its registered arm (`arm_problems`: names alone never establish settings);
+    the exact lane also refuses different algorithm scope or heuristic (shortlist/sampling)
+    settings, which no identity of outputs could make an exact variant."""
     if base.arm is None and cand.arm is None:
         return None
     if base.arm is None or cand.arm is None:
@@ -1239,6 +1337,13 @@ def registered_comparison(
     pin = {k: base.document["source"].get(k) for k in SOURCE_PIN}
     if pin != {k: cand.document["source"].get(k) for k in SOURCE_PIN}:
         raise LatencyReportError("arm experiments of one comparison must share one source")
+    for side, exp in (("baseline", base), ("candidate", cand)):
+        problems = arm_problems(exp.document, exp.runs)
+        if problems:
+            raise LatencyReportError(
+                f"{side} arm {(exp.arm or {}).get('name')!r} does not match its registration "
+                f"({len(problems)} problem(s)): " + "; ".join(problems[:10])
+            )
     names = (base.arm["name"], cand.arm["name"])
     for item in base.document["arms"]["document"]["comparisons"]:
         if (

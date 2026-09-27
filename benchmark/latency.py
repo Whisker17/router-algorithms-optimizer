@@ -343,9 +343,13 @@ def _control_settings(name: str, raw: Any) -> dict[str, Any]:
 def load_arms(path: str | Path) -> Arms:
     import yaml
 
-    path = Path(path)
-    data = path.read_bytes()
-    raw = yaml.safe_load(data)
+    data = Path(path).read_bytes()
+    return parse_arms(yaml.safe_load(data), str(path), sha256_bytes(data))
+
+
+def parse_arms(raw: Any, path: str, sha256: str) -> Arms:
+    """Validate an arms document (the file's YAML, or the copy embedded in an experiment)
+    and resolve every arm to its canonical registered settings."""
     try:
         top = _keys(raw, {"schema", "key", "version", "protocol", "sufficient_budget",
                           "source", "controls", "arms", "comparisons", "dispositions"},
@@ -432,7 +436,7 @@ def load_arms(path: str | Path) -> Arms:
         ):
             _keys(dispositions[lane], verdicts, f"dispositions.{lane}")
         return Arms(
-            path=str(path), sha256=sha256_bytes(data), document=raw,
+            path=path, sha256=sha256, document=raw,
             protocol_path=str(protocol["path"]), protocol_sha256=str(protocol["sha256"]),
             sufficient_path=str(sufficient["path"]),
             sufficient_sha256=str(sufficient["sha256"]), arms=arms,
