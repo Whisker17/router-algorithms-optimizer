@@ -744,22 +744,29 @@ def _bound_pair() -> tuple[report.Experiment, report.Experiment]:
     return base, candidate
 
 
+SB_PROTOCOL = REPO / "config/latency/l01-sufficient-budget.yaml"
+SB_MEASUREMENT = yaml.safe_load(SB_PROTOCOL.read_text())["measurement"]  # warmup 0, repeats 2
+
+
 def _evidence(exp: report.Experiment, *records: dict[str, Any]) -> report.SufficientEvidence:
     schedule = [[r["algorithm"], r["case_id"]] for r in records]
+    declared = dict(SB_MEASUREMENT)  # as l01-sufficient-budget.yaml and the driver declare
     manifest = SimpleNamespace(bundle_hash="hash-full_source/matrix", state="complete",
-                               measurement={"schedule": schedule})  # fmt: skip
+                               measurement={"schedule": schedule, **declared,
+                                            "stage": "sufficient_budget"})  # fmt: skip
     document = {
         "protocol": {"sha256": exp.document["protocol"]["sha256"]},
         "source": dict(exp.document["source"]), "profile": dict(exp.document["profile"]),
         "bundles": {"full_source/matrix": {"bundle_hash": "hash-full_source/matrix"}},
-        "sufficient_budget": {"sha256": "sb"},
+        "sufficient_budget": {"sha256": "sb", "document": {"measurement": dict(declared)}},
     }  # fmt: skip
     run = report.RunView({}, manifest, list(records), [], Path("sb"))  # type: ignore[arg-type]
     return report.SufficientEvidence(Path("."), document, {"full_source": run})
 
 
 def _unbounded(**extra: Any) -> dict[str, Any]:  # re-solved with the quote cap raised
-    return _rec("single_path", "h2", 2.0, samples=2, warmup=0, **extra)
+    return _rec("single_path", "h2", 2.0, samples=SB_MEASUREMENT["repeats"],
+                warmup=SB_MEASUREMENT["warmup"], **extra)  # fmt: skip
 
 
 def _still_bound() -> dict[str, Any]:
@@ -821,6 +828,98 @@ def test_fixed_budget_completion_is_reported_apart_from_sufficient_exactness() -
     assert result["verdict"] == "adopt_eligible", result["reasons"]
     assert len(result["fixed_budget_differences"]) == 3  # kept, per stage/order
     assert result["bounded_exactness"]["established"]
+
+
+def _sb_records(ev: report.SufficientEvidence) -> list[dict[str, Any]]:
+    return ev.runs["full_source"].records
+
+
+def _zero_attempts(ev: report.SufficientEvidence) -> None:  # ok/consistent, nothing solved
+    for record in _sb_records(ev):
+        record["measurement"].update(attempts_completed=0, solve_seconds=[],
+                                     solve_cpu_seconds=[], transport_seconds=[])  # fmt: skip
+
+
+def _one_attempt(ev: report.SufficientEvidence) -> None:  # 1 of the 2 declared attempts
+    for record in _sb_records(ev):
+        m = record["measurement"]
+        m["attempts_completed"] = 1
+        for key in report.SAMPLE_FIELDS:
+            m[key] = m[key][:1]
+
+
+def _one_sb_sample(ev: report.SufficientEvidence) -> None:  # 2 attempts, one wall sample lost
+    for record in _sb_records(ev):
+        record["measurement"]["solve_seconds"] = record["measurement"]["solve_seconds"][:1]
+
+
+def _record_repeats(ev: report.SufficientEvidence) -> None:  # record claims another schedule
+    for record in _sb_records(ev):
+        record["measurement"]["repeats"] = 3
+
+
+def _manifest_undeclared(ev: report.SufficientEvidence) -> None:
+    for key in ("warmup", "repeats"):
+        del ev.runs["full_source"].manifest.measurement[key]
+
+
+def _manifest_repeats(ev: report.SufficientEvidence) -> None:
+    ev.runs["full_source"].manifest.measurement["repeats"] = 3
+
+
+def _protocol_undeclared(ev: report.SufficientEvidence) -> None:
+    del ev.document["sufficient_budget"]["document"]
+
+
+def _protocol_repeats(ev: report.SufficientEvidence) -> None:  # protocol != manifest/records
+    ev.document["sufficient_budget"]["document"]["measurement"]["repeats"] = 3
+
+
+@pytest.mark.parametrize("side", ["baseline", "candidate"])
+@pytest.mark.parametrize(
+    ("defect", "message"),
+    [
+        (_zero_attempts, "0 attempt\\(s\\) completed"),
+        (_one_attempt, "1 attempt\\(s\\) completed"),
+        (_one_sb_sample, "samples .*expected 2 each"),
+        (_record_repeats, "single_path/h2: declares warmup/repeats 0/3"),
+        (_manifest_undeclared, "run declares warmup/repeats None/None"),
+        (_manifest_repeats, "run declares warmup/repeats 0/3, sufficient-budget protocol 0/2"),
+        (_protocol_undeclared, "declares no valid warmup/repeats"),
+        (_protocol_repeats, "run declares warmup/repeats 0/2, sufficient-budget protocol 0/3"),
+    ],
+)  # fmt: skip
+def test_sufficient_exactness_needs_the_declared_attempts_and_samples(
+    defect: Any, message: str, side: str
+) -> None:
+    base, candidate = _bound_pair()
+    evidence = (_evidence(base, _unbounded()), _evidence(candidate, _unbounded()))
+    valid = report.compare_experiments(base, candidate, lane="exact", sufficient=evidence)
+    assert valid["verdict"] == "adopt_eligible" and valid["bounded_exactness"]["established"]
+    defect(evidence[side == "candidate"])  # mutated only after the valid construction
+    result = report.compare_experiments(base, candidate, lane="exact", sufficient=evidence)
+    assert result["verdict"] == "inconclusive", result["reasons"]
+    bounded = result["bounded_exactness"]
+    assert bounded["established"] == [] and bounded["mismatches"] == []
+    assert bounded["unproven"] == [
+        f"{BOUND[0]} single_path/h2 (3 bound record(s)): evidence invalid"
+    ]
+    problems = bounded["evidence_problems"]
+    assert any(re.search(message, p) for p in problems[side]), problems
+    assert problems["baseline" if side == "candidate" else "candidate"] == []
+
+
+@pytest.mark.parametrize("status", ["algorithm_error", "timeout"])
+def test_failed_sufficient_companions_leave_exactness_unproven(status: str) -> None:
+    base, candidate = _bound_pair()
+    evidence = (_evidence(base, _unbounded()), _evidence(candidate, _unbounded()))
+    for ev in evidence:  # identical failures on both sides: explicit, never a zero or a pass
+        _failed(_sb_records(ev)[0], status)
+    result = report.compare_experiments(base, candidate, lane="exact", sufficient=evidence)
+    assert result["verdict"] == "inconclusive", result["reasons"]
+    bounded = result["bounded_exactness"]
+    assert bounded["evidence_problems"] == {"baseline": [], "candidate": [], "pairing": []}
+    assert bounded["established"] == [] and "failed" in bounded["unproven"][0]
 
 
 # ------------------------------------------------------------ L08 arms (WHI-1510)
