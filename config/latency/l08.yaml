@@ -1,0 +1,125 @@
+# L08 (WHI-1510): the pre-registered final measurement of the 0.1.2 latency experiments.
+# Registered, committed and frozen BEFORE any final collection
+# (docs/references/latency-optimization-results.md explains every value). Changing
+# anything is a new `version` (and a new sha256 in every experiment), never an in-place
+# reinterpretation. Read by `python -m benchmark.latency run|sufficient|session --arms`
+# and `python -m report.latency compare|final`.
+#
+# What this file adds to L01 -- and nothing else:
+# - L01 v1 (config/latency/l01.yaml) and L01-SB v1 are used UNCHANGED: the same frozen
+#   parent bundle, pinned profile, matrix/splits, both cohorts, warmup 1 + 5 repeats in
+#   fixed and reverse order, cold + separate tracemalloc pass on full_source, the 0.5 x
+#   logical-CPU load rule and every acceptance rule and threshold.
+# - An ARM names explicit settings. Controls (L02-L05) are installed by the driver inside
+#   the child worker's solve window only: fresh instances for every solve (so building and
+#   filling them is charged to that solve), removed again when it returns; the parent's
+#   independent final evaluation always runs the default reference path. Overlays select
+#   the opt-in `uni_sor_fast` identity with its registered shortlist/sampling settings.
+# - `main.py quote` cannot select controls and is not changed, so the quote-CLI stage (the
+#   measured six-algorithm complete response) belongs to the default arm R only. A
+#   controlled arm's complete-response boundary is its cold per-algorithm charge (start-up
+#   incl. prepare + solve + transport + independent evaluation); no six-algorithm CLI total
+#   is claimed for it.
+schema: latency-arms/1
+key: L08
+version: 1
+
+protocol:
+  path: config/latency/l01.yaml
+  sha256: 961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b
+sufficient_budget:
+  path: config/latency/l01-sufficient-budget.yaml
+  sha256: 4059506da09280cdb0e8d4a94ac6ecef1c786113016e8eee430bef38089db43b
+
+# Measured source: the clean commit that contains this file (recorded in every experiment
+# as git revision + code-tree ids). Every experiment and sufficient-budget run of one
+# session must share that identical source identity; compare/final refuse a mix.
+source: every_arm_same_clean_commit
+
+# Explicit experiment controls. Settings are the predecessors' declared evidence settings,
+# not tuned here and not runtime defaults. `per_solve` is the only lifetime measured:
+# nothing survives a solve (no per-worker, per-process or per-bundle cache).
+controls:
+  L02: {skip_empty_spans: true}                                   # WHI-1504
+  L03: {tick_capacity: 16384, bin_capacity: 4096, lifetime: per_solve}  # WHI-1505
+  L04: {max_keys: 4096, max_checkpoints: 262144, lifetime: per_solve}   # WHI-1506
+  L05: {graph_reuse: true, lifetime: per_solve}  # WHI-1507: incremental_graph only
+
+# Arms, in the fixed session order. `algorithms: reference` = the pinned profile's six
+# algorithms. `stages` is the complete required stage set of the arm (the coverage
+# contract): an arm experiment with fewer stages is refused, never "partial".
+arms:
+  - {name: R, algorithms: reference, controls: [], stages: [timing, cold, quote_cli]}
+  - {name: E1, algorithms: reference, controls: [L02], stages: [timing, cold]}
+  - {name: E2, algorithms: reference, controls: [L02, L03], stages: [timing, cold]}
+  - {name: E3, algorithms: reference, controls: [L02, L03, L04], stages: [timing, cold]}
+  - {name: E4, algorithms: reference, controls: [L02, L03, L04, L05], stages: [timing, cold]}
+  # Heuristic reference: L01 comparisons never drop a baseline algorithm, so the SOR-only
+  # heuristic arms are paired with a SOR-only default-path reference.
+  - {name: S0, algorithms: [uni_sor_port], controls: [], stages: [timing, cold]}
+  # L06 nomination p5.100-k8-d0 (config/latency/l06.yaml, tuning at 9cfb76a).
+  - name: H1
+    algorithms: [uni_sor_fast]
+    controls: []
+    stages: [timing, cold]
+    shortlist: {probe_percents: [5, 100], routes_per_probe: 8, direct_routes: 0}
+  # L07 combined nomination combined-c25-r1-snone (config/latency/l07.yaml, tuning cd27439).
+  - name: H2
+    algorithms: [uni_sor_fast]
+    controls: []
+    stages: [timing, cold]
+    shortlist: {probe_percents: [5, 100], routes_per_probe: 8, direct_routes: 0}
+    sampling: {coarse_step: 25, refine_radius: 1, soft_max_quotes: null}
+  # L07 adaptive-only nomination adaptive_only-c25-r1-snone (vacuous shortlist: probes are
+  # the coarse grid, 10^6 routes per probe).
+  - name: H3
+    algorithms: [uni_sor_fast]
+    controls: []
+    stages: [timing, cold]
+    shortlist: {probe_percents: [25, 50, 75, 100], routes_per_probe: 1000000, direct_routes: 0}
+    sampling: {coarse_step: 25, refine_radius: 1, soft_max_quotes: null}
+  # Composition: H2 with the L02-L04 exact controls.
+  - name: H4
+    algorithms: [uni_sor_fast]
+    controls: [L02, L03, L04]
+    stages: [timing, cold]
+    shortlist: {probe_percents: [5, 100], routes_per_probe: 8, direct_routes: 0}
+    sampling: {coarse_step: 25, refine_radius: 1, soft_max_quotes: null}
+
+# Every arm that schedules an algorithm listed by L01-SB gets its own sufficient-budget run
+# on the same source and arm, immediately after its experiment.
+
+# The only comparisons `report.latency compare` accepts between arm experiments. `decision`
+# comparisons carry an experiment's disposition; `informational` ones are reported only.
+# The verdict is L01's, verbatim; the disposition wording follows `dispositions` below.
+comparisons:
+  - {id: L02, lane: exact, baseline: R, candidate: E1, role: decision}
+  - {id: L03, lane: exact, baseline: E1, candidate: E2, role: decision}
+  - {id: L04, lane: exact, baseline: E2, candidate: E3, role: decision}
+  - {id: L05, lane: exact, baseline: E3, candidate: E4, role: decision}
+  - {id: L02-L04-cumulative, lane: exact, baseline: R, candidate: E3, role: informational}
+  - {id: L02-L05-cumulative, lane: exact, baseline: R, candidate: E4, role: informational}
+  - {id: H4-exact-controls, lane: exact, baseline: H2, candidate: H4, role: informational}
+  - {id: L06, lane: heuristic, baseline: S0, candidate: H1, role: decision,
+     pairs: {uni_sor_fast: uni_sor_port}}
+  - {id: L07-combined, lane: heuristic, baseline: S0, candidate: H2, role: decision,
+     pairs: {uni_sor_fast: uni_sor_port}}
+  - {id: L07-adaptive-only, lane: heuristic, baseline: S0, candidate: H3, role: decision,
+     pairs: {uni_sor_fast: uni_sor_port}}
+  - {id: L07-sampling-ablation, lane: heuristic, baseline: H1, candidate: H2,
+     role: informational}
+  - {id: L06-L07-with-exact-controls, lane: heuristic, baseline: S0, candidate: H4,
+     role: informational, pairs: {uni_sor_fast: uni_sor_port}}
+
+# Verdict -> disposition. Nothing is activated by this issue: an adopt-eligible exact
+# control stays explicit and default-off until a separate reviewed change; a heuristic
+# stays opt-in (no owner loss tolerance: heuristic_default_loss_tolerance null in L01).
+dispositions:
+  exact:
+    adopt_eligible: adopt-eligible (not activated; default activation is a separate reviewed change)
+    reject: rejected
+    inconclusive: not adopted (inconclusive)
+  heuristic:
+    opt_in_only: opt-in only (no default; any loss needs the owner's explicit acceptance)
+    reject: rejected
+    inconclusive: not adopted (inconclusive)

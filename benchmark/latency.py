@@ -40,6 +40,16 @@ evaluation, each recorded separately.
 matrix bundles and pinned profile with the budget raised (the sufficient-budget evidence
 exact comparisons need; docs/references/latency-baseline.md §7).
 
+`--arms config/latency/l08.yaml --arm NAME` (WHI-1510 / L08) measures one pre-registered
+arm with the same protocol: explicit exact controls (L02-L05) installed inside the child
+worker's solve window only -- fresh instances per solve, so their construction and filling
+is charged to that solve; the parent's independent final evaluation keeps the default
+reference path -- and/or the opt-in `uni_sor_fast` overlay (the pinned `uni_sor_port`, its
+contract and goldens are never altered by an arm). `session --arms F` runs every
+arm once, in the registered order, each followed by its own same-source/same-arm
+sufficient-budget run; it stops on a coverage, determinism or provenance failure, never on
+host load alone, and never retries.
+
 SIGTERM is handled like Ctrl-C: the current run's unfinished cases are recorded as
 `cancelled`, its manifest and the experiment are finalized as `interrupted` (never
 `complete`), and the command exits 130.
@@ -48,6 +58,7 @@ SIGTERM is handled like Ctrl-C: the current run's unfinished cases are recorded 
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import json
 import os
@@ -57,12 +68,19 @@ import subprocess
 import sys
 import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from benchmark.profile import ProfileError, RunProfile, _parse_budget, load_profile
+from benchmark.profile import (
+    ProfileError,
+    RunProfile,
+    _parse_budget,
+    load_profile,
+    parse_profile,
+    read_profile_document,
+)
 from benchmark.results import (
     REPO_ROOT,
     STATE_COMPLETE,
@@ -86,7 +104,10 @@ from benchmark.runner import (
     _WorkerSlot,
 )
 from benchmark.worker import AttemptOutcome, SolveRequest, Worker
-from routing.algorithms.base import Budget
+from pools import concentrated, liquidity_book
+from pools.cl_math import TickMathReuse
+from routing.algorithms import incremental_graph
+from routing.algorithms.base import AlgorithmFactory, Budget, SolveResult
 from routing.algorithms.registry import get_algorithm
 from snapshot.bundle import load_bundle, sha256_bytes, sha256_file
 from snapshot.corpus import subset_corpus_bundle
@@ -241,6 +262,278 @@ def load_protocol(path: str | Path) -> Protocol:
         return parse_protocol(yaml.safe_load(data), path=str(path), sha256=sha256_bytes(data))
     except LatencyError as exc:
         raise LatencyError(f"{path}: {exc}") from exc
+
+
+# ------------------------------------------------------------------ L08 arms
+
+ARMS_SCHEMA = "latency-arms/1"
+# Explicit controls an arm may select, with exactly these settings keys (WHI-1504..1507).
+CONTROL_KEYS = {
+    "L02": {"skip_empty_spans"},
+    "L03": {"tick_capacity", "bin_capacity", "lifetime"},
+    "L04": {"max_keys", "max_checkpoints", "lifetime"},
+    "L05": {"graph_reuse", "lifetime"},
+}
+OVERLAY_ALGORITHM = "uni_sor_fast"  # the only identity with shortlist/sampling settings
+CONTROL_STATS_KEY = "l08_controls"  # per-solve control stats added to a record's `search`
+LANES = ("exact", "heuristic")
+
+
+@dataclass(frozen=True)
+class Arm:
+    """One pre-registered arm: which algorithms, which explicit controls (with their
+    settings), which overlay settings and which complete stage set it must measure."""
+
+    name: str
+    algorithms: tuple[str, ...] | None  # None = the pinned profile's algorithms
+    controls: dict[str, dict[str, Any]]  # selected control -> its registered settings
+    stages: tuple[str, ...]
+    shortlist: dict[str, Any] | None
+    sampling: dict[str, Any] | None
+
+    def record(self) -> dict[str, Any]:
+        return {"name": self.name,
+                "algorithms": None if self.algorithms is None else list(self.algorithms),
+                "controls": {k: dict(v) for k, v in self.controls.items()},
+                "stages": list(self.stages), "shortlist": self.shortlist,
+                "sampling": self.sampling, "quote_path": self.quote_path()}  # fmt: skip
+
+    def quote_path(self) -> str:
+        if not self.controls:
+            return "default reference quote path (no L02-L05 control installed)"
+        parts = [f"{k} {json.dumps(v, sort_keys=True)}" for k, v in sorted(self.controls.items())]
+        return (f"L08 arm {self.name}: explicit controls installed in the worker around each "
+                f"solve only, fresh per solve: {'; '.join(parts)}")  # fmt: skip
+
+
+@dataclass(frozen=True)
+class Arms:
+    path: str
+    sha256: str
+    document: dict[str, Any]
+    protocol_path: str
+    protocol_sha256: str
+    sufficient_path: str
+    sufficient_sha256: str
+    arms: dict[str, Arm]  # in the registered session order
+    comparisons: tuple[dict[str, Any], ...]
+
+    def identity(self) -> dict[str, Any]:
+        return {"path": self.path, "sha256": self.sha256, "key": self.document["key"],
+                "version": self.document["version"], "document": self.document}  # fmt: skip
+
+
+def _control_settings(name: str, raw: Any) -> dict[str, Any]:
+    where = f"controls.{name}"
+    if name not in CONTROL_KEYS:
+        raise LatencyError(f"{where}: unknown control (known: {sorted(CONTROL_KEYS)})")
+    item = _keys(raw, CONTROL_KEYS[name], where)
+    for key, value in item.items():
+        if key in ("skip_empty_spans", "graph_reuse"):
+            if value is not True:
+                raise LatencyError(f"{where}.{key}: must be true (the control's own setting)")
+        elif key == "lifetime":
+            if value != "per_solve":
+                raise LatencyError(f"{where}.lifetime: only per_solve is measured")
+        else:
+            _int(value, 1, f"{where}.{key}")
+    return dict(item)
+
+
+def load_arms(path: str | Path) -> Arms:
+    import yaml
+
+    path = Path(path)
+    data = path.read_bytes()
+    raw = yaml.safe_load(data)
+    try:
+        top = _keys(raw, {"schema", "key", "version", "protocol", "sufficient_budget",
+                          "source", "controls", "arms", "comparisons", "dispositions"},
+                    "<root>")  # fmt: skip
+        if top["schema"] != ARMS_SCHEMA:
+            raise LatencyError(f"schema: expected {ARMS_SCHEMA!r}, got {top['schema']!r}")
+        _int(top["version"], 1, "version")
+        if top["source"] != "every_arm_same_clean_commit":
+            raise LatencyError("source: expected every_arm_same_clean_commit")
+        protocol = _keys(top["protocol"], {"path", "sha256"}, "protocol")
+        sufficient = _keys(top["sufficient_budget"], {"path", "sha256"}, "sufficient_budget")
+        if not isinstance(top["controls"], dict):
+            raise LatencyError("controls: expected a mapping")
+        controls = {n: _control_settings(n, v) for n, v in top["controls"].items()}
+        if not isinstance(top["arms"], list) or not top["arms"]:
+            raise LatencyError("arms: expected a non-empty list")
+        arms: dict[str, Arm] = {}
+        for i, entry in enumerate(top["arms"]):
+            where = f"arms[{i}]"
+            if not isinstance(entry, dict):
+                raise LatencyError(f"{where}: expected a mapping")
+            item = _keys(entry, {"name", "algorithms", "controls", "stages"}
+                         | ({"shortlist", "sampling"} & entry.keys()), where)  # fmt: skip
+            name = str(item["name"])
+            if name in arms:
+                raise LatencyError(f"{where}: duplicate arm {name!r}")
+            algorithms = item["algorithms"]
+            if algorithms != "reference":
+                if (not isinstance(algorithms, list) or not algorithms
+                        or len(set(algorithms)) != len(algorithms)):  # fmt: skip
+                    raise LatencyError(f"{where}.algorithms: 'reference' or a non-empty list")
+                algorithms = tuple(str(a) for a in algorithms)
+            selected = item["controls"]
+            if not isinstance(selected, list) or len(set(selected)) != len(selected):
+                raise LatencyError(f"{where}.controls: expected a list without duplicates")
+            if not set(selected) <= controls.keys():
+                raise LatencyError(f"{where}.controls: {selected} not all registered")
+            overlay = {k: item.get(k) for k in ("shortlist", "sampling")}
+            if any(overlay.values()) and (
+                algorithms == "reference" or OVERLAY_ALGORITHM not in algorithms
+            ):
+                raise LatencyError(f"{where}: shortlist/sampling only for {OVERLAY_ALGORITHM}")
+            stages = _subset(item["stages"], STAGES, f"{where}.stages")
+            if not {"timing", "cold"} <= set(stages):
+                raise LatencyError(f"{where}.stages: timing and cold are always required")
+            plain = not selected and not any(overlay.values())
+            default_path = algorithms == "reference" and plain
+            if "quote_cli" in stages and not default_path:
+                raise LatencyError(
+                    f"{where}.stages: `main.py quote` measures only the default six-algorithm "
+                    "path; a controlled, subset or overlay arm cannot claim its CLI total"
+                )
+            arms[name] = Arm(
+                name=name,
+                algorithms=None if algorithms == "reference" else algorithms,
+                controls={c: controls[c] for c in selected},
+                stages=tuple(s for s in STAGES if s in stages),
+                shortlist=overlay["shortlist"],
+                sampling=overlay["sampling"],
+            )
+        comparisons = top["comparisons"]
+        if not isinstance(comparisons, list) or not comparisons:
+            raise LatencyError("comparisons: expected a non-empty list")
+        seen: set[str] = set()
+        for i, entry in enumerate(comparisons):
+            where = f"comparisons[{i}]"
+            if not isinstance(entry, dict):
+                raise LatencyError(f"{where}: expected a mapping")
+            item = _keys(entry, {"id", "lane", "baseline", "candidate", "role"}
+                         | ({"pairs"} & entry.keys()), where)  # fmt: skip
+            if item["id"] in seen:
+                raise LatencyError(f"{where}: duplicate id {item['id']!r}")
+            seen.add(item["id"])
+            if item["lane"] not in LANES or item["role"] not in ("decision", "informational"):
+                raise LatencyError(f"{where}: lane exact|heuristic, role decision|informational")
+            if not {item["baseline"], item["candidate"]} <= arms.keys():
+                raise LatencyError(f"{where}: unknown arm")
+            if item["lane"] == "exact" and item.get("pairs"):
+                raise LatencyError(f"{where}: the exact lane pairs each algorithm with itself")
+        dispositions = _keys(top["dispositions"], set(LANES), "dispositions")
+        for lane, verdicts in (
+            ("exact", {"adopt_eligible", "reject", "inconclusive"}),
+            ("heuristic", {"opt_in_only", "reject", "inconclusive"}),
+        ):
+            _keys(dispositions[lane], verdicts, f"dispositions.{lane}")
+        return Arms(
+            path=str(path), sha256=sha256_bytes(data), document=raw,
+            protocol_path=str(protocol["path"]), protocol_sha256=str(protocol["sha256"]),
+            sufficient_path=str(sufficient["path"]),
+            sufficient_sha256=str(sufficient["sha256"]), arms=arms,
+            comparisons=tuple(comparisons),
+        )  # fmt: skip
+    except LatencyError as exc:
+        raise LatencyError(f"{path}: {exc}") from exc
+
+
+@dataclass(frozen=True)
+class _ArmProfile(RunProfile):
+    """The pinned profile with an arm's overlay; its resolved form (the run manifest's
+    `resolved_profile`) names the arm and, under controls, the effective quote path in
+    place of a solver's static "controls off" provenance label."""
+
+    arm: dict[str, Any] = field(default_factory=dict)
+
+    def resolved(self) -> dict[str, Any]:
+        out = super().resolved()
+        out["l08_arm"] = self.arm
+        if self.arm.get("controls"):
+            for config in out["algorithm_config"].values():
+                if "quote_path" in config.get("provenance", {}):
+                    config["provenance"]["quote_path"] = self.arm["quote_path"]
+        return out
+
+
+def arm_profile(arm: Arm, protocol: Protocol) -> RunProfile:
+    """The pinned profile (sha256 already checked) with the arm's algorithms/overlay,
+    validated by the ordinary profile loader."""
+    raw = read_profile_document(REPO_ROOT / protocol.profile_path)
+    if arm.algorithms is not None:
+        raw["algorithms"] = list(arm.algorithms)
+    for key in ("shortlist", "sampling"):
+        if getattr(arm, key):
+            raw[key] = dict(getattr(arm, key))
+    try:
+        profile = parse_profile(raw, protocol.profile_path)
+    except ProfileError as exc:
+        raise LatencyError(f"arm {arm.name}: {exc}") from exc
+    values = {f: getattr(profile, f) for f in profile.__dataclass_fields__}
+    return _ArmProfile(**values, arm=arm.record())
+
+
+# The reference quote kernels, captured once per process: controls always start from them.
+_REFERENCE_CL_SWAP = concentrated.swap
+_REFERENCE_LB_SWAP = liquidity_book.swap
+
+
+def controlled_solve(
+    controls: Mapping[str, Mapping[str, Any]], label: str, solve: Any, case: Any,
+    context: Any, budget: Any,
+) -> Any:  # fmt: skip
+    """Run `solve` with the arm's explicit L02-L04 quote controls installed for this solve
+    only (L05 is bound into `solve` by `arm_factory`). Fresh memo/prefix instances per
+    call, so construction and population are inside the timed solve window; the reference
+    kernels are restored before returning, so nothing outlives the solve and the parent's
+    independent evaluation (another process) never sees a control."""
+    if concentrated.swap is not _REFERENCE_CL_SWAP or liquidity_book.swap is not _REFERENCE_LB_SWAP:
+        raise RuntimeError("quote kernels already replaced: controls must start from the reference")
+    l03, l04 = controls.get("L03"), controls.get("L04")
+    tick = TickMathReuse(l03["tick_capacity"]) if l03 else None
+    bins = liquidity_book.BinMathReuse(l03["bin_capacity"]) if l03 else None
+    prefix = concentrated.CLPrefixReuse(l04["max_keys"], l04["max_checkpoints"]) if l04 else None
+    concentrated.swap = functools.partial(
+        _REFERENCE_CL_SWAP, skip_empty_spans="L02" in controls, math_reuse=tick,
+        prefix_reuse=prefix,
+    )  # fmt: skip
+    liquidity_book.swap = functools.partial(_REFERENCE_LB_SWAP, math_reuse=bins)
+    try:
+        result = solve(case, context, budget)
+    finally:
+        concentrated.swap, liquidity_book.swap = _REFERENCE_CL_SWAP, _REFERENCE_LB_SWAP
+    if not isinstance(result, SolveResult):
+        return result  # the worker reports it as an algorithm error
+    search = dict(result.search_stats)
+    search[CONTROL_STATS_KEY] = {
+        "arm": label, "controls": sorted(controls), "lifetime": "per_solve",
+        "graph_reuse_bound": isinstance(solve, functools.partial),
+        "tick_math": tick.stats() if tick else None,
+        "bin_math": bins.stats() if bins else None,
+        "prefix": prefix.stats() if prefix else None,
+    }  # fmt: skip
+    fast = search.get("sor_fast")
+    if isinstance(fast, Mapping) and "quote_path" in fast:  # not the static "all off" label
+        label_path = f"L08 arm {label}: {sorted(controls)} installed around this solve"
+        search["sor_fast"] = {**fast, "quote_path": label_path}
+    return replace(result, search_stats=search)
+
+
+def arm_factory(factory: AlgorithmFactory, arm: Arm | None) -> AlgorithmFactory:
+    """`factory` unchanged for an arm without controls; otherwise its `solve` wrapped by
+    `controlled_solve` (module-level functions and partials: pickled by reference into
+    the spawned worker). L05 binds `graph_reuse=True` into `incremental_graph` only."""
+    if arm is None or not arm.controls:
+        return factory
+    solve: Any = factory.solve
+    if "L05" in arm.controls and factory.name == incremental_graph.NAME:
+        solve = functools.partial(solve, graph_reuse=True)
+    controls = {k: dict(v) for k, v in arm.controls.items()}
+    return replace(factory, solve=functools.partial(controlled_solve, controls, arm.name, solve))
 
 
 # ------------------------------------------------------------------ provenance
@@ -409,10 +702,12 @@ def measure_run(
     environment: Mapping[str, Any] | None = None,
     on_record: Callable[[str, str], None] | None = None,
     pairs: frozenset[tuple[str, str]] | None = None,
+    arm: Arm | None = None,
 ) -> RunManifest:
     """One ordinary schema-2 run of `profile.algorithms` over `bundle` with the given
     schedule order, attempts and worker scope (see module docstring). `pairs`, if given,
-    restricts the schedule to those (algorithm, case id) pairs."""
+    restricts the schedule to those (algorithm, case id) pairs; `arm`, if given, installs
+    its explicit controls in every worker's solve window (`arm_factory`)."""
     if order not in ORDERS:
         raise LatencyError(f"unknown order {order!r}")
     profile = replace(
@@ -424,7 +719,7 @@ def measure_run(
         ),
         worker=replace(profile.worker, scope=scope),  # type: ignore[arg-type]
     )  # fmt: skip
-    factories = [get_algorithm(name) for name in profile.algorithms]
+    factories = [arm_factory(get_algorithm(name), arm) for name in profile.algorithms]
     schedule = [
         (factory, case)
         for factory in factories
@@ -448,6 +743,7 @@ def measure_run(
             "worker_scope": scope,
             "schedule": [[f.name, c.case_id] for f, c in schedule],
             "budget": profile.budget.to_dict(),
+            **({"arm": arm.record()} if arm is not None else {}),
         },
         environment=environment or environment_record(profile.worker.to_dict()),
         memory=memory,
@@ -552,12 +848,36 @@ class _LoadLog:
         }
 
 
-def _replay(protocol: Protocol, bundle_path: str, out: Path, stages: Sequence[str]) -> str:
+def _replay(
+    protocol: Protocol, bundle_path: str, out: Path, stages: Sequence[str],
+    arm: tuple[Arms, Arm] | None = None,
+) -> str:  # fmt: skip
     cmd = ["uv", "run", "python", "-m", "benchmark.latency", "run", "--protocol",
            protocol.path, "--bundle", bundle_path, "--out", str(out)]  # fmt: skip
-    if tuple(stages) != STAGES:
+    if arm is not None:
+        cmd += ["--arms", arm[0].path, "--arm", arm[1].name]
+    elif tuple(stages) != STAGES:
         cmd += ["--stages", ",".join(stages)]
     return shlex.join(cmd)
+
+
+def _selected_arm(arms_path: str | Path | None, name: str | None, protocol: Protocol,
+                  pinned_sha256: str, pinned_what: str) -> tuple[Arms, Arm] | None:  # fmt: skip
+    """The registered arm, refusing a protocol / sufficient-budget file other than the
+    one the arms file pins."""
+    if arms_path is None and name is None:
+        return None
+    if arms_path is None or name is None:
+        raise LatencyError("--arms and --arm go together")
+    arms = load_arms(arms_path)
+    if name not in arms.arms:
+        raise LatencyError(f"unknown arm {name!r}; registered: {list(arms.arms)}")
+    if protocol.sha256 != arms.protocol_sha256:
+        raise LatencyError(f"{protocol.path}: sha256 differs from the arms file's pin")
+    wanted = arms.protocol_sha256 if pinned_what == "protocol" else arms.sufficient_sha256
+    if pinned_sha256 != wanted:
+        raise LatencyError(f"the {pinned_what} file's sha256 differs from the arms file's pin")
+    return arms, arms.arms[name]
 
 
 def _quote_cli(
@@ -637,22 +957,33 @@ def run_latency_experiment(
     bundle_path: str,
     out_dir: str | Path,
     *,
-    stages: Sequence[str] = STAGES,
+    stages: Sequence[str] | None = None,
     allow_dirty: bool = False,
     experiment_id: str | None = None,
     echo: Callable[[str], None] = print,
+    arms_path: str | Path | None = None,
+    arm_name: str | None = None,
 ) -> Path:
-    """Run the protocol's stages sequentially; return the experiment directory."""
+    """Run the protocol's stages sequentially; return the experiment directory. With an
+    arm, its registered stage set is the complete required set (never a partial run)."""
+    protocol = load_protocol(protocol_path)
+    selected = _selected_arm(arms_path, arm_name, protocol, protocol.sha256, "protocol")
+    required = STAGES if selected is None else selected[1].stages
+    stages = required if stages is None else tuple(stages)
     if not stages or not set(stages) <= set(STAGES):
         raise LatencyError(f"stages must be a non-empty subset of {list(STAGES)}")
-    protocol = load_protocol(protocol_path)
+    if selected is not None and tuple(stages) != required:
+        raise LatencyError(f"arm {selected[1].name} registers the stages {list(required)}")
     source, profile = _checked_inputs(protocol, allow_dirty)
+    arm = None if selected is None else selected[1]
+    if arm is not None:
+        profile = arm_profile(arm, protocol)
     parent = load_bundle(bundle_path)
     out = Path(out_dir) / (experiment_id or new_run_id())
     out.mkdir(parents=True)  # exclusive: an experiment is never overwritten
     log = _LoadLog(out / LOAD_FILE, protocol.max_loadavg_1m_per_cpu)
     environment = environment_record(profile.worker.to_dict())
-    replay = _replay(protocol, bundle_path, Path(out_dir), stages)
+    replay = _replay(protocol, bundle_path, Path(out_dir), stages, selected)
     bundles = build_bundles(protocol, parent, out / "bundles")
     document: dict[str, Any] = {
         "schema": EXPERIMENT_SCHEMA,
@@ -662,7 +993,7 @@ def run_latency_experiment(
         "finished_at": None,
         "replay_command": replay,
         "stages_requested": list(stages),
-        "partial": tuple(stages) != STAGES,
+        "partial": tuple(stages) != required,
         "protocol": {"path": protocol.path, "sha256": protocol.sha256, "key": protocol.key,
                      "version": protocol.version, "document": protocol.document},
         "source": source,
@@ -670,6 +1001,8 @@ def run_latency_experiment(
         "parent_bundle": {"path": bundle_path, "bundle_id": parent.bundle_id,
                           "bundle_hash": parent.bundle_hash},
         "profile": {"path": protocol.profile_path, "sha256": protocol.profile_sha256},
+        **({} if selected is None else {"arms": selected[0].identity(),
+                                        "arm": selected[1].record()}),
         "algorithms": list(profile.algorithms),
         "bundles": {label: {"path": b.source_path, "bundle_id": b.bundle_id,
                             "bundle_hash": b.bundle_hash, "cases": len(b.cases)}
@@ -691,7 +1024,7 @@ def run_latency_experiment(
         manifest = measure_run(
             bundles[label], profile, results_dir=out / "runs", run_id=run_id, stage=stage,
             order=order, replay_command=replay, environment=environment,
-            on_record=on_record,
+            on_record=on_record, arm=arm,
             **kwargs,
         )  # fmt: skip
         after = log.sample(stage=stage, run_id=run_id, point="after")
@@ -816,17 +1149,29 @@ def run_sufficient_budget(
     allow_dirty: bool = False,
     experiment_id: str | None = None,
     echo: Callable[[str], None] = print,
+    arms_path: str | Path | None = None,
+    arm_name: str | None = None,
 ) -> Path:
     """Re-solve the listed records on the main protocol's derived matrix bundles (same
     bundle hashes) and pinned profile, with only the budget replaced; fixed order, one warm
-    worker per algorithm, `repeats` attempts (so attempt consistency is checked)."""
+    worker per algorithm, `repeats` attempts (so attempt consistency is checked). With an
+    arm: under the arm's controls, only the listed records of the arm's algorithms."""
     sufficient = load_sufficient_budget(sufficient_path)
     protocol = load_protocol(REPO_ROOT / sufficient.protocol_path)
     if protocol.sha256 != sufficient.protocol_sha256:
         raise LatencyError(f"{sufficient.protocol_path}: sha256 differs from the pinned one")
+    selected = _selected_arm(arms_path, arm_name, protocol, sufficient.sha256,
+                             "sufficient-budget")  # fmt: skip
     source, profile = _checked_inputs(protocol, allow_dirty)
+    arm = None if selected is None else selected[1]
+    pairs_listed = sufficient.pairs
+    if arm is not None:
+        profile = arm_profile(arm, protocol)
+        pairs_listed = tuple(p for p in pairs_listed if p[2] in profile.algorithms)
+        if not pairs_listed:
+            raise LatencyError(f"arm {arm.name} schedules no listed sufficient-budget record")
     matrix = {m.case_id for m in protocol.matrix}
-    for cohort, case_id, algorithm in sufficient.pairs:
+    for cohort, case_id, algorithm in pairs_listed:
         if cohort not in protocol.cohorts or case_id not in matrix:
             raise LatencyError(f"{cohort}/{case_id}: not a protocol cohort/matrix case")
         if algorithm not in profile.algorithms:
@@ -836,9 +1181,10 @@ def run_sufficient_budget(
     out.mkdir(parents=True)
     log = _LoadLog(out / LOAD_FILE, protocol.max_loadavg_1m_per_cpu)
     environment = environment_record(profile.worker.to_dict())
+    arm_args = [] if selected is None else ["--arms", selected[0].path, "--arm", selected[1].name]
     replay = shlex.join(["uv", "run", "python", "-m", "benchmark.latency", "sufficient",
                          "--sufficient", sufficient.path, "--bundle", bundle_path,
-                         "--out", str(out_dir)])  # fmt: skip
+                         "--out", str(out_dir), *arm_args])  # fmt: skip
     bundles = build_bundles(protocol, parent, out / "bundles")
     measured = replace(profile, budget=sufficient.budget)
     document: dict[str, Any] = {
@@ -857,6 +1203,8 @@ def run_sufficient_budget(
         "parent_bundle": {"path": bundle_path, "bundle_id": parent.bundle_id,
                           "bundle_hash": parent.bundle_hash},
         "profile": {"path": protocol.profile_path, "sha256": protocol.profile_sha256},
+        **({} if selected is None else {"arms": selected[0].identity(),
+                                        "arm": selected[1].record()}),
         "budget": sufficient.budget.to_dict(),
         "fixed_budget": profile.budget.to_dict(),
         "bundles": {f"{c}/matrix": {"bundle_hash": bundles[f"{c}/matrix"].bundle_hash}
@@ -866,9 +1214,9 @@ def run_sufficient_budget(
     }  # fmt: skip
     _atomic_json(out / EXPERIMENT_FILE, document)
     try:
-        for cohort in sorted({c for c, _, _ in sufficient.pairs}):
+        for cohort in sorted({c for c, _, _ in pairs_listed}):
             run_id = f"sufficient-{cohort}"
-            pairs = frozenset((a, k) for c, k, a in sufficient.pairs if c == cohort)
+            pairs = frozenset((a, k) for c, k, a in pairs_listed if c == cohort)
             log.sample(stage="sufficient_budget", run_id=run_id, point="before")
             echo(f"[{_now()}] {run_id}: start ({len(pairs)} record(s))")
             manifest = measure_run(
@@ -876,6 +1224,7 @@ def run_sufficient_budget(
                 run_id=run_id, stage="sufficient_budget", order="fixed",
                 warmup=sufficient.warmup, repeats=sufficient.repeats, scope="algorithm",
                 memory=False, replay_command=replay, environment=environment, pairs=pairs,
+                arm=arm,
             )  # fmt: skip
             log.sample(stage="sufficient_budget", run_id=run_id, point="after")
             document["runs"].append({"run_id": run_id, "cohort": cohort,
@@ -891,6 +1240,94 @@ def run_sufficient_budget(
     return out
 
 
+# ------------------------------------------------------------------ L08 session
+
+SESSION_SCHEMA = "latency-session/1"
+SESSION_FILE = "session.json"
+
+
+def _session_gate(experiment: Path, source: Mapping[str, Any]) -> list[str]:
+    """Why the session must stop after this arm: a coverage or internal determinism
+    failure, or a measured source other than the session's. Host load is not a reason
+    (the per-experiment contamination label is kept and judged by the comparator)."""
+    from report import latency as report  # the report reads this module: import late
+
+    exp = report.load_experiment(experiment)
+    problems = report.coverage_problems(exp)
+    problems += [m for v in report.internal_checks(exp).values() for m in v]
+    pin = ("git_revision", "git_dirty", "dirty_patch_sha256")
+    if {k: exp.document["source"].get(k) for k in pin} != {k: source.get(k) for k in pin}:
+        problems.append("measured source differs from the session's source")
+    return problems
+
+
+def run_session(
+    arms_path: str | Path,
+    bundle_path: str,
+    out_dir: str | Path,
+    *,
+    allow_dirty: bool = False,
+    echo: Callable[[str], None] = print,
+) -> Path:
+    """Every registered arm once, in order, each followed by its own sufficient-budget run
+    when it schedules a listed algorithm. No retry: a stopped or interrupted session is
+    recorded as such and a new session needs a new decision."""
+    arms = load_arms(arms_path)
+    source = source_identity()
+    if source["git_dirty"] and not allow_dirty:
+        raise LatencyError(f"the source tree is dirty; commit first: {source['dirty_paths']}")
+    listed = {a for _, _, a in load_sufficient_budget(REPO_ROOT / arms.sufficient_path).pairs}
+    session = Path(out_dir) / new_run_id()
+    session.mkdir(parents=True)
+    document: dict[str, Any] = {
+        "schema": SESSION_SCHEMA, "session_id": session.name, "state": "running",
+        "created_at": _now(), "finished_at": None, "arms": arms.identity(),
+        "order": list(arms.arms), "source": source, "parent_bundle": bundle_path,
+        "replay_command": shlex.join(["uv", "run", "python", "-m", "benchmark.latency",
+                                      "session", "--arms", arms.path, "--bundle",
+                                      bundle_path, "--out", str(out_dir)]),
+        "entries": [], "stop_reasons": [],
+    }  # fmt: skip
+    _atomic_json(session / SESSION_FILE, document)
+    try:
+        for name, arm in arms.arms.items():
+            entry: dict[str, Any] = {"arm": name, "started_at": _now()}
+            document["entries"].append(entry)
+            echo(f"[{_now()}] session {session.name}: arm {name} start")
+            experiment = run_latency_experiment(
+                REPO_ROOT / arms.protocol_path, bundle_path, session, allow_dirty=allow_dirty,
+                echo=echo, arms_path=arms_path, arm_name=name,
+                experiment_id=f"{new_run_id()}-{name}",
+            )  # fmt: skip
+            entry["experiment"] = experiment.name
+            _atomic_json(session / SESSION_FILE, document)
+            problems = _session_gate(experiment, source)
+            algorithms = set(arm.algorithms or load_profile(
+                REPO_ROOT / load_protocol(REPO_ROOT / arms.protocol_path).profile_path
+            ).algorithms)  # fmt: skip
+            if not problems and algorithms & listed:
+                entry["sufficient"] = run_sufficient_budget(
+                    REPO_ROOT / arms.sufficient_path, bundle_path, session,
+                    allow_dirty=allow_dirty, echo=echo, arms_path=arms_path, arm_name=name,
+                    experiment_id=f"{new_run_id()}-{name}-sufficient",
+                ).name  # fmt: skip
+            entry["finished_at"] = _now()
+            _atomic_json(session / SESSION_FILE, document)
+            if problems:
+                document["stop_reasons"] = [f"arm {name}: {p}" for p in problems]
+                document.update(state="stopped", finished_at=_now())
+                _atomic_json(session / SESSION_FILE, document)
+                echo(f"session STOPPED after arm {name}: {len(problems)} problem(s)")
+                return session
+    except BaseException:
+        document.update(state="interrupted", finished_at=_now())
+        _atomic_json(session / SESSION_FILE, document)
+        raise
+    document.update(state="complete", finished_at=_now())
+    _atomic_json(session / SESSION_FILE, document)
+    return session
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m benchmark.latency")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -898,13 +1335,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     run_p.add_argument("--protocol", required=True)
     run_p.add_argument("--bundle", required=True, help="Frozen parent corpus bundle")
     run_p.add_argument("--out", default="data/latency")
-    run_p.add_argument("--stages", default=",".join(STAGES))
+    run_p.add_argument("--stages", default=None, help=f"default: all ({','.join(STAGES)}) "
+                       "or the arm's registered stages")  # fmt: skip
     run_p.add_argument("--allow-dirty", action="store_true")
     sb_p = sub.add_parser("sufficient", help="Re-solve listed records under a raised budget")
     sb_p.add_argument("--sufficient", required=True, help="Sufficient-budget protocol")
     sb_p.add_argument("--bundle", required=True, help="Frozen parent corpus bundle")
     sb_p.add_argument("--out", default="data/latency")
     sb_p.add_argument("--allow-dirty", action="store_true")
+    for p in (run_p, sb_p):
+        p.add_argument("--arms", default=None, help="L08 arms file (config/latency/l08.yaml)")
+        p.add_argument("--arm", default=None, help="Registered arm name")
+    se_p = sub.add_parser("session", help="Every registered arm once, in order (L08)")
+    se_p.add_argument("--arms", required=True)
+    se_p.add_argument("--bundle", required=True, help="Frozen parent corpus bundle")
+    se_p.add_argument("--out", default="data/latency-l08")
+    se_p.add_argument("--allow-dirty", action="store_true")
     args = parser.parse_args(argv)
 
     def _terminate(signum: int, frame: object) -> None:
@@ -912,14 +1358,18 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     previous = signal.signal(signal.SIGTERM, _terminate)
     try:
-        if args.command == "sufficient":
+        if args.command == "session":
+            out = run_session(args.arms, args.bundle, args.out, allow_dirty=args.allow_dirty)
+        elif args.command == "sufficient":
             out = run_sufficient_budget(
-                args.sufficient, args.bundle, args.out, allow_dirty=args.allow_dirty
-            )
+                args.sufficient, args.bundle, args.out, allow_dirty=args.allow_dirty,
+                arms_path=args.arms, arm_name=args.arm,
+            )  # fmt: skip
         else:
+            stages = None if args.stages is None else [s for s in args.stages.split(",") if s]
             out = run_latency_experiment(
-                args.protocol, args.bundle, args.out,
-                stages=[s for s in args.stages.split(",") if s], allow_dirty=args.allow_dirty,
+                args.protocol, args.bundle, args.out, stages=stages,
+                allow_dirty=args.allow_dirty, arms_path=args.arms, arm_name=args.arm,
             )  # fmt: skip
     except LatencyError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -930,8 +1380,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 130
     finally:
         signal.signal(signal.SIGTERM, previous)
-    view = "sufficient" if args.command == "sufficient" else "summarize"
-    print(f"experiment: {out}\nsummarize:  uv run python -m report.latency {view} {out}")
+    view = {"sufficient": "sufficient", "session": "final"}.get(args.command, "summarize")
+    print(f"{args.command}: {out}\nreport:  uv run python -m report.latency {view} {out}")
     return 0
 
 
