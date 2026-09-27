@@ -17,7 +17,7 @@ import pickle
 import re
 import signal
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from types import FrameType, SimpleNamespace
 from typing import Any
@@ -532,7 +532,7 @@ def _rec(
     return record
 
 
-def _experiment(wall: float) -> report.Experiment:
+def _experiment(wall: float, algorithms: Sequence[str] = ALGS) -> report.Experiment:
     protocol: dict[str, Any] = yaml.safe_load((REPO / "config/latency/l01.yaml").read_text())
     protocol.update(
         matrix=[{"case": "t1", "split": "tuning", "covers": []},
@@ -542,10 +542,10 @@ def _experiment(wall: float) -> report.Experiment:
     )  # fmt: skip
     runs = {}
     for stage, order, label in RUN_KEYS:
-        schedule = [[a, c] for a in ALGS for c in CASES[label]]
+        schedule = [[a, c] for a in algorithms for c in CASES[label]]
         attempts = {"samples": 1, "warmup": 0} if stage == "cold" else {"samples": 5, "warmup": 1}
         manifest = SimpleNamespace(
-            algorithms=ALGS, state="complete", bundle_hash=f"hash-{label}",
+            algorithms=tuple(algorithms), state="complete", bundle_hash=f"hash-{label}",
             scheduled_count=len(schedule),
             measurement={"schedule": schedule[::-1] if order == "reverse" else schedule,
                          "warmup": attempts["warmup"], "repeats": attempts["samples"]},
@@ -556,7 +556,7 @@ def _experiment(wall: float) -> report.Experiment:
         runs[(stage, order, label)] = report.RunView({}, manifest, records, [], Path(stage))  # type: ignore[arg-type]
     document = {
         "experiment_id": f"e{wall}", "partial": False, "stages_requested": list(latency.STAGES),
-        "protocol": {"sha256": "p", "document": protocol}, "algorithms": list(ALGS),
+        "protocol": {"sha256": "p", "document": protocol}, "algorithms": list(algorithms),
         "bundles": {label: {"bundle_hash": f"hash-{label}"} for label in CASES},
         "source": {"git_revision": "abc", "git_dirty": False}, "load": {"contaminated": False},
         "quote_cli": [], "profile": {"path": "config/daily_gross.yaml", "sha256": "x"},
@@ -1064,17 +1064,50 @@ def _refuses_mixed_sources(
     assert report.final_report(session)[0]["comparisons"]  # restored: accepted again
 
 
-def _armed(wall: float, name: str, **arm: Any) -> report.Experiment:
-    exp = _experiment(wall)
-    exp.document["arms"] = {"sha256": "arms", "document": _arms_doc()}
-    exp.document["arm"] = {"name": name, "algorithms": None, "controls": {}, "shortlist": None,
-                           "sampling": None, **arm}  # fmt: skip
+PINNED_PROFILE = "config/daily_gross.yaml"  # the L01 pin: `algorithms: reference`
+
+
+def _bind(manifest: Any, arm: latency.Arm, algorithms: Sequence[str]) -> None:
+    """Record `arm` as the driver does in a run manifest: measurement arm + effective
+    (resolved) profile. Fresh copies, so mutating one declaration never edits another."""
+    record = arm.record()
+    overlays = {k: record[k] for k in ("shortlist", "sampling") if record[k]}
+    params = {k: v for overlay in overlays.values() for k, v in overlay.items()}
+    manifest.algorithms = tuple(algorithms)
+    manifest.measurement["arm"] = json.loads(json.dumps(record))
+    manifest.resolved_profile = json.loads(json.dumps({
+        "algorithms": list(algorithms), "l08_arm": record, **overlays,
+        "algorithm_config": {a: {"params": params if a == latency.OVERLAY_ALGORITHM else {},
+                                 "provenance": {"quote_path": record["quote_path"]}}
+                             for a in algorithms},
+    }))  # fmt: skip
+
+
+def _armed(wall: float, name: str, arms_doc: dict[str, Any] | None = None) -> report.Experiment:
+    """A GENUINELY registered L08 arm experiment: declared arm, stages, algorithms and every
+    run's recorded effective profile are the canonical settings resolved from the embedded
+    arms document. Negative tests must mutate it explicitly after construction."""
+    doc = arms_doc or _arms_doc()
+    arm = latency.parse_arms(doc, "test arms", "arms").arms[name]
+    pinned = yaml.safe_load((REPO / PINNED_PROFILE).read_text())["algorithms"]
+    algorithms = list(arm.algorithms or pinned)
+    exp = _experiment(wall, algorithms)
+    exp.document.update(
+        arms={"sha256": "arms", "document": doc}, arm=json.loads(json.dumps(arm.record())),
+        stages_requested=list(arm.stages),
+        profile={"path": PINNED_PROFILE, "sha256": sha256_file(REPO / PINNED_PROFILE)},
+    )  # fmt: skip
+    for run in exp.runs.values():
+        _bind(run.manifest, arm, algorithms)
     return exp
 
 
 def test_arm_comparisons_must_be_registered_and_exact_needs_equal_scope() -> None:
     base, cand = _armed(1.0, "E2"), _armed(0.5, "E3")
-    assert report.compare_experiments(base, cand, lane="exact")["arms"]["id"] == "L04"
+    result = report.compare_experiments(base, cand, lane="exact")
+    assert result["arms"]["id"] == "L04" and result["verdict"] == "adopt_eligible"
+    assert result["arms"]["baseline_controls"].keys() == {"L02", "L03"}
+    assert result["arms"]["candidate_controls"].keys() == {"L02", "L03", "L04"}
     with pytest.raises(report.LatencyReportError, match="pre-registered"):
         report.compare_experiments(base, cand, lane="heuristic")
     cand.document["arms"] = {"sha256": "other", "document": _arms_doc()}
@@ -1084,9 +1117,103 @@ def test_arm_comparisons_must_be_registered_and_exact_needs_equal_scope() -> Non
     cand.document["source"] = {"git_revision": "def", "git_dirty": False}
     with pytest.raises(report.LatencyReportError, match="share one source"):
         report.compare_experiments(base, cand, lane="exact")
-    h2 = _armed(1.0, "H2", shortlist={"routes_per_probe": 8})
-    h4 = _armed(0.5, "H4", shortlist={"routes_per_probe": 2})
+    # An arms file registering an exact comparison between different overlays: each arm
+    # matches its registration, but the exact lane still refuses the scope difference.
+    doc = _arms_doc()
+    next(a for a in doc["arms"] if a["name"] == "H4")["shortlist"]["routes_per_probe"] = 2
     with pytest.raises(report.LatencyReportError, match="heuristic settings"):
-        report.compare_experiments(h2, h4, lane="exact")
+        report.compare_experiments(_armed(1.0, "H2", doc), _armed(0.5, "H4", doc), lane="exact")
     with pytest.raises(report.LatencyReportError, match="only compared with another arm"):
         report.compare_experiments(_experiment(1.0), cand, lane="exact")
+
+
+def test_empty_declared_controls_are_refused_even_when_every_record_agrees() -> None:
+    """R1-F1: E2/E3 with explicitly empty controls -- the reviewer's scenario, set AFTER
+    valid construction so a helper change can never make this vacuous -- are refused,
+    also when the runs' effective profiles were relabelled consistently."""
+    base, cand = _armed(1.0, "E2"), _armed(0.5, "E3")
+    assert report.compare_experiments(base, cand, lane="exact")["verdict"] == "adopt_eligible"
+    for exp in (base, cand):
+        exp.document["arm"]["controls"] = {}
+    with pytest.raises(
+        report.LatencyReportError,
+        match=r"baseline arm 'E2' does not match .*declared controls \{\}",
+    ):
+        report.compare_experiments(base, cand, lane="exact")
+    base = _armed(1.0, "E2")
+    reference_path = latency.Arm("E3", None, {}, (), None, None).quote_path()
+    manifests = [run.manifest for run in cand.runs.values()]
+    relabelled = [m.measurement["arm"] for m in manifests]
+    relabelled += [m.resolved_profile["l08_arm"] for m in manifests]
+    for arm in (cand.document["arm"], *relabelled):
+        arm.update(controls={}, quote_path=reference_path)
+    with pytest.raises(report.LatencyReportError, match="candidate arm 'E3'.*declared controls"):
+        report.compare_experiments(base, cand, lane="exact")
+
+
+def _first(exp: report.Experiment) -> Any:
+    return exp.runs[("timing", "fixed", "full_source/matrix")].manifest
+
+
+E_PAIR = ("E2", "E3", "exact", None)  # L04
+H_PAIR = ("S0", "H4", "heuristic", {"uni_sor_fast": "uni_sor_port"})  # L06-L07-with-exact-controls
+
+
+@pytest.mark.parametrize(
+    ("pair", "mutate", "message"),
+    [
+        (E_PAIR, lambda e: e.document["arm"]["controls"]["L03"].update(tick_capacity=8192),
+         "declared controls"),
+        (E_PAIR, lambda e: e.document["arm"]["controls"].pop("L04"), "declared controls"),
+        (E_PAIR, lambda e: e.document["arm"].update(algorithms=["direct"]), "declared algorithms"),
+        (E_PAIR, lambda e: e.document["arm"].update(stages=["timing", "cold", "quote_cli"]),
+         "declared stages"),
+        (E_PAIR, lambda e: e.document["arm"].update(name="E9"), "not registered"),
+        (E_PAIR, lambda e: e.document.update(stages_requested=["timing"]), "stages_requested"),
+        (E_PAIR, lambda e: e.document.update(algorithms=["direct"]), "algorithms"),
+        (E_PAIR, lambda e: e.document["arms"]["document"]["controls"]["L03"].update(
+            tick_capacity=0), "does not resolve"),
+        (E_PAIR, lambda e: e.document.update(profile={"path": PINNED_PROFILE, "sha256": "x"}),
+         "reference` unresolvable"),
+        # recorded effective profile disagreeing with the (valid) declaration
+        (E_PAIR, lambda e: _first(e).measurement["arm"].update(controls={}), "measurement arm"),
+        (E_PAIR, lambda e: _first(e).resolved_profile["l08_arm"]["controls"]["L04"].update(
+            max_keys=1), "effective profile l08_arm"),
+        (E_PAIR, lambda e: _first(e).resolved_profile.update(algorithms=["direct"]),
+         "effective profile algorithms"),
+        (E_PAIR, lambda e: setattr(_first(e), "algorithms", ("direct",)), "run algorithms"),
+        (E_PAIR, lambda e: _first(e).resolved_profile["algorithm_config"]["direct"][
+            "provenance"].update(quote_path="default reference"), "quote path"),
+        # heuristic overlays (shortlist / sampling) and their effective settings
+        (H_PAIR, lambda e: e.document["arm"]["shortlist"].update(routes_per_probe=2),
+         "declared shortlist"),
+        (H_PAIR, lambda e: e.document["arm"].update(sampling=None), "declared sampling"),
+        (H_PAIR, lambda e: _first(e).resolved_profile.pop("sampling"), "effective sampling"),
+        (H_PAIR, lambda e: _first(e).resolved_profile["algorithm_config"]["uni_sor_fast"][
+            "params"].update(coarse_step=10), "params \\['coarse_step'\\]"),
+    ],
+)  # fmt: skip
+def test_arm_settings_and_effective_profiles_must_match_the_registration(
+    pair: tuple[str, str, str, Any], mutate: Any, message: str
+) -> None:
+    baseline, candidate, lane, pairs = pair
+    base, cand = _armed(1.0, baseline), _armed(0.5, candidate)
+    report.compare_experiments(base, cand, lane=lane, pairs=pairs)  # valid before the mutation
+    mutate(cand)
+    with pytest.raises(report.LatencyReportError, match=f"candidate arm .*{message}"):
+        report.compare_experiments(base, cand, lane=lane, pairs=pairs)
+
+
+def test_sufficient_evidence_must_measure_the_registered_arm_settings() -> None:
+    exp = _armed(0.5, "E3")
+    arm = latency.parse_arms(_arms_doc(), "test arms", "arms").arms["E3"]
+    evidence = _evidence(exp, _unbounded())
+    evidence.document.update(arm=json.loads(json.dumps(exp.document["arm"])),
+                             arms=exp.document["arms"])  # fmt: skip
+    _bind(evidence.runs["full_source"].manifest, arm, exp.algorithms)
+    assert report.sufficient_problems(evidence, exp) == []
+    evidence.document["arm"]["controls"] = {}  # same name, reference-path settings
+    assert any("arm E3: declared controls" in p for p in report.sufficient_problems(evidence, exp))
+    evidence.document["arm"] = json.loads(json.dumps(exp.document["arm"]))
+    evidence.runs["full_source"].manifest.resolved_profile["l08_arm"]["controls"] = {}
+    assert any("effective profile l08_arm" in p for p in report.sufficient_problems(evidence, exp))
