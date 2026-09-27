@@ -387,10 +387,54 @@ def memory_problems(run: RunView, scheduled: Counter[tuple[str, str]]) -> list[s
     return out
 
 
+# A run's own provenance (`environment_record`, `RunManifest.profile_sha256`) against its
+# containing experiment's pins, with the types `git_provenance` / the profile hash write.
+# `git_diff_sha256` is the TRACKED diff on both sides; `source.dirty_patch_sha256` also
+# covers untracked contents, so it is never compared with a run's tracked-diff hash.
+RUN_IDENTITY = {"git_revision": (str, type(None)), "git_dirty": (bool, type(None)),
+                "git_diff_sha256": (str, type(None)), "profile_sha256": (str,)}  # fmt: skip
+
+
+def identity_problems(document: Mapping[str, Any], runs: Mapping[Any, RunView]) -> list[str]:
+    """Why a run does not carry its containing experiment's measured source (revision,
+    dirty flag, tracked-diff hash) and pinned profile sha256: each field present, of the
+    writer's type and strictly equal (never False == 0, never a missing field). An unknown
+    (None) Git identity must match an equally unknown pin; it proves nothing more. Paths
+    are not identity: a relocated archive keeps its hashes."""
+    source = document.get("source")
+    source = source if isinstance(source, Mapping) else {}
+    profile = document.get("profile")
+    profile = profile if isinstance(profile, Mapping) else {}
+    absent = object()  # a missing field: never equal to anything, and never well-typed
+
+    def pinned(values: Mapping[str, Any], profile_sha256: Any) -> dict[str, Any]:
+        return {**{k: values.get(k, absent) for k in RUN_IDENTITY if k != "profile_sha256"},
+                "profile_sha256": profile_sha256}  # fmt: skip
+
+    def shown(value: Any) -> str:
+        return MISSING if value is absent else repr(value)
+
+    expected = pinned(source, profile.get("sha256", absent))
+    out = [f"experiment pin {field} {shown(value)} is missing or malformed"
+           for field, value in expected.items()
+           if not isinstance(value, RUN_IDENTITY[field])]  # fmt: skip
+    for key, run in sorted(runs.items()):
+        where = key if isinstance(key, str) else " ".join(key)
+        env = getattr(run.manifest, "environment", None)
+        actual = pinned(env if isinstance(env, Mapping) else {},
+                        getattr(run.manifest, "profile_sha256", absent))  # fmt: skip
+        for field, value in actual.items():
+            if not isinstance(value, RUN_IDENTITY[field]) or not _same(value, expected[field]):
+                out.append(f"{where}: run {field} {shown(value)} is not the containing "
+                           f"experiment's {shown(expected[field])}")  # fmt: skip
+    return out
+
+
 def coverage_problems(exp: Experiment) -> list[str]:
     """Everything the protocol schedule requires but the experiment does not hold exactly
-    once. Empty means complete coverage; anything else can never support a verdict."""
-    problems: list[str] = []
+    once, and every run whose own source/profile identity is not the experiment's. Empty
+    means complete coverage; anything else can never support a verdict."""
+    problems: list[str] = identity_problems(exp.document, exp.runs)
     required = _required_runs(exp)
     for key in sorted(required - exp.runs.keys()):
         problems.append(f"{' '.join(key)}: required run missing")
@@ -1026,7 +1070,8 @@ SOURCE_PIN = ("git_revision", "git_dirty", "dirty_patch_sha256")
 
 def sufficient_problems(evidence: SufficientEvidence, exp: Experiment) -> list[str]:
     """Why `evidence` cannot stand in for `exp`'s budget-bound records: it must be for the
-    same main protocol, from the same measured source, on the same derived bundles, with
+    same main protocol, from the same measured source (each run's own identity included,
+    `identity_problems`), on the same derived bundles, with
     every scheduled record present once, holding the attempts and samples its
     sufficient-budget protocol declares (a consistency flag alone is no evidence)."""
     doc, problems = evidence.document, []
@@ -1048,6 +1093,7 @@ def sufficient_problems(evidence: SufficientEvidence, exp: Experiment) -> list[s
                         f"{exp.document['source'].get('git_revision')}")  # fmt: skip
     if doc["profile"] != exp.document["profile"]:
         problems.append("different pinned profile")
+    problems += identity_problems(doc, evidence.runs)
     arm_pin = [(d.get("arm") or {}).get("name") for d in (doc, exp.document)]
     arms_pin = [(d.get("arms") or {}).get("sha256") for d in (doc, exp.document)]
     if arm_pin[0] != arm_pin[1] or arms_pin[0] != arms_pin[1]:
