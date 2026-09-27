@@ -932,7 +932,8 @@ def _evidence(exp: report.Experiment, *records: dict[str, Any]) -> report.Suffic
         "protocol": {"sha256": exp.document["protocol"]["sha256"]},
         "source": dict(exp.document["source"]), "profile": dict(exp.document["profile"]),
         "bundles": {"full_source/matrix": {"bundle_hash": "hash-full_source/matrix"}},
-        "sufficient_budget": {"sha256": sha256_file(SB_PROTOCOL),
+        "sufficient_budget": {"path": str(SB_PROTOCOL.relative_to(REPO)),
+                              "sha256": sha256_file(SB_PROTOCOL),
                               "document": yaml.safe_load(SB_PROTOCOL.read_text())},
         "budget": SB_BUDGET.to_dict(),
         "fixed_budget": load_profile(REPO / PINNED_PROFILE).budget.to_dict(),
@@ -1063,8 +1064,10 @@ def _protocol_repeats(ev: report.SufficientEvidence) -> None:  # protocol != man
         (_record_repeats, "single_path/h2: declares warmup/repeats 0/3"),
         (_manifest_undeclared, "run declares warmup/repeats None/None"),
         (_manifest_repeats, "run declares warmup/repeats 0/3, sufficient-budget protocol 0/2"),
-        (_protocol_undeclared, "declares no valid warmup/repeats"),
-        (_protocol_repeats, "run declares warmup/repeats 0/2, sufficient-budget protocol 0/3"),
+        # WHI-1526: the attempts come from the hash-verified file, so an embedded copy that
+        # is missing or declares other attempts is inconsistent evidence, never a contract
+        (_protocol_undeclared, "embedded sufficient-budget document .* its whole content"),
+        (_protocol_repeats, "embedded sufficient-budget document .* differs in measurement"),
     ],
 )  # fmt: skip
 def test_sufficient_exactness_needs_the_declared_attempts_and_samples(
@@ -1764,9 +1767,9 @@ SB_DEFECTS = [
     ("sb protocol pin", lambda ev: ev.document["sufficient_budget"].update(sha256="0" * 64),
      "the arms file pins"),
     ("embedded raise", lambda ev: ev.document["sufficient_budget"]["document"]["budget"].update(
-        max_quotes=10**6), "effective budget"),
+        max_quotes=10**6), "embedded sufficient-budget document .* differs in budget"),
     ("malformed raise", lambda ev: ev.document["sufficient_budget"]["document"]["budget"].update(
-        time_limit_seconds=True), "time_limit_seconds"),
+        time_limit_seconds=True), "embedded sufficient-budget document .* differs in budget"),
     ("scope case", lambda ev: (_sb(ev).measurement.update(worker_scope="case"),
                                _sb(ev).resolved_profile["worker"].update(scope="case")),
      "run measurement worker_scope 'case', the registered sufficient_budget stage"),
@@ -1826,6 +1829,144 @@ def test_both_sides_redeclaring_the_cold_worker_scope_are_refused() -> None:
         report.LatencyReportError, match="baseline arm 'H1' .*cold stage has 'case'"
     ):
         report.compare_experiments(base, cand, lane="heuristic")
+
+
+# ------------------------------------------------------------ registered L01-SB (WHI-1526)
+#
+# R3-F1: the raised budget and attempts a sufficient-budget run may use come from the
+# hash-verified checked-in L01-SB file, not from the evidence's embedded copy -- so a
+# consistent redeclaration (embedded, top-level and every run) under the registered sha256
+# is refused, and unverifiable content leaves no expectation (fail closed).
+
+
+def _e2_e3_sb() -> tuple[report.Experiment, report.Experiment, dict[str, Any]]:
+    """The archived E2 -> E3 exact shape: single_path/h2 cut by the quote cap on both sides,
+    each side with its own genuine registered-arm evidence (valid before any mutation)."""
+    base, cand = _armed(1.0, "E2"), _armed(0.5, "E3")
+    for exp in (base, cand):
+        for key in (FIXED, REVERSE, COLD):
+            _record(exp, key, "single_path", "h2")["search"] = {"truncated_by": "max_quotes"}
+    evidence = {"baseline": _armed_evidence(base), "candidate": _armed_evidence(cand)}
+    result = report.compare_experiments(
+        base, cand, lane="exact", sufficient=(evidence["baseline"], evidence["candidate"])
+    )
+    assert result["verdict"] == "adopt_eligible", result["reasons"]
+    assert len(result["bounded_exactness"]["established"]) == 1
+    return base, cand, evidence
+
+
+def _redeclare_budget(ev: report.SufficientEvidence) -> None:
+    """The reviewer's R3 probe: 600 -> 900 s in the embedded document, the top-level budget
+    and every run's measurement/effective budget; hashes and records unchanged."""
+    ev.document["sufficient_budget"]["document"]["budget"]["time_limit_seconds"] = 900.0
+    budget = {**SB_BUDGET.to_dict(), "time_limit_seconds": 900.0}
+    ev.document["budget"] = dict(budget)
+    for run in ev.runs.values():
+        run.manifest.measurement["budget"] = dict(budget)
+        run.manifest.resolved_profile["budget"] = dict(budget)
+
+
+def _redeclare_attempts(ev: report.SufficientEvidence) -> None:
+    """0/2 -> 0/3 attempts in the embedded document, every run declaration and records."""
+    ev.document["sufficient_budget"]["document"]["measurement"]["repeats"] = 3
+    for run in ev.runs.values():
+        run.manifest.measurement["repeats"] = 3
+        run.manifest.resolved_profile["measurement"]["repeats"] = 3
+        run.records[:] = [_rec("single_path", "h2", 2.0, samples=3, warmup=0)]
+
+
+@pytest.mark.parametrize("sides", [BASE, CAND, BOTH], ids="+".join)
+@pytest.mark.parametrize(
+    ("redeclare", "differs"), [(_redeclare_budget, "budget"), (_redeclare_attempts, "measurement")]
+)  # fmt: skip
+def test_consistent_redeclaration_under_the_registered_sb_hash_is_refused(
+    sides: tuple[str, ...], redeclare: Any, differs: str
+) -> None:
+    base, cand, evidence = _e2_e3_sb()
+    for side in sides:
+        redeclare(evidence[side])
+        problems = report.arm_problems(evidence[side].document, evidence[side].runs,
+                                       experiment=False)  # fmt: skip
+        assert len(problems) == 1, problems  # fail closed: nothing derived from the copy
+        registered = "the embedded sufficient-budget document is not the registered config"
+        assert problems[0].startswith(registered + "/latency/l01-sufficient-budget.yaml")
+        assert problems[0].endswith(f"differs in {differs}"), problems
+    result = report.compare_experiments(
+        base, cand, lane="exact", sufficient=(evidence["baseline"], evidence["candidate"])
+    )
+    bounded = result["bounded_exactness"]
+    for side in BOTH:
+        found = bounded["evidence_problems"][side]
+        assert len(found) == (1 if side in sides else 0), found  # reported once, not per path
+    assert bounded["established"] == [] and bounded["mismatches"] == []
+    assert bounded["unproven"] == [f"{BOUND[0]} single_path/h2 (3 bound record(s)): "
+                                   "evidence invalid"]  # fmt: skip
+    assert result["verdict"] == "inconclusive"
+
+
+def test_registered_budget_is_the_expectation_when_only_declarations_are_changed() -> None:
+    """Embedded copy intact: the top-level and run budgets are checked against the
+    hash-verified registered 600 s raise (the redeclared value is never the expected one)."""
+    _, _, evidence = _e2_e3_sb()
+    ev = evidence["candidate"]
+    embedded = ev.document["sufficient_budget"]["document"]
+    _redeclare_budget(ev)
+    embedded["budget"]["time_limit_seconds"] = 600  # as the checked-in YAML writes it
+    problems = report.arm_problems(ev.document, ev.runs, experiment=False)
+    assert any("budget" in p and "declares {'time_limit_seconds': 600.0" in p for p in problems)
+    assert any("full_source: run measurement budget" in p for p in problems)
+    assert any("full_source: effective budget" in p for p in problems)
+
+
+def _pin(ev: report.SufficientEvidence, **changes: Any) -> None:
+    ev.document["sufficient_budget"].update(changes)
+
+
+def test_unverifiable_sb_content_fails_closed(tmp_path: Path) -> None:
+    """Unavailable, hash-mismatched, unloadable or non-mapping content: explicit problems,
+    no expectation, no exactness -- in plain L01 evidence (`sufficient_problems`) too."""
+    unrelated = tmp_path / "config" / "notes.yaml"
+    unrelated.parent.mkdir()
+    unrelated.write_text("just: notes\n")
+    cases: list[tuple[Any, str]] = [
+        (lambda ev: _pin(ev, path="config/latency/missing.yaml"), "is not available"),
+        (lambda ev: _pin(ev, sha256="0" * 64), "is not available"),
+        (lambda ev: _pin(ev, path=str(unrelated), sha256=sha256_file(unrelated)),
+         "does not load"),
+        (lambda ev: _pin(ev, document=["not", "a", "mapping"]), "its whole content"),
+    ]  # fmt: skip
+    for mutate, message in cases:
+        base, cand = _bound_pair()
+        pair = (_evidence(base, _unbounded()), _evidence(cand, _unbounded()))
+        valid = report.compare_experiments(base, cand, lane="exact", sufficient=pair)
+        assert valid["bounded_exactness"]["established"], valid["reasons"]
+        mutate(pair[1])
+        problems = report.sufficient_problems(pair[1], cand)
+        assert len(problems) == 1 and message in problems[0], problems
+        result = report.compare_experiments(base, cand, lane="exact", sufficient=pair)
+        assert result["bounded_exactness"]["established"] == []
+        assert result["verdict"] == "inconclusive"
+    _, _, evidence = _e2_e3_sb()  # the same through the arm path
+    _pin(evidence["candidate"], sha256="0" * 64)
+    problems = report.arm_problems(evidence["candidate"].document, evidence["candidate"].runs,
+                                   experiment=False)  # fmt: skip
+    assert any("is not available" in p for p in problems)
+    assert any("the arms file pins" in p for p in problems)
+
+
+def test_an_archived_obsolete_worktree_sb_path_resolves_by_content() -> None:
+    """Relocation: the archive records the SB file under a since-removed worktree; its
+    `config/...` suffix in this checkout, verified by sha256, is the registered content."""
+    base, cand, evidence = _e2_e3_sb()
+    for ev in evidence.values():
+        _pin(ev, path="/gone/router-algorithms-optimizer-wt/whi-1510/config/latency/"
+                      "l01-sufficient-budget.yaml")  # fmt: skip
+        assert report.arm_problems(ev.document, ev.runs, experiment=False) == []
+    assert report.sufficient_problems(evidence["candidate"], cand) == []
+    result = report.compare_experiments(
+        base, cand, lane="exact", sufficient=(evidence["baseline"], evidence["candidate"])
+    )
+    assert len(result["bounded_exactness"]["established"]) == 1
 
 
 # ------------------------------------------------------------ run identity (R2-F2)

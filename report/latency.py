@@ -58,6 +58,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from benchmark.latency import (
     CONTROL_STATS_KEY,
     SESSION_FILE,
@@ -65,14 +67,15 @@ from benchmark.latency import (
     SUFFICIENT_EXPERIMENT_SCHEMA,
     Arm,
     LatencyError,
+    SufficientBudget,
     arm_profile,
+    load_sufficient_budget,
     parse_arms,
     source_identity,
 )
 from benchmark.profile import (
     ProfileError,
     RunProfile,
-    _parse_budget,
     _parse_measurement,
     _parse_worker,
 )
@@ -1075,21 +1078,57 @@ def load_sufficient(path: str | Path) -> SufficientEvidence:
 SOURCE_PIN = ("git_revision", "git_dirty", "dirty_patch_sha256")
 
 
+def registered_sufficient(
+    document: Mapping[str, Any],
+) -> tuple[SufficientBudget | None, list[str]]:
+    """The sufficient-budget protocol an evidence experiment declares, as REGISTERED: the
+    checked-in file with the declared sha256, parsed by the driver's own loader, whose
+    content the embedded copy must be exactly. The raised budget and attempts are taken
+    from it, never from the embedded copy: a declaration beside a claimed hash (even one
+    another pin repeats) authenticates nothing. A path recorded by another, possibly
+    removed, worktree is looked up by its `config/...` suffix in this checkout. None, with
+    the reasons, when the content is unavailable, mismatched or inconsistent (fail closed:
+    no expectation, so no evidence)."""
+    pin = document.get("sufficient_budget")
+    pin = pin if isinstance(pin, dict) else {}
+    recorded = Path(str(pin.get("path")))
+    candidates = [REPO_ROOT / recorded]  # an absolute path stays itself
+    if "config" in recorded.parts:
+        suffix = recorded.parts[recorded.parts.index("config") :]
+        candidates.append(REPO_ROOT.joinpath(*suffix))
+    path = next((p for p in candidates
+                 if p.is_file() and sha256_file(p) == pin.get("sha256")), None)  # fmt: skip
+    if path is None:
+        return None, [f"sufficient-budget protocol {pin.get('path')} with sha256 "
+                      f"{pin.get('sha256')} is not available: its registered budget and "
+                      "attempts are unverifiable"]  # fmt: skip
+    try:
+        definition = load_sufficient_budget(path)
+    except (LatencyError, yaml.YAMLError) as exc:
+        return None, [f"the registered sufficient-budget protocol does not load: {exc}"]
+    registered, embedded = _canonical(definition.document), pin.get("document")
+    if not _same(embedded, registered):
+        where = (", ".join(sorted(k for k in registered.keys() | embedded.keys()
+                                  if not _same(embedded.get(k, MISSING),
+                                               registered.get(k, MISSING))))
+                 if isinstance(embedded, dict) else "its whole content")  # fmt: skip
+        return None, [f"the embedded sufficient-budget document is not the registered "
+                      f"{path.relative_to(REPO_ROOT) if path.is_relative_to(REPO_ROOT) else path}"
+                      f" (sha256 {definition.sha256}): differs in {where}"]  # fmt: skip
+    return definition, []
+
+
 def sufficient_problems(evidence: SufficientEvidence, exp: Experiment) -> list[str]:
     """Why `evidence` cannot stand in for `exp`'s budget-bound records: it must be for the
     same main protocol, from the same measured source (each run's own identity included,
     `identity_problems`), on the same derived bundles, with
-    every scheduled record present once, holding the attempts and samples its
-    sufficient-budget protocol declares (a consistency flag alone is no evidence)."""
-    doc, problems = evidence.document, []
-    declared = ((doc.get("sufficient_budget") or {}).get("document") or {}).get("measurement")
-    warmup, repeats = (declared.get(k) if isinstance(declared, dict) else None
-                       for k in ("warmup", "repeats"))  # fmt: skip
-    attempts = None
-    if type(warmup) is int and type(repeats) is int and warmup >= 0 and repeats >= 2:
-        attempts = (warmup, repeats)
-    else:
-        problems.append(f"sufficient-budget protocol declares no valid warmup/repeats: {declared}")
+    every scheduled record present once, holding the attempts and samples its REGISTERED
+    sufficient-budget protocol declares (`registered_sufficient`; a consistency flag alone
+    is no evidence)."""
+    doc = evidence.document
+    definition, unverified = registered_sufficient(doc)
+    problems = list(unverified)
+    attempts = None if definition is None else (definition.warmup, definition.repeats)
     if doc["protocol"]["sha256"] != exp.document["protocol"]["sha256"]:
         problems.append("different main protocol document")
     if {k: doc["source"].get(k) for k in SOURCE_PIN} != {
@@ -1107,7 +1146,8 @@ def sufficient_problems(evidence: SufficientEvidence, exp: Experiment) -> list[s
         problems.append(f"measured under arm {arm_pin[0]!r}, the experiment under {arm_pin[1]!r}")
     elif exp.arm is not None:  # the same registered arm, by its settings, not only its name
         problems += [f"arm {arm_pin[0]}: {p}"
-                     for p in arm_problems(doc, evidence.runs, experiment=False)]  # fmt: skip
+                     for p in arm_problems(doc, evidence.runs, experiment=False)
+                     if p not in unverified]  # fmt: skip  # reported once, above
     for cohort, run in sorted(evidence.runs.items()):
         label = f"{cohort}/matrix"
         wanted = (exp.document.get("bundles") or {}).get(label, {}).get("bundle_hash")
@@ -1448,12 +1488,13 @@ MISSING = "<missing>"
 
 
 def _stage_contract(
-    document: Mapping[str, Any], key: Any, experiment: bool
+    document: Mapping[str, Any], key: Any, sufficient: SufficientBudget | None = None
 ) -> dict[str, Any] | str:
     """The stage declaration a run keyed `key` must carry, derived from the registered
-    contract (L01's stage/order schedule and attempts, or L01-SB's), never from the run's
-    own record: stage, order, attempts, memory pass and worker scope. A string: why none."""
-    if experiment:
+    contract (L01's stage/order schedule and attempts, or -- for a sufficient-budget run --
+    the hash-verified L01-SB definition `sufficient`), never from the run's own record:
+    stage, order, attempts, memory pass and worker scope. A string: why none."""
+    if sufficient is None:
         stage, order = key[0], key[1]
         if stage not in ("timing", "cold"):
             return f"stage {stage!r} is not an L01 run stage"
@@ -1463,9 +1504,7 @@ def _stage_contract(
             return f"the protocol declares no {stage} attempts: {exc!r}"
     else:
         stage, order = "sufficient_budget", "fixed"
-        declared = ((document.get("sufficient_budget") or {}).get("document") or {}).get(
-            "measurement") or {}  # fmt: skip
-        warmup, repeats = declared.get("warmup"), declared.get("repeats")
+        warmup, repeats = sufficient.warmup, sufficient.repeats
     scope, memory = STAGE_WORKERS[stage]
     return {"stage": stage, "order": order, "warmup": warmup, "repeats": repeats,
             "memory_pass": memory, "worker_scope": scope}  # fmt: skip
@@ -1525,7 +1564,9 @@ def arm_problems(
     with the registered overlays (`arm_profile`): every section and every declared
     algorithm's complete params, including the ABSENCE of optional settings. Only each
     stage's declared attempts / memory pass / worker scope and the registered
-    sufficient-budget raise legitimately differ. Values compare strictly typed."""
+    sufficient-budget raise legitimately differ; that raise and its attempts come from the
+    hash-verified sufficient-budget file (`registered_sufficient`), never from the embedded
+    copy. Values compare strictly typed."""
     declared = _canonical(document.get("arm"))
     declared = declared if isinstance(declared, dict) else {}
     try:
@@ -1548,6 +1589,7 @@ def arm_problems(
         problems.append(f"measured under protocol {protocol.get('sha256')}, the arms file pins "
                         f"{arms.protocol_sha256}")  # fmt: skip
     budget: Budget | None = None
+    definition: SufficientBudget | None = None
     try:
         profile = _pinned_profile(document, arm)
         if profile is None:
@@ -1570,12 +1612,9 @@ def arm_problems(
         if sb.get("sha256") != arms.sufficient_sha256:
             problems.append(f"sufficient-budget protocol {sb.get('sha256')}, the arms file pins "
                             f"{arms.sufficient_sha256}")  # fmt: skip
-        try:
-            budget = _parse_budget((sb.get("document") or {}).get("budget"),
-                                   "sufficient-budget protocol budget")  # fmt: skip
-        except ProfileError as exc:
-            budget = None
-            problems.append(str(exc))
+        definition, unverified = registered_sufficient(document)
+        problems += unverified
+        budget = None if definition is None else definition.budget
         if budget is not None and not _same(document.get("budget"), budget.to_dict()):
             problems.append(f"budget {document.get('budget')}, the sufficient-budget protocol "
                             f"declares {budget.to_dict()}")  # fmt: skip
@@ -1612,7 +1651,7 @@ def arm_problems(
         if profile is None or budget is None:
             continue
         measurement = run.manifest.measurement
-        contract = _stage_contract(document, key, experiment)
+        contract = _stage_contract(document, key, definition)
         if isinstance(contract, str):
             problems.append(f"{where}: {contract}")
             continue
