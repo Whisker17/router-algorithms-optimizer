@@ -29,7 +29,7 @@ import yaml
 import benchmark.latency as latency
 import benchmark.runner as runner
 from benchmark.objective import gross_only
-from benchmark.profile import MeasurementSettings, RunProfile, WorkerSettings
+from benchmark.profile import MeasurementSettings, RunProfile, WorkerSettings, load_profile
 from benchmark.results import load_case_records, load_manifest, load_memory_records
 from benchmark.runner import compare_runs
 from report import latency as report
@@ -545,6 +545,9 @@ def _memory_event(index: int, algorithm: str) -> dict[str, Any]:
             "prepare_seconds": 0.02, "prepare_peak_bytes": 2048}  # fmt: skip
 
 
+L01_SHA256 = sha256_file(REPO / "config/latency/l01.yaml")  # the protocol the L08 arms pin
+
+
 def _experiment(wall: float, algorithms: Sequence[str] = ALGS) -> report.Experiment:
     protocol: dict[str, Any] = yaml.safe_load((REPO / "config/latency/l01.yaml").read_text())
     protocol.update(
@@ -564,7 +567,8 @@ def _experiment(wall: float, algorithms: Sequence[str] = ALGS) -> report.Experim
             scheduled_count=len(schedule), memory_record_count=len(memory) if cold else None,
             measurement={"schedule": schedule[::-1] if order == "reverse" else schedule,
                          "warmup": attempts["warmup"], "repeats": attempts["samples"],
-                         "memory_pass": cold},
+                         "memory_pass": cold, "worker_scope": "case" if cold else "algorithm",
+                         "stage": stage, "order": order},
             prepare_events=({"index": 0, "algorithm": "direct", "status": "ok",
                              "startup_seconds": 0.2, "prepare_seconds": 0.01},
                             *[_memory_event(m["prepare_event"], m["algorithm"]) for m in memory]),
@@ -573,7 +577,7 @@ def _experiment(wall: float, algorithms: Sequence[str] = ALGS) -> report.Experim
         runs[(stage, order, label)] = report.RunView({}, manifest, records, memory, Path(stage))  # type: ignore[arg-type]
     document = {
         "experiment_id": f"e{wall}", "partial": False, "stages_requested": list(latency.STAGES),
-        "protocol": {"sha256": "p", "document": protocol}, "algorithms": list(algorithms),
+        "protocol": {"sha256": L01_SHA256, "document": protocol}, "algorithms": list(algorithms),
         "bundles": {label: {"bundle_hash": f"hash-{label}"} for label in CASES},
         "source": {"git_revision": "abc", "git_dirty": False}, "load": {"contaminated": False},
         "quote_cli": [], "profile": {"path": "config/daily_gross.yaml", "sha256": "x"},
@@ -894,17 +898,25 @@ SB_PROTOCOL = REPO / "config/latency/l01-sufficient-budget.yaml"
 SB_MEASUREMENT = yaml.safe_load(SB_PROTOCOL.read_text())["measurement"]  # warmup 0, repeats 2
 
 
+SB_BUDGET = latency.load_sufficient_budget(SB_PROTOCOL).budget  # the registered raise
+
+
 def _evidence(exp: report.Experiment, *records: dict[str, Any]) -> report.SufficientEvidence:
     schedule = [[r["algorithm"], r["case_id"]] for r in records]
     declared = dict(SB_MEASUREMENT)  # as l01-sufficient-budget.yaml and the driver declare
     manifest = SimpleNamespace(bundle_hash="hash-full_source/matrix", state="complete",
                                measurement={"schedule": schedule, **declared,
-                                            "stage": "sufficient_budget"})  # fmt: skip
+                                            "memory_pass": False, "worker_scope": "algorithm",
+                                            "stage": "sufficient_budget",
+                                            "order": "fixed"})  # fmt: skip
     document = {
         "protocol": {"sha256": exp.document["protocol"]["sha256"]},
         "source": dict(exp.document["source"]), "profile": dict(exp.document["profile"]),
         "bundles": {"full_source/matrix": {"bundle_hash": "hash-full_source/matrix"}},
-        "sufficient_budget": {"sha256": "sb", "document": {"measurement": dict(declared)}},
+        "sufficient_budget": {"sha256": sha256_file(SB_PROTOCOL),
+                              "document": yaml.safe_load(SB_PROTOCOL.read_text())},
+        "budget": SB_BUDGET.to_dict(),
+        "fixed_budget": load_profile(REPO / PINNED_PROFILE).budget.to_dict(),
     }  # fmt: skip
     run = report.RunView({}, manifest, list(records), [], Path("sb"))  # type: ignore[arg-type]
     return report.SufficientEvidence(Path("."), document, {"full_source": run})
@@ -1312,20 +1324,28 @@ def _refuses_mixed_sources(
 PINNED_PROFILE = "config/daily_gross.yaml"  # the L01 pin: `algorithms: reference`
 
 
-def _bind(manifest: Any, arm: latency.Arm, algorithms: Sequence[str]) -> None:
-    """Record `arm` as the driver does in a run manifest: measurement arm + effective
-    (resolved) profile. Fresh copies, so mutating one declaration never edits another."""
-    record = arm.record()
-    overlays = {k: record[k] for k in ("shortlist", "sampling") if record[k]}
-    params = {k: v for overlay in overlays.values() for k, v in overlay.items()}
-    manifest.algorithms = tuple(algorithms)
-    manifest.measurement["arm"] = json.loads(json.dumps(record))
-    manifest.resolved_profile = json.loads(json.dumps({
-        "algorithms": list(algorithms), "l08_arm": record, **overlays,
-        "algorithm_config": {a: {"params": params if a == latency.OVERLAY_ALGORITHM else {},
-                                 "provenance": {"quote_path": record["quote_path"]}}
-                             for a in algorithms},
-    }))  # fmt: skip
+def _bind(manifest: Any, arm: latency.Arm, budget: Budget | None = None) -> None:
+    """Record `arm` as the driver does in a run manifest (`run_latency_experiment` /
+    `run_sufficient_budget` -> `measure_run` -> `RunWriter`): the COMPLETE profile the run
+    measured -- the pinned profile with the arm's overlays, this run's declared attempts,
+    memory pass and worker scope, and `budget` for sufficient-budget evidence -- as the
+    measurement record and the effective (resolved) profile. Fresh JSON copies, so mutating
+    one declaration never edits another."""
+    m = manifest.measurement
+    pinned = latency.arm_profile(arm, PINNED_PROFILE)
+    profile = dataclasses.replace(
+        pinned, budget=budget or pinned.budget,
+        measurement=dataclasses.replace(pinned.measurement, warmup=m["warmup"],
+                                        repeats=m["repeats"], order="fixed",
+                                        memory_pass=m["memory_pass"]),
+        worker=dataclasses.replace(pinned.worker, scope=m["worker_scope"]),
+    )  # fmt: skip
+    manifest.algorithms = profile.algorithms
+    m.update(json.loads(json.dumps({**profile.measurement.to_dict(), "order": m.get("order"),
+                                    "worker_scope": m["worker_scope"],
+                                    "budget": profile.budget.to_dict(),
+                                    "arm": arm.record()})))  # fmt: skip
+    manifest.resolved_profile = json.loads(json.dumps(profile.resolved()))
 
 
 def _armed(wall: float, name: str, arms_doc: dict[str, Any] | None = None) -> report.Experiment:
@@ -1342,8 +1362,9 @@ def _armed(wall: float, name: str, arms_doc: dict[str, Any] | None = None) -> re
         stages_requested=list(arm.stages),
         profile={"path": PINNED_PROFILE, "sha256": sha256_file(REPO / PINNED_PROFILE)},
     )  # fmt: skip
+    exp.document["protocol"]["sha256"] = doc["protocol"]["sha256"]
     for run in exp.runs.values():
-        _bind(run.manifest, arm, algorithms)
+        _bind(run.manifest, arm)
     return exp
 
 
@@ -1427,7 +1448,7 @@ H_PAIR = ("S0", "H4", "heuristic", {"uni_sor_fast": "uni_sor_port"})  # L06-L07-
         (E_PAIR, lambda e: _first(e).resolved_profile.update(algorithms=["direct"]),
          "effective profile algorithms"),
         (E_PAIR, lambda e: setattr(_first(e), "algorithms", ("direct",)), "run algorithms"),
-        (E_PAIR, lambda e: _first(e).resolved_profile["algorithm_config"]["direct"][
+        (E_PAIR, lambda e: _first(e).resolved_profile["algorithm_config"]["uni_sor_port"][
             "provenance"].update(quote_path="default reference"), "quote path"),
         # heuristic overlays (shortlist / sampling) and their effective settings
         (H_PAIR, lambda e: e.document["arm"]["shortlist"].update(routes_per_probe=2),
@@ -1455,10 +1476,332 @@ def test_sufficient_evidence_must_measure_the_registered_arm_settings() -> None:
     evidence = _evidence(exp, _unbounded())
     evidence.document.update(arm=json.loads(json.dumps(exp.document["arm"])),
                              arms=exp.document["arms"])  # fmt: skip
-    _bind(evidence.runs["full_source"].manifest, arm, exp.algorithms)
+    _bind(evidence.runs["full_source"].manifest, arm, SB_BUDGET)
     assert report.sufficient_problems(evidence, exp) == []
     evidence.document["arm"]["controls"] = {}  # same name, reference-path settings
     assert any("arm E3: declared controls" in p for p in report.sufficient_problems(evidence, exp))
     evidence.document["arm"] = json.loads(json.dumps(exp.document["arm"]))
     evidence.runs["full_source"].manifest.resolved_profile["l08_arm"]["controls"] = {}
     assert any("effective profile l08_arm" in p for p in report.sufficient_problems(evidence, exp))
+
+
+# R2-F1: every run's recorded effective profile is bound COMPLETELY to the hash-verified
+# pinned profile with the registered overlays -- every section and every declared factory's
+# complete params, including the absence of optional (sampling) keys -- on both comparison
+# sides and through the shared sufficient-budget path. Positive controls come first.
+
+FAST = latency.OVERLAY_ALGORITHM
+SEARCH = {"max_hops": 2, "max_splits": 4, "percent_step": 5}  # config/daily_gross.yaml
+SHORTLIST = {"direct_routes": 0, "probe_percents": [5, 100], "routes_per_probe": 8}
+SAMPLING = {"coarse_step": 25, "refine_radius": 1, "soft_max_quotes": None}  # L07 nomination
+
+
+def _armed_evidence(exp: report.Experiment) -> report.SufficientEvidence:
+    """`exp`'s own sufficient-budget evidence as `run_sufficient_budget` records it: the same
+    arm, the registered L01-SB raise, one warm worker, no memory pass."""
+    evidence = _evidence(exp, _unbounded())
+    evidence.document.update(arm=json.loads(json.dumps(exp.document["arm"])),
+                             arms=exp.document["arms"])  # fmt: skip
+    arm = latency.parse_arms(_arms_doc(), "test arms", "arms").arms[exp.document["arm"]["name"]]
+    _bind(evidence.runs["full_source"].manifest, arm, SB_BUDGET)
+    return evidence
+
+
+def _params(manifest: Any, algorithm: str = FAST) -> dict[str, Any]:
+    params: dict[str, Any] = manifest.resolved_profile["algorithm_config"][algorithm]["params"]
+    return params
+
+
+def test_complete_effective_profiles_of_every_registered_arm_stage_and_sb_run_validate() -> None:
+    """The positive controls: the fixtures carry the archived manifests' complete shape
+    (not only the overlay keys) and validate, although each stage's attempts / memory pass /
+    worker scope and the sufficient-budget raise legitimately differ. Absent sampling is the
+    L06 shortlist variant: no sampling key anywhere."""
+    h1, h2, e3 = _armed(1.0, "H1"), _armed(0.5, "H2"), _armed(1.0, "E3")
+    assert _params(_first(h1)) == {**SEARCH, **SHORTLIST}
+    assert "sampling" not in _first(h1).resolved_profile
+    assert _params(_first(h2)) == {**SEARCH, **SHORTLIST, **SAMPLING}
+    assert _first(h2).resolved_profile["sampling"] == SAMPLING
+    assert _params(_first(e3), "incremental_graph") == {**SEARCH, "chunks": 200}
+    assert _params(_first(e3), "single_path") == {"max_hops": 2}
+    assert _params(_first(e3), "direct") == {}
+    assert _first(e3).resolved_profile["search"] == SEARCH
+    assert _first(e3).resolved_profile["graph"] == {"chunks": 200}
+    timing, cold = _first(e3).resolved_profile, e3.runs[COLD].manifest.resolved_profile
+    assert (timing["measurement"]["warmup"], timing["measurement"]["repeats"],
+            timing["measurement"]["memory_pass"], timing["worker"]["scope"]) == (
+        1, 5, False, "algorithm")  # fmt: skip
+    assert (cold["measurement"]["warmup"], cold["measurement"]["repeats"],
+            cold["measurement"]["memory_pass"], cold["worker"]["scope"]) == (
+        0, 1, True, "case")  # fmt: skip
+    # each run declares its own registered stage/order (reverse timing, fixed cold)
+    assert [
+        (k, e3.runs[k].manifest.measurement["stage"], e3.runs[k].manifest.measurement["order"])
+        for k in (FIXED, REVERSE, COLD)
+    ] == [(FIXED, "timing", "fixed"), (REVERSE, "timing", "reverse"), (COLD, "cold", "fixed")]
+    for name, arm in latency.load_arms(ARMS).arms.items():
+        exp = _armed(1.0, name)
+        assert report.arm_problems(exp.document, exp.runs) == [], name
+        if arm.algorithms is None:  # the arms whose algorithms L01-SB lists get own evidence
+            evidence = _armed_evidence(exp)
+            sb = evidence.runs["full_source"].manifest.resolved_profile
+            assert sb["budget"] == SB_BUDGET.to_dict() != _first(exp).resolved_profile["budget"]
+            assert (sb["measurement"]["repeats"], sb["worker"]["scope"]) == (2, "algorithm")
+            assert report.sufficient_problems(evidence, exp) == [], name
+    l06 = report.compare_experiments(_armed(1.0, "S0"), h1, lane="heuristic",
+                                     pairs={FAST: "uni_sor_port"})  # fmt: skip
+    assert l06["arms"]["id"] == "L06"
+    assert report.compare_experiments(h1, h2, lane="heuristic")["arms"]["id"] == (
+        "L07-sampling-ablation")  # fmt: skip
+
+
+def _each(exp: report.Experiment) -> list[Any]:
+    return [run.manifest for run in exp.runs.values()]
+
+
+def _redeclare(exp: report.Experiment, key: tuple[str, str, str], **stage: Any) -> None:
+    """Alter a run's stage settings CONSISTENTLY in both of its declarations: the run
+    measurement record and the effective profile (as a driver misconfiguration would)."""
+    manifest = exp.runs[key].manifest
+    scope = stage.pop("worker_scope", None)
+    manifest.measurement.update(stage, **({"worker_scope": scope} if scope else {}))
+    manifest.resolved_profile["measurement"].update(stage)
+    if scope:
+        manifest.resolved_profile["worker"]["scope"] = scope
+
+
+def _hidden_sampling(manifests: list[Any]) -> None:  # the reviewer's R2-F1 CHECK1
+    for manifest in manifests:
+        _params(manifest).update(SAMPLING)
+
+
+H_ABLATION = ("H1", "H2", "heuristic", None)  # L07-sampling-ablation: H1 = no sampling
+BOTH, BASE, CAND = ("baseline", "candidate"), ("baseline",), ("candidate",)
+EFFECTIVE_DEFECTS = [
+    # hidden optional activation / changed registered or search parameters
+    ("hidden sampling, every H1 run", H_ABLATION, BASE, lambda e: _hidden_sampling(_each(e)),
+     r"uni_sor_fast params \['coarse_step', 'refine_radius', 'soft_max_quotes'\]"),
+    ("hidden sampling, one cold run", H_ABLATION, BASE,
+     lambda e: _hidden_sampling([e.runs[COLD].manifest]), r"cold fixed .*params \['coarse_step'"),
+    ("hidden sampling section", H_ABLATION, BASE,
+     lambda e: _first(e).resolved_profile.update(sampling=dict(SAMPLING)), "effective sampling"),
+    ("percent_step 10, every H2 run", H_ABLATION, CAND,  # the reviewer's R2-F1 CHECK2
+     lambda e: [_params(m).update(percent_step=10) for m in _each(e)],
+     r"params \['percent_step'\]"),
+    ("refine_radius True", H_ABLATION, CAND,
+     lambda e: _params(_first(e)).update(refine_radius=True), r"params \['refine_radius'\]"),
+    ("soft cap", H_ABLATION, CAND, lambda e: _params(_first(e)).update(soft_max_quotes=500),
+     r"params \['soft_max_quotes'\]"),
+    ("sampling param missing", H_ABLATION, CAND, lambda e: _params(_first(e)).pop("coarse_step"),
+     r"params \['coarse_step'\]"),
+    ("percent_step", H_ABLATION, BOTH, lambda e: _params(_first(e)).update(percent_step=10),
+     r"params \['percent_step'\]"),
+    ("max_hops", H_ABLATION, BOTH, lambda e: _params(_first(e)).update(max_hops=3),
+     r"params \['max_hops'\]"),
+    ("extra param", H_ABLATION, BOTH, lambda e: _params(_first(e)).update(beam=4),
+     r"params \['beam'\]"),
+    ("missing param", H_ABLATION, BOTH, lambda e: _params(_first(e)).pop("routes_per_probe"),
+     r"params \['routes_per_probe'\]"),
+    ("bool for int", H_ABLATION, BOTH, lambda e: _params(_first(e)).update(direct_routes=False),
+     r"params \['direct_routes'\]"),
+    ("float for int", H_ABLATION, BOTH, lambda e: _params(_first(e)).update(max_splits=4.0),
+     r"params \['max_splits'\]"),
+    ("params not a mapping", H_ABLATION, BOTH,
+     lambda e: _first(e).resolved_profile["algorithm_config"][FAST].update(params=None),
+     "not a mapping"),
+    ("extra factory", H_ABLATION, BOTH, lambda e: _first(e).resolved_profile["algorithm_config"]
+     .update(uni_sor_port={"params": dict(SEARCH)}), "effective algorithm_config"),
+    # other factories of the reference arms
+    ("chunks", E_PAIR, BOTH, lambda e: _params(_first(e), "incremental_graph").update(chunks=100),
+     r"incremental_graph params \['chunks'\]"),
+    ("direct_split step", E_PAIR, BOTH,
+     lambda e: _params(e.runs[COLD].manifest, "direct_split").update(percent_step=10),
+     r"direct_split params \['percent_step'\]"),
+    ("single_path hidden key", E_PAIR, BOTH,
+     lambda e: _params(_first(e), "single_path").update(percent_step=5),
+     r"single_path params \['percent_step'\]"),
+    ("direct params", E_PAIR, BOTH, lambda e: _params(_first(e), "direct").update(max_hops=2),
+     r"direct params \['max_hops'\]"),
+    # effective base sections disagreeing with the pinned profile / the run's declarations
+    ("search section", H_ABLATION, BOTH,
+     lambda e: _first(e).resolved_profile["search"].update(percent_step=10), "effective search"),
+    ("graph section", E_PAIR, BOTH, lambda e: _first(e).resolved_profile["graph"].update(chunks=1),
+     "effective graph"),
+    ("graph missing", E_PAIR, BOTH, lambda e: _first(e).resolved_profile.pop("graph"),
+     "effective graph"),
+    ("objective", E_PAIR, BOTH, lambda e: _first(e).resolved_profile.update(
+        objective={"mode": "synthetic_fixed_cost", "fixed_cost": 0}), "effective objective"),
+    ("budget", H_ABLATION, BOTH,
+     lambda e: _first(e).resolved_profile["budget"].update(max_quotes=60000), "effective budget"),
+    ("SB raise outside SB", E_PAIR, BOTH,
+     lambda e: _first(e).resolved_profile.update(budget=SB_BUDGET.to_dict()), "effective budget"),
+    ("seed", E_PAIR, BOTH, lambda e: _first(e).resolved_profile["measurement"].update(seed=7),
+     "effective measurement"),
+    ("attempts not the run's", E_PAIR, BOTH,
+     lambda e: _first(e).resolved_profile["measurement"].update(repeats=3),
+     "effective measurement"),
+    ("start method", H_ABLATION, BOTH,
+     lambda e: _first(e).resolved_profile["worker"].update(start_method="forkserver"),
+     "effective worker"),
+    ("scope not the run's", H_ABLATION, BOTH,
+     lambda e: e.runs[COLD].manifest.resolved_profile["worker"].update(scope="algorithm"),
+     "effective worker"),
+    ("schema", E_PAIR, BOTH, lambda e: _first(e).resolved_profile.update(schema_version=True),
+     "effective schema_version"),
+    ("extra section", E_PAIR, BOTH, lambda e: _first(e).resolved_profile.update(notes={}),
+     "effective notes"),
+    ("run budget", E_PAIR, BOTH,
+     lambda e: _first(e).measurement["budget"].update(time_limit_seconds=600.0),
+     "run measurement budget"),
+    ("run seed", H_ABLATION, BOTH, lambda e: _first(e).measurement.update(seed=True),
+     "run measurement seed"),
+    # malformed stage declarations (typed by the profile loader, not coerced)
+    ("warmup True", E_PAIR, BOTH, lambda e: _first(e).measurement.update(warmup=True),
+     "run measurement warmup True, the registered timing stage has 1"),
+    ("worker scope", E_PAIR, BOTH, lambda e: _first(e).measurement.update(worker_scope="process"),
+     "run measurement worker_scope"),
+    ("protocol attempts", E_PAIR, BOTH,
+     lambda e: e.document["protocol"]["document"]["timing"].update(warmup=True),
+     "registered timing stage settings are invalid"),
+    # stage overrides come from the L01 contract: two consistently altered declarations
+    # (run measurement + effective profile) never redefine a registered stage
+    ("cold scope algorithm", H_ABLATION, BOTH,
+     lambda e: _redeclare(e, COLD, worker_scope="algorithm"),
+     "cold fixed full_source/matrix: run measurement worker_scope 'algorithm', the registered "
+     "cold stage has 'case'"),
+    ("timing scope case", E_PAIR, BOTH, lambda e: _redeclare(e, REVERSE, worker_scope="case"),
+     "run measurement worker_scope 'case', the registered timing stage has 'algorithm'"),
+    ("cold without memory pass", E_PAIR, BOTH, lambda e: _redeclare(e, COLD, memory_pass=False),
+     "run measurement memory_pass False"),
+    ("timing memory pass", H_ABLATION, BOTH, lambda e: _redeclare(e, FIXED, memory_pass=True),
+     "run measurement memory_pass True"),
+    ("cold attempts", H_ABLATION, BOTH, lambda e: _redeclare(e, COLD, warmup=1, repeats=5),
+     "run measurement warmup 1"),
+    ("timing attempts", E_PAIR, BOTH, lambda e: _redeclare(e, FIXED, repeats=3),
+     "run measurement repeats 3"),
+    ("stage relabel", E_PAIR, BOTH, lambda e: e.runs[FIXED].manifest.measurement.update(
+        stage="cold"), "run measurement stage 'cold'"),
+    ("order relabel", H_ABLATION, BOTH, lambda e: e.runs[REVERSE].manifest.measurement.update(
+        order="fixed"), "run measurement order 'fixed', the registered timing stage has 'reverse'"),
+    # links among registration, protocol and profile pins
+    ("protocol profile pin", E_PAIR, BOTH,
+     lambda e: e.document["protocol"]["document"]["profile"].update(sha256="0" * 64),
+     "not the protocol's pinned"),
+    ("declared controls bool/int", E_PAIR, BOTH,
+     lambda e: e.document["arm"]["controls"]["L02"].update(skip_empty_spans=1),
+     "declared controls"),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("pair", "side", "mutate", "message"),
+    [pytest.param(pair, side, mutate, message, id=f"{what}-{side}")
+     for what, pair, sides, mutate, message in EFFECTIVE_DEFECTS for side in sides],
+)  # fmt: skip
+def test_effective_profiles_must_be_the_pinned_profile_with_the_registered_overlays(
+    pair: tuple[str, str, str, Any], side: str, mutate: Any, message: str
+) -> None:
+    baseline, candidate, lane, pairs = pair
+    base, cand = _armed(1.0, baseline), _armed(0.5, candidate)
+    report.compare_experiments(base, cand, lane=lane, pairs=pairs)  # valid before the mutation
+    mutate(base if side == "baseline" else cand)
+    with pytest.raises(report.LatencyReportError, match=f"{side} arm .*{message}"):
+        report.compare_experiments(base, cand, lane=lane, pairs=pairs)
+
+
+def test_arm_protocol_must_be_the_arms_files_pin() -> None:
+    exp = _armed(1.0, "H1")
+    assert report.arm_problems(exp.document, exp.runs) == []
+    exp.document["protocol"]["sha256"] = "0" * 64
+    assert any("the arms file pins" in p for p in report.arm_problems(exp.document, exp.runs))
+
+
+def _sb(evidence: report.SufficientEvidence) -> Any:
+    return evidence.runs["full_source"].manifest
+
+
+FIXED_BUDGET = {"time_limit_seconds": 120.0, "max_quotes": 50000, "max_candidates": None}
+SB_DEFECTS = [
+    ("chunks", lambda ev: _params(_sb(ev), "incremental_graph").update(chunks=100),
+     r"incremental_graph params \['chunks'\]"),
+    ("hidden optional key", lambda ev: _params(_sb(ev), "uni_sor_port").update(coarse_step=25),
+     r"uni_sor_port params \['coarse_step'\]"),
+    ("search section", lambda ev: _sb(ev).resolved_profile["search"].update(percent_step=10),
+     "effective search"),
+    ("raise not applied", lambda ev: _sb(ev).resolved_profile.update(budget=dict(FIXED_BUDGET)),
+     "effective budget"),
+    ("another raise", lambda ev: _sb(ev).resolved_profile["budget"].update(
+        time_limit_seconds=900.0), "effective budget"),
+    ("run budget", lambda ev: _sb(ev).measurement["budget"].update(max_quotes=50000),
+     "run measurement budget"),
+    ("seed", lambda ev: _sb(ev).resolved_profile["measurement"].update(seed=7),
+     "effective measurement"),
+    ("declared budget", lambda ev: ev.document.update(budget=dict(FIXED_BUDGET)),
+     "the sufficient-budget protocol declares"),
+    ("declared fixed budget", lambda ev: ev.document["fixed_budget"].update(max_quotes=1),
+     "fixed_budget"),
+    ("sb protocol pin", lambda ev: ev.document["sufficient_budget"].update(sha256="0" * 64),
+     "the arms file pins"),
+    ("embedded raise", lambda ev: ev.document["sufficient_budget"]["document"]["budget"].update(
+        max_quotes=10**6), "effective budget"),
+    ("malformed raise", lambda ev: ev.document["sufficient_budget"]["document"]["budget"].update(
+        time_limit_seconds=True), "time_limit_seconds"),
+    ("scope case", lambda ev: (_sb(ev).measurement.update(worker_scope="case"),
+                               _sb(ev).resolved_profile["worker"].update(scope="case")),
+     "run measurement worker_scope 'case', the registered sufficient_budget stage"),
+    ("memory pass", lambda ev: (_sb(ev).measurement.update(memory_pass=True),
+                                _sb(ev).resolved_profile["measurement"].update(memory_pass=True)),
+     "run measurement memory_pass True"),
+    ("stage relabel", lambda ev: _sb(ev).measurement.update(stage="timing"),
+     "run measurement stage 'timing'"),
+    ("order", lambda ev: _sb(ev).measurement.update(order="reverse"), "run measurement order"),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("side", "mutate", "message"),
+    [pytest.param(side, mutate, message, id=f"{what}-{side}")
+     for what, mutate, message in SB_DEFECTS for side in BOTH],
+)  # fmt: skip
+def test_sufficient_evidence_effective_profiles_are_bound_on_either_side(
+    side: str, mutate: Any, message: str
+) -> None:
+    """The shared companion path (`bounded_exactness` -> `sufficient_problems` ->
+    `arm_problems`): only the registered raise may differ from the pinned profile."""
+    base, cand = _armed(1.0, "E2"), _armed(0.5, "E3")
+    for exp in (base, cand):  # single_path/h2 cut by the quote cap, identical outputs
+        for key in (FIXED, REVERSE, COLD):
+            _record(exp, key, "single_path", "h2")["search"] = {"truncated_by": "max_quotes"}
+    evidence = {"baseline": _armed_evidence(base), "candidate": _armed_evidence(cand)}
+    pair = (evidence["baseline"], evidence["candidate"])
+    result = report.compare_experiments(base, cand, lane="exact", sufficient=pair)
+    assert result["verdict"] == "adopt_eligible", result["reasons"]
+    assert len(result["bounded_exactness"]["established"]) == 1
+    mutate(evidence[side])
+    result = report.compare_experiments(base, cand, lane="exact", sufficient=pair)
+    problems = result["bounded_exactness"]["evidence_problems"]
+    assert any(re.search(message, p) for p in problems[side]), problems[side]
+    assert problems["candidate" if side == "baseline" else "baseline"] == []
+    assert result["verdict"] == "inconclusive" and result["bounded_exactness"]["established"] == []
+
+
+def test_both_sides_redeclaring_the_cold_worker_scope_are_refused() -> None:
+    """Parent pre-merge repro at b487320: cold full_source/matrix redeclared as a warm
+    per-algorithm worker in BOTH its run measurement and its effective profile, on both
+    sides at once. Coverage alone does not see it; the L01 cold contract (fresh worker per
+    case) does, and nothing is judged."""
+    base, cand = _armed(1.0, "H1"), _armed(0.5, "H2")
+    report.compare_experiments(base, cand, lane="heuristic")  # valid before the mutation
+    for exp in (base, cand):
+        _redeclare(exp, COLD, worker_scope="algorithm")
+        assert report.coverage_problems(exp) == []
+        problems = report.arm_problems(exp.document, exp.runs)
+        assert len(problems) == 2 and all(p.startswith("cold fixed full_source/matrix: ")
+                                          for p in problems)  # fmt: skip
+        assert any("run measurement worker_scope 'algorithm', the registered cold stage has "
+                   "'case'" in p for p in problems)  # fmt: skip
+        assert any("effective worker" in p and "'scope': 'case'" in p for p in problems)
+    with pytest.raises(
+        report.LatencyReportError, match="baseline arm 'H1' .*cold stage has 'case'"
+    ):
+        report.compare_experiments(base, cand, lane="heuristic")

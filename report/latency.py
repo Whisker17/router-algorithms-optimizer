@@ -46,6 +46,7 @@ not support a tail or SLA claim.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import math
 import statistics
@@ -59,15 +60,22 @@ from typing import Any
 
 from benchmark.latency import (
     CONTROL_STATS_KEY,
-    OVERLAY_ALGORITHM,
     SESSION_FILE,
     STAGES,
     SUFFICIENT_EXPERIMENT_SCHEMA,
+    Arm,
     LatencyError,
+    arm_profile,
     parse_arms,
     source_identity,
 )
-from benchmark.profile import read_profile_document
+from benchmark.profile import (
+    ProfileError,
+    RunProfile,
+    _parse_budget,
+    _parse_measurement,
+    _parse_worker,
+)
 from benchmark.results import (
     REPO_ROOT,
     RunManifest,
@@ -76,6 +84,7 @@ from benchmark.results import (
     load_memory_records,
 )
 from benchmark.runner import _deterministic_view
+from routing.algorithms.base import Budget
 from snapshot.bundle import sha256_file
 
 SUMMARY_SCHEMA = "latency-summary/2"
@@ -287,10 +296,22 @@ ATTEMPT_FAILURES = {"timeout", "algorithm_error"}  # may end a case before its l
 SAMPLE_FIELDS = ("solve_seconds", "solve_cpu_seconds", "transport_seconds")
 
 
+def _stage_attempts(protocol: Mapping[str, Any], stage: str) -> tuple[Any, Any]:
+    timing = protocol["timing"]
+    return (timing["warmup"], timing["repeats"]) if stage == "timing" else (0, 1)
+
+
 def declared_attempts(exp: Experiment, stage: str) -> tuple[int, int]:
     """(warmup, repeats) the protocol schedules per case in a stage."""
-    timing = exp.protocol["timing"]
-    return (timing["warmup"], timing["repeats"]) if stage == "timing" else (0, 1)
+    return _stage_attempts(exp.protocol, stage)
+
+
+# The L01 / L01-SB stage contract (config/latency/l01*.yaml; `run_latency_experiment`,
+# `run_sufficient_budget`): timing = one warm worker per algorithm, no memory pass; cold =
+# a fresh worker for every case, followed by the separate memory pass; sufficient budget =
+# one warm worker per algorithm, fixed order. Never taken from a run's own declaration.
+STAGE_WORKERS = {"timing": ("algorithm", False), "cold": ("case", True),
+                 "sufficient_budget": ("algorithm", False)}  # fmt: skip
 
 
 def sample_problem(record: Mapping[str, Any], warmup: int, repeats: int) -> str | None:
@@ -1323,14 +1344,120 @@ def _canonical(value: Any) -> Any:
     return json.loads(json.dumps(value))
 
 
-def _pinned_algorithms(document: Mapping[str, Any]) -> list[str] | None:
-    """`algorithms: reference` resolved offline: the pinned profile's algorithm list, read
-    only if the checked-in file still has the experiment's pinned sha256."""
+def _typed(value: Any) -> Any:
+    """`value` with every scalar tagged by its exact type (tuples as lists), so comparing
+    settings never lets True == 1 == 1.0 pass a value the profile loader would refuse."""
+    if isinstance(value, Mapping):
+        return {k: _typed(v) for k, v in value.items()}
+    if isinstance(value, list | tuple):
+        return [_typed(v) for v in value]
+    return (type(value).__name__, value)
+
+
+def _same(a: Any, b: Any) -> bool:
+    return bool(_typed(a) == _typed(b))
+
+
+def _pinned_profile(document: Mapping[str, Any], arm: Arm) -> RunProfile | None:
+    """The arm's expected profile, offline: the experiment's pinned profile, read only if
+    the checked-in file still has its pinned sha256, with the registered algorithms/
+    overlays applied by the driver's own construction (`arm_profile`, validated by the
+    ordinary profile loader). None: the pinned file is not available."""
     pin = document.get("profile") or {}
     path = REPO_ROOT / str(pin.get("path"))
     if not path.is_file() or sha256_file(path) != pin.get("sha256"):
         return None
-    return list(read_profile_document(path).get("algorithms") or [])
+    return arm_profile(arm, str(pin["path"]))
+
+
+def _stage_profile(
+    profile: RunProfile, measurement: Mapping[str, Any], budget: Budget
+) -> RunProfile:
+    """`profile` as `measure_run` runs one stage: only the stage contract's attempts, memory
+    pass and worker scope (`_stage_contract`, typed by the profile loader) and, for
+    sufficient-budget evidence, the registered raised budget differ. `measure_run` always
+    records case order `fixed` (the run's schedule order is `measurement.order`)."""
+    return dataclasses.replace(
+        profile,
+        budget=budget,
+        measurement=_parse_measurement(
+            {**profile.measurement.to_dict(), "order": "fixed",
+             **{k: measurement.get(k) for k in ("warmup", "repeats", "memory_pass")}},
+            "run measurement",
+        ),
+        worker=_parse_worker(
+            {**profile.worker.to_dict(), "scope": measurement.get("worker_scope")}, "run worker"
+        ),
+    )  # fmt: skip
+
+
+MISSING = "<missing>"
+
+
+def _stage_contract(
+    document: Mapping[str, Any], key: Any, experiment: bool
+) -> dict[str, Any] | str:
+    """The stage declaration a run keyed `key` must carry, derived from the registered
+    contract (L01's stage/order schedule and attempts, or L01-SB's), never from the run's
+    own record: stage, order, attempts, memory pass and worker scope. A string: why none."""
+    if experiment:
+        stage, order = key[0], key[1]
+        if stage not in ("timing", "cold"):
+            return f"stage {stage!r} is not an L01 run stage"
+        try:
+            warmup, repeats = _stage_attempts(document["protocol"]["document"], stage)
+        except (KeyError, TypeError) as exc:
+            return f"the protocol declares no {stage} attempts: {exc!r}"
+    else:
+        stage, order = "sufficient_budget", "fixed"
+        declared = ((document.get("sufficient_budget") or {}).get("document") or {}).get(
+            "measurement") or {}  # fmt: skip
+        warmup, repeats = declared.get("warmup"), declared.get("repeats")
+    scope, memory = STAGE_WORKERS[stage]
+    return {"stage": stage, "order": order, "warmup": warmup, "repeats": repeats,
+            "memory_pass": memory, "worker_scope": scope}  # fmt: skip
+
+
+def _effective_problems(
+    where: str, actual: Mapping[str, Any], expected: Mapping[str, Any]
+) -> list[str]:
+    """Every difference between a run's recorded effective profile and the expected one:
+    each section missing, extra or changed (strictly typed), and every declared
+    algorithm's COMPLETE params -- an optional key (e.g. sampling) the expected profile
+    does not hand over is a difference too. The arm record, algorithm scope and quote path
+    are the caller's; capabilities/provenance describe code, not settings. An
+    `empirical_cost` objective is bound to each bundle's own price context."""
+    out: list[str] = []
+    for key in sorted(actual.keys() | expected.keys()):
+        if key in ("l08_arm", "algorithms", "algorithm_config"):
+            continue
+        a, e = actual.get(key, MISSING), expected.get(key, MISSING)
+        if key == "objective" and isinstance(a, dict) and isinstance(e, dict) and (
+            e.get("mode") == "empirical_cost"
+        ):  # fmt: skip
+            a, e = ({k: v for k, v in x.items() if k != "price_context_sha256"} for x in (a, e))
+        if not _same(a, e):
+            out.append(f"{where}: effective {key} {a!r}, expected {e!r} (the pinned profile "
+                       "with the registered arm)")  # fmt: skip
+    configs, wanted = actual.get("algorithm_config"), expected["algorithm_config"]
+    configs = configs if isinstance(configs, dict) else {}
+    if configs.keys() != wanted.keys():
+        out.append(f"{where}: effective algorithm_config {sorted(configs)}, expected "
+                   f"{sorted(wanted)}")  # fmt: skip
+    for alg in sorted(configs.keys() & wanted.keys()):
+        config = configs[alg] if isinstance(configs[alg], dict) else {}
+        params, want = config.get("params", MISSING), wanted[alg]["params"]
+        if not isinstance(params, dict):
+            out.append(f"{where}: effective {alg} params {params!r} are not a mapping")
+            continue
+        bad = sorted(k for k in params.keys() | want.keys()
+                     if not _same(params.get(k, MISSING), want.get(k, MISSING)))  # fmt: skip
+        if bad:
+            out.append(f"{where}: effective {alg} params {bad} are not the pinned profile with "
+                       f"the registered overlays: recorded "
+                       f"{ {k: params.get(k, MISSING) for k in bad} }, expected "
+                       f"{ {k: want.get(k, MISSING) for k in bad} }")  # fmt: skip
+    return out
 
 
 def arm_problems(
@@ -1339,9 +1466,13 @@ def arm_problems(
     """Why an L08 arm experiment (`experiment=False`: its sufficient-budget run) did not
     measure its registered arm. The declared arm must be the canonical record resolved from
     the embedded arms document -- controls with their values, algorithm scope, shortlist/
-    sampling overlays, stages and quote path -- and every run's recorded effective profile
-    must agree with it. Only arm-bound fields are compared: each stage's measurement
-    settings, worker scope and the sufficient-budget raise legitimately differ."""
+    sampling overlays, stages and quote path -- measured under the protocol (and
+    sufficient-budget protocol) the arms file pins, with the profile the protocol pins.
+    Every run's recorded effective profile must be exactly the hash-verified pinned profile
+    with the registered overlays (`arm_profile`): every section and every declared
+    algorithm's complete params, including the ABSENCE of optional settings. Only each
+    stage's declared attempts / memory pass / worker scope and the registered
+    sufficient-budget raise legitimately differ. Values compare strictly typed."""
     declared = _canonical(document.get("arm"))
     declared = declared if isinstance(declared, dict) else {}
     try:
@@ -1354,17 +1485,53 @@ def arm_problems(
     if arm is None:
         return [f"arm {name!r} is not registered in the embedded arms document"]
     want = _canonical(arm.record())
-    missing = "<missing>"
     problems = [
-        f"declared {key} {declared.get(key, missing)!r}, registered {want.get(key, missing)!r}"
+        f"declared {key} {declared.get(key, MISSING)!r}, registered {want.get(key, MISSING)!r}"
         for key in sorted(want.keys() | declared.keys())
-        if declared.get(key, missing) != want.get(key, missing)
+        if not _same(declared.get(key, MISSING), want.get(key, MISSING))
     ]
-    algorithms = list(arm.algorithms) if arm.algorithms is not None else _pinned_algorithms(
-        document)  # fmt: skip
-    if algorithms is None:
-        problems.append(f"`algorithms: reference` unresolvable: pinned profile "
-                        f"{document.get('profile')} is not available")  # fmt: skip
+    protocol = document.get("protocol") or {}
+    if protocol.get("sha256") != arms.protocol_sha256:
+        problems.append(f"measured under protocol {protocol.get('sha256')}, the arms file pins "
+                        f"{arms.protocol_sha256}")  # fmt: skip
+    budget: Budget | None = None
+    try:
+        profile = _pinned_profile(document, arm)
+        if profile is None:
+            problems.append(
+                "effective profile and `algorithms: reference` unresolvable: "
+                f"pinned profile {document.get('profile')} is not available"
+            )
+        else:
+            budget = profile.budget
+    except (LatencyError, ProfileError) as exc:
+        profile = None
+        problems.append(f"the pinned profile does not resolve with the arm: {exc}")
+    if experiment:
+        pinned = (protocol.get("document") or {}).get("profile")
+        if not _same(document.get("profile"), pinned):
+            problems.append(f"profile {document.get('profile')} is not the protocol's pinned "
+                            f"{pinned}")  # fmt: skip
+    else:  # the registered sufficient-budget protocol's raised budget replaces the base's
+        sb = document.get("sufficient_budget") or {}
+        if sb.get("sha256") != arms.sufficient_sha256:
+            problems.append(f"sufficient-budget protocol {sb.get('sha256')}, the arms file pins "
+                            f"{arms.sufficient_sha256}")  # fmt: skip
+        try:
+            budget = _parse_budget((sb.get("document") or {}).get("budget"),
+                                   "sufficient-budget protocol budget")  # fmt: skip
+        except ProfileError as exc:
+            budget = None
+            problems.append(str(exc))
+        if budget is not None and not _same(document.get("budget"), budget.to_dict()):
+            problems.append(f"budget {document.get('budget')}, the sufficient-budget protocol "
+                            f"declares {budget.to_dict()}")  # fmt: skip
+        if profile is not None and not _same(document.get("fixed_budget"),
+                                             profile.budget.to_dict()):  # fmt: skip
+            problems.append(f"fixed_budget {document.get('fixed_budget')}, the pinned profile "
+                            f"declares {profile.budget.to_dict()}")  # fmt: skip
+    algorithms = list(profile.algorithms) if profile is not None else (
+        list(arm.algorithms) if arm.algorithms is not None else None)  # fmt: skip
     if experiment:
         if document.get("stages_requested") != want["stages"]:
             problems.append(f"stages_requested {document.get('stages_requested')}, "
@@ -1377,27 +1544,37 @@ def arm_problems(
         recorded = {"measurement arm": run.manifest.measurement.get("arm"),
                     "effective profile l08_arm": resolved.get("l08_arm")}  # fmt: skip
         problems += [f"{where}: {what} is not the registered arm"
-                     for what, value in recorded.items() if _canonical(value) != want]  # fmt: skip
+                     for what, value in recorded.items() if not _same(value, want)]  # fmt: skip
         scopes = {"run algorithms": list(run.manifest.algorithms),
                   "effective profile algorithms": resolved.get("algorithms")}  # fmt: skip
         problems += [f"{where}: {what} {value}, registered {algorithms}"
                      for what, value in scopes.items()
                      if algorithms is not None and value != algorithms]  # fmt: skip
-        configs = resolved.get("algorithm_config") or {}
-        params = (configs.get(OVERLAY_ALGORITHM) or {}).get("params") or {}
-        for overlay in ("shortlist", "sampling"):
-            if _canonical(resolved.get(overlay)) != want[overlay]:
-                problems.append(f"{where}: effective {overlay} {resolved.get(overlay)}, "
-                                f"registered {want[overlay]}")  # fmt: skip
-            wrong = sorted(k for k, v in (want[overlay] or {}).items()
-                           if _canonical(params.get(k, missing)) != v)  # fmt: skip
-            if wrong:
-                problems.append(f"{where}: effective {OVERLAY_ALGORITHM} params {wrong} are "
-                                f"not the registered {overlay}")  # fmt: skip
-        for alg, config in sorted(configs.items()):
-            path = (config.get("provenance") or {}).get("quote_path")
+        configs = resolved.get("algorithm_config")
+        for alg, config in sorted(configs.items() if isinstance(configs, dict) else []):
+            path = (config.get("provenance") or {}).get("quote_path") if isinstance(
+                config, dict) else None  # fmt: skip
             if arm.controls and path is not None and path != want["quote_path"]:
                 problems.append(f"{where}: effective {alg} quote path is not the arm's controls")
+        if profile is None or budget is None:
+            continue
+        measurement = run.manifest.measurement
+        contract = _stage_contract(document, key, experiment)
+        if isinstance(contract, str):
+            problems.append(f"{where}: {contract}")
+            continue
+        try:
+            expected = _stage_profile(profile, contract, budget).resolved()
+        except ProfileError as exc:
+            problems.append(f"{where}: the registered {contract['stage']} stage settings are "
+                            f"invalid: {exc}")  # fmt: skip
+            continue
+        problems += _effective_problems(where, resolved, expected)
+        for field, value in (*contract.items(), ("budget", expected["budget"]),
+                             ("seed", expected["measurement"]["seed"])):  # fmt: skip
+            if not _same(recorded_value := measurement.get(field, MISSING), value):
+                problems.append(f"{where}: run measurement {field} {recorded_value!r}, the "
+                                f"registered {contract['stage']} stage has {value!r}")  # fmt: skip
     return problems
 
 
