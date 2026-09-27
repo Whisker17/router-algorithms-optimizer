@@ -398,9 +398,11 @@ RUN_IDENTITY = {"git_revision": (str, type(None)), "git_dirty": (bool, type(None
 def identity_problems(document: Mapping[str, Any], runs: Mapping[Any, RunView]) -> list[str]:
     """Why a run does not carry its containing experiment's measured source (revision,
     dirty flag, tracked-diff hash) and pinned profile sha256: each field present, of the
-    writer's type and strictly equal (never False == 0, never a missing field). An unknown
-    (None) Git identity must match an equally unknown pin; it proves nothing more. Paths
-    are not identity: a relocated archive keeps its hashes."""
+    writer's type and strictly equal (never False == 0, never a missing field). The pinned
+    revision itself must be KNOWN: `git_provenance` records None when `git rev-parse` fails
+    (and an empty revision names nothing), whatever the other fields say, so an unknown
+    revision never supports a verdict or same-source evidence -- it is reported as it is,
+    not coerced. Paths are not identity: a relocated archive keeps its hashes."""
     source = document.get("source")
     source = source if isinstance(source, Mapping) else {}
     profile = document.get("profile")
@@ -418,6 +420,11 @@ def identity_problems(document: Mapping[str, Any], runs: Mapping[Any, RunView]) 
     out = [f"experiment pin {field} {shown(value)} is missing or malformed"
            for field, value in expected.items()
            if not isinstance(value, RUN_IDENTITY[field])]  # fmt: skip
+    revision = expected["git_revision"]
+    if revision is None or revision == "" or (
+        isinstance(revision, str) and revision != revision.strip()
+    ):  # fmt: skip
+        out.append(f"experiment pin git_revision {revision!r} is not a known revision")
     for key, run in sorted(runs.items()):
         where = key if isinstance(key, str) else " ".join(key)
         env = getattr(run.manifest, "environment", None)

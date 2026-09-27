@@ -1940,16 +1940,14 @@ DIRTY = {"git_dirty": True, "git_diff_sha256": "d" * 64, "dirty_paths": [" M x.p
 @pytest.mark.parametrize(
     "source",
     [pytest.param(DIRTY, id="dirty, tracked != combined patch"),
-     pytest.param({**DIRTY, "git_diff_sha256": None}, id="dirty, tracked diff unreadable"),
-     pytest.param({"git_revision": None, "git_dirty": None, "git_diff_sha256": None},
-                  id="unknown source")],
+     pytest.param({**DIRTY, "git_diff_sha256": None}, id="dirty, tracked diff unreadable")],
 )  # fmt: skip
-def test_matching_dirty_and_unknown_identities_bind_but_never_prove_a_clean_source(
+def test_matching_dirty_identities_bind_but_never_prove_a_clean_source(
     source: dict[str, Any],
 ) -> None:
-    """Legitimate writer states (`git_provenance`/`source_identity`) whose runs carry the
-    same identity are consistent -- coverage and sufficient-budget evidence are clean --
-    but a dirty or unknown source still never yields an accepted verdict."""
+    """Legitimate dirty writer states (`git_provenance`/`source_identity`) whose runs carry
+    the same identity are consistent -- coverage and sufficient-budget evidence are clean --
+    but a dirty source still never yields an accepted verdict."""
     base, cand = _bound_pair()
     for exp in (base, cand):
         _with_source(exp, **source)
@@ -1986,3 +1984,70 @@ def test_malformed_experiment_pins_are_not_matched_by_equally_malformed_runs() -
     for run in exp.runs.values():
         vars(run.manifest)["profile_sha256"] = None
     assert any("experiment pin profile_sha256" in p for p in report.coverage_problems(exp))
+
+
+UNKNOWN_REVISIONS = [
+    pytest.param({"git_revision": None}, id="revision None, recorded clean"),
+    pytest.param({"git_revision": ""}, id="empty revision, recorded clean"),
+    pytest.param({"git_revision": "  "}, id="blank revision, recorded clean"),
+    pytest.param({"git_revision": None, "git_dirty": None, "git_diff_sha256": None},
+                 id="writer's non-git checkout"),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize("unknown", UNKNOWN_REVISIONS)
+@pytest.mark.parametrize("side", BOTH)
+def test_an_unknown_revision_never_supports_a_normal_verdict(
+    side: str, unknown: dict[str, Any]
+) -> None:
+    """Parent pre-merge probe on 54847fd: experiment source AND every run environment
+    with revision None, git_dirty still False -- every field matched, so coverage was empty
+    and H1 -> H2 stayed opt_in_only. A clean status is no known revision: refused, and the
+    honest None is reported as it is (never turned into dirty)."""
+    exps = {"baseline": _armed(1.0, "H1"), "candidate": _armed(0.5, "H2")}
+    valid = report.compare_experiments(exps["baseline"], exps["candidate"], lane="heuristic")
+    assert valid["verdict"] == "opt_in_only", valid["reasons"]
+    for exp in exps.values():  # one comparison shares one source, so both carry it
+        _with_source(exp, **unknown)
+    result = report.compare_experiments(exps["baseline"], exps["candidate"], lane="heuristic")
+    for problems in (result["coverage_problems"][s] for s in BOTH):
+        assert problems == [f"experiment pin git_revision {unknown['git_revision']!r} is not "
+                            "a known revision"]  # fmt: skip
+    assert result["verdict"] == "inconclusive"
+    assert exps[side].document["source"]["git_dirty"] is unknown.get("git_dirty", False)
+    # Only this side's experiment unknown: still refused on that side (and not one source).
+    exps = {"baseline": _experiment(1.0), "candidate": _experiment(0.5)}
+    _with_source(exps[side], **unknown)
+    result = report.compare_experiments(exps["baseline"], exps["candidate"], lane="exact")
+    assert any("is not a known revision" in p for p in result["coverage_problems"][side])
+    assert result["coverage_problems"]["candidate" if side == "baseline" else "baseline"] == []
+    assert result["verdict"] == "inconclusive"
+
+
+@pytest.mark.parametrize("unknown", UNKNOWN_REVISIONS)
+@pytest.mark.parametrize("side", BOTH)
+def test_an_unknown_revision_is_no_same_source_sufficient_evidence(
+    side: str, unknown: dict[str, Any]
+) -> None:
+    """Sufficient-budget evidence whose own document and run carry the (matching) unknown
+    revision of an equally unknown experiment proves no same-source exactness."""
+    base, cand = _bound_pair()
+    pair = {"baseline": _evidence(base, _unbounded()), "candidate": _evidence(cand, _unbounded())}
+    valid = report.compare_experiments(
+        base, cand, lane="exact", sufficient=(pair["baseline"], pair["candidate"])
+    )
+    assert valid["bounded_exactness"]["established"], valid["reasons"]
+    exp = base if side == "baseline" else cand
+    _with_source(exp, **unknown)
+    pair[side] = _evidence(exp, _unbounded())  # SB document and run: the same unknown source
+    assert pair[side].runs["full_source"].manifest.environment["git_revision"] == (
+        unknown["git_revision"])  # fmt: skip
+    result = report.compare_experiments(
+        base, cand, lane="exact", sufficient=(pair["baseline"], pair["candidate"])
+    )
+    problems = result["bounded_exactness"]["evidence_problems"]
+    assert problems[side] == [f"experiment pin git_revision {unknown['git_revision']!r} is "
+                              "not a known revision"]  # fmt: skip
+    assert problems["candidate" if side == "baseline" else "baseline"] == []
+    assert result["bounded_exactness"]["established"] == []
+    assert result["verdict"] == "inconclusive"
