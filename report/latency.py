@@ -1086,9 +1086,10 @@ def registered_sufficient(
     content the embedded copy must be exactly. The raised budget and attempts are taken
     from it, never from the embedded copy: a declaration beside a claimed hash (even one
     another pin repeats) authenticates nothing. A path recorded by another, possibly
-    removed, worktree is looked up by its `config/...` suffix in this checkout. None, with
-    the reasons, when the content is unavailable, mismatched or inconsistent (fail closed:
-    no expectation, so no evidence)."""
+    removed, worktree is looked up by its `config/...` suffix in this checkout; a candidate
+    that cannot be read (stat, hash or load `OSError`) is skipped for the next one. None,
+    with the reasons, when the content is unavailable, unreadable, mismatched or
+    inconsistent (fail closed: no expectation, so no evidence)."""
     pin = document.get("sufficient_budget")
     pin = pin if isinstance(pin, dict) else {}
     recorded = Path(str(pin.get("path")))
@@ -1096,16 +1097,23 @@ def registered_sufficient(
     if "config" in recorded.parts:
         suffix = recorded.parts[recorded.parts.index("config") :]
         candidates.append(REPO_ROOT.joinpath(*suffix))
-    path = next((p for p in candidates
-                 if p.is_file() and sha256_file(p) == pin.get("sha256")), None)  # fmt: skip
-    if path is None:
+    unreadable: list[str] = []
+    for path in dict.fromkeys(candidates):
+        try:
+            if not path.is_file() or sha256_file(path) != pin.get("sha256"):
+                continue
+            definition = load_sufficient_budget(path)
+        except OSError as exc:  # unreadable here; the relocation candidate may still serve
+            unreadable.append(f"{path}: {exc}")
+            continue
+        except (LatencyError, yaml.YAMLError) as exc:
+            return None, [f"the registered sufficient-budget protocol does not load: {exc}"]
+        break
+    else:
+        why = f" (unreadable: {'; '.join(unreadable)})" if unreadable else ""
         return None, [f"sufficient-budget protocol {pin.get('path')} with sha256 "
                       f"{pin.get('sha256')} is not available: its registered budget and "
-                      "attempts are unverifiable"]  # fmt: skip
-    try:
-        definition = load_sufficient_budget(path)
-    except (LatencyError, yaml.YAMLError) as exc:
-        return None, [f"the registered sufficient-budget protocol does not load: {exc}"]
+                      f"attempts are unverifiable{why}"]  # fmt: skip
     registered, embedded = _canonical(definition.document), pin.get("document")
     if not _same(embedded, registered):
         where = (", ".join(sorted(k for k in registered.keys() | embedded.keys()

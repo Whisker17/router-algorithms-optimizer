@@ -1969,6 +1969,70 @@ def test_an_archived_obsolete_worktree_sb_path_resolves_by_content() -> None:
     assert len(result["bounded_exactness"]["established"]) == 1
 
 
+def _unreadable(monkeypatch: pytest.MonkeyPatch, target: str, broken: Path) -> None:
+    """`broken` exists with the registered content, but reading it (hash or load) fails."""
+    real = getattr(report, target)
+
+    def read(path: Path) -> Any:
+        if Path(path) == broken:
+            raise PermissionError(f"injected: {path} unreadable")
+        return real(path)
+
+    monkeypatch.setattr(report, target, read)
+
+
+@pytest.mark.parametrize("target", ["sha256_file", "load_sufficient_budget"])
+@pytest.mark.parametrize("sides", [BASE, CAND, BOTH], ids="+".join)
+def test_unreadable_sb_content_without_a_fallback_is_an_evidence_problem(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sides: tuple[str, ...], target: str
+) -> None:
+    """PR-F1: an existing but unreadable SB file (no `config/` relocation candidate) is
+    explicit evidence failure on the affected side(s), never an escaping exception."""
+    base, cand, evidence = _e2_e3_sb()
+    copy = tmp_path / "sb" / SB_PROTOCOL.name  # the registered bytes, outside any config/
+    copy.parent.mkdir()
+    shutil.copyfile(SB_PROTOCOL, copy)
+    assert "config" not in copy.parts
+    for side in sides:
+        _pin(evidence[side], path=str(copy))
+    _unreadable(monkeypatch, target, copy)
+    result = report.compare_experiments(
+        base, cand, lane="exact", sufficient=(evidence["baseline"], evidence["candidate"])
+    )
+    bounded = result["bounded_exactness"]
+    for side in BOTH:
+        found = bounded["evidence_problems"][side]
+        if side in sides:
+            assert len(found) == 1 and "is not available" in found[0], found
+            assert f"(unreadable: {copy}: injected" in found[0], found
+        else:
+            assert found == []
+    assert bounded["established"] == [] and result["verdict"] == "inconclusive"
+
+
+@pytest.mark.parametrize("target", ["sha256_file", "load_sufficient_budget"])
+def test_an_unreadable_old_worktree_path_falls_back_to_the_checked_in_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, target: str
+) -> None:
+    """Relocation survives an old path that still exists but cannot be read: the current
+    checkout's hash-verified `config/...` file is the registered content."""
+    base, cand, evidence = _e2_e3_sb()
+    old = tmp_path / "old-wt" / "config" / "latency" / SB_PROTOCOL.name
+    old.parent.mkdir(parents=True)
+    shutil.copyfile(SB_PROTOCOL, old)
+    for ev in evidence.values():
+        _pin(ev, path=str(old))
+    _unreadable(monkeypatch, target, old)
+    for ev in evidence.values():
+        assert report.arm_problems(ev.document, ev.runs, experiment=False) == []
+    result = report.compare_experiments(
+        base, cand, lane="exact", sufficient=(evidence["baseline"], evidence["candidate"])
+    )
+    assert result["bounded_exactness"]["evidence_problems"] == {
+        "baseline": [], "candidate": [], "pairing": []}  # fmt: skip
+    assert len(result["bounded_exactness"]["established"]) == 1
+
+
 # ------------------------------------------------------------ run identity (R2-F2)
 #
 # Every run manifest's own provenance -- environment git_revision / git_dirty / TRACKED
