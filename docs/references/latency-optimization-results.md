@@ -5,8 +5,11 @@ adopted.** Session `20260926T200553953133Z-dbac5a10` (2026-09-26 20:05–22:17 U
 source `2fda208`, clean) measured all ten arms with complete coverage, clean determinism
 gates and exact semantics, but 8 of the 10 arm experiments exceeded L01's unchanged host-load
 rule (1-minute load > 5.0 on the shared 10-core host). Every decision comparison is therefore
-`inconclusive` → **not adopted (inconclusive)**: that is a measurement-environment blocker,
-not evidence that any experiment is slow (§§3–5). Research key L08
+`inconclusive` → **not adopted (inconclusive)**: a measurement-environment limitation, not
+evidence that any experiment is slow (§§3–5). **The owner explicitly accepted this complete
+report as WHI-1510's final 0.1.2 outcome** (report closure and independent review; recorded
+on WHI-1510 as "Owner-approved final report acceptance"): an honest experimental report with
+adoption withheld, requiring no fresh campaign and no positive adoption (§5). Research key L08
 ([latency-optimization-research.md](latency-optimization-research.md) §§4, 6). Base
 `911f819` (0.1.2 `dev`, WHI-1504…1509 merged, every experiment default-off / opt-in).
 
@@ -307,18 +310,27 @@ both):
 No experiment is labelled "slower" or "rejected for performance": no comparison reached a
 `reject`, and an inconclusive timing is not evidence of slowness.
 
-## 5. Remaining gap and exact decisions needed
+## 5. Acceptance status
 
-- **Unmet:** "adequate declared samples … support latency claims." The samples are complete
-  and correctly bounded, but no decision comparison has two uncontaminated experiments, so no
-  adopt (or performance-reject) verdict exists for L02–L07.
-- **Needed to close it (parent/owner decision, not taken here):** either (a) one new run of the
-  same frozen L08 v1 session in an actually quiet window (new session id, no threshold or rule
-  change; this issue made no retry), or (b) an explicit owner decision on whether any of the
-  marginally contaminated experiments (E3/E4 max 5.62; H3 5.73) may be used, as was done for
-  the 5.174 case. Neither is assumed.
-- Even an adopt-eligible exact control stays default-off until a separate reviewed activation
-  change; every heuristic default needs the owner's explicit acceptance of its reported loss.
+- **Owner-approved closure.** The owner explicitly accepted this complete L08 report, with its
+  not-adopted / inconclusive verdicts, as the final 0.1.2 outcome of WHI-1510 (selected
+  "报告收尾并评审": close the report and review it; the orchestrator recorded the amendment
+  "Owner-approved final report acceptance — report closure and independent review" on
+  WHI-1510). No fresh campaign and no positive adoption are required for this issue. This
+  replaces the earlier position that WHI-1510 stayed blocked until a quiet-host rerun.
+- **What the acceptance does not do.** It does not turn contaminated timings into speedup
+  evidence, accept any heuristic quality loss, enable any default, or waive correctness,
+  provenance, coverage, cost accounting, the release candidate's full test suite, the
+  independent release review or human promotion gates. Every verdict, contamination flag and
+  number in §3 stands as measured (raw data at `2fda208`, report generator `e9f3ebd`).
+- **Adoption withheld.** No L02–L07 decision comparison has two uncontaminated experiments, so no
+  adopt (or performance-reject) verdict exists. The one clean result, H1→H2 (`opt_in_only`),
+  is informational and limited to the sampling ablation over the L06 shortlist; it does not
+  make L07 or `uni_sor_fast` a default.
+- **Future work needs separate evidence.** Any later default activation or performance claim
+  needs its own measurement meeting L01's rules (for example a run of the same frozen L08 v1
+  session on a quiet host, or a new registered protocol) and a separate reviewed change; every
+  heuristic default also needs the owner's explicit acceptance of its reported loss.
 
 ## 6. Limitations
 
