@@ -944,8 +944,17 @@ SOURCE_PIN = ("git_revision", "git_dirty", "dirty_patch_sha256")
 def sufficient_problems(evidence: SufficientEvidence, exp: Experiment) -> list[str]:
     """Why `evidence` cannot stand in for `exp`'s budget-bound records: it must be for the
     same main protocol, from the same measured source, on the same derived bundles, with
-    every scheduled record present once, consistent, and actually unbounded."""
+    every scheduled record present once, holding the attempts and samples its
+    sufficient-budget protocol declares (a consistency flag alone is no evidence)."""
     doc, problems = evidence.document, []
+    declared = ((doc.get("sufficient_budget") or {}).get("document") or {}).get("measurement")
+    warmup, repeats = (declared.get(k) if isinstance(declared, dict) else None
+                       for k in ("warmup", "repeats"))  # fmt: skip
+    attempts = None
+    if type(warmup) is int and type(repeats) is int and warmup >= 0 and repeats >= 2:
+        attempts = (warmup, repeats)
+    else:
+        problems.append(f"sufficient-budget protocol declares no valid warmup/repeats: {declared}")
     if doc["protocol"]["sha256"] != exp.document["protocol"]["sha256"]:
         problems.append("different main protocol document")
     if {k: doc["source"].get(k) for k in SOURCE_PIN} != {
@@ -973,6 +982,16 @@ def sufficient_problems(evidence: SufficientEvidence, exp: Experiment) -> list[s
         schedule = Counter(tuple(p) for p in run.manifest.measurement.get("schedule") or [])
         if Counter(_key(r) for r in run.records) != schedule or run.manifest.state != "complete":
             problems.append(f"{label}: records do not match the complete schedule")
+        if attempts is None:
+            continue
+        m = run.manifest.measurement
+        if (m.get("warmup"), m.get("repeats")) != attempts:
+            problems.append(f"{label}: run declares warmup/repeats {m.get('warmup')}/"
+                            f"{m.get('repeats')}, sufficient-budget protocol "
+                            f"{attempts[0]}/{attempts[1]}")  # fmt: skip
+        for record in run.records:
+            if why := sample_problem(record, *attempts):
+                problems.append(f"{label} {record['algorithm']}/{record['case_id']}: {why}")
     return problems
 
 
@@ -1026,10 +1045,10 @@ def bounded_exactness(
             out["unproven"].append(f"{what}: not re-solved in the {'/'.join(missing)} evidence")
             continue
         still = [side for side, r in (("baseline", b_r), ("candidate", c_r))
-                 if budget_bound(r) or r["status"] in KILLED
+                 if budget_bound(r) or r["status"] in KILLED | ATTEMPT_FAILURES
                  or r["measurement"].get("attempts_consistent") is not True]  # fmt: skip
         if still:
-            out["unproven"].append(f"{what}: still budget-bound or inconsistent under the "
+            out["unproven"].append(f"{what}: still budget-bound, failed or inconsistent under the "
                                    f"sufficient budget ({'/'.join(still)})")  # fmt: skip
         elif semantic_view(b_r, fields) != semantic_view(c_r, fields):
             diff = _differing(semantic_view(b_r, fields), semantic_view(c_r, fields))
