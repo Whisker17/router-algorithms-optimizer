@@ -1023,12 +1023,45 @@ def test_l08_session_measures_controls_in_workers_and_judges_registered_comparis
     assert final["arms"]["R"]["quote_cli"]["one_solve_per_algorithm_per_invocation"] is True
     assert final["arms"]["E3"]["quote_cli"] is None  # no CLI total claimed for a controlled arm
     report.render_final(final)
+    # Every arm and SB run must carry the session's source pin (l08.yaml
+    # every_arm_same_clean_commit), checked against the session, not only pairwise.
+    zero = {**doc["source"], "git_revision": "0" * 40}
+    _refuses_mixed_sources(session, doc, lambda d: d.update(source=zero))  # root declared only
+    arm_docs = [session / e["experiment"] / "experiment.json" for e in doc["entries"]]
+    _refuses_mixed_sources(session, doc, None, arm_docs, zero)  # consistent foreign arm group
+    sb_docs = [session / doc["entries"][1]["sufficient"] / "experiment.json"]
+    _refuses_mixed_sources(session, doc, None, sb_docs, zero)  # own-arm SB from elsewhere
     # A missing arm experiment is `not_measured`, never a verdict.
     doc["entries"][1]["experiment"] = "gone"
     (session / "session.json").write_text(json.dumps(doc))
     final, _ = report.final_report(session)
     assert final["comparisons"][0]["verdict"] == "not_measured"
     assert final["comparisons"][0]["disposition"] == "not adopted (not measured)"
+
+
+def _refuses_mixed_sources(
+    session: Path, doc: dict[str, Any], mutate_root: Any, documents: Any = (),
+    source: Any = None,
+) -> None:  # fmt: skip
+    """Mutate only the session's declared source, or rewrite the listed experiment
+    documents to one consistent foreign source; `final_report` must then refuse (no
+    comparison, no verdict). Every file is restored afterwards."""
+    saved = {p: p.read_text() for p in [session / "session.json", *documents]}
+    try:
+        if mutate_root is not None:
+            root = json.loads(json.dumps(doc))
+            mutate_root(root)
+            (session / "session.json").write_text(json.dumps(root))
+        for path in documents:
+            exp = json.loads(path.read_text())
+            exp["source"] = source
+            path.write_text(json.dumps(exp))
+        with pytest.raises(report.LatencyReportError, match="measured sources differ"):
+            report.final_report(session)
+    finally:
+        for path, text in saved.items():
+            path.write_text(text)
+    assert report.final_report(session)[0]["comparisons"]  # restored: accepted again
 
 
 def _armed(wall: float, name: str, **arm: Any) -> report.Experiment:

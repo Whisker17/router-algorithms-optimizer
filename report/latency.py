@@ -1776,6 +1776,23 @@ def final_report(session_dir: str | Path) -> tuple[dict[str, Any], list[dict[str
         experiments[name] = exp
         if entry.get("sufficient"):
             evidence[name] = load_sufficient(session_dir / entry["sufficient"])
+    # l08.yaml `source: every_arm_same_clean_commit`: every experiment and sufficient-budget
+    # run must carry the session's own source pin -- checked against the session, not only
+    # pairwise, so comparisons that share no arm cannot come from different sources either.
+    pin = {k: (session.get("source") or {}).get(k) for k in SOURCE_PIN}
+    foreign = sorted(
+        f"{kind} {name}: {doc['source'].get('git_revision')} (dirty "
+        f"{doc['source'].get('git_dirty')})"
+        for kind, docs in (("arm", {n: e.document for n, e in experiments.items()}),
+                           ("sufficient-budget", {n: e.document for n, e in evidence.items()}))
+        for name, doc in docs.items()
+        if {k: (doc.get("source") or {}).get(k) for k in SOURCE_PIN} != pin
+    )  # fmt: skip
+    if foreign:
+        raise LatencyReportError(
+            f"{session_dir}: measured sources differ from the session's "
+            f"{pin['git_revision']} (dirty {pin['git_dirty']}): " + "; ".join(foreign)
+        )
     comparisons: list[dict[str, Any]] = []
     for item in arms_doc["comparisons"]:
         lane, base, cand = item["lane"], item["baseline"], item["candidate"]
