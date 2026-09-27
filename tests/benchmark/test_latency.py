@@ -532,6 +532,19 @@ def _rec(
     return record
 
 
+def _memory(algorithm: str, case: str, index: int, event: int) -> dict[str, Any]:
+    """A measured memory-pass outcome as `benchmark.runner._measure_memory` writes it."""
+    return {"pass": "memory", "schedule_index": index, "case_id": case, "algorithm": algorithm,
+            "seed": 1, "solve_peak_bytes": 4096, "solver_status": "ok", "error": None,
+            "prepare_event": event, "worker_id": event, "status": "measured"}  # fmt: skip
+
+
+def _memory_event(index: int, algorithm: str) -> dict[str, Any]:
+    return {"index": index, "pass": "memory", "algorithm": algorithm, "status": "ok",
+            "reason": "per_case", "error": None, "worker_id": index, "startup_seconds": 0.3,
+            "prepare_seconds": 0.02, "prepare_peak_bytes": 2048}  # fmt: skip
+
+
 def _experiment(wall: float, algorithms: Sequence[str] = ALGS) -> report.Experiment:
     protocol: dict[str, Any] = yaml.safe_load((REPO / "config/latency/l01.yaml").read_text())
     protocol.update(
@@ -544,16 +557,20 @@ def _experiment(wall: float, algorithms: Sequence[str] = ALGS) -> report.Experim
     for stage, order, label in RUN_KEYS:
         schedule = [[a, c] for a in algorithms for c in CASES[label]]
         attempts = {"samples": 1, "warmup": 0} if stage == "cold" else {"samples": 5, "warmup": 1}
+        cold = stage == "cold"  # cold runs carry the separate memory pass, as the driver writes
+        memory = [_memory(a, c, i, 1 + i) for i, (a, c) in enumerate(schedule)] if cold else []
         manifest = SimpleNamespace(
             algorithms=tuple(algorithms), state="complete", bundle_hash=f"hash-{label}",
-            scheduled_count=len(schedule),
+            scheduled_count=len(schedule), memory_record_count=len(memory) if cold else None,
             measurement={"schedule": schedule[::-1] if order == "reverse" else schedule,
-                         "warmup": attempts["warmup"], "repeats": attempts["samples"]},
+                         "warmup": attempts["warmup"], "repeats": attempts["samples"],
+                         "memory_pass": cold},
             prepare_events=({"index": 0, "algorithm": "direct", "status": "ok",
-                             "startup_seconds": 0.2, "prepare_seconds": 0.01},),
+                             "startup_seconds": 0.2, "prepare_seconds": 0.01},
+                            *[_memory_event(m["prepare_event"], m["algorithm"]) for m in memory]),
         )  # fmt: skip
         records = [_rec(a, c, wall, **attempts) for a, c in schedule]
-        runs[(stage, order, label)] = report.RunView({}, manifest, records, [], Path(stage))  # type: ignore[arg-type]
+        runs[(stage, order, label)] = report.RunView({}, manifest, records, memory, Path(stage))  # type: ignore[arg-type]
     document = {
         "experiment_id": f"e{wall}", "partial": False, "stages_requested": list(latency.STAGES),
         "protocol": {"sha256": "p", "document": protocol}, "algorithms": list(algorithms),
@@ -668,6 +685,135 @@ def test_exact_comparison_is_adopt_eligible_only_without_any_defect(
     defect(base_defect)
     flipped = report.compare_experiments(base_defect, _experiment(0.5), lane="exact")
     assert flipped["verdict"] != "adopt_eligible"
+
+
+# ------------------------------------------------------------ cold memory pass (R1-F3)
+
+SENTINEL_COLD = ("cold", "fixed", "full_source/sentinel")
+
+
+def _memory_of(e: report.Experiment, alg: str, case: str) -> Any:
+    return next(m for m in e.runs[COLD].memory if (m["algorithm"], m["case_id"]) == (alg, case))
+
+
+def _manifest(e: report.Experiment, key: tuple[str, str, str], **changes: Any) -> None:
+    vars(e.runs[key].manifest).update(changes)
+
+
+def _drop_outcome(e: report.Experiment) -> None:  # one outcome gone, count kept consistent
+    e.runs[COLD].memory.remove(_memory_of(e, "single_path", "h1"))
+    _manifest(e, COLD, memory_record_count=len(e.runs[COLD].memory))
+
+
+def _empty_pass(e: report.Experiment) -> None:  # the reviewer's R1-F3 reproduction
+    for key in (COLD, SENTINEL_COLD):
+        e.runs[key].memory.clear()
+        _manifest(e, key, memory_record_count=0)
+
+
+def _duplicate(e: report.Experiment) -> None:
+    e.runs[COLD].memory.append(dict(_memory_of(e, "direct", "t1")))
+    _manifest(e, COLD, memory_record_count=len(e.runs[COLD].memory))
+
+
+def _unscheduled(e: report.Experiment) -> None:
+    e.runs[COLD].memory.append({**_memory_of(e, "direct", "t1"), "case_id": "s"})
+    _manifest(e, COLD, memory_record_count=len(e.runs[COLD].memory))
+
+
+def _count_mismatch(e: report.Experiment) -> None:
+    _manifest(e, COLD, memory_record_count=len(e.runs[COLD].memory) + 1)
+
+
+def _undeclared(e: report.Experiment) -> None:
+    e.runs[COLD].manifest.measurement["memory_pass"] = False
+
+
+def _no_peak(e: report.Experiment) -> None:
+    _memory_of(e, "single_path", "h1")["solve_peak_bytes"] = None
+
+
+def _bad_peak(e: report.Experiment) -> None:
+    _memory_of(e, "single_path", "h1")["solve_peak_bytes"] = -1
+
+
+def _no_prepare_peak(e: report.Experiment) -> None:
+    event = _memory_of(e, "single_path", "h1")["prepare_event"]
+    e.runs[COLD].manifest.prepare_events[event]["prepare_peak_bytes"] = None
+
+
+def _fabricated_failure(e: report.Experiment) -> None:  # a failure with an invented peak
+    _memory_of(e, "single_path", "h1").update(status="timeout", error="solve exceeded")
+
+
+def _silent_failure(e: report.Experiment) -> None:  # a failure without its error
+    _memory_of(e, "single_path", "h1").update(status="error", solve_peak_bytes=None)
+
+
+def _cancelled_outcome(e: report.Experiment) -> None:
+    _memory_of(e, "single_path", "h1").update(status="cancelled", solve_peak_bytes=None)
+
+
+def _timing_memory(e: report.Experiment) -> None:  # a memory pass the timing stage never has
+    _manifest(e, FIXED, memory_record_count=0)
+
+
+@pytest.mark.parametrize(
+    ("defect", "expected"),
+    [
+        (_drop_outcome, "cold fixed full_source/matrix: single_path/h1: scheduled memory "
+                        "outcome missing"),
+        (_empty_pass, "cold fixed full_source/sentinel: single_path/s: scheduled memory "
+                      "outcome missing"),
+        (_duplicate, "direct/t1: unscheduled or duplicate memory outcome"),
+        (_unscheduled, "direct/s: unscheduled or duplicate memory outcome"),
+        (_count_mismatch, "manifest memory_record_count 7 != 6 memory outcome(s)"),
+        (_undeclared, "memory pass not declared"),
+        (_no_peak, "single_path/h1: measured memory outcome lacks"),
+        (_bad_peak, "single_path/h1: measured memory outcome lacks"),
+        (_no_prepare_peak, "single_path/h1: measured memory outcome lacks"),
+        (_fabricated_failure, "single_path/h1: failed memory outcome 'timeout'"),
+        (_silent_failure, "single_path/h1: failed memory outcome 'error'"),
+        (_cancelled_outcome, "single_path/h1: memory outcome is 'cancelled'"),
+        (_timing_memory, "timing fixed full_source/matrix: memory pass outside"),
+    ],
+)  # fmt: skip
+def test_incomplete_cold_memory_pass_is_a_coverage_problem(defect: Any, expected: str) -> None:
+    exp = _experiment(0.5)
+    assert report.coverage_problems(exp) == []
+    defect(exp)
+    problems = report.coverage_problems(exp)
+    assert any(expected in p for p in problems), problems
+    result = report.compare_experiments(_experiment(1.0), exp, lane="exact")
+    assert result["verdict"] == "inconclusive" and result["coverage_problems"]["candidate"]
+
+
+def test_explicit_memory_failures_and_no_route_peaks_stay_valid() -> None:
+    exp = _experiment(0.5)
+    _memory_of(exp, "direct", "t1")["solver_status"] = "no_route"  # a measured solve peak
+    _memory_of(exp, "single_path", "h1").update(
+        status="timeout", error="solve exceeded the 120s time limit; worker killed",
+        solve_peak_bytes=None, worker_id=None)  # fmt: skip
+    failed = _memory_of(exp, "single_path", "h2")
+    failed.update(status="prepare_failed", error="prepare raised: boom", solve_peak_bytes=None)
+    exp.runs[COLD].manifest.prepare_events[failed["prepare_event"]].update(
+        status="error", error="prepare raised: boom", prepare_peak_bytes=None)  # fmt: skip
+    assert report.coverage_problems(exp) == []
+    block = report._cold_block(exp.runs[COLD])
+    assert block["single_path"]["memory_failures"] == {"prepare_failed": 1, "timeout": 1}
+    assert block["single_path"]["solve_peak_bytes"]["n"] == 1  # no fabricated peak
+    assert "memory_failures" not in block["direct"]
+    peaks = {(r["algorithm"], r["case_id"]): r["solve_peak_bytes"] for r in report.case_records(exp)
+             if r["bundle"] == "full_source/matrix"}  # fmt: skip
+    assert peaks[("single_path", "h1")] is None and peaks[("direct", "t1")] == 4096
+
+
+def test_timing_only_run_needs_no_memory_pass() -> None:
+    exp = _experiment(0.5)
+    exp.document["stages_requested"] = ["timing"]
+    for key in [k for k in exp.runs if k[0] == "cold"]:
+        del exp.runs[key]
+    assert report.coverage_problems(exp) == []
 
 
 def test_heuristic_candidate_that_loses_timed_cases_is_rejected() -> None:

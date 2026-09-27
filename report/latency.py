@@ -158,7 +158,7 @@ def load_experiment(path: str | Path) -> Experiment:
     for entry in document["runs"]:
         run_dir = path / "runs" / entry["run_id"]  # relocatable: relative to the experiment
         manifest = load_manifest(run_dir)  # verifies cases/memory checksums
-        memory = load_memory_records(run_dir) if manifest.memory_record_count else []
+        memory = load_memory_records(run_dir) if manifest.memory_record_count is not None else []
         runs[(entry["stage"], entry["order"], entry["bundle"])] = RunView(
             entry, manifest, load_case_records(run_dir), memory, run_dir
         )
@@ -318,6 +318,54 @@ def sample_problem(record: Mapping[str, Any], warmup: int, repeats: int) -> str 
     return None
 
 
+# The memory pass's explicit failures (`benchmark.runner._measure_memory`): no peak, an error.
+MEMORY_FAILURES = {"prepare_failed", "error", "quote_limit", "timeout", "crashed"}
+
+
+def _peak(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def memory_problems(run: RunView, scheduled: Counter[tuple[str, str]]) -> list[str]:
+    """Why a cold run does not hold its separate memory pass exactly (L01: every cold run
+    is followed by it): one outcome per scheduled algorithm x case, the manifest's count
+    and declaration, and a measured outcome's solve + memory-pass prepare peaks. An
+    explicit failure is valid evidence and must stay one -- no peak, its error kept. A
+    measured outcome's solver status (e.g. no_route) is the solver's, not the pass's."""
+    manifest = run.manifest
+    out: list[str] = []
+    if manifest.measurement.get("memory_pass") is not True:
+        out.append("memory pass not declared; the cold stage requires it")
+    if manifest.memory_record_count != len(run.memory):
+        out.append(f"manifest memory_record_count {manifest.memory_record_count} != "
+                   f"{len(run.memory)} memory outcome(s)")  # fmt: skip
+    outcomes = Counter(_key(m) for m in run.memory)
+    for a, c in sorted(scheduled - outcomes):
+        out.append(f"{a}/{c}: scheduled memory outcome missing")
+    for a, c in sorted(outcomes - scheduled):
+        out.append(f"{a}/{c}: unscheduled or duplicate memory outcome")
+    events = {e["index"]: e for e in manifest.prepare_events}
+    for m in run.memory:
+        pair, status = f"{m['algorithm']}/{m['case_id']}", m.get("status")
+        event = events.get(m.get("prepare_event")) or {}
+        if m.get("pass") != "memory":
+            out.append(f"{pair}: memory outcome has pass {m.get('pass')!r}")
+        elif status == "measured":
+            if not (_peak(m.get("solve_peak_bytes")) and m.get("solver_status")
+                    and event.get("pass") == "memory" and event.get("status") == "ok"
+                    and event.get("algorithm") == m["algorithm"]
+                    and _peak(event.get("prepare_peak_bytes"))):  # fmt: skip
+                out.append(f"{pair}: measured memory outcome lacks a valid solve peak, "
+                           "solver status or memory-pass prepare peak")  # fmt: skip
+        elif status in MEMORY_FAILURES:
+            if m.get("solve_peak_bytes") is not None or not m.get("error"):
+                out.append(f"{pair}: failed memory outcome {status!r} must carry its error "
+                           "and no solve peak")  # fmt: skip
+        else:
+            out.append(f"{pair}: memory outcome is {status!r}")
+    return out
+
+
 def coverage_problems(exp: Experiment) -> list[str]:
     """Everything the protocol schedule requires but the experiment does not hold exactly
     once. Empty means complete coverage; anything else can never support a verdict."""
@@ -357,6 +405,11 @@ def coverage_problems(exp: Experiment) -> list[str]:
             problems.append(f"{where}: {a}/{c}: scheduled record missing")
         for a, c in sorted(extra):
             problems.append(f"{where}: {a}/{c}: unscheduled or duplicate record")
+        if key[0] == "cold":
+            problems += [f"{where}: {p}" for p in memory_problems(run, full)]
+        elif (run.memory or manifest.memory_record_count is not None
+              or manifest.measurement.get("memory_pass")):  # fmt: skip
+            problems.append(f"{where}: memory pass outside the protocol's cold stage")
         warmup, repeats = declared_attempts(exp, key[0])
         declared = (manifest.measurement.get("warmup"), manifest.measurement.get("repeats"))
         if declared != (warmup, repeats):
@@ -575,6 +628,10 @@ def _cold_block(run: RunView) -> dict[str, Any]:
     for record in run.memory:
         if record.get("solve_peak_bytes") is not None:
             memory[record["algorithm"]]["solve_peak_bytes"].append(record["solve_peak_bytes"])
+    failures: dict[str, Counter[str]] = defaultdict(Counter)
+    for record in run.memory:
+        if record.get("status") != "measured":  # explicit failures: counted, never a peak
+            failures[record["algorithm"]][str(record.get("status"))] += 1
     for event in run.manifest.prepare_events:
         if event.get("pass") == "memory" and event.get("prepare_peak_bytes") is not None:
             memory[event["algorithm"]]["prepare_peak_bytes"].append(event["prepare_peak_bytes"])
@@ -584,6 +641,11 @@ def _cold_block(run: RunView) -> dict[str, Any]:
             **{name: _spread(values) for name, values in memory.get(algorithm, {}).items()},
             "records": sum(1 for r in run.records if r["algorithm"] == algorithm),
             "memory_records": sum(1 for r in run.memory if r["algorithm"] == algorithm),
+            **(
+                {"memory_failures": dict(sorted(failures[algorithm].items()))}
+                if failures.get(algorithm)
+                else {}
+            ),
         }
         for algorithm, entry in entries.items()
     }
