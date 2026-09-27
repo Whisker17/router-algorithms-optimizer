@@ -464,17 +464,19 @@ class _ArmProfile(RunProfile):
         return out
 
 
-def arm_profile(arm: Arm, protocol: Protocol) -> RunProfile:
+def arm_profile(arm: Arm, protocol: Protocol | str) -> RunProfile:
     """The pinned profile (sha256 already checked) with the arm's algorithms/overlay,
-    validated by the ordinary profile loader."""
-    raw = read_profile_document(REPO_ROOT / protocol.profile_path)
+    validated by the ordinary profile loader. `protocol` may be just its pinned profile
+    path (`report.latency` resolves an archived experiment's expected profile)."""
+    profile_path = protocol if isinstance(protocol, str) else protocol.profile_path
+    raw = read_profile_document(REPO_ROOT / profile_path)
     if arm.algorithms is not None:
         raw["algorithms"] = list(arm.algorithms)
     for key in ("shortlist", "sampling"):
         if getattr(arm, key):
             raw[key] = dict(getattr(arm, key))
     try:
-        profile = parse_profile(raw, protocol.profile_path)
+        profile = parse_profile(raw, profile_path)
     except ProfileError as exc:
         raise LatencyError(f"arm {arm.name}: {exc}") from exc
     values = {f: getattr(profile, f) for f in profile.__dataclass_fields__}
