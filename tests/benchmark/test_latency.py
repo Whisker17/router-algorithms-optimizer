@@ -15,6 +15,7 @@ import multiprocessing
 import os
 import pickle
 import re
+import shutil
 import signal
 import time
 from collections.abc import Iterator, Sequence
@@ -375,6 +376,14 @@ def test_experiment_over_the_corpus_fixture_records_every_stage(tmp_path: Path) 
     paired = report.compare(out, out, lane="exact", sufficient=(sb_dir, sb_dir))
     assert paired["bounded_exactness"]["required"] == 0
     assert paired["bounded_exactness"]["evidence_problems"]["baseline"] == []
+    # Relocated archive (R2-F2): the writer's own run identities still bind by content,
+    # although the recorded worktree/profile paths are now obsolete.
+    moved = tmp_path / "archive" / "moved"
+    shutil.copytree(out, moved / "exp")
+    shutil.copytree(sb_dir, moved / "sb")
+    relocated = report.load_experiment(moved / "exp")
+    assert report.coverage_problems(relocated) == []
+    assert report.sufficient_problems(report.load_sufficient(moved / "sb"), relocated) == []
 
 
 def test_sigterm_finalizes_the_experiment_as_interrupted(
@@ -546,6 +555,15 @@ def _memory_event(index: int, algorithm: str) -> dict[str, Any]:
 
 
 L01_SHA256 = sha256_file(REPO / "config/latency/l01.yaml")  # the protocol the L08 arms pin
+CLEAN = {"git_revision": "a" * 40, "git_dirty": False, "git_diff_sha256": None}
+
+
+def _identify(runs: Any, document: dict[str, Any]) -> None:
+    """Every run's own provenance, as `environment_record` / `RunManifest` record it: the
+    containing experiment's source (tracked-diff hash) and pinned profile sha256."""
+    for run in runs.values():
+        run.manifest.environment = {k: document["source"][k] for k in CLEAN}
+        run.manifest.profile_sha256 = document["profile"]["sha256"]
 
 
 def _experiment(wall: float, algorithms: Sequence[str] = ALGS) -> report.Experiment:
@@ -579,9 +597,10 @@ def _experiment(wall: float, algorithms: Sequence[str] = ALGS) -> report.Experim
         "experiment_id": f"e{wall}", "partial": False, "stages_requested": list(latency.STAGES),
         "protocol": {"sha256": L01_SHA256, "document": protocol}, "algorithms": list(algorithms),
         "bundles": {label: {"bundle_hash": f"hash-{label}"} for label in CASES},
-        "source": {"git_revision": "abc", "git_dirty": False}, "load": {"contaminated": False},
-        "quote_cli": [], "profile": {"path": "config/daily_gross.yaml", "sha256": "x"},
+        "source": dict(CLEAN), "load": {"contaminated": False},
+        "quote_cli": [], "profile": {"path": "config/daily_gross.yaml", "sha256": "f" * 64},
     }  # fmt: skip
+    _identify(runs, document)
     return report.Experiment(Path("."), document, runs)
 
 
@@ -919,6 +938,7 @@ def _evidence(exp: report.Experiment, *records: dict[str, Any]) -> report.Suffic
         "fixed_budget": load_profile(REPO / PINNED_PROFILE).budget.to_dict(),
     }  # fmt: skip
     run = report.RunView({}, manifest, list(records), [], Path("sb"))  # type: ignore[arg-type]
+    _identify({"full_source": run}, document)
     return report.SufficientEvidence(Path("."), document, {"full_source": run})
 
 
@@ -1365,6 +1385,7 @@ def _armed(wall: float, name: str, arms_doc: dict[str, Any] | None = None) -> re
     exp.document["protocol"]["sha256"] = doc["protocol"]["sha256"]
     for run in exp.runs.values():
         _bind(run.manifest, arm)
+    _identify(exp.runs, exp.document)
     return exp
 
 
@@ -1805,3 +1826,228 @@ def test_both_sides_redeclaring_the_cold_worker_scope_are_refused() -> None:
         report.LatencyReportError, match="baseline arm 'H1' .*cold stage has 'case'"
     ):
         report.compare_experiments(base, cand, lane="heuristic")
+
+
+# ------------------------------------------------------------ run identity (R2-F2)
+#
+# Every run manifest's own provenance -- environment git_revision / git_dirty / TRACKED
+# git_diff_sha256 and profile_sha256 -- must be its containing experiment's source and
+# pinned profile, in normal coverage and in sufficient-budget evidence.
+
+
+def _env(manifest: Any, **changes: Any) -> None:
+    manifest.environment.update(changes)
+
+
+def _drop(field: str) -> Any:
+    return lambda m: m.environment.pop(field)
+
+
+IDENTITY_DEFECTS = [
+    ("revision", lambda m: _env(m, git_revision="0" * 40), "run git_revision '0000"),
+    ("dirty", lambda m: _env(m, git_dirty=True), "run git_dirty True"),
+    ("dirty as 0", lambda m: _env(m, git_dirty=0), "run git_dirty 0"),
+    ("dirty unknown", lambda m: _env(m, git_dirty=None), "run git_dirty None"),
+    ("tracked diff", lambda m: _env(m, git_diff_sha256="0" * 64), "run git_diff_sha256 '0000"),
+    ("no dirty field", _drop("git_dirty"), "run git_dirty <missing>"),
+    ("no diff field", _drop("git_diff_sha256"), "run git_diff_sha256 <missing>"),
+    ("no revision field", _drop("git_revision"), "run git_revision <missing>"),
+    ("no environment", lambda m: setattr(m, "environment", None), "run git_revision <missing>"),
+    ("profile", lambda m: setattr(m, "profile_sha256", "0" * 64), "run profile_sha256 '0000"),
+    ("profile unknown", lambda m: setattr(m, "profile_sha256", None), "run profile_sha256 None"),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("side", "key", "mutate", "message", "count"),
+    [pytest.param(side, key, mutate, message, 3 if what == "no environment" else 1,
+                  id=f"{what}-{side}-{key[0]}")
+     for what, mutate, message in IDENTITY_DEFECTS for side in BOTH
+     for key in (FIXED, COLD)],
+)  # fmt: skip
+def test_one_run_with_another_identity_stops_a_normal_comparison_on_either_side(
+    side: str, key: tuple[str, str, str], mutate: Any, message: str, count: int
+) -> None:
+    """The reviewer's R2-F2 CHECK1/CHECK2 shape: ONE run of an otherwise valid experiment
+    names another revision, dirty state, tracked diff or profile hash (or none)."""
+    exps = {"baseline": _experiment(1.0), "candidate": _experiment(0.5)}
+    valid = report.compare_experiments(exps["baseline"], exps["candidate"], lane="exact")
+    assert valid["verdict"] == "adopt_eligible", valid["reasons"]
+    mutate(exps[side].runs[key].manifest)
+    result = report.compare_experiments(exps["baseline"], exps["candidate"], lane="exact")
+    problems = result["coverage_problems"][side]
+    assert all(p.startswith(" ".join(key) + ": run ") for p in problems)
+    assert len(problems) == count, problems  # no environment: all three Git fields
+    assert message in problems[0], problems
+    assert result["coverage_problems"]["candidate" if side == "baseline" else "baseline"] == []
+    assert result["verdict"] == "inconclusive", result["reasons"]
+
+
+@pytest.mark.parametrize("field", ["git_revision", "profile_sha256"])
+def test_reviewer_identity_mutation_of_a_registered_heuristic_arm_is_refused(field: str) -> None:
+    """R2-F2 on registered L08 arms (H1 -> H2, heuristic): opt_in_only before, not after."""
+    base, cand = _armed(1.0, "H1"), _armed(0.5, "H2")
+    assert report.compare_experiments(base, cand, lane="heuristic")["verdict"] == "opt_in_only"
+    manifest = cand.runs[FIXED].manifest
+    if field == "git_revision":
+        _env(manifest, git_revision="0" * 40)
+    else:
+        vars(manifest)["profile_sha256"] = "0" * 64
+    assert report.arm_problems(cand.document, cand.runs) == []  # not an arm-settings defect
+    result = report.compare_experiments(base, cand, lane="heuristic")
+    assert result["verdict"] == "inconclusive"
+    assert [p for p in result["coverage_problems"]["candidate"] if f"run {field}" in p]
+
+
+@pytest.mark.parametrize(
+    ("side", "mutate", "message", "count"),
+    [pytest.param(side, mutate, message, 3 if what == "no environment" else 1,
+                  id=f"{what}-{side}")
+     for what, mutate, message in IDENTITY_DEFECTS for side in BOTH],
+)  # fmt: skip
+def test_sufficient_evidence_run_identity_is_bound_on_either_side(
+    side: str, mutate: Any, message: str, count: int
+) -> None:
+    """The same binding for each side's sufficient-budget run: no exactness from evidence
+    whose run is not the evidence experiment's own source/profile."""
+    base, cand = _bound_pair()
+    evidence = {"baseline": _evidence(base, _unbounded()),
+                "candidate": _evidence(cand, _unbounded())}  # fmt: skip
+    pair = (evidence["baseline"], evidence["candidate"])
+    valid = report.compare_experiments(base, cand, lane="exact", sufficient=pair)
+    assert valid["verdict"] == "adopt_eligible", valid["reasons"]
+    mutate(evidence[side].runs["full_source"].manifest)
+    result = report.compare_experiments(base, cand, lane="exact", sufficient=pair)
+    problems = result["bounded_exactness"]["evidence_problems"]
+    assert all(p.startswith("full_source: run ") for p in problems[side])
+    assert len(problems[side]) == count, problems[side]
+    assert message in problems[side][0], problems[side]
+    assert problems["candidate" if side == "baseline" else "baseline"] == []
+    assert result["verdict"] == "inconclusive" and result["bounded_exactness"]["established"] == []
+
+
+def _with_source(exp: report.Experiment, **source: Any) -> report.Experiment:
+    """`exp` measured from another (consistently recorded) source identity."""
+    exp.document["source"] = {**exp.document["source"], **source}
+    _identify(exp.runs, exp.document)
+    return exp
+
+
+DIRTY = {"git_dirty": True, "git_diff_sha256": "d" * 64, "dirty_paths": [" M x.py", "?? n.py"],
+         "dirty_patch_sha256": "e" * 64}  # fmt: skip  # tracked diff != combined patch
+
+
+@pytest.mark.parametrize(
+    "source",
+    [pytest.param(DIRTY, id="dirty, tracked != combined patch"),
+     pytest.param({**DIRTY, "git_diff_sha256": None}, id="dirty, tracked diff unreadable")],
+)  # fmt: skip
+def test_matching_dirty_identities_bind_but_never_prove_a_clean_source(
+    source: dict[str, Any],
+) -> None:
+    """Legitimate dirty writer states (`git_provenance`/`source_identity`) whose runs carry
+    the same identity are consistent -- coverage and sufficient-budget evidence are clean --
+    but a dirty source still never yields an accepted verdict."""
+    base, cand = _bound_pair()
+    for exp in (base, cand):
+        _with_source(exp, **source)
+    pair = (_evidence(base, _unbounded()), _evidence(cand, _unbounded()))
+    assert report.coverage_problems(cand) == [] and report.coverage_problems(base) == []
+    assert report.sufficient_problems(pair[1], cand) == []
+    result = report.compare_experiments(base, cand, lane="exact", sufficient=pair)
+    assert result["bounded_exactness"]["established"]  # evidence valid, nothing else hidden
+    assert result["verdict"] == "inconclusive"
+    assert result["reasons"] == ["an experiment is partial, or ran from a dirty source tree"]
+
+
+def test_the_tracked_diff_is_never_the_combined_dirty_patch() -> None:
+    """A run's `git_diff_sha256` is the tracked diff: carrying the experiment's combined
+    (tracked + untracked) `dirty_patch_sha256` instead is a mismatch, in either path."""
+    exp = _with_source(_experiment(0.5), **DIRTY)
+    evidence = _evidence(exp, _unbounded())
+    _env(exp.runs[COLD].manifest, git_diff_sha256=DIRTY["dirty_patch_sha256"])
+    _env(evidence.runs["full_source"].manifest, git_diff_sha256=DIRTY["dirty_patch_sha256"])
+    assert report.coverage_problems(exp) == [
+        f"cold fixed full_source/matrix: run git_diff_sha256 '{'e' * 64}' is not the "
+        f"containing experiment's '{'d' * 64}'"
+    ]
+    assert any("full_source: run git_diff_sha256" in p
+               for p in report.sufficient_problems(evidence, exp))  # fmt: skip
+
+
+def test_malformed_experiment_pins_are_not_matched_by_equally_malformed_runs() -> None:
+    """A run echoing a malformed pin (dirty 0, no profile hash) is no identity proof."""
+    exp = _with_source(_experiment(0.5), git_dirty=0)
+    assert any("experiment pin git_dirty 0" in p for p in report.coverage_problems(exp))
+    exp = _experiment(0.5)
+    exp.document["profile"] = {"path": "config/daily_gross.yaml"}
+    for run in exp.runs.values():
+        vars(run.manifest)["profile_sha256"] = None
+    assert any("experiment pin profile_sha256" in p for p in report.coverage_problems(exp))
+
+
+UNKNOWN_REVISIONS = [
+    pytest.param({"git_revision": None}, id="revision None, recorded clean"),
+    pytest.param({"git_revision": ""}, id="empty revision, recorded clean"),
+    pytest.param({"git_revision": "  "}, id="blank revision, recorded clean"),
+    pytest.param({"git_revision": None, "git_dirty": None, "git_diff_sha256": None},
+                 id="writer's non-git checkout"),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize("unknown", UNKNOWN_REVISIONS)
+@pytest.mark.parametrize("side", BOTH)
+def test_an_unknown_revision_never_supports_a_normal_verdict(
+    side: str, unknown: dict[str, Any]
+) -> None:
+    """Parent pre-merge probe on 54847fd: experiment source AND every run environment
+    with revision None, git_dirty still False -- every field matched, so coverage was empty
+    and H1 -> H2 stayed opt_in_only. A clean status is no known revision: refused, and the
+    honest None is reported as it is (never turned into dirty)."""
+    exps = {"baseline": _armed(1.0, "H1"), "candidate": _armed(0.5, "H2")}
+    valid = report.compare_experiments(exps["baseline"], exps["candidate"], lane="heuristic")
+    assert valid["verdict"] == "opt_in_only", valid["reasons"]
+    for exp in exps.values():  # one comparison shares one source, so both carry it
+        _with_source(exp, **unknown)
+    result = report.compare_experiments(exps["baseline"], exps["candidate"], lane="heuristic")
+    for problems in (result["coverage_problems"][s] for s in BOTH):
+        assert problems == [f"experiment pin git_revision {unknown['git_revision']!r} is not "
+                            "a known revision"]  # fmt: skip
+    assert result["verdict"] == "inconclusive"
+    assert exps[side].document["source"]["git_dirty"] is unknown.get("git_dirty", False)
+    # Only this side's experiment unknown: still refused on that side (and not one source).
+    exps = {"baseline": _experiment(1.0), "candidate": _experiment(0.5)}
+    _with_source(exps[side], **unknown)
+    result = report.compare_experiments(exps["baseline"], exps["candidate"], lane="exact")
+    assert any("is not a known revision" in p for p in result["coverage_problems"][side])
+    assert result["coverage_problems"]["candidate" if side == "baseline" else "baseline"] == []
+    assert result["verdict"] == "inconclusive"
+
+
+@pytest.mark.parametrize("unknown", UNKNOWN_REVISIONS)
+@pytest.mark.parametrize("side", BOTH)
+def test_an_unknown_revision_is_no_same_source_sufficient_evidence(
+    side: str, unknown: dict[str, Any]
+) -> None:
+    """Sufficient-budget evidence whose own document and run carry the (matching) unknown
+    revision of an equally unknown experiment proves no same-source exactness."""
+    base, cand = _bound_pair()
+    pair = {"baseline": _evidence(base, _unbounded()), "candidate": _evidence(cand, _unbounded())}
+    valid = report.compare_experiments(
+        base, cand, lane="exact", sufficient=(pair["baseline"], pair["candidate"])
+    )
+    assert valid["bounded_exactness"]["established"], valid["reasons"]
+    exp = base if side == "baseline" else cand
+    _with_source(exp, **unknown)
+    pair[side] = _evidence(exp, _unbounded())  # SB document and run: the same unknown source
+    assert pair[side].runs["full_source"].manifest.environment["git_revision"] == (
+        unknown["git_revision"])  # fmt: skip
+    result = report.compare_experiments(
+        base, cand, lane="exact", sufficient=(pair["baseline"], pair["candidate"])
+    )
+    problems = result["bounded_exactness"]["evidence_problems"]
+    assert problems[side] == [f"experiment pin git_revision {unknown['git_revision']!r} is "
+                              "not a known revision"]  # fmt: skip
+    assert problems["candidate" if side == "baseline" else "baseline"] == []
+    assert result["bounded_exactness"]["established"] == []
+    assert result["verdict"] == "inconclusive"
