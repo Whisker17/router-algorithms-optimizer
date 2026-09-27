@@ -296,10 +296,22 @@ ATTEMPT_FAILURES = {"timeout", "algorithm_error"}  # may end a case before its l
 SAMPLE_FIELDS = ("solve_seconds", "solve_cpu_seconds", "transport_seconds")
 
 
+def _stage_attempts(protocol: Mapping[str, Any], stage: str) -> tuple[Any, Any]:
+    timing = protocol["timing"]
+    return (timing["warmup"], timing["repeats"]) if stage == "timing" else (0, 1)
+
+
 def declared_attempts(exp: Experiment, stage: str) -> tuple[int, int]:
     """(warmup, repeats) the protocol schedules per case in a stage."""
-    timing = exp.protocol["timing"]
-    return (timing["warmup"], timing["repeats"]) if stage == "timing" else (0, 1)
+    return _stage_attempts(exp.protocol, stage)
+
+
+# The L01 / L01-SB stage contract (config/latency/l01*.yaml; `run_latency_experiment`,
+# `run_sufficient_budget`): timing = one warm worker per algorithm, no memory pass; cold =
+# a fresh worker for every case, followed by the separate memory pass; sufficient budget =
+# one warm worker per algorithm, fixed order. Never taken from a run's own declaration.
+STAGE_WORKERS = {"timing": ("algorithm", False), "cold": ("case", True),
+                 "sufficient_budget": ("algorithm", False)}  # fmt: skip
 
 
 def sample_problem(record: Mapping[str, Any], warmup: int, repeats: int) -> str | None:
@@ -1361,11 +1373,10 @@ def _pinned_profile(document: Mapping[str, Any], arm: Arm) -> RunProfile | None:
 def _stage_profile(
     profile: RunProfile, measurement: Mapping[str, Any], budget: Budget
 ) -> RunProfile:
-    """`profile` as `measure_run` runs one stage: only the attempts, memory pass and worker
-    scope the run's own measurement record declares (typed by the profile loader; their
-    stage values are checked by the coverage/sample rules) and, for sufficient-budget
-    evidence, the registered raised budget differ. `measure_run` always records case order
-    `fixed` (the run's schedule order is `measurement.order`)."""
+    """`profile` as `measure_run` runs one stage: only the stage contract's attempts, memory
+    pass and worker scope (`_stage_contract`, typed by the profile loader) and, for
+    sufficient-budget evidence, the registered raised budget differ. `measure_run` always
+    records case order `fixed` (the run's schedule order is `measurement.order`)."""
     return dataclasses.replace(
         profile,
         budget=budget,
@@ -1381,6 +1392,30 @@ def _stage_profile(
 
 
 MISSING = "<missing>"
+
+
+def _stage_contract(
+    document: Mapping[str, Any], key: Any, experiment: bool
+) -> dict[str, Any] | str:
+    """The stage declaration a run keyed `key` must carry, derived from the registered
+    contract (L01's stage/order schedule and attempts, or L01-SB's), never from the run's
+    own record: stage, order, attempts, memory pass and worker scope. A string: why none."""
+    if experiment:
+        stage, order = key[0], key[1]
+        if stage not in ("timing", "cold"):
+            return f"stage {stage!r} is not an L01 run stage"
+        try:
+            warmup, repeats = _stage_attempts(document["protocol"]["document"], stage)
+        except (KeyError, TypeError) as exc:
+            return f"the protocol declares no {stage} attempts: {exc!r}"
+    else:
+        stage, order = "sufficient_budget", "fixed"
+        declared = ((document.get("sufficient_budget") or {}).get("document") or {}).get(
+            "measurement") or {}  # fmt: skip
+        warmup, repeats = declared.get("warmup"), declared.get("repeats")
+    scope, memory = STAGE_WORKERS[stage]
+    return {"stage": stage, "order": order, "warmup": warmup, "repeats": repeats,
+            "memory_pass": memory, "worker_scope": scope}  # fmt: skip
 
 
 def _effective_problems(
@@ -1524,17 +1559,22 @@ def arm_problems(
         if profile is None or budget is None:
             continue
         measurement = run.manifest.measurement
+        contract = _stage_contract(document, key, experiment)
+        if isinstance(contract, str):
+            problems.append(f"{where}: {contract}")
+            continue
         try:
-            expected = _stage_profile(profile, measurement, budget).resolved()
+            expected = _stage_profile(profile, contract, budget).resolved()
         except ProfileError as exc:
-            problems.append(f"{where}: the run's declared stage settings are invalid: {exc}")
+            problems.append(f"{where}: the registered {contract['stage']} stage settings are "
+                            f"invalid: {exc}")  # fmt: skip
             continue
         problems += _effective_problems(where, resolved, expected)
-        for field, value in (("budget", expected["budget"]),
+        for field, value in (*contract.items(), ("budget", expected["budget"]),
                              ("seed", expected["measurement"]["seed"])):  # fmt: skip
             if not _same(recorded_value := measurement.get(field, MISSING), value):
-                problems.append(f"{where}: run measurement {field} {recorded_value!r}, "
-                                f"expected {value!r}")  # fmt: skip
+                problems.append(f"{where}: run measurement {field} {recorded_value!r}, the "
+                                f"registered {contract['stage']} stage has {value!r}")  # fmt: skip
     return problems
 
 

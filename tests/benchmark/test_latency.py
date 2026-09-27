@@ -567,7 +567,8 @@ def _experiment(wall: float, algorithms: Sequence[str] = ALGS) -> report.Experim
             scheduled_count=len(schedule), memory_record_count=len(memory) if cold else None,
             measurement={"schedule": schedule[::-1] if order == "reverse" else schedule,
                          "warmup": attempts["warmup"], "repeats": attempts["samples"],
-                         "memory_pass": cold, "worker_scope": "case" if cold else "algorithm"},
+                         "memory_pass": cold, "worker_scope": "case" if cold else "algorithm",
+                         "stage": stage, "order": order},
             prepare_events=({"index": 0, "algorithm": "direct", "status": "ok",
                              "startup_seconds": 0.2, "prepare_seconds": 0.01},
                             *[_memory_event(m["prepare_event"], m["algorithm"]) for m in memory]),
@@ -906,7 +907,8 @@ def _evidence(exp: report.Experiment, *records: dict[str, Any]) -> report.Suffic
     manifest = SimpleNamespace(bundle_hash="hash-full_source/matrix", state="complete",
                                measurement={"schedule": schedule, **declared,
                                             "memory_pass": False, "worker_scope": "algorithm",
-                                            "stage": "sufficient_budget"})  # fmt: skip
+                                            "stage": "sufficient_budget",
+                                            "order": "fixed"})  # fmt: skip
     document = {
         "protocol": {"sha256": exp.document["protocol"]["sha256"]},
         "source": dict(exp.document["source"]), "profile": dict(exp.document["profile"]),
@@ -1532,6 +1534,11 @@ def test_complete_effective_profiles_of_every_registered_arm_stage_and_sb_run_va
     assert (cold["measurement"]["warmup"], cold["measurement"]["repeats"],
             cold["measurement"]["memory_pass"], cold["worker"]["scope"]) == (
         0, 1, True, "case")  # fmt: skip
+    # each run declares its own registered stage/order (reverse timing, fixed cold)
+    assert [
+        (k, e3.runs[k].manifest.measurement["stage"], e3.runs[k].manifest.measurement["order"])
+        for k in (FIXED, REVERSE, COLD)
+    ] == [(FIXED, "timing", "fixed"), (REVERSE, "timing", "reverse"), (COLD, "cold", "fixed")]
     for name, arm in latency.load_arms(ARMS).arms.items():
         exp = _armed(1.0, name)
         assert report.arm_problems(exp.document, exp.runs) == [], name
@@ -1539,6 +1546,7 @@ def test_complete_effective_profiles_of_every_registered_arm_stage_and_sb_run_va
             evidence = _armed_evidence(exp)
             sb = evidence.runs["full_source"].manifest.resolved_profile
             assert sb["budget"] == SB_BUDGET.to_dict() != _first(exp).resolved_profile["budget"]
+            assert (sb["measurement"]["repeats"], sb["worker"]["scope"]) == (2, "algorithm")
             assert report.sufficient_problems(evidence, exp) == [], name
     l06 = report.compare_experiments(_armed(1.0, "S0"), h1, lane="heuristic",
                                      pairs={FAST: "uni_sor_port"})  # fmt: skip
@@ -1549,6 +1557,17 @@ def test_complete_effective_profiles_of_every_registered_arm_stage_and_sb_run_va
 
 def _each(exp: report.Experiment) -> list[Any]:
     return [run.manifest for run in exp.runs.values()]
+
+
+def _redeclare(exp: report.Experiment, key: tuple[str, str, str], **stage: Any) -> None:
+    """Alter a run's stage settings CONSISTENTLY in both of its declarations: the run
+    measurement record and the effective profile (as a driver misconfiguration would)."""
+    manifest = exp.runs[key].manifest
+    scope = stage.pop("worker_scope", None)
+    manifest.measurement.update(stage, **({"worker_scope": scope} if scope else {}))
+    manifest.resolved_profile["measurement"].update(stage)
+    if scope:
+        manifest.resolved_profile["worker"]["scope"] = scope
 
 
 def _hidden_sampling(manifests: list[Any]) -> None:  # the reviewer's R2-F1 CHECK1
@@ -1638,9 +1657,32 @@ EFFECTIVE_DEFECTS = [
      "run measurement seed"),
     # malformed stage declarations (typed by the profile loader, not coerced)
     ("warmup True", E_PAIR, BOTH, lambda e: _first(e).measurement.update(warmup=True),
-     "declared stage settings are invalid"),
+     "run measurement warmup True, the registered timing stage has 1"),
     ("worker scope", E_PAIR, BOTH, lambda e: _first(e).measurement.update(worker_scope="process"),
-     "declared stage settings are invalid"),
+     "run measurement worker_scope"),
+    ("protocol attempts", E_PAIR, BOTH,
+     lambda e: e.document["protocol"]["document"]["timing"].update(warmup=True),
+     "registered timing stage settings are invalid"),
+    # stage overrides come from the L01 contract: two consistently altered declarations
+    # (run measurement + effective profile) never redefine a registered stage
+    ("cold scope algorithm", H_ABLATION, BOTH,
+     lambda e: _redeclare(e, COLD, worker_scope="algorithm"),
+     "cold fixed full_source/matrix: run measurement worker_scope 'algorithm', the registered "
+     "cold stage has 'case'"),
+    ("timing scope case", E_PAIR, BOTH, lambda e: _redeclare(e, REVERSE, worker_scope="case"),
+     "run measurement worker_scope 'case', the registered timing stage has 'algorithm'"),
+    ("cold without memory pass", E_PAIR, BOTH, lambda e: _redeclare(e, COLD, memory_pass=False),
+     "run measurement memory_pass False"),
+    ("timing memory pass", H_ABLATION, BOTH, lambda e: _redeclare(e, FIXED, memory_pass=True),
+     "run measurement memory_pass True"),
+    ("cold attempts", H_ABLATION, BOTH, lambda e: _redeclare(e, COLD, warmup=1, repeats=5),
+     "run measurement warmup 1"),
+    ("timing attempts", E_PAIR, BOTH, lambda e: _redeclare(e, FIXED, repeats=3),
+     "run measurement repeats 3"),
+    ("stage relabel", E_PAIR, BOTH, lambda e: e.runs[FIXED].manifest.measurement.update(
+        stage="cold"), "run measurement stage 'cold'"),
+    ("order relabel", H_ABLATION, BOTH, lambda e: e.runs[REVERSE].manifest.measurement.update(
+        order="fixed"), "run measurement order 'fixed', the registered timing stage has 'reverse'"),
     # links among registration, protocol and profile pins
     ("protocol profile pin", E_PAIR, BOTH,
      lambda e: e.document["protocol"]["document"]["profile"].update(sha256="0" * 64),
@@ -1704,6 +1746,15 @@ SB_DEFECTS = [
         max_quotes=10**6), "effective budget"),
     ("malformed raise", lambda ev: ev.document["sufficient_budget"]["document"]["budget"].update(
         time_limit_seconds=True), "time_limit_seconds"),
+    ("scope case", lambda ev: (_sb(ev).measurement.update(worker_scope="case"),
+                               _sb(ev).resolved_profile["worker"].update(scope="case")),
+     "run measurement worker_scope 'case', the registered sufficient_budget stage"),
+    ("memory pass", lambda ev: (_sb(ev).measurement.update(memory_pass=True),
+                                _sb(ev).resolved_profile["measurement"].update(memory_pass=True)),
+     "run measurement memory_pass True"),
+    ("stage relabel", lambda ev: _sb(ev).measurement.update(stage="timing"),
+     "run measurement stage 'timing'"),
+    ("order", lambda ev: _sb(ev).measurement.update(order="reverse"), "run measurement order"),
 ]  # fmt: skip
 
 
@@ -1732,3 +1783,25 @@ def test_sufficient_evidence_effective_profiles_are_bound_on_either_side(
     assert any(re.search(message, p) for p in problems[side]), problems[side]
     assert problems["candidate" if side == "baseline" else "baseline"] == []
     assert result["verdict"] == "inconclusive" and result["bounded_exactness"]["established"] == []
+
+
+def test_both_sides_redeclaring_the_cold_worker_scope_are_refused() -> None:
+    """Parent pre-merge repro at b487320: cold full_source/matrix redeclared as a warm
+    per-algorithm worker in BOTH its run measurement and its effective profile, on both
+    sides at once. Coverage alone does not see it; the L01 cold contract (fresh worker per
+    case) does, and nothing is judged."""
+    base, cand = _armed(1.0, "H1"), _armed(0.5, "H2")
+    report.compare_experiments(base, cand, lane="heuristic")  # valid before the mutation
+    for exp in (base, cand):
+        _redeclare(exp, COLD, worker_scope="algorithm")
+        assert report.coverage_problems(exp) == []
+        problems = report.arm_problems(exp.document, exp.runs)
+        assert len(problems) == 2 and all(p.startswith("cold fixed full_source/matrix: ")
+                                          for p in problems)  # fmt: skip
+        assert any("run measurement worker_scope 'algorithm', the registered cold stage has "
+                   "'case'" in p for p in problems)  # fmt: skip
+        assert any("effective worker" in p and "'scope': 'case'" in p for p in problems)
+    with pytest.raises(
+        report.LatencyReportError, match="baseline arm 'H1' .*cold stage has 'case'"
+    ):
+        report.compare_experiments(base, cand, lane="heuristic")
