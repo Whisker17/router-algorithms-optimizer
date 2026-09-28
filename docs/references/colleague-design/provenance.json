@@ -1,0 +1,170 @@
+{
+  "schema": "colleague-design-provenance/1",
+  "issue": "WHI-1536",
+  "attachment": {
+    "file_name": "plan-and-compilation.html",
+    "title": "计划、编译与编码（M3）· 技术评审讲解",
+    "title_en": "Plan, compilation and encoding (M3) - technical review walkthrough",
+    "stated_source": "docs/modules/plan-and-compilation.md",
+    "stated_source_date": "2026-09-23",
+    "bytes": 196262,
+    "sha256": "5c259cc638b66f06cebe81f73ee1139bdd5d573dfb76e2197717080ebb0fcc63",
+    "language": "zh-CN",
+    "form": "single-file HTML (one <style>, one <script>, no external href/src); every amount, address, Adapter ID and quote is marked by the page itself as demo data",
+    "location": "the only Linear file-upload link in the description of Linear project 29829418-7ca6-43c9-bf03-a49f05c76b1a, whose text names it the colleague's design direction",
+    "retrieved": "2026-09-28 (about 10:35 UTC) by Linear GraphQL (project.content) then an authenticated download. The signed URL is short-lived and deliberately not recorded. The file is not archived in the repository (docs/DESIGN.md §1.1). Only the passages below are retained",
+    "verification": "len(bytes) == 196262 and sha256 matches the value the issue states"
+  },
+  "passages": [
+    {
+      "id": "P1",
+      "section": "§1 case",
+      "zh": "路由求解器已经选好三路分配，第三路经过 DAI，三份 WETH 最后共用一次 JIT 成交。",
+      "en": "The routing solver has already chosen the three-way allocation; the third way goes through DAI, and the three WETH amounts finally share one JIT fill."
+    },
+    {
+      "id": "P2",
+      "section": "§1 case",
+      "zh": "amountIn = 1_000_000_001，minAmountOut = 990_000_000。多出的那一个 USDC 最小单位是故意留的——用来观察取整与尾差归属。",
+      "en": "amountIn = 1_000_000_001, minAmountOut = 990_000_000. The extra smallest USDC unit is deliberate, to show rounding and who receives the remainder."
+    },
+    {
+      "id": "P3",
+      "section": "§1 case",
+      "zh": "全文金额、地址、Adapter ID 与报价均为演示数据；结构与伪代码解释目标设计，不代表生产 ABI 或已部署实现。",
+      "en": "All amounts, addresses, Adapter IDs and quotes are demo data. Structure and pseudocode explain the target design and do not represent a production ABI or deployed implementation."
+    },
+    {
+      "id": "P4",
+      "section": "§1 call order",
+      "zh": "真实调用顺序是 X 或 Fermi → Y → C → V → Z 或 Kipseli。两处 JIT 的改善阈值都是 1 bps；运行到对应 hop 时，Router 用实际输入比较已选候选，执行其中一个来源。这个顺序会影响共享池和库存状态，GraphQuoter 已按它完整估值。Compiler 保持原有外部调用序列，不另选一个拓扑序。",
+      "en": "The real call order is X or Fermi -> Y -> C -> V -> Z or Kipseli. Both JIT improvement thresholds are 1 bps. When execution reaches that hop, the Router compares the selected candidates on the actual input and executes one of the sources. The order affects shared-pool and inventory state, and GraphQuoter has already valued the whole plan in it. The Compiler keeps the external call sequence and does not pick another topological order."
+    },
+    {
+      "id": "P5",
+      "section": "§2 pipeline",
+      "zh": "编译时固定的是资金依赖、比例和候选政策；每个中间 actualOut 由 Router 执行时产生，再成为后续指令的输入。",
+      "en": "Compilation fixes fund dependencies, ratios and candidate policies. Each intermediate actualOut is produced by the Router at execution time and becomes the input of later instructions."
+    },
+    {
+      "id": "P6",
+      "section": "§3.1 RoutingPlan",
+      "zh": "RoutingGraph { source: FlowID  terminals: FlowID[]  flows: Map<FlowID, Token>  nodes: PlanNode[]   // 已选顺序 }",
+      "en": "RoutingGraph { source, terminals, flows, nodes: PlanNode[] // selected order }"
+    },
+    {
+      "id": "P7",
+      "section": "§3.2 Hop / Candidate",
+      "zh": "Hop { tokenIn, tokenOut  baseline: Candidate  jitCandidates: Candidate[]  minImprovementBps } … 候选集为空 → SWAP；非空 → JIT_SWAP。opcode 由 Compiler 依据候选集决定，不由求解器直接指定。",
+      "en": "A Hop holds a baseline Candidate, jitCandidates and minImprovementBps. An empty candidate set lowers to SWAP and a non-empty one to JIT_SWAP. The Compiler chooses the opcode from the candidate set, not the solver."
+    },
+    {
+      "id": "P8",
+      "section": "§4.1 Semantic IR",
+      "zh": "这一步不重新选路，RoutingPlan 中已有的显式关系直接保留。",
+      "en": "This step does not re-route. The explicit relations already in the RoutingPlan are kept."
+    },
+    {
+      "id": "P9",
+      "section": "§6.3 InputSpec",
+      "zh": "本例根输入按整数分为 500_000_000、350_000_000、150_000_001。第二路仍以最初的 1_000_000_001 为基数，第三路承接尾差。每一层的 bps 都作用在自己那一层的冻结基数上，所以多层分配不能靠相乘比例压成一层——floor(floor(3 × 50%) × 80%) = 0，而 floor(3 × 40%) = 1。",
+      "en": "The root input splits into the integers 500_000_000, 350_000_000 and 150_000_001. The second way still uses the original 1_000_000_001 as its base, and the third way takes the remainder. Each layer's bps applies to that layer's own frozen base, so multi-layer allocation cannot be flattened by multiplying ratios: floor(floor(3 x 50%) x 80%) = 0, whereas floor(3 x 40%) = 1."
+    },
+    {
+      "id": "P10",
+      "section": "§6.4 execution graph",
+      "zh": "例如三路实际产生 0.150 / 0.104 / 0.044 WETH 时，#4 处理的金额就是 0.298 WETH。编码器接下来保存的是上述引用与政策，不会写入这些演示成交金额。",
+      "en": "For example, when the three ways actually yield 0.150 / 0.104 / 0.044 WETH, #4 processes 0.298 WETH. The encoder stores the references and policies, not these demo fill amounts."
+    },
+    {
+      "id": "P11",
+      "section": "§7.4 constraints",
+      "zh": "JIT payload 中 baseline 报价失败使整笔回滚；阈值只相对 baseline 判定一次，候选平价时保留先出现者。",
+      "en": "In a JIT payload, a failed baseline quote reverts the whole transaction. The threshold is checked only once, relative to the baseline. On a candidate tie, the one appearing first is kept."
+    },
+    {
+      "id": "P12",
+      "section": "§5.1 conditions",
+      "zh": "合流输入数满足当前配置（当前上限 4 路，可配置）",
+      "en": "The merge input count satisfies the current configuration (current limit 4, configurable)."
+    },
+    {
+      "id": "P13",
+      "section": "§9.2 Router validation",
+      "zh": "输入金额为零仍保留消费关系；MERGE_INTO 即使分到零也要先完成合流初始化。执行时跳过零输入的 quote / swap，并产生 ready 的零输出，不能把尚未 ready 的 slot 当作零余额。",
+      "en": "A zero input amount still keeps its consumption relation, and MERGE_INTO completes merge initialization even when its share is zero. Execution skips the quote/swap of a zero input and produces a ready zero output. A slot that is not yet ready must never be treated as a zero balance."
+    },
+    {
+      "id": "P14",
+      "section": "§9.3 failure ownership",
+      "zh": "ErrUnencodableSemantics、ErrFormatLimit 允许上层重新求解另一张完整图；图不合法或 Adapter 不相容应上报，不能简单换图掩盖。编译器内部不换路，也不把编译失败变成某个 hop 的局部 fallback。",
+      "en": "ErrUnencodableSemantics and ErrFormatLimit let the upper layer solve for another complete graph. An invalid graph or incompatible Adapter must be reported, not hidden by swapping in another graph. The compiler never re-routes internally and never turns a compile failure into a local per-hop fallback."
+    },
+    {
+      "id": "P15",
+      "section": "§10.4 merge then split",
+      "zh": "这只扩展可编码与可执行的能力。求解器的四类模板与\"最多一个拆分组\"不变，不会因此去搜索新拓扑。",
+      "en": "This only extends what can be encoded and executed. The solver's four template classes and 'at most one split group' are unchanged, and it will not search new topologies because of this."
+    },
+    {
+      "id": "P16",
+      "section": "§10.4 zero first branch",
+      "zh": "首支即使因取整分到 0，也要先完成 ①②；零输入跳过报价与成交，写入 ready 的零输出。",
+      "en": "Even if the first branch rounds to 0, steps (1) and (2), member consumption and merge initialization, still complete first. A zero input skips quoting and filling and writes a ready zero output."
+    },
+    {
+      "id": "P17",
+      "section": "§10.4 validator table",
+      "zh": "零分配 | 首支取整为 0 也先完成成员关闭与合流初始化；最终 REMAINDER 可以为 0",
+      "en": "Zero allocation: a first branch rounding to 0 still closes members and initializes the merge; the final REMAINDER may be 0."
+    },
+    {
+      "id": "P18",
+      "section": "§10.3 appendix",
+      "zh": "每层比例使用自己的冻结基数：假设 source 为 1001 A、#0 得到 301 B、#6 得到 1003 G，三组分配分别为 600/401 A、75/226 B、401/602 G。",
+      "en": "Each layer's ratio uses its own frozen base. Assuming a 1001 A source, #0 yielding 301 B and #6 yielding 1003 G, the three groups allocate 600/401 A, 75/226 B and 401/602 G."
+    },
+    {
+      "id": "P19",
+      "section": "§11 related modules",
+      "zh": "路由与求解 | 交付已固定拓扑、比例、政策和调用顺序的 RoutingPlan",
+      "en": "Routing and solving: delivers the RoutingPlan with fixed topology, ratios, policies and call order. It is named as a separate module and is not included."
+    },
+    {
+      "id": "P20",
+      "section": "embedded script (data model)",
+      "code": "const SEM_NODES = [ N0 SPLIT in F100 out F101,F102,F103 | N1 SWAP F101->F110 | N2 SWAP F102->F120 | N3 SWAP F103->F130 | N4 SWAP F130->F131 | N5 MERGE F110,F120,F131->F140 | N6 SWAP F140->F150 ]",
+      "en": "The page's single source of truth lists the semantic nodes N0 to N6, with N5 MERGE before N6 SWAP."
+    },
+    {
+      "id": "P21",
+      "section": "embedded script (RoutingPlan instance renderer)",
+      "code": "nodes: [ { id: N0, kind: SPLIT, ... }, ${SEM_NODES.filter(n=>n.kind==='SWAP').map(...)} { id: N5, kind: MERGE, inputs: [F110, F120, F131], output: F140 }, ]",
+      "en": "The displayed RoutingPlan.nodes list is generated as N0, then every SWAP node (N1, N2, N3, N4, N6), then a hard-coded N5 MERGE line. This puts N6, the consumer of F140, before N5, its producer."
+    },
+    {
+      "id": "P22",
+      "section": "embedded script (§10.4 amounts)",
+      "code": "/* 演示上游实际输出（文档给定 101 B、199 B），合流与分配金额现场算 */ m1 = 101n, m2 = 199n, base = m1 + m2; first = base * 6000n / 10000n; rest = base - first  // self-test expects '300/180/120'",
+      "en": "Demo upstream outputs of 101 B and 199 B are given by the document. The page computes the merge base and allocation."
+    }
+  ],
+  "searches_for_referenced_sources": [
+    {"where": "Linear project 29829418 description, externalLinks, attachments, documents", "result": "one upload (this attachment); zero external links; zero attachments; documents are only the Release 0.1.2 / 0.2.0 orchestration records"},
+    {"where": "Linear searchDocuments 'GraphQuoter'", "result": "no documents"},
+    {"where": "Linear searchIssues 'GraphQuoter' / 'Kipseli' / 'plan-and-compilation.md'", "result": "only WHI-1536..1539 (these tickets) plus unrelated fuzzy matches; no routing/solver/GraphQuoter source"},
+    {"where": "GitHub code search 'BPS_OF_PARENT MERGE_INTO', 'Kipseli Fermi JIT', 'plan-and-compilation.md'", "result": "0 results"},
+    {"where": "GitHub code search 'GraphQuoter'", "result": "only unrelated tokenized matches (LaTeX completion files, a chat UI and a CRM); no router source"},
+    {"where": "local sibling checkouts under the mantle-router workspace", "result": "only this repository and its issue worktrees"},
+    {"where": "attachment itself: links", "result": "no href/src; §11 names the modules 'routing and solving', 'protocol access and adaptation', 'Router execution and settlement', 'quote and transaction preparation' and 'full RoutingPlan compilation case' without links or contents"}
+  ],
+  "missing_documents": [
+    "routing-and-solving module (§11; the 'four template classes' and 'at most one split group' of P15)",
+    "GraphQuoter specification or code (P4)",
+    "Router execution and settlement module, including runtime JIT comparison arithmetic (P4, P11)",
+    "protocol access and adaptation module (Adapter/Codec/Quoter semantics, JIT/RFQ providers such as the illustrative Fermi/Kipseli)",
+    "quote and transaction preparation module",
+    "the markdown source docs/modules/plan-and-compilation.md itself (only the rendered HTML walkthrough is available)"
+  ],
+  "license_and_notices": "The attachment carries no license or copyright notice. It is an internal colleague document shared through the owner's Linear project and is used here only for private internal research. Nothing is copied into code. The retained passages are short quotations with this identity record. It is not redistributed, and no colleague was contacted."
+}
