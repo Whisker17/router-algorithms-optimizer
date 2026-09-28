@@ -14,6 +14,10 @@ The ordinary CLI compares strategies in two separate groups and, by default, run
   | `uni_sor_adaptive` | H3 | near-full candidates (vacuous shortlist: coarse probes 25/50/75/100, 10⁶ routes per probe, 0 extra direct routes) + adaptive percentage sampling (`coarse_step` 25, `refine_radius` 1, no soft cap) | none |
   | `uni_sor_optimized` | H4 | L06 shortlist (probes 5/100, 8 routes per probe, 0 extra direct routes) + the same adaptive sampling | L02, L03, L04 (no L05) |
 
+How the two recipes search, with hand-worked and test-verified examples, is explained in
+[`routing-algorithms.md`](routing-algorithms.md) §8 (`uni_sor_adaptive`) and §9
+(`uni_sor_optimized`).
+
 The owner asked for this layout: the optimized strategies are **not** default strategies
 and are kept apart from the base ones, but the CLI runs them all. Nothing here adopts a
 strategy, changes a router default or accepts a loss tolerance. The L08 results and
