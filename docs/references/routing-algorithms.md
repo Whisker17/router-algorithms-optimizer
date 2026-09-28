@@ -1,13 +1,27 @@
 # Routing Algorithms: Architecture, Theory, and Reproducible Worked Examples
 
-This guide provides a first-principles explanation of the six exact-input routing algorithms
-implemented in this repository. It covers their mathematical foundations, search mechanics,
-state management, and practical trade-offs against frozen Mantle liquidity snapshots.
-To compare these algorithms on a single swap via the CLI, see [`single-request.md`](single-request.md).
+This guide explains, from first principles, the exact-input routing strategies that the
+ordinary CLI compares. It covers:
 
-Inspected source commit: `b2a680578f65ac65653a8160f04a3d97a5c5e71e` (Release 0.1.1).  
+- the six **base strategies** (`direct`, `single_path`, `direct_split`, `path_split`,
+  `incremental_graph`, `uni_sor_port`), which are the references;
+- the two **named optimized strategies** (`uni_sor_adaptive`, `uni_sor_optimized`). These are
+  frozen, experimental recipes of the opt-in `uni_sor_fast` heuristic over the `uni_sor_port`
+  core ([`strategy-groups.md`](strategy-groups.md)).
+
+For each strategy it describes the mathematical foundations, search mechanics, state management
+and practical trade-offs against frozen Mantle liquidity snapshots. To compare them on a single
+swap via the CLI, see [`single-request.md`](single-request.md).
+
+Inspected source commits:
+
+- Sections 2–7: `b2a680578f65ac65653a8160f04a3d97a5c5e71e` (Release 0.1.1). The
+  `incremental_graph` line references were refreshed at `c5b5636`.
+- Sections 8–9 and the eight-strategy rows of Sections 10–12:
+  `c5b56369155b4beddef8de4df64e63dd0118662c`.
+
 All numeric traces and intermediate transitions are verified offline by
-`tests/docs/test_routing_algorithm_examples.py` and runnable via
+`tests/docs/test_routing_algorithm_examples.py` and can be run via
 `docs/examples/routing-algorithms/run_examples.py`.
 
 ---
@@ -41,9 +55,11 @@ subject to:
 - **Section 5:** `path_split` — Multi-hop candidate generation, pool-conflict pruning, and branch-and-bound.
 - **Section 6:** `incremental_graph` — Marginal allocation over aggregate pool inputs, acyclic graph expansion, and merged execution.
 - **Section 7:** `uni_sor_port` — Upstream Uniswap SOR V2/V3 parity core, amount distribution, BFS seed queues, and adapter fill.
-- **Section 8:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044).
-- **Section 9:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map.
-- **Section 10:** Operational Boundaries, Limitations, and Known Debt.
+- **Section 8:** `uni_sor_adaptive` (optimized, recipe H3) — Coarse-to-fine percentage sampling over the unchanged SOR core, validated anytime incumbent.
+- **Section 9:** `uni_sor_optimized` (optimized, recipe H4) — Amount-aware 5 % / 100 % route shortlist, the same sampling, and the exact L02–L04 quote controls.
+- **Section 10:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044).
+- **Section 11:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map.
+- **Section 12:** Operational Boundaries, Limitations, and Known Debt.
 
 ### 1.3 Terminology and Symbol Table
 
@@ -124,7 +140,7 @@ the reserve of token $T_{\text{out}}$. When an input $\Delta x$ is provided:
 
 *Note:* This integer formula governs Uniswap V2 and Merchant Moe Classic (`moe_classic_v1`).
 Concentrated Liquidity (CL) and Liquidity Book (LB) use tick bitmaps and bin discrete trees,
-which are evaluated in Section 8 via their exact protocol simulators.
+which are evaluated in Section 10 via their exact protocol simulators.
 
 ---
 
@@ -748,12 +764,12 @@ Using our synthetic teaching bundle, let $K = 10$ chunks ($1\,000$ TKA each):
 
 ### 6.6 Implementation Map
 - File: `routing/algorithms/incremental_graph.py`
-- Chunk schedule: `chunk_amounts(amount_in, chunks)` (line 139).
-- Cycle detection: `creates_cycle(edges, path)` (line 145).
-- Merged plan builder: `merged_plan(case, flows)` (line 180).
-- Topology classification: `topology(route_paths)` (line 260).
-- Solver: `solve(case, context, budget)` (lines 290–530).
-- Marginal simulation: `marginal(path, amount, memo)` (line 343).
+- Chunk schedule: `chunk_amounts(amount_in, chunks)` (line 149).
+- Cycle detection: `creates_cycle(edges, path)` (line 155).
+- Merged plan builder: `merged_plan(case, flows)` (line 190).
+- Topology classification: `topology(route_paths)` (line 270).
+- Solver: `solve(case, context, budget)` (lines 407–706).
+- Marginal simulation: `marginal(path, amount, memo)` (line 471).
 
 ### 6.7 Parameters, Budgets, and Ties
 - Parameters: `graph.chunks` ($K$), plus `path_split` parameters for retained candidates.
@@ -905,10 +921,516 @@ On our synthetic teaching graph ($N = 10, S = 2$):
 
 ---
 
-## 8. Real-State Fixed-Block Walkthrough (Block 101082044)
+## 8. Algorithm 7: `uni_sor_adaptive` (Optimized Recipe H3: Adaptive Percentage Sampling)
 
-To demonstrate how these algorithms behave on real blockchain liquidity, we execute all six
-solvers against the verified frozen Mantle snapshot `mantle-5src-101082044-091b0759-fixture`:
+### 8.1 Problem and Inclusion Rationale
+`uni_sor_port` fills its entire quote matrix before it combines anything. Every enumerated
+route is quoted at every grid percent: $\lvert \Pi_H \rvert \cdot G$ entries, each costing
+$\text{hops}(\pi)$ pool quotes. Most of those entries lie far from the allocation SOR finally
+selects and never influence it. `uni_sor_adaptive` keeps the SOR combination logic and quotes
+only a **coarse grid first, then fine percents next to the current best allocation**, until no
+new percent is proposed.
+
+It is one of the two **named optimized strategies** (WHI-1528, [`strategy-groups.md`](strategy-groups.md)).
+It is not a separate solver. It is a frozen recipe of the opt-in `uni_sor_fast` heuristic:
+
+- **Recipe:** L08 arm **H3**, the L07 adaptive-only nomination `adaptive_only-c25-r1-snone`,
+  registered in [`config/latency/l08.yaml`](../../config/latency/l08.yaml) v1 (sha256
+  `e7add86a…beaa`).
+- **Execution:** `solve` calls the unchanged `uni_sor_fast.solve`, which calls the unchanged
+  translated SOR core of §7, then relabels the result as `uni_sor_adaptive`.
+- **Scope:** It is experimental: not a default, not adopted, with no parity claim and no
+  accepted loss tolerance.
+
+| Recipe setting | Value | Effect |
+|---|---|---|
+| `shortlist.probe_percents` | `[25, 50, 75, 100]` | Probe percents used to rank routes (§9.2); here they equal the coarse grid |
+| `shortlist.routes_per_probe` | `1000000` | Keeps every ranked route: the shortlist is vacuous ("near-full candidates") |
+| `shortlist.direct_routes` | `0` | No extra one-hop routes |
+| `sampling.coarse_step` | `25` | First table: grid percents divisible by 25 |
+| `sampling.refine_radius` | `1` | Each refinement proposes neighbours one grid step away |
+| `sampling.soft_max_quotes` | `null` | No soft quote cap: refinement runs to its fixed point |
+| exact controls | none | Default reference quote path |
+
+### 8.2 Mathematical Model and Assumptions
+The model reuses §7.2 verbatim for everything except **which table entries exist**:
+- Routes $\Pi$ are the V2/V3 cohort routes from `compute_all_routes`. Liquidity Book is excluded
+  (D-4). The grid is $\mathcal{P} = \{\delta, 2\delta, \dots, 100\}$ with $\delta = \text{percent\_step}$.
+  Entry amounts are $a_p = \lfloor A \cdot p / 100 \rfloor$.
+- Let $C(T)$ denote the **unchanged** SOR core (`get_best_swap_route`) applied to a sub-table
+  $T \subseteq \Pi \times \mathcal{P}$. It returns a pool-disjoint selection
+  $\sigma = ((\pi_1, p_1), \dots, (\pi_m, p_m))$ with $\sum p_i = 100$ and $m \le S$, or nothing.
+  A percent group that is missing from $T$ is simply absent, as B-S4/B-S6 already allow.
+- **Ranked routes:** $L$ is every route with at least one valid entry at the probe percents
+  $Q = \{25, 50, 75, 100\}$. Because $K = 10^6 \ge \lvert \Pi \rvert$, no ranked route is ever cut.
+  A route whose probe entries are all null is unranked and is not searched.
+- **Coarse table:** $S_0 = \{p \in \mathcal{P} : p \bmod c = 0\}$ with $c = \text{coarse\_step} = 25$,
+  so $S_0 = \{25, 50, 75, 100\}$ and $T_0 = L \times S_0$. The value 100 is always included.
+- **Seed incumbent $I$:** the sampled 100 % entries in descending quote order, each tried as a
+  single-route selection, until one replays valid. This is the simplest full-input plan.
+- **Refinement proposal** (`refine_percents`), with $r = \text{refine\_radius}$:
+  $$R(B) = \{\, p - j\delta,\ p + j\delta,\ j\delta \;:\; p \in B,\ 1 \le j \le r \,\} \cap [\delta, 100]$$
+  - The basis is $B = \text{percents}(\sigma_k) \cup \text{percents}(I)$.
+  - The term $j\delta$ is a *freed share* that another route may take.
+  - Update: $S_{k+1} = S_k \cup R(B)$ and $\sigma_{k+1} = C(L \times S_{k+1})$.
+- **Acceptance:** A selection becomes the incumbent only after the D-1 integer fill, a
+  pool-disjoint `split_path_plan` and an evaluator replay. Its score must be strictly better, or
+  a combined selection may tie the full-input seed.
+- **Termination:** The search stops when $R(B) \setminus S_k = \emptyset$ (`converged`). Because
+  $S_k$ strictly grows every round, there are at most $G$ rounds.
+- **Approximation:** The result is a *local fixed point over the sampled table*. An optimum whose
+  percents are never proposed can be missed (§8.5, step 8).
+
+### 8.3 Concise Pseudocode
+```python
+def solve_uni_sor_adaptive(case, bundle, search, recipe_H3):
+    routes = compute_all_routes(case.token_in, case.token_out, search.max_hops, sor_cohort)  # §7
+    percents, amounts = amount_distribution(case.amount_in, search.percent_step)
+
+    # 1. Probe and rank (vacuous here: K = 10**6 keeps every ranked route)
+    probe = build_route_quotes(routes, [25, 50, 75, 100], ...)   # memoized table entries
+    shortlist = shortlist_routes(routes, probe, K=10**6, direct_routes=0)
+
+    # 2. Coarse table, full-input seed, first combined selection
+    sampled = {25, 50, 75, 100}
+    selection = sor_core(table(shortlist, sampled), max_splits=search.max_splits)
+    incumbent = first_valid([single(rq) for rq in sorted_100pct_entries(table)])  # replayed
+    consider(selection)            # D-1 fill + pool-disjoint plan + evaluator replay
+
+    # 3. Coarse-to-fine refinement around the incumbent and the latest selection
+    while True:
+        basis = percents(selection) | percents(incumbent)
+        new = refine_percents(basis, search.percent_step, radius=1) - sampled
+        if not new:
+            break                                          # "converged": local fixed point
+        sampled |= new                                     # quote only the new entries
+        selection = sor_core(table(shortlist, sampled), max_splits=search.max_splits)
+        consider(selection)        # published only if valid and strictly better
+
+    # 4. Safety nets: grid completion, then full-table fallback (both charged)
+    if selection is None or incumbent is None:
+        complete_grid()            # quote the rest of the grid before concluding anything
+    return incumbent.plan, incumbent.evaluation      # already replayed; no re-quote
+```
+
+### 8.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart TD
+    subgraph Adaptive Sampling over the SOR Core
+        Enum[compute_all_routes<br>V2/V3 cohort] --> Probe[Probe 25/50/75/100<br>rank, keep all ranked]
+        Probe --> Coarse[Coarse table<br>percents 25/50/75/100]
+        Coarse --> Core[Unchanged SOR core<br>get_best_swap_route]
+        Core --> Val{D-1 fill + replay<br>valid and better?}
+        Val -- yes --> Inc[Publish incumbent]
+        Val -- no --> Keep[Keep incumbent]
+        Inc --> Ref[refine_percents<br>p +/- 5, freed share 5]
+        Keep --> Ref
+        Ref --> New{New percents?}
+        New -- yes --> Grow[Quote only new entries] --> Core
+        New -- no --> Out([converged: incumbent RoutePlan])
+    end
+```
+
+### 8.5 Hand-Worked Numeric Example
+The example uses the teaching graph of §7.5 with the recipe's grid:
+$A = 10\,000$ TKA $\to$ TKB, $H = 2$, $S = 2$, $\delta = 5$ ($G = 20$).
+1. **Routes:** The same 4 routes as §7.5: `P_AB1`, `P_AB2`, `P_AC -> P_CB` and `P_AD -> P_DB`.
+2. **Probe (25/50/75/100):** 16 entries cost 24 pool quotes: $2 \times 4$ one-hop quotes plus
+   $2 \times 4 \times 2$ two-hop quotes. The ranking is identical at every probe, and all 4 routes
+   are kept:
+
+   | Route | 25 % | 50 % | 75 % | 100 % |
+   |---|---|---|---|---|
+   | `P_AC -> P_CB` | 3550 | 6779 | 9729 | 12434 |
+   | `P_AD -> P_DB` | 2840 | 5423 | 7783 | 9947 |
+   | `P_AB1` | 2431 | 4748 | 6957 | 9066 |
+   | `P_AB2` | 2215 | 4377 | 6487 | 8546 |
+
+   Hand check of the two 75 % / 25 % legs:
+   - `P_AC` at $7500$:
+     $$\Delta x_{\text{fee}} = 7500 \cdot 9970 = 74\,775\,000$$
+     $$\Delta y = \lfloor 74\,775\,000 \cdot 200\,000 / (10^9 + 74\,775\,000) \rfloor = \lfloor 14\,955\,000\,000\,000 / 1\,074\,775\,000 \rfloor = 13914$$
+   - `P_CB` at $13914$:
+     $$\lfloor 20\,808\,387\,000\,000 / 2\,138\,722\,580 \rfloor = 9729$$
+   - `P_AD` at $2500$:
+     $$\lfloor 3\,738\,750\,000\,000 / 1\,024\,925\,000 \rfloor = 3647$$
+   - `P_DB` at $3647$:
+     $$\lfloor 4\,363\,270\,800\,000 / 1\,536\,360\,590 \rfloor = 2840$$
+3. **Round 0 (coarse):** The table is exactly the probe entries, so it costs 0 new quotes (memo
+   hits).
+   - Seed: the best 100 % entry, `P_AC -> P_CB`, replays valid at $12434$. It is the first
+     published incumbent.
+   - The SOR core compares the pool-disjoint combinations:
+
+     | Allocation | Gross (TKB) |
+     |---|---|
+     | 100 % (seed) | 12434 |
+     | 50 / 50 | $6779 + 5423 = 12202$ |
+     | 75 / 25 | $9729 + 2840 = \mathbf{12569}$ |
+
+   - It selects `P_AC -> P_CB` @ 75 % + `P_AD -> P_DB` @ 25 %. The selection replays valid,
+     and $12569 > 12434$ makes it the new incumbent.
+4. **Round 1 (refine):** The basis is $\{75, 25\}$.
+   - The proposal is $\{70, 80, 5\} \cup \{20, 30, 5\} = \{5, 20, 30, 70, 80\}$.
+   - The 5 new percents across 4 routes add 20 entries and cost 30 quotes.
+   - The core now finds 80 / 20: $10288 + 2293 = \mathbf{12581}$. That beats 75 / 25 and
+     70 / 30 ($9160 + 3376 = 12536$), and it becomes the incumbent.
+5. **Round 2 (refine):** The basis is $\{80, 20\}$.
+   - The only new percents are $\{15, 85\}$: 8 entries and 12 quotes.
+   - 85 / 15 ($10838 + 1737 = 12575$) does not win.
+   - The selection is the already-seen 80 / 20, so the outcome is `unchanged`.
+6. **Stop:** The basis $\{80, 20\}$ proposes nothing new, so the search stops with `converged`.
+   The search sampled 11 of 20 percents (44 of 80 entries).
+7. **Outcome and accounting:**
+   - The plan is identical to §7.5: $8000 \to 14773 \to 10288$ and $2000 \to 2932 \to 2293$,
+     for $\mathbf{12581}$ TKB.
+   - It executed $24 + 30 + 12 = \mathbf{66}$ pool quotes. `uni_sor_port` needs **120** on the
+     same 5 % grid.
+   - The 34 memo hits are 24 coarse re-reads of probe entries plus 10 replay hops. Those hops
+     come from 3 validations: the seed (2), 75 / 25 (4) and 80 / 20 (4).
+8. **Where it loses: a narrow optimum.** The case uses the `NARROW` pools of
+   `tests/routing/test_uni_sor_fast.py`: $A = 10^8$, $S = 4$, $\delta = 5$.
+   - `uni_sor_port` selects `d1`@90 + `d0`@5 + `ax -> xb`@5 = $20\,795\,709$, using 80 quotes.
+   - `uni_sor_adaptive` walks through these allocations:
+     - coarse: `d1`@50 / `d0`@25 / `ax -> xb`@25;
+     - refine: `d1`@75 / `ax -> xb`@20 / `d0`@5;
+     - refine: `d1`@80 / `d0`@10 / `ax -> xb`@10.
+   - It then stops (`converged`). No single-step neighbour improves, and 90 % is never sampled.
+   - It returns a valid $20\,740\,242$ using 56 quotes. The loss is $55\,467$ raw units,
+     or **26.67 bps**.
+   - The loss is kept in the result, not hidden by the exact final replay.
+
+### 8.6 Implementation Map
+- Strategy adapter: `routing/algorithms/uni_sor_strategies.py`.
+  - Recipe reader: `registered_settings` (line 84) reads the sha256-pinned arm, and
+    `check_recipe` (line 122) refuses any other values.
+  - Strategy table: `STRATEGIES` (line 166).
+  - Preparation and solve: `_prepare` (line 260) and `_solve` (line 290).
+  - Entry points: `prepare_adaptive` / `solve_adaptive` (lines 320–326).
+  - Factory: `ADAPTIVE_FACTORY` (line 348).
+- Heuristic engine: `routing/algorithms/uni_sor_fast.py`.
+  - Setup: `prepare` (line 294) and `shortlist_routes` (line 323).
+  - Refinement proposal: `refine_percents` (line 273).
+  - Solver: `solve` (lines 367–969). It contains the probe/rank/shortlist block
+    (lines 563–597), `validate` (line 603) and `sampled_search` (lines 648–811). The latter holds
+    `run_round` (line 692), `consider` (line 720), `seed` (line 748) and `complete_grid`
+    (line 764).
+  - Table search and fallback: `search` (line 814) and the full-table fallback (lines 857–866).
+- Profile integration: `benchmark/profile.py` WHI-1528 strategies section (line 418). The CLI
+  selection is `--strategies all|base|optimized|profile` ([`strategy-groups.md`](strategy-groups.md)).
+
+### 8.7 Parameters, Budgets, and Ties
+- **Caller parameters:** The caller supplies `search.max_hops`, `search.max_splits` and
+  `search.percent_step`. They are shared with the base strategies and are not part of the recipe.
+  The grid must contain every recipe percent: `coarse_step` 25 must be a multiple of $\delta$, so
+  $\delta \in \{1, 5, 25\}$. A profile with `percent_step: 10` is refused, never silently re-tuned.
+- **Recipe values are fixed:** The profile loader and `prepare` both refuse any `shortlist` /
+  `sampling` / `controls` value that differs from arm H3. Other settings belong to the
+  profile-selected `uni_sor_fast`.
+- **Budgets:**
+  - If `max_candidates` is below the number of enumerated routes, the solve returns `timeout`
+    before probing.
+  - `max_quotes` is a hard limit. Exceeding it gives `timeout` with no plan; the last valid
+    incumbent survives only as labelled metadata and through the candidate sink.
+  - There is no soft cap (`soft_max_quotes: null`).
+- **Ties:**
+  - Entries follow the reference B-Q1 quote-list order (family V3, V2, MIXED, then DFS order),
+    and the SOR core keeps its V8 sort emulation.
+  - A new selection must score strictly better. The one exception: a combined selection
+    replaces an equal-scoring full-input seed.
+- **Statuses:**
+  - Enumeration returns `unsupported` / `no_route` exactly as the reference does.
+  - If there is no selection even over the full grid, the result is `no_route` or
+    `incomplete_snapshot`.
+  - If there are selections but none replays valid, the result is `invalid_plan`, and that plan
+    is never published.
+
+### 8.8 Computational and Memory Cost
+- **Pool quotes:** probes $\sum_{\pi} \text{hops}(\pi) \cdot \lvert Q \rvert$, plus table entries
+  $\sum_{\pi \in L} \text{hops}(\pi) \cdot \lvert S_{\text{final}} \setminus Q \rvert$, plus replay
+  quotes for non-grid D-1 remainders.
+  - Sampled entries are a subset of the reference table. Several incumbents may be replayed,
+    though, so the evidence counts quotes against the reference per case and assumes no bound.
+  - Measured: 66 vs 120 on the teaching graph; 12 vs 40 on the fixed-block request of §10;
+    **0.467 ×** the reference's quotes over the L08 matrix.
+- **CPU:** One SOR-core combination per round (at most $G$ rounds), each over
+  $\lvert L \rvert \cdot \lvert S_k \rvert$ entries. Add one evaluator replay per new distinct
+  selection.
+- **Memory:** The sampled table holds at most $\lvert \Pi \rvert \cdot G$ entries. On the L08
+  full-source matrix, cold solve peak was 171.0 MiB vs 268.7 MiB for `uni_sor_port`.
+- **Timing:** The L08 sentinel warm median was 1.618 s vs 3.752 s for S0. That arm ran above the
+  host-load rule, so the figure is a diagnostic only, never adoption evidence
+  ([`latency-optimization-results.md`](latency-optimization-results.md) §3.4).
+
+### 8.9 Guarantees and Limitations
+- **Guarantees:**
+  - Every returned plan is protocol-exact, funds the whole input, is pool-disjoint and is
+    replayed by the independent evaluator.
+  - No unvalidated plan is ever published.
+  - Because 100 % is always sampled and the full-input seed is validated first, the result is,
+    under a gross objective, never worse than the best valid full-input single route over the
+    ranked routes.
+  - With `coarse_step == percent_step`, a non-recipe setting, the first table is the full grid
+    and the result is the L06 result whenever the combined selection replays valid and scores at
+    least the seed. This always holds under a gross objective.
+- **Limitations:**
+  - The search stops at a local fixed point, not a global optimum (26.67 bps loss in §8.5).
+  - It inherits `uni_sor_port`'s scope: no Liquidity Book (LB-only cases are `unsupported`) and
+    zero gas scores (A-3).
+- **Recorded scope (L08):** 0 held-out losses over 13 `ok` cases at 0.467 × quotes. That is no
+  guarantee. The decision comparison was `inconclusive` (host load), so the disposition is
+  **opt-in only, not a default**.
+
+---
+
+## 9. Algorithm 8: `uni_sor_optimized` (Optimized Recipe H4: Shortlist + Sampling + Exact Controls)
+
+### 9.1 Problem and Inclusion Rationale
+`uni_sor_adaptive` cuts the *percent* dimension of the SOR table. `uni_sor_optimized` stacks three
+independent savings:
+
+1. It cuts the **route** dimension with the L06 amount-aware shortlist.
+2. It cuts the **percent** dimension with the same L07 sampling as §8.
+3. It makes each concentrated-liquidity (CL) and Liquidity Book (LB) quote cheaper with the
+   **exact** quote controls L02–L04. These change work, never results.
+
+The recipe is L08 arm **H4**, which is H2 (L06 + L07) composed with L02–L04, without L05.
+As in §8, the strategy is the unchanged `uni_sor_fast.solve` with frozen settings. It is
+experimental, not a default, and carries no parity or loss-tolerance claim.
+
+| Recipe setting | Value | Effect |
+|---|---|---|
+| `shortlist.probe_percents` | `[5, 100]` | Rank every route at 5 % and at 100 % of the input |
+| `shortlist.routes_per_probe` | `8` | Keep the top 8 routes of each probe (at most 16 routes) |
+| `shortlist.direct_routes` | `0` | No extra one-hop routes |
+| `sampling` | `coarse_step 25, refine_radius 1, soft_max_quotes null` | Identical to §8 |
+| `L02` | `skip_empty_spans: true` | Skip zero-liquidity, uninitialized CL bitmap words |
+| `L03` | `tick_capacity 16384, bin_capacity 4096, per_solve` | Memoize tick and bin price math |
+| `L04` | `max_keys 4096, max_checkpoints 262144, per_solve` | Reuse CL traversal prefixes across amounts |
+
+### 9.2 Mathematical Model and Assumptions
+- **Probe ranking:** For each probe $q \in \{5, 100\}$, the routes with a valid entry are ranked
+  by `quote_adjusted_for_gas` in descending order. Gas scores are zero (A-3), so this is the raw
+  quote. Ties follow the B-Q1 quote-list order.
+- **Shortlist:**
+  $$L = \text{top}_8(5) \cup \text{top}_8(100), \qquad \lvert L \rvert \le 16$$
+  - Probing 100 % keeps the best full-input single route, SOR's B-S3 baseline.
+  - Probing 5 % keeps routes that are poor at full size but best as a small split, such as a
+    thin pool with a better price.
+  - Nothing is ranked by TVL or spot price. The frozen bundle has no pool TVL, and TVL can miss
+    profitable small splits.
+- **Search:** The §8.2 sampling runs over $L \times S_k$ instead of all ranked routes.
+- **Fallback:** If no route was ranked, or $L$ yields no complete selection even after grid
+  completion, the full reference table over all routes is built and searched. It is
+  deterministic and charged to the same solve. A shortlist failure is never reported as
+  `no_route`.
+- **Exact controls:** For every pool state $s$, direction and amount $x$,
+  $\text{swap}_{\text{controlled}}(s, x) = \text{swap}_{\text{ref}}(s, x)$. The outcome is identical
+  in amount, new state, logical steps and errors; only the executed work changes.
+  - **L02:** While in-range liquidity is 0, a whole collected, all-zero bitmap word strictly
+    before the price limit is stepped over. Those iterations move only price and tick, and they
+    are still counted as logical steps.
+  - **L03:** `getSqrtRatioAtTick(tick)` (CL) and `getPriceFromId(id, binStep)` (LB) are pure
+    functions, so bounded memos return the stored integers.
+  - **L04:** On one original CL state, a query of amount $A'$ repeats every *full* step whose
+    cumulative gross input satisfies $C[i+1] \le A'$. Checkpoints are recorded after each full
+    step. A query resumes at `bisect_left(C, A')` and lets the reference code run the partial
+    step. Partial steps and errors are never cached.
+- **Control lifetime:** Fresh instances are built inside each timed solve (`per_solve`) and
+  installed into `pools.concentrated.swap` / `pools.liquidity_book.swap` for that solve only.
+  The reference kernels are restored in a `finally`. The runner's independent evaluation runs in
+  another process on the reference path.
+
+### 9.3 Concise Pseudocode
+```python
+def solve_uni_sor_optimized(case, bundle, search, recipe_H4):
+    controls = QuoteControls.fresh({"L02": ..., "L03": ..., "L04": ...})  # per solve
+    with exact_controls.installed(controls):          # reference kernels restored in finally
+        routes = compute_all_routes(...)              # unchanged, §7
+        probe = build_route_quotes(routes, [5, 100], ...)
+        shortlist = set()
+        for q in (5, 100):
+            ranked = sorted(entries_at(probe, q), key=lambda e: (-e.quote, bq1_order(e.route)))
+            shortlist |= {e.route for e in ranked[:8]}  # union of the two top-8 lists
+        result = adaptive_sampling(shortlist, search)  # §8.3 steps 2-4, over the shortlist
+        if result.selection is None:
+            result = adaptive_sampling(routes, search)  # full-table fallback, charged
+    stats["strategy"] = controls.stats()             # memo / prefix counters of this solve
+    return relabel(result, "uni_sor_optimized")
+```
+
+### 9.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart TD
+    subgraph Worker Solve Window
+        Ctl[Install fresh L02/L03/L04<br>per-solve controls] --> Enum[compute_all_routes]
+        Enum --> Probe[Probe 5 % and 100 %<br>rank by exact quote]
+        Probe --> SL[Shortlist: top 8 per probe<br>union, B-Q1 ties]
+        SL --> Samp[Adaptive sampling §8<br>over shortlisted routes]
+        Samp --> Sel{Complete selection?}
+        Sel -- no --> FB[Full-table fallback<br>charged] --> Samp2[Adaptive sampling<br>over all routes]
+        Sel -- yes --> Plan[Validated incumbent]
+        Samp2 --> Plan
+        Plan --> Restore[Restore reference kernels]
+    end
+    Restore --> Eval[Independent evaluation<br>reference path, parent process]
+```
+
+### 9.5 Hand-Worked Numeric Example
+**(a) Teaching graph (same request as §8.5).**
+- **Probes:** The 5 % and 100 % probes give 8 entries and cost 12 quotes. At 5 % the ranking is
+  `P_AC -> P_CB` 738, `P_AD -> P_DB` 590, `P_AB1` 496, `P_AB2` 447. At 100 % it is 12434, 9947,
+  9066, 8546. The graph has only 4 routes and $K = 8$, so the shortlist keeps everything
+  (`search_scope = full_cohort`).
+- **Sampling:** The rounds are exactly those of §8.5: coarse 75 / 25, then 80 / 20, then
+  `converged` after sampling 11 percents. The result is the same $\mathbf{12581}$ plan.
+- **Quote accounting:** The total is again **66** quotes, but split differently:
+
+  | Phase | Quotes | Why |
+  |---|---|---|
+  | probe | 12 | 5 % and 100 % |
+  | coarse | 18 | 25 / 50 / 75 are new; 100 % is memoized |
+  | round 1 | 24 | 20 / 30 / 70 / 80 are new; 5 % is memoized |
+  | round 2 | 12 | 15 / 85 |
+
+  The 22 memo hits are 6 (100 %), 6 (5 %) and 10 replay hops.
+- **Controls:** Every teaching pool is CPMM, so L02–L04 never run. The per-solve counters in
+  `search.strategy` are all zero (`tick_math` misses 0, `prefix` queries 0). The controls change
+  only CL/LB kernels.
+
+**(b) Wide graph: the shortlist cuts a route, and the 5 % probe saves a thin pool.**
+- **Setup:** Nine equal-price pools `D1`…`D9` with reserves $(k \cdot 10^6, k \cdot 10^6)$, plus
+  one thin pool `T` with $(300\,000, 600\,000)$. All pools have 30 bps fees. The request is
+  $A = 10^6$ A $\to$ B, with $H = 1$, $S = 2$ and $\delta = 5$.
+- **Probe values:**
+  - `T` at 5 %:
+    $$\Delta x_{\text{fee}} = 50\,000 \cdot 9970 = 498\,500\,000$$
+    $$\Delta y = \lfloor 498\,500\,000 \cdot 600\,000 / (3 \cdot 10^9 + 498\,500\,000) \rfloor = 85493$$
+  - `T` at 100 %:
+    $$\lfloor 5\,982\,000\,000\,000\,000 / 12\,970\,000\,000 \rfloor = 461218$$
+  - `D9` at 5 %:
+    $$\lfloor 4\,486\,500\,000\,000\,000 / 90\,498\,500\,000 \rfloor = 49575$$
+  - `D1` at 100 %:
+    $$\lfloor 9\,970\,000\,000\,000\,000 / 19\,970\,000\,000 \rfloor = 499248$$
+- **Ranking:**
+
+  | Rank | 5 % probe | 100 % probe |
+  |---|---|---|
+  | 1 | `T` 85493 | `D9` 897569 |
+  | 2–8 | `D9` 49575 … `D3` 49035 | `D8` 886517 … `D2` 665331 |
+  | 9 | `D2` 48637 (cut) | `D1` 499248 (cut) |
+  | 10 | `D1` 47482 (cut) | `T` 461218 (cut) |
+
+- **Shortlist:** The union is `D2`…`D9` plus `T`: 9 routes. `D1` is skipped
+  (`candidates_truncated = 1`, `search_scope = shortlist`). `T` ranks last at full size but first
+  at 5 %.
+- **Sampling:**
+  - The seed is `D9` @ 100 % = 897569.
+  - Coarse: `D9`@75 + `T`@25 = $690\,390 + 272\,280 = 962\,670$.
+  - Refine: `D9`@80 + `T`@20 = $972\,236$.
+  - Refine: `D9`@85 + `T`@15 = $774\,520 + 199\,599 = \mathbf{974\,119}$.
+  - Refine: $\{10, 90\}$ gives `D9`@90 + `T`@10 = $965\,611$, which does not win.
+  - The search stops with `converged`.
+- **Outcome:** The result equals `uni_sor_port`: `D9` receives 850000 and returns 774520; `T`
+  receives 150000 and returns 199599.
+- **Quote accounting:**
+
+  | Algorithm | Quotes | Breakdown |
+  |---|---|---|
+  | `uni_sor_port` | 200 | $10 \times 20$ |
+  | `uni_sor_adaptive` | 130 | 40 probe + 90 table |
+  | `uni_sor_optimized` | **119** | 20 probe + $9 \times 11$ table |
+
+- **Counterfactual (not the recipe):** This shows why the 5 % probe exists. `uni_sor_fast` with
+  `probe_percents: [100]` and $K = 8$ keeps only `D2`…`D9`, drops `T`, and returns `D9`@55 +
+  `D8`@45 = $941\,683$ using 74 quotes. That is a loss of $32\,436$ raw units, or
+  **332.98 bps**.
+
+**(c) Recorded losses.**
+- The L08 matrix recorded two real held-out losses, 1.125 bps and 1.095 bps, both on
+  `09bc4e`-`201eba` cases.
+- Both come from the shortlist. Sampling added none (H1 $\to$ H2), and H3, which keeps every
+  ranked route, has none.
+
+### 9.6 Implementation Map
+- Strategy adapter: `routing/algorithms/uni_sor_strategies.py`.
+  - `_controls` (line 233) validates the recipe's control settings.
+  - `_solve` (line 290) wraps `uni_sor_fast.solve` in `exact_controls.installed(QuoteControls.fresh(...))`.
+  - Entry points: `prepare_optimized` / `solve_optimized` (lines 328–334).
+  - Factory: `OPTIMIZED_FACTORY` (line 349).
+- Shortlist: `routing/algorithms/uni_sor_fast.py`.
+  - `shortlist_routes` (line 323) ranks and takes the per-probe union.
+  - The probe block is at lines 563–597, and the full-table fallback at lines 857–866.
+- Control installer: `pools/exact_controls.py`.
+  - Control keys: `QUOTE_CONTROL_KEYS` (line 32).
+  - `QuoteControls.fresh` / `stats` (line 44) and `installed` (line 74).
+  - The same code serves the L08 driver.
+- Control kernels: `pools/concentrated.py` `swap(..., skip_empty_spans, math_reuse, prefix_reuse)`,
+  `pools/cl_math.py` `TickMathReuse`, `pools/liquidity_book.py` `BinMathReuse`, and
+  `concentrated.CLPrefixReuse`.
+- Contracts: [`latency-l02-empty-cl-spans.md`](latency-l02-empty-cl-spans.md),
+  [`latency-l03-math-reuse.md`](latency-l03-math-reuse.md),
+  [`latency-l04-prefix-reuse.md`](latency-l04-prefix-reuse.md) and
+  [`latency-l06-sor-shortlist.md`](latency-l06-sor-shortlist.md).
+
+### 9.7 Parameters, Budgets, and Ties
+- **Caller parameters:** They are the same caller-owned `search.*` values as §8.7. The 5 % probe
+  must be a grid percent, so $\delta \in \{1, 5\}$. Under `--strategies all|optimized`, a
+  `percent_step` that does not divide 5 is refused before any worker starts.
+- **Recipe values are fixed:** Changing the probes, $K$, the sampling or the control settings is
+  refused under this name.
+- **Budgets:** `max_candidates` counts *enumerated* routes, because all of them must be probed.
+  The `max_quotes` hard limit and the absent soft cap behave as in §8.7. A budget interruption
+  during the fallback reports the planned scope, not completed coverage.
+- **Ties:** Probe ranks break ties by B-Q1 order, and a route's best rank over the probes decides
+  `direct_routes` (unused here, $d = 0$). Selection ties follow §8.7.
+
+### 9.8 Computational and Memory Cost
+- **Pool quotes:** probes $\sum_{\pi \in \Pi} \text{hops}(\pi) \cdot 2$, plus the sampled table over
+  at most 16 shortlisted routes, plus replay quotes. The probe cost is the only term that grows
+  with $\lvert \Pi \rvert$.
+  - With a fallback, the full-table work is added and charged.
+  - Measured: 66 vs 120 (teaching graph), 119 vs 200 (wide graph), 12 vs 40 (§10) and
+    **0.152 ×** the reference's quotes over the L08 matrix.
+- **Per-quote work:** L02–L04 remove executed CL iterations, tick/bin price computations and
+  repeated full steps. On the WHI-1504 L01 records, L02 alone executed 6.26 M of 36.00 M logical
+  CL iterations. The controls do not change the number of pool quotes: H2 $\to$ H4 has identical
+  quotes and 0 semantic mismatches.
+- **Memory:** The table holds at most $16 \cdot G$ entries (plus a fallback). The controls are
+  bounded by 16384 tick entries, 4096 bin entries, and 4096 keys / 262144 checkpoints per solve,
+  and they are discarded after it. The L08 full-source cold peak was 41.0 MiB vs 268.7 MiB for
+  `uni_sor_port`.
+- **Timing:** The L08 sentinel warm median was 0.120 s vs 3.752 s for S0. H4 ran at 100 % of
+  samples above the load threshold, so this is a diagnostic only, never adoption evidence.
+
+### 9.9 Guarantees and Limitations
+- **Guarantees:**
+  - Everything in §8.9 holds.
+  - The controls are exact: identical outcomes, and H2 $\to$ H4 has 0 mismatches in every stage.
+  - The controls never reach the independent evaluation or any base strategy's worker.
+  - The best full-input single route is always shortlisted.
+  - A shortlist failure falls back to the full table and is never reported as `no_route`.
+- **Limitations:**
+  - The shortlist ranks *single-route* quotes at only two sizes. A route that is outside the top
+    8 at both sizes but useful inside a combination is skipped (§9.5 (b)). This caused the
+    recorded L08 held-out losses of ≤ 1.125 bps.
+  - $K$ is fixed at 8, and there is no TVL signal.
+  - The §8.9 local-fixed-point limitation also applies.
+  - The controls help only CL/LB pools, and their lifetime is per solve only (no cross-solve
+    cache).
+- **Recorded scope (L08):** The disposition is **opt-in only, not a default**. The decision
+  comparisons were `inconclusive` (host load), and any quality loss needs the owner's explicit
+  acceptance.
+
+---
+
+## 10. Real-State Fixed-Block Walkthrough (Block 101082044)
+
+To demonstrate how these strategies behave on real blockchain liquidity, we execute all eight
+strategies (six base, two optimized) against the verified frozen Mantle snapshot
+`mantle-5src-101082044-091b0759-fixture`:
 - **Parent Bundle:** `mantle-5src-101082044-091b0759-fixture`
 - **Bundle Hash:** `5401b1de8c83a3527e5f9b5afae4510a760f171f2b306d49dbb5c830256c9ad0`
 - **Block:** 101082044
@@ -925,11 +1447,14 @@ solvers against the verified frozen Mantle snapshot `mantle-5src-101082044-091b0
     --profile config/daily_gross.yaml \
     --token-in USDC --token-out USDT0 --amount 10000 --details
   ```
+  `--strategies all` is the default. It runs the profile's six base strategies, then
+  `uni_sor_adaptive` and `uni_sor_optimized`, each in its own isolated worker.
+  `--strategies base` reproduces the six-row table.
 
 *Classification:* This is an **exploratory single request** evaluated on a checked-in 19-pool fixture
 subset, not a held-out corpus result.
 
-### 8.1 Summary Comparison Table
+### 10.1 Summary Comparison Table
 
 | Algorithm | Status | Evaluated Gross (USDT0) | Gross Raw Units | Quotes Counted | Trace Characteristics |
 |---|---|---|---|---|---|
@@ -939,10 +1464,12 @@ subset, not a held-out corpus result.
 | `path_split` | `ok` | 10000.660449 | 10000660449 | 80 | 100% Agni V3 (multi-hop splits unviable) |
 | `incremental_graph` | `ok` | **10000.663447** | **10000663447** | 264 | **99.5% Agni V3 + 0.5% Moe LB** |
 | `uni_sor_port` | `ok` | 10000.660449 | 10000660449 | 40 | 100% Agni V3 (LB pool excluded) |
+| `uni_sor_adaptive` | `ok` | 10000.660449 | 10000660449 | **12** | 100% Agni V3 (6 of 20 percents sampled) |
+| `uni_sor_optimized` | `ok` | 10000.660449 | 10000660449 | **12** | 100% Agni V3 (L02–L04 installed; result unchanged) |
 
-### 8.2 Execution Order and Fund Ledger Trace
+### 10.2 Execution Order and Fund Ledger Trace
 
-#### The Baseline Plan (`direct`, `single_path`, `direct_split`, `path_split`, `uni_sor_port`)
+#### The Baseline Plan (`direct`, `single_path`, `direct_split`, `path_split`, `uni_sor_port`, `uni_sor_adaptive`, `uni_sor_optimized`)
 ```
 Step 0: agni_v3 pool 0x36f66548cda219c6fc037037cee063b9f28b13ef
   Token In:  USDC (0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9)
@@ -965,7 +1492,7 @@ Terminal Total: 9950659893 + 50003554 = 10000663447 raw
 Residuals: None. Reconciled exactly.
 ```
 
-### 8.3 Analysis of Real-World Behavior
+### 10.3 Analysis of Real-World Behavior
 1. **Marginal Exploitation:** `incremental_graph` identified that Merchant Moe Liquidity Book pool
    `0x368b...` possessed an extremely favorable active bin exchange rate for the first $50$ USDC,
    capturing a marginal gain of $+2998$ raw base units ($+0.003\text{ bps}$, calculated as
@@ -974,23 +1501,47 @@ Residuals: None. Reconciled exactly.
    route and 1 direct Merchant Moe Classic V2 route. Across 20 percentage buckets (5% to 100%),
    it quoted $2 \times 20 = 40$ times. Contract Deviation D-4 explicitly excludes Liquidity Book
    pools, accurately mirroring upstream Uniswap SOR behavior on non-Uniswap concentrated architectures.
+3. **Adaptive Sampling Stops After One Refinement:** Both optimized strategies search the same
+   2 routes as `uni_sor_port`, but they sample only 6 of the 20 percents: $2 \times 6 = 12$ quotes
+   instead of 40.
+   - `uni_sor_adaptive` probes 25/50/75/100 (8 quotes), and those entries are its coarse table.
+   - `uni_sor_optimized` probes 5/100 (4 quotes) and quotes 25/50/75 at the coarse round.
+   - In both, the full-input Agni V3 seed replays valid first. The coarse selection is that same
+     100 % route (outcome `unchanged`).
+   - The basis $\{100\}$ proposes only 95 and the freed share 5. The selection stays unchanged,
+     nothing new is proposed, and the search stops with `converged` after 1 validation.
+   - Here the result equals `uni_sor_port`'s. The single-request CLI shows one observation of the
+     solve latency, not a latency distribution.
+4. **Exact Controls on a Real CL Pool:** `uni_sor_optimized` records its per-solve counters in
+   `search.strategy`.
+   - Across the six Agni V3 quotes, the tick memo records 1 miss and 5 hits (1 entry).
+   - The prefix reuse sees 6 queries on 1 key but resumes none (`reused_steps = 0`). Every swap
+     ends inside its first step, so no full step exists to reuse.
+   - The controls leave the result, quotes and trace unchanged. Their saving grows with deep
+     tick traversals, such as the large L08 sentinel (sentinel cold charge, contaminated:
+     `uni_sor_fast` H2 0.64 s vs H4 0.27 s).
 
 ---
 
-## 9. Algorithmic Comparison Matrix, Complexity, and Reading Map
+## 11. Algorithmic Comparison Matrix, Complexity, and Reading Map
 
-### 9.1 High-Level Comparison Matrix
+### 11.1 High-Level Comparison Matrix
 
-| Property | `direct` | `single_path` | `direct_split` | `path_split` | `incremental_graph` | `uni_sor_port` |
-|---|---|---|---|---|---|---|
-| **Multi-Hop Support** | No | Yes ($\le H$) | No | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) |
-| **Split Support** | No | No | Yes ($\le S$) | Yes ($\le S$) | Yes ($\le K$) | Yes ($\le S$) |
-| **Shared Intermediate Pools** | N/A | N/A | No | No | **Yes** | No |
-| **Supported Protocols** | All 5 | All 5 | All 5 | All 5 | All 5 | CPMM + CL only (No LB) |
-| **Search Mechanism** | Exhaustive scan | Hop-major bounded DFS | Exact Grid DP | Knapsack Branch & Bound | Greedy marginal chunks | FIFO layer priority queue |
-| **Optimality Scope** | Best evaluated | Best evaluated | Best on grid | Best disjoint grid | Local heuristic | Local heuristic |
+The two optimized strategies share `uni_sor_port`'s scope (multi-hop $\le H$, splits $\le S$,
+no shared pools, CPMM + CL only). They differ only in how the quote table is built:
 
-### 9.2 Asymptotic Search Complexity
+| Property | `direct` | `single_path` | `direct_split` | `path_split` | `incremental_graph` | `uni_sor_port` | `uni_sor_adaptive` | `uni_sor_optimized` |
+|---|---|---|---|---|---|---|---|---|
+| **Multi-Hop Support** | No | Yes ($\le H$) | No | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) |
+| **Split Support** | No | No | Yes ($\le S$) | Yes ($\le S$) | Yes ($\le K$) | Yes ($\le S$) | Yes ($\le S$) | Yes ($\le S$) |
+| **Shared Intermediate Pools** | N/A | N/A | No | No | **Yes** | No | No | No |
+| **Supported Protocols** | All 5 | All 5 | All 5 | All 5 | All 5 | CPMM + CL only (No LB) | CPMM + CL only (No LB) | CPMM + CL only (No LB) |
+| **Search Mechanism** | Exhaustive scan | Hop-major bounded DFS | Exact Grid DP | Knapsack Branch & Bound | Greedy marginal chunks | FIFO layer priority queue | SOR core on a coarse-to-fine sampled table | 5 % / 100 % route shortlist + sampled SOR core |
+| **Optimality Scope** | Best evaluated | Best evaluated | Best on grid | Best disjoint grid | Local heuristic | Local heuristic | Local fixed point (approximates `uni_sor_port`) | Shortlist + local fixed point (approximates `uni_sor_port`) |
+| **Group / Default** | Base | Base | Base | Base | Base | Base (parity reference) | Optimized, experimental, opt-in | Optimized, experimental, opt-in |
+| **Quote Controls** | Reference | Reference | Reference | Reference | Reference | Reference | Reference | Exact L02–L04, per solve |
+
+### 11.2 Asymptotic Search Complexity
 
 Let:
 - $P$: Number of admitted pools in snapshot ($P_{\text{direct}}$ for direct pools).
@@ -1000,6 +1551,8 @@ Let:
 - $S$: Maximum splits (`search.max_splits`).
 - $c_q$: Computational cost of one simulated quote (CL/LB tick traversal).
 - $\Pi_H$: Cycle-free paths up to $H$ hops.
+- $L$: Routes searched after probing ($L = $ all ranked routes for `uni_sor_adaptive`; $\lvert L \rvert \le 16$ for `uni_sor_optimized`).
+- $\lvert S_f \rvert$: Percents sampled when refinement stops ($\le G$); $R \le G$ refinement rounds; $V$ validation replays.
 
 *Table Notation:* `\lvert \Pi_H \rvert` denotes the count of cycle-free candidate paths.
 
@@ -1011,8 +1564,10 @@ Let:
 | `path_split` | $\mathcal{O}(S \cdot G^3 + \lvert \Pi_H \rvert \cdot G \cdot c_q + \text{BnB Nodes})$ | $\le \text{Quotes}(\text{sub}) + \sum_{\pi} \text{hops}(\pi) \cdot G$ | $\mathcal{O}(S \cdot G^2 + \lvert \Pi_H \rvert \cdot G)$ |
 | `incremental_graph` | $\mathcal{O}(K \cdot \sum_{\pi} \text{hops}(\pi) \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot \sum_{\pi} \text{hops}(\pi) + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K + \lvert \Pi_H \rvert)$ + cache |
 | `uni_sor_port` | $\mathcal{O}(\sum_{\pi} \text{hops}(\pi) \cdot G \cdot c_q + \lvert Q \rvert \cdot \lvert \Pi_H \rvert)$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G + \text{hops}(\pi_{\text{last}})$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G + \lvert Q \rvert)$ |
+| `uni_sor_adaptive` | $\mathcal{O}(\sum_{\pi \in L} \text{hops}(\pi) \cdot \lvert S_f \rvert \cdot c_q + R \cdot \text{Core}(\lvert L \rvert \cdot \lvert S_f \rvert) + V \cdot \text{Eval})$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G + \text{replay quotes}$ (grid completion); typically $\sum_{\pi \in L} \text{hops}(\pi) \cdot \lvert S_f \rvert$ | $\mathcal{O}(\lvert L \rvert \cdot \lvert S_f \rvert + \lvert Q \rvert)$ |
+| `uni_sor_optimized` | $\mathcal{O}(\sum_{\pi \in \Pi_H} \text{hops}(\pi) \cdot 2 \cdot c_q' + \text{Cost}(\text{adaptive over } L))$, $c_q' \le c_q$ under L02–L04 | $\le \sum_{\pi} 2\,\text{hops}(\pi) + \sum_{\pi \in L} \text{hops}(\pi) \cdot G$ + replay quotes, plus the full table on fallback | $\mathcal{O}(16 \cdot G + \lvert Q \rvert)$ + bounded per-solve memos |
 
-### 9.3 Source Reading Map
+### 11.3 Source Reading Map
 
 When navigating the codebase, consult these authoritative entry points:
 - **Interfaces & Context:** `routing/algorithms/base.py` (`SolveContext`, `Budget`, `SolveResult`, `SolveStatus`).
@@ -1023,15 +1578,20 @@ When navigating the codebase, consult these authoritative entry points:
   - `routing/algorithms/single_path.py`: `prepare` (line 107), `_new_quotes_needed` (line 116), `solve` (lines 133–294)
   - `routing/algorithms/direct_split.py`: `prepare` (line 107), `leg_amounts` (line 121), `allocation_plan` (line 128), `solve` (lines 157–348)
   - `routing/algorithms/path_split.py`: `paths_conflict` (line 133), `_branch_and_bound` (lines 183–265), `_family_counts` (line 301), `_family_exceeds` (line 318), `_members_above` (line 335), `solve` (lines 341–572)
-  - `routing/algorithms/incremental_graph.py`: `chunk_amounts` (line 139), `creates_cycle` (line 145), `merged_plan` (line 180), `topology` (line 260), `solve` (lines 290–530), `marginal` (line 343)
+  - `routing/algorithms/incremental_graph.py`: `chunk_amounts` (line 149), `creates_cycle` (line 155), `merged_plan` (line 190), `topology` (line 270), `solve` (lines 407–706), `marginal` (line 471)
   - `routing/algorithms/uni_sor_port.py`: `compute_all_routes` (line 266), `amount_distribution` (line 352), `build_route_quotes` (line 429), `v8_small_array_sort` (line 453), `find_first_route_not_using_used_pools` (line 501), `get_best_swap_route_by` (line 538), `get_best_swap_route` (line 670), `integer_fill` (line 709), `prepare` (line 772), `solve` (lines 833–1051)
+  - `routing/algorithms/uni_sor_fast.py` (engine of both optimized strategies): `refine_percents` (line 273), `prepare` (line 294), `shortlist_routes` (line 323), `solve` (lines 367–969) with `sampled_search` (lines 648–811) and the full-table fallback (lines 857–866)
+  - `routing/algorithms/uni_sor_strategies.py`: `registered_settings` (line 84), `check_recipe` (line 122), `STRATEGIES` (line 166), `_prepare` (line 260), `_solve` (line 290), `ADAPTIVE_FACTORY` / `OPTIMIZED_FACTORY` (lines 348–349)
+  - `pools/exact_controls.py`: `QUOTE_CONTROL_KEYS` (line 32), `QuoteControls` (line 44), `installed` (line 74)
+  - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the two comparison groups)
 - **Contract Verification:**
   - Uniswap SOR: [`uni-sor-port-contract.md`](uni-sor-port-contract.md) and `tests/routing/test_uni_sor_parity.py`.
+  - Optimized strategies: [`strategy-groups.md`](strategy-groups.md), [`latency-optimization-results.md`](latency-optimization-results.md) (L08), `tests/routing/test_uni_sor_strategies.py` and `tests/routing/test_uni_sor_fast.py`.
   - Cost Model: [`cost-model.md`](cost-model.md) and `benchmark/costs.py`.
 
 ---
 
-## 10. Operational Boundaries, Limitations, and Known Debt
+## 12. Operational Boundaries, Limitations, and Known Debt
 
 1. **`quote` CLI Profile Restrictions:**
    The `main.py quote` command explicitly refuses `empirical_cost` profiles (such as `config/daily.yaml`).
@@ -1044,7 +1604,8 @@ When navigating the codebase, consult these authoritative entry points:
 3. **SOR Zero Gas Scores (Adaptation A-3):**
    `uni_sor_port` evaluates routes assuming zero gas overhead (`(0, 0, 0)`), selecting purely on
    gross quotes. Even when the benchmark runner re-evaluates the resulting plan under a cost model,
-   the internal SOR selection remains gross-driven.
+   the internal SOR selection remains gross-driven. The same holds for both optimized strategies,
+   whose shortlist ranks by `quote_adjusted_for_gas` = raw quote.
 4. **Uncalibrated Split Costs:**
    Empirical cost models currently calibrate standard 1-hop and 2-hop single routes. Complex
    split or shared-pool topologies produce `UNRANKED` cost statuses in acceptance benchmarks
@@ -1067,3 +1628,22 @@ When navigating the codebase, consult these authoritative entry points:
      no admissible path does the incremental solve abort and fall back to the retained `path_split` candidate.
    - `uni_sor_port`: Refuses to select over a truncated quote table; if candidate or quote budgets
      truncate the matrix, it returns `timeout`.
+   - `uni_sor_adaptive` / `uni_sor_optimized`:
+     - A probe entry that needs uncollected state is null and counted
+       (`probe_entries_incomplete`).
+     - If no complete selection exists over the sampled table, the rest of the grid is quoted
+       first. The full-table fallback follows if needed, and only after that can the result be
+       `no_route` / `incomplete_snapshot`.
+     - A hard `max_quotes` stop is `timeout` with no plan.
+     - Selections that never replay valid give `invalid_plan`.
+8. **Optimized Strategies Are Not Defaults:**
+   - `uni_sor_adaptive` and `uni_sor_optimized` are experimental recipes.
+     - Their L08 decision comparisons were `inconclusive` (host load), so neither is adopted.
+     - No loss tolerance exists: `heuristic_default_loss_tolerance: null`.
+     - Their recipe values cannot be changed under their names.
+   - They need `search.max_hops`, `search.max_splits` and a `percent_step` that divides 5.
+     - Profiles without `search`, or with `percent_step: 10`, are refused under
+       `--strategies all|optimized`.
+     - Use `--strategies base` or `--strategies profile` for such profiles.
+   - `uni_sor_fast` stays a separate, profile-selected experiment
+     ([`strategy-groups.md`](strategy-groups.md)).
