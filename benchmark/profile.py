@@ -20,7 +20,11 @@ as `AlgorithmConfig.params`.
 The optional `graph` section (WHI-1441) holds `graph.chunks` (docs/DESIGN.md §2.12:
 explicit per profile, swept alongside percentage granularity), required by
 `incremental_graph` through `AlgorithmFactory.graph_params` under the same no-default
-rule; its values join the `search.*` values in `AlgorithmConfig.params`.
+rule; its values join the `search.*` values in `AlgorithmConfig.params`. The same section
+holds `graph.label_hops` (an integer >= `search.max_hops`) and `graph.label_pruning` (an
+explicit bool), the settings of the opt-in experimental `metis_inspired` (WHI-1449), which
+alone declares them; no other factory receives them and a profile without them resolves
+exactly as before.
 
 The optional `shortlist` section (WHI-1508) holds the pre-registered candidate-shortlist
 settings of the opt-in experimental `uni_sor_fast` variant of `uni_sor_port`
@@ -339,17 +343,26 @@ def _parse_search(obj: Any, where: str) -> dict[str, int]:
     return search
 
 
-# Every `graph.*` key the loader knows (docs/DESIGN.md §2.12), with its minimum.
-GRAPH_KEYS: dict[str, int] = {"chunks": 1}
+# Every integer `graph.*` key the loader knows (docs/DESIGN.md §2.12), with its minimum.
+# `label_hops` (WHI-1449, opt-in `metis_inspired` only) must also be >= `search.max_hops`.
+GRAPH_KEYS: dict[str, int] = {"chunks": 1, "label_hops": 1}
+# Boolean `graph.*` keys (WHI-1449 `label_pruning`: the mechanism ablation switch).
+GRAPH_FLAGS = ("label_pruning",)
 
 
 def _parse_graph(obj: Any, where: str) -> dict[str, int]:
-    _require_keys(obj, set(), set(GRAPH_KEYS), where)
-    return {
+    _require_keys(obj, set(), set(GRAPH_KEYS) | set(GRAPH_FLAGS), where)
+    graph = {
         key: _int_at_least(obj[key], minimum, f"{where}.{key}")
         for key, minimum in GRAPH_KEYS.items()
         if key in obj
     }
+    for key in GRAPH_FLAGS:
+        if key in obj:
+            if not isinstance(obj[key], bool):
+                raise ProfileError(f"{where}.{key}: expected a bool, got {obj[key]!r}")
+            graph[key] = obj[key]
+    return graph
 
 
 # Every `shortlist.*` key the loader knows (WHI-1508, opt-in `uni_sor_fast` only).
@@ -559,6 +572,14 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
     objective = _parse_objective(raw["objective"], "objective")
     search = _parse_search(raw["search"], "search") if "search" in raw else {}
     graph = _parse_graph(raw["graph"], "graph") if "graph" in raw else {}
+    if "label_hops" in graph:
+        if "max_hops" not in search:
+            raise ProfileError("graph.label_hops: needs search.max_hops to be declared")
+        if graph["label_hops"] < search["max_hops"]:
+            raise ProfileError(
+                f"graph.label_hops: must be >= search.max_hops ({search['max_hops']}), "
+                f"got {graph['label_hops']}"
+            )
     shortlist = (
         _parse_shortlist(raw["shortlist"], "shortlist", search.get("percent_step"))
         if "shortlist" in raw
