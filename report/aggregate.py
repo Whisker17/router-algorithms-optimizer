@@ -970,7 +970,10 @@ STRATEGY_GROUP_TITLES = {
 
 
 def strategy_groups(manifest: RunManifest) -> list[tuple[str, list[str]]] | None:
-    """(group, algorithms) in run order, read only from the run's own persisted selection
+    """(group, algorithms) -- groups in base / optimized / custom order, members in their
+    recorded order (a presentation, not the schedule: a custom algorithm may have run between
+    base ones; `manifest.algorithms` is the execution order) -- read only from the run's own
+    persisted selection
     record -- never from the current registry -- or `None` for a run without one (older
     records and `--strategies profile` runs keep their ungrouped presentation). A recorded
     algorithm missing from every group is still shown, under `custom`."""

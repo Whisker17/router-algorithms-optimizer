@@ -40,6 +40,7 @@ from benchmark.results import load_case_records, load_manifest
 from benchmark.runner import compare_runs
 from benchmark.strategies import StrategySelectionError, derive
 from routing.algorithms.registry import ALGORITHMS, BASE_STRATEGIES, OPTIMIZED_STRATEGIES
+from snapshot.bundle import load_bundle
 
 REPO = Path(__file__).resolve().parents[2]
 CORPUS = REPO / "tests" / "fixtures" / "corpus" / "bundle"
@@ -228,9 +229,17 @@ def test_changed_recipe_file_is_refused(tmp_path: Path, monkeypatch: pytest.Monk
         text = (REPO / "config" / "latency" / name).read_text()
         (tmp_path / "config" / "latency" / name).write_text(text + ("\n# edited\n" * (
             name == "l08.yaml")))  # fmt: skip
-    monkeypatch.setattr(profile_module, "REPO_ROOT", tmp_path)
+    from routing.algorithms import uni_sor_strategies
+
+    effective = _effective()  # derived from the real, unchanged file
+    factory = ALGORITHMS["uni_sor_adaptive"]
+    config = parse_profile(effective, "e.yaml").algorithm_config(factory)
+    monkeypatch.setattr(uni_sor_strategies, "REPO_ROOT", tmp_path)  # the one shared reader
     with pytest.raises(ProfileError, match="differs from the recipe pin"):
-        parse_profile(_effective(), "effective.yaml")
+        parse_profile(effective, "effective.yaml")
+    assert factory.prepare is not None  # the direct factory path refuses it as well
+    with pytest.raises(uni_sor_strategies.UniSorStrategyError, match="recipe pin"):
+        factory.prepare(load_bundle(MIXED), config)
 
 
 def test_effective_profile_round_trips_and_legacy_profiles_resolve_unchanged(
@@ -445,3 +454,45 @@ def test_reports_group_strategies_with_failures_and_escape_text(
     pairs = list(csv.DictReader((out / "paired_gross.csv").open()))
     assert any(p["algorithm"] == "uni_sor_adaptive" and p["baseline"] == "path_split"
                for p in pairs if p["run_id"] == grouped.name)  # fmt: skip
+
+
+def test_custom_profile_reports_the_recorded_execution_order_not_the_group_order(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """PR-F2: groups are a presentation. A custom algorithm listed between base ones runs
+    there; the report says so instead of claiming the group order is the run order."""
+    custom = {**_small(_doc()), "algorithms": ["direct", "uni_sor_fast", "path_split"],
+              "shortlist": {"probe_percents": [10, 100], "routes_per_probe": 3,
+                            "direct_routes": 1}}  # fmt: skip
+    source = _write(tmp_path, custom)
+    order = ["direct", "uni_sor_fast", "path_split", *OPTIMIZED_STRATEGIES]
+    assert main.main(["quote", "--bundle", str(CORPUS), "--profile", str(source),
+                      "--token-in", "USDC", "--token-out", "USDT0", "--amount", "1500.25",
+                      "--quotes-dir", str(tmp_path / "q"), "--details"]) == 0  # fmt: skip
+    out = capsys.readouterr().out
+    run_dir = _saved_run(out)
+    manifest = load_manifest(run_dir)
+    assert list(manifest.algorithms) == order  # the schedule keeps the profile's order
+    assert [r["algorithm"] for r in load_case_records(run_dir)] == order
+    assert [e["algorithm"] for e in manifest.prepare_events] == order
+    assert f"execution order (sequential, as recorded): {', '.join(order)}" in out
+    assert "sequentially in that order" not in out
+    # the grouped presentation is unchanged: base, optimized, then custom
+    base = out.index("Base strategies:")
+    optimized = out.index("Optimized strategies:")
+    other = out.index("Other profile-selected strategies:")
+    assert base < optimized < other
+    assert re.search(r"^uni_sor_fast\s+ok\s", out[other:], re.M)
+    assert out.index("== Base strategies ==") < out.index("== Optimized strategies ==") < out.index(
+        "== Other profile-selected strategies ==")  # fmt: skip
+    # the HTML report of a batch run of the same source states the recorded order too
+    results = tmp_path / "results"
+    assert main.main(["run", "--bundle", str(MIXED), "--profile", str(source),
+                      "--results-dir", str(results)]) == 0  # fmt: skip
+    (batch,) = results.iterdir()
+    assert list(load_manifest(batch).algorithms) == order
+    assert main.main(["report", str(batch), "--output", str(tmp_path / "report")]) == 0
+    html = (tmp_path / "report" / "report.html").read_text()
+    assert f"the recorded order <code>{', '.join(order)}</code>" in html
+    assert "base strategies first" not in html
+    assert "<h3>Other profile-selected strategies (1)</h3>" in html

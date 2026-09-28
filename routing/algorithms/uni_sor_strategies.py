@@ -20,11 +20,13 @@ What a strategy is:
   `uni_sor_fast.prepare` result of the strategy's settings; nothing is re-implemented. The
   result is re-labelled with the strategy's own name (the runner refuses any other name),
   and its search metadata gains a `strategy` record (name, group, recipe, controls).
-- **Its settings are the recipe's, not a default.** Every numeric setting comes from the
-  frozen, sha256-pinned L08 arms file through the validated profile (`strategies.<name>`,
-  checked against the arm by `benchmark.profile`); the caller's objective, budget and
-  `search.*` values are the profile's own, shared with the base strategies. `prepare`
-  re-checks the settings and the exact control set, since it can be called without a profile.
+- **Its settings are the recipe's, not a default.** Every recipe setting comes from the
+  frozen, sha256-pinned L08 arms file (`registered_settings`). The profile loader and this
+  factory's `prepare` both refuse any `shortlist` / `sampling` / `controls` value that
+  differs from it (`check_recipe`, one shared check), so a direct caller of the algorithm
+  interface cannot run other settings under the recipe's name. The caller's objective,
+  budget and `search.*` values are its own, shared with the base strategies, and are not
+  part of the recipe.
 - **Per-solve controls.** `uni_sor_optimized` installs its L02-L04 quote controls with the
   shared `pools.exact_controls` installer: fresh instances built inside the timed solve,
   reference kernels restored in a `finally` (after errors too), never visible to the
@@ -37,10 +39,14 @@ What a strategy is:
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any
+
+import yaml
 
 from pools import exact_controls
 from routing.algorithms import uni_sor_fast as fast
@@ -66,8 +72,67 @@ CONTROLS_PARAM = "controls"
 STRATEGY_STATS_KEY = "strategy"
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+RECIPE_KEYS = ("shortlist", "sampling", "controls")
+
+
 class UniSorStrategyError(ValueError):
-    """`prepare` received settings that are not a complete, valid recipe of the strategy."""
+    """Settings that are not a complete, valid recipe of the strategy, or a recipe file that
+    no longer matches its pin."""
+
+
+def registered_settings(recipe: Mapping[str, Any]) -> dict[str, Any]:
+    """The recipe arm's `shortlist` (probe percents ascending), `sampling` and `controls`
+    (each selected control with its registered settings), read from the arms file only
+    after its bytes hash to the recipe's sha256 pin -- the frozen L08 v1 bytes, which
+    `benchmark.latency.parse_arms` validates (a test asserts both readings agree). A changed
+    file is refused, never reinterpreted. The only reader of recipe values, shared by the
+    profile loader and `prepare`."""
+    where = f"recipe {recipe.get('key')} arm {recipe.get('arm')}"
+    try:
+        data = (REPO_ROOT / str(recipe["path"])).read_bytes()
+    except OSError as exc:
+        raise UniSorStrategyError(f"{where}: recipe file unreadable: {exc}") from exc
+    digest = hashlib.sha256(data).hexdigest()
+    if digest != recipe["sha256"]:
+        raise UniSorStrategyError(
+            f"{where}: {recipe['path']} sha256 {digest} differs from the recipe pin "
+            f"{recipe['sha256']} (a registered recipe is frozen; a changed file is refused)"
+        )
+    doc = yaml.safe_load(data)
+    if (doc.get("key"), doc.get("version")) != (recipe["key"], recipe["version"]):
+        raise UniSorStrategyError(f"{where}: {recipe['path']} is not that key/version")
+    arm = next((a for a in doc.get("arms", []) if a.get("name") == recipe["arm"]), None)
+    if (
+        arm is None
+        or arm.get("algorithms") != [fast.NAME]
+        or not arm.get("shortlist")
+        or not arm.get("sampling")
+    ):
+        raise UniSorStrategyError(f"{where}: not a {fast.NAME} recipe arm")
+    shortlist = dict(arm["shortlist"])
+    shortlist["probe_percents"] = sorted(shortlist["probe_percents"])
+    return {
+        "shortlist": shortlist,
+        "sampling": dict(arm["sampling"]),
+        "controls": {c: dict(doc["controls"][c]) for c in arm["controls"]},
+    }
+
+
+def check_recipe(recipe: Mapping[str, Any], declared: Mapping[str, Any]) -> None:
+    """Refuse `declared` `shortlist` / `sampling` / `controls` values (probe percents in any
+    order) unless they are exactly the registered recipe's (`registered_settings`)."""
+    expected = registered_settings(recipe)
+    for key in RECIPE_KEYS:
+        value = dict(declared[key])
+        if key == "shortlist" and "probe_percents" in value:
+            value["probe_percents"] = sorted(value["probe_percents"])
+        if value != expected[key]:
+            raise UniSorStrategyError(
+                f"{key}: {value!r} differs from recipe {recipe['key']} arm {recipe['arm']} "
+                f"({expected[key]!r}); a named strategy is exactly its recipe -- use "
+                f"{fast.NAME} for other settings"
+            )
 
 
 @dataclass(frozen=True)
@@ -209,6 +274,16 @@ def _prepare(strategy: Strategy, bundle: SnapshotBundle, config: AlgorithmConfig
         raise UniSorStrategyError(f"{strategy.name}: {exc}") from exc
     if prepared.sampling is None:  # unreachable: fast.prepare got every sampling key
         raise UniSorStrategyError(f"{strategy.name}: adaptive sampling settings are required")
+    # Generic validity is not enough: the settings must BE the recipe named in every result.
+    declared = {
+        "shortlist": prepared.settings.to_dict(),
+        "sampling": prepared.sampling.to_dict(),
+        "controls": controls,
+    }
+    try:
+        check_recipe(strategy.recipe, declared)
+    except UniSorStrategyError as exc:
+        raise UniSorStrategyError(f"{strategy.name}: {exc}") from exc
     return PreparedStrategy(prepared, MappingProxyType(controls))
 
 

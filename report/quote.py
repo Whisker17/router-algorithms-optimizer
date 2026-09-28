@@ -6,7 +6,9 @@ pools file the source of every pool).
 `render_compact` prints one row per selected algorithm, failures included; a run that
 persisted its strategy groups (`main.py quote --strategies`, WHI-1528) shows them as
 separate "Base strategies" / "Optimized strategies" blocks, older runs keep one ungrouped
-table (and `render_details` the same group headings). `render_details` adds, for EVERY
+table (and `render_details` the same group headings). Groups are a presentation: the
+header prints the recorded execution order separately, since a profile's custom algorithm
+may run between its base ones. `render_details` adds, for EVERY
 algorithm, the final plan exactly as the independent evaluation replayed it -- steps in
 execution order, the fund ledger (how each fund was split between later steps, which steps
 merged funds, which physical pools were reused) with exact raw amounts that reconcile --
@@ -233,8 +235,10 @@ def render_header(view: QuoteView) -> list[str]:
         lines.append(
             f"strategies: --strategies {mode} -- "
             + "; ".join(f"{STRATEGY_GROUP_TITLES[g]} ({len(n)})" for g, n in groups)
-            + ", run sequentially in that order under the same objective, budget and search"
+            + " (groups are a presentation, not the schedule), under the same objective, "
+            "budget and search"
         )
+        lines.append(f"  execution order (sequential, as recorded): {', '.join(m.algorithms)}")
         for group, names in groups:
             for name in names:
                 entry = strategy_recipe(m, name)
@@ -308,7 +312,10 @@ def render_compact(view: QuoteView) -> str:
             )
     table = _table(header, rows)
     groups = strategy_groups(view.manifest)
-    if groups is not None:  # each group's rows under its own heading, in run order
+    # Each group's rows under its own heading, in the recorded order within the group (the
+    # execution sequence itself is printed in the header; a custom algorithm may run between
+    # base ones).
+    if groups is not None:
         by_name = dict(zip((n for n, _ in records), table[2:], strict=True))
         table = table[:2] + [
             line

@@ -110,7 +110,11 @@ registry:
 
 - **Terminal** (`quote`, and `report` of a quote run): the compact table shows *Base
   strategies* and *Optimized strategies* blocks; `--details` has group headings. The
-  header names each optimized strategy's recipe and controls.
+  header names each optimized strategy's recipe and controls. Groups are a presentation,
+  not the schedule: the header also prints the recorded execution order. With a custom
+  profile such as `[direct, uni_sor_fast, path_split]`, the run order is `direct`,
+  `uni_sor_fast`, `path_split`, then the optimized strategies, while the blocks read base,
+  optimized, custom.
 - **HTML**: a *Strategy groups* section gives, per group, every algorithm's status counts
   over the full schedule (failures included). It also shows paired gross versus `direct`
   and versus `uni_sor_port` on common-success cases, and each strategy's recorded recipe

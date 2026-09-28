@@ -116,7 +116,8 @@ def derive(
 
 
 def selected_groups(profile: RunProfile) -> list[tuple[str, list[str]]]:
-    """(group, algorithms) in run order, from the persisted selection record or, without
+    """(group, algorithms), members in `profile.algorithms` order (groups are a presentation;
+    `profile.algorithms` is the execution order), from the persisted selection record or, without
     one (`--strategies profile`), from the static classification of the algorithms."""
     groups = profile.selection.get("groups") if profile.selection else None
     if groups is None:

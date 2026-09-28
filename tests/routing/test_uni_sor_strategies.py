@@ -317,3 +317,66 @@ def test_solve_needs_its_own_prepared_state() -> None:
     with pytest.raises(TypeError, match="PreparedStrategy"):
         strategies.solve_adaptive(bundle.cases[0], SolveContext(bundle, gross_only(), prepared),
                                   Budget())  # fmt: skip
+
+
+# ------------------------------------------------------------------ recipe binding (PR-F1)
+
+
+def test_the_shared_recipe_reader_is_the_l08_drivers_arm() -> None:
+    for name, arm_name in ARMS.items():
+        arm = latency.load_arms(L08).arms[arm_name]  # the driver's validated reading
+        got = strategies.registered_settings(strategies.STRATEGIES[name].recipe)
+        assert arm.shortlist is not None
+        assert got["shortlist"] == {**arm.shortlist, "probe_percents": sorted(
+            arm.shortlist["probe_percents"])}  # fmt: skip
+        assert got["sampling"] == arm.sampling
+        assert got["controls"] == dict(arm.controls)
+
+
+def test_exact_recipes_prepare_with_the_callers_own_search_constraints() -> None:
+    bundle = _load("tests/fixtures/routing/mantle_mixed")
+    for name in ARMS:
+        params = _params(name)
+        params["probe_percents"] = list(reversed(params["probe_percents"]))  # order is not a value
+        params.update(max_hops=3, max_splits=2)  # caller-owned search.*, not part of the recipe
+        factory = ALGORITHMS[name]
+        assert factory.prepare is not None
+        prepared = factory.prepare(bundle, AlgorithmConfig(name, params))
+        assert (prepared.fast.port.max_hops, prepared.fast.port.max_splits) == (3, 2)
+        result = factory.solve(bundle.cases[0], SolveContext(bundle, gross_only(), prepared),
+                               Budget())  # fmt: skip
+        assert result.algorithm == name and result.status is SolveStatus.OK
+
+
+@pytest.mark.parametrize(
+    ("name", "mutate", "field"),
+    [
+        # the review's reproduction: H3 with routes_per_probe 8 claimed H3 provenance
+        (strategies.ADAPTIVE, lambda p: p.update(routes_per_probe=8), "shortlist"),
+        (strategies.ADAPTIVE, lambda p: p.update(direct_routes=1), "shortlist"),
+        (strategies.ADAPTIVE, lambda p: p.update(probe_percents=[50, 100]), "shortlist"),
+        (strategies.ADAPTIVE, lambda p: p.update(coarse_step=50), "sampling"),
+        (strategies.ADAPTIVE, lambda p: p.update(refine_radius=2), "sampling"),
+        (strategies.ADAPTIVE, lambda p: p.update(soft_max_quotes=5000), "sampling"),
+        (strategies.OPTIMIZED, lambda p: p.update(routes_per_probe=1_000_000), "shortlist"),
+        (strategies.OPTIMIZED, lambda p: p.update(probe_percents=[10, 100]), "shortlist"),
+        (strategies.OPTIMIZED, lambda p: p.update(refine_radius=3), "sampling"),
+        (strategies.OPTIMIZED, lambda p: p["controls"]["L03"].update(tick_capacity=8192),
+         "controls"),
+        (strategies.OPTIMIZED, lambda p: p["controls"]["L04"].update(max_keys=2048), "controls"),
+        (strategies.OPTIMIZED, lambda p: p["controls"]["L04"].update(max_checkpoints=1),
+         "controls"),
+    ],
+)  # fmt: skip
+def test_prepare_refuses_valid_but_different_recipe_values(
+    name: str, mutate: Any, field: str
+) -> None:
+    """Every altered value here is generically valid, so only the recipe binding refuses it;
+    before PR-F1 `prepare` accepted it and the result still claimed the L08 arm."""
+    params = _params(name)
+    mutate(params)
+    factory = ALGORITHMS[name]
+    assert factory.prepare is not None
+    with pytest.raises(strategies.UniSorStrategyError,
+                       match=rf"{field}: .* differs from recipe L08 arm {ARMS[name]}"):  # fmt: skip
+        factory.prepare(_load("tests/fixtures/routing/mantle_mixed"), AlgorithmConfig(name, params))

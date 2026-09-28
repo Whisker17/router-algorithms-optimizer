@@ -41,18 +41,19 @@ The optional `strategies` section (WHI-1528) holds the settings of the **named o
 strategies** (`uni_sor_adaptive`, `uni_sor_optimized`; `AlgorithmFactory.strategy_recipe`),
 one entry per selected strategy: its `recipe` identity (a frozen, sha256-pinned arms file
 and arm) and that arm's `shortlist`, `sampling` and exact quote `controls`, written out in
-full. The loader re-reads the pinned arms file and refuses any entry whose settings differ
-from the registered arm, so a strategy name always means exactly its recipe; each strategy
-gets only its own entry (never the global `shortlist` / `sampling` sections). A profile
-listing such a strategy must declare its entry. The optional `selection` section records how
-`main.py run|quote --strategies` derived an effective profile (mode, source profile identity,
-the `base` / `optimized` / `custom` groups); it is validated against `algorithms` and
-persisted for offline reporting. Profiles without either section resolve exactly as before.
+full. The loader re-reads the pinned arms file (the shared, sha256-verified
+`uni_sor_strategies.registered_settings`, which the factory's `prepare` also checks) and
+refuses any entry whose settings differ from the registered arm, so a strategy name always
+means exactly its recipe; each strategy gets only its own entry (never the global
+`shortlist` / `sampling` sections). A profile listing such a strategy must declare its
+entry. The optional `selection` section records how `main.py run|quote --strategies`
+derived an effective profile (mode, source profile identity, the `base` / `optimized` /
+`custom` groups); it is validated against `algorithms` and persisted for offline
+reporting. Profiles without either section resolve exactly as before.
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -62,6 +63,7 @@ from typing import Any, Literal
 import yaml
 
 from benchmark.objective import ObjectiveContext, empirical_cost, gross_only, synthetic_fixed_cost
+from routing.algorithms import uni_sor_strategies
 from routing.algorithms.base import AlgorithmConfig, AlgorithmFactory, Budget
 from routing.algorithms.registry import ALGORITHMS, BASE_STRATEGIES, OPTIMIZED_STRATEGIES
 
@@ -416,39 +418,16 @@ def _parse_sampling(obj: Any, where: str, percent_step: int | None) -> dict[str,
 # ------------------------------------------------------------------ WHI-1528 strategies
 
 STRATEGY_KEYS = ("recipe", "shortlist", "sampling", "controls")
-REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def recipe_settings(recipe: Mapping[str, Any], where: str) -> dict[str, Any]:
-    """The registered settings of `recipe`'s arm (`shortlist`, `sampling`, `controls`), read
-    from its frozen arms file (validated by `benchmark.latency.parse_arms`) after checking
-    the file's sha256 against the pin. A changed file is refused, never reinterpreted."""
-    from benchmark.latency import LatencyError, load_arms  # lazy: latency imports this module
-
-    path = REPO_ROOT / str(recipe["path"])
+    """The registered settings of `recipe`'s arm (`shortlist`, `sampling`, `controls`): the
+    one shared, sha256-verified reader (`uni_sor_strategies.registered_settings`) the
+    factory's `prepare` uses too."""
     try:
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    except OSError as exc:
-        raise ProfileError(f"{where}: recipe file unreadable: {exc}") from exc
-    if digest != recipe["sha256"]:
-        raise ProfileError(
-            f"{where}: {recipe['path']} sha256 {digest} differs from the recipe pin "
-            f"{recipe['sha256']} (a registered recipe is frozen; a changed file is refused)"
-        )
-    try:
-        arms = load_arms(path)
-    except LatencyError as exc:
+        return uni_sor_strategies.registered_settings(recipe)
+    except uni_sor_strategies.UniSorStrategyError as exc:
         raise ProfileError(f"{where}: {exc}") from exc
-    if (arms.document["key"], arms.document["version"]) != (recipe["key"], recipe["version"]):
-        raise ProfileError(f"{where}: {recipe['path']} is not {recipe['key']} v{recipe['version']}")
-    arm = arms.arms.get(str(recipe["arm"]))
-    if arm is None or arm.algorithms != ("uni_sor_fast",) or not arm.shortlist or not arm.sampling:
-        raise ProfileError(f"{where}: arm {recipe['arm']!r} is not a uni_sor_fast recipe")
-    return {
-        "shortlist": dict(arm.shortlist),
-        "sampling": dict(arm.sampling),
-        "controls": {k: dict(v) for k, v in arm.controls.items()},
-    }
 
 
 def strategy_entry(name: str) -> dict[str, Any]:
@@ -488,21 +467,13 @@ def _parse_strategies(
         sampling = _parse_sampling(entry["sampling"], f"{at}.sampling", percent_step)
         if not isinstance(entry["controls"], dict):
             raise ProfileError(f"{at}.controls: expected a mapping")
-        registered = recipe_settings(recipe, at)
         declared = {"shortlist": _plain(shortlist), "sampling": sampling,
                     "controls": entry["controls"]}  # fmt: skip
-        expected = {
-            "shortlist": _plain(_parse_shortlist(registered["shortlist"], at, percent_step)),
-            "sampling": _parse_sampling(registered["sampling"], at, percent_step),
-            "controls": registered["controls"],
-        }
-        for key in ("shortlist", "sampling", "controls"):
-            if declared[key] != expected[key]:
-                raise ProfileError(
-                    f"{at}.{key}: {declared[key]!r} differs from recipe {recipe['key']} arm "
-                    f"{recipe['arm']} ({expected[key]!r}); a named strategy is exactly its "
-                    "recipe -- use uni_sor_fast for other settings"
-                )
+        registered = recipe_settings(recipe, at)  # a changed recipe file is refused first
+        try:  # the same check the factory's `prepare` applies
+            uni_sor_strategies.check_recipe(recipe, declared)
+        except uni_sor_strategies.UniSorStrategyError as exc:
+            raise ProfileError(f"{at}.{exc}") from exc
         out[name] = {
             "recipe": recipe,
             "shortlist": shortlist,
