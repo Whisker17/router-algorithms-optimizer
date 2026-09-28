@@ -42,6 +42,15 @@ exactly one solve attempt each (`benchmark.quote`: a derived single-case bundle 
 effective profile with warmup 0 / repeats 1 / memory_pass false, run by the unchanged
 runner). `report` renders such a run as a single-case text report (`report.quote`).
 
+`run` and `quote` take `--strategies all|base|optimized|profile` (WHI-1528,
+`benchmark.strategies`; default `all`): the six base strategies the profile selects, then
+the two named optimized strategies (`uni_sor_adaptive`, `uni_sor_optimized`: registered
+L08 recipes of the heuristic over the `uni_sor_port` core), run sequentially under the
+profile's objective, budget and search. `base` / `optimized` run one group; `profile`
+runs the profile's exact selection. The derived effective profile is validated before
+anything is written, saved (`run`: `<results-dir>/<run id>/profile.yaml`; `quote`: its
+`profile.yaml`) and replayed with `--strategies profile`; source profiles are never edited.
+
 `validate` and `run` are always offline: they read only the bundle directory
 (docs/DESIGN.md §4.5: "Ordinary offline commands require no RPC/Dune access").
 `prepare --source synthetic` is offline too. `prepare --source agni --block N` is the
@@ -59,7 +68,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from benchmark.profile import ProfileError, load_profile
+from benchmark.profile import ProfileError, load_profile, read_profile_document
 from benchmark.results import ResultError
 from benchmark.runner import RunInterrupted, compare_runs, run_experiment
 from snapshot.bundle import BundleError, load_bundle
@@ -222,6 +231,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Override the profile's case order (state-leak checks); recorded in the run",
     )
+    _strategies_argument(run_p)
 
     order_p = subparsers.add_parser(
         "order-check",
@@ -265,8 +275,22 @@ def build_parser() -> argparse.ArgumentParser:
         "--details", action="store_true", help="Explain every final plan and its timings"
     )
     quote_p.add_argument("--quotes-dir", default="data/quotes")
+    _strategies_argument(quote_p)
 
     return parser
+
+
+def _strategies_argument(parser: argparse.ArgumentParser) -> None:
+    from benchmark.strategies import DEFAULT_MODE, MODES
+
+    parser.add_argument(
+        "--strategies",
+        choices=list(MODES),
+        default=DEFAULT_MODE,
+        help="all (default): the profile's base strategies, then the named optimized "
+        "strategies uni_sor_adaptive / uni_sor_optimized; base / optimized: one group; "
+        "profile: the profile's exact algorithm selection",
+    )
 
 
 def _cmd_report(args: argparse.Namespace) -> int:
@@ -584,19 +608,57 @@ def _cmd_validate(args: argparse.Namespace) -> int:
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
+    import yaml
+
+    from benchmark.profile import parse_profile
+    from benchmark.results import PROFILE_FILE, new_run_id
+    from benchmark.strategies import announce, derive
+    from snapshot.bundle import sha256_file
+
     try:
         bundle = load_bundle(args.bundle)
-        profile = load_profile(args.profile)
-    except (BundleError, ProfileError) as exc:
+        if args.strategies == "profile":
+            profile = load_profile(args.profile)
+            effective = None
+        else:  # validated in full before anything is written or any worker starts
+            effective, profile = derive(
+                read_profile_document(args.profile),
+                args.strategies,
+                source_path=args.profile,
+                source_sha256=sha256_file(Path(args.profile)),
+            )
+    except (BundleError, ProfileError, OSError) as exc:
         print(f"run failed: {exc}", file=sys.stderr)
         return 1
 
+    run_id = new_run_id()
+    profile_path = args.profile
+    profile_text = None
+    if effective is not None:
+        # The effective profile is saved into the run directory and is what the run (and
+        # its replay, with --strategies profile) reads; the source profile is untouched.
+        saved = Path(args.results_dir) / run_id / PROFILE_FILE
+        profile_text = (
+            f"# Effective run profile written by `main.py run --strategies {args.strategies}` "
+            f"(WHI-1528).\n# Source profile: {args.profile} (sha256 "
+            f"{profile.selection['source_profile']['sha256']}); the source is unchanged.\n"
+            + yaml.safe_dump(effective, sort_keys=False)
+        )
+        try:
+            profile = parse_profile(yaml.safe_load(profile_text), str(saved))  # as read back
+        except ProfileError as exc:  # pragma: no cover - the same, already validated document
+            print(f"run failed: {exc}", file=sys.stderr)
+            return 1
+        profile_path = str(saved)
+    print(announce(profile, args.strategies))
+
     replay_command = (
-        f"uv run python main.py run --bundle {args.bundle} --profile {args.profile} "
+        f"uv run python main.py run --bundle {args.bundle} --profile {profile_path} "
         f"--results-dir {args.results_dir}"
     )
     if args.order is not None:
         replay_command += f" --order {args.order}"
+    replay_command += " --strategies profile"
 
     def _terminate(signum: int, frame: object) -> None:
         raise KeyboardInterrupt(f"signal {signum}")
@@ -609,6 +671,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
             results_dir=args.results_dir,
             replay_command=replay_command,
             order=args.order,
+            run_id=run_id,
+            profile_text=profile_text,
         )
     except RunInterrupted as exc:
         print(
@@ -655,6 +719,7 @@ def _cmd_quote(args: argparse.Namespace) -> int:
             token_in=args.token_in,
             token_out=args.token_out,
             amount=args.amount,
+            strategies=args.strategies,
         )
     except (BundleError, ProfileError, QuoteError, RequestError, OSError) as exc:
         print(f"quote failed: {exc}", file=sys.stderr)

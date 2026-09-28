@@ -76,6 +76,7 @@ def test_summary_compares_variants_against_the_best_known_on_one_bundle(
     results = tmp_path / "results"
     for name in ("t-maxsplits1.yaml", "t-maxsplits2.yaml"):
         run = ["run", "--bundle", str(FIXTURE), "--profile", str(out / name)]
+        run += ["--strategies", "profile"]  # a calibration grid point exactly
         assert main.main([*run, "--results-dir", str(results)]) == 0
     runs = sorted(results.iterdir())
     summaries = cal.summarize_runs(runs)
@@ -107,6 +108,7 @@ def test_summary_refuses_runs_of_different_bundles(tmp_path: Path) -> None:
     assert main.main(["corpus", "cohort", "--bundle", str(FIXTURE), "--output", str(cohort)]) == 0
     for bundle in (FIXTURE, cohort):
         run = ["run", "--bundle", str(bundle), "--profile", str(base)]
+        run += ["--strategies", "profile"]  # a calibration grid point exactly
         assert main.main([*run, "--results-dir", str(results)]) == 0
     with pytest.raises(cal.CalibrationError, match="bundles"):
         cal.summarize_runs(sorted(results.iterdir()))
@@ -127,6 +129,7 @@ def test_acceptance_manifest_binds_runs_order_checks_and_reports(tmp_path: Path)
     results = tmp_path / "results"
     for order in ("fixed", "reverse"):
         run = ["run", "--bundle", str(FIXTURE), "--profile", str(base), "--order", order]
+        run += ["--strategies", "profile"]  # a calibration grid point exactly
         assert main.main([*run, "--results-dir", str(results)]) == 0
     fixed, reverse = sorted(results.iterdir(), key=lambda p: load_manifest_order(p))
     fixture = load_bundle(FIXTURE)

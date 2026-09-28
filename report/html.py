@@ -150,6 +150,89 @@ def _labels(run: RunData) -> str:
     )
 
 
+def _versus(run: RunData, algorithm: str, baseline: str, min_samples: int) -> str:
+    if baseline not in run.algorithms or algorithm == baseline:
+        return "<span class='na'>N/A</span>"
+    s = agg.paired_gross(run, algorithm, baseline, run.case_ids, min_samples)
+    return f"n {esc(s['n'])}, p50 {bps(s['p50'])}{under(s['underpowered'])}"
+
+
+def _strategy_groups(run: RunData, min_samples: int) -> str:
+    """WHI-1528: the run's persisted base / optimized groups (absent for older records)."""
+    groups = agg.strategy_groups(run.manifest)
+    if groups is None:
+        return ""
+    selection = run.manifest.resolved_profile.get("selection", {})
+    source = selection.get("source_profile", {})
+    statuses = list(agg.STATUS_ORDER)
+    by_algorithm = {e["algorithm"]: e for e in agg.status_table(run)}
+    parts = [
+        "<h2>Strategy groups</h2>"
+        f"<p>Selected with <code>--strategies {esc(selection.get('mode'))}</code> from source "
+        f"profile <code>{esc(source.get('path'))}</code> (sha256 "
+        f"<code>{esc(source.get('sha256'))}</code>); groups are read from this run's own "
+        "records. Every group ran under the same objective, budget and search settings. "
+        "Groups are a presentation, not the schedule: the algorithms ran sequentially in "
+        f"the recorded order <code>{esc(', '.join(run.manifest.algorithms))}</code>. "
+        "Optimized strategies are experimental heuristics with registered recipes: "
+        "comparisons, not defaults and not adopted. Every scheduled case is counted, "
+        "failures included; cross-group ratios use common-success cases only (all pairs are "
+        "in the pairwise table below).</p>"
+    ]
+    for group, members in groups:
+        rows = []
+        for algorithm in members:
+            e = by_algorithm[algorithm]
+            rows.append(
+                [
+                    f"<code>{esc(algorithm)}</code>",
+                    esc(e["scheduled"]),
+                    *[esc(e[st]) for st in statuses],
+                    esc(e["other"]),
+                    na(e["ok_share"], "{:.1%}"),
+                    _versus(run, algorithm, "direct", min_samples),
+                    _versus(run, algorithm, "uni_sor_port", min_samples),
+                ]
+            )
+        parts.append(
+            f"<h3>{esc(agg.STRATEGY_GROUP_TITLES[group])} ({esc(len(members))})</h3>"
+            + table(
+                [
+                    "algorithm",
+                    "scheduled",
+                    *statuses,
+                    "other",
+                    "ok share",
+                    "gross vs direct (bps)",
+                    "gross vs uni_sor_port (bps)",
+                ],
+                rows,
+            )  # fmt: skip
+        )
+        recipes = [
+            [
+                f"<code>{esc(algorithm)}</code>",
+                f"<code>{esc(json.dumps(entry.get('recipe'), sort_keys=True))}</code>",
+                f"<code>{esc(json.dumps(entry.get('shortlist'), sort_keys=True))}</code>",
+                f"<code>{esc(json.dumps(entry.get('sampling'), sort_keys=True))}</code>",
+                f"<code>{esc(json.dumps(entry.get('controls'), sort_keys=True))}</code>",
+            ]
+            for algorithm in members
+            if (entry := agg.strategy_recipe(run.manifest, algorithm)) is not None
+        ]
+        if recipes:
+            parts.append(
+                "<p class='note'>Recipe settings as recorded in this run (the objective, "
+                "budget and search.* values are the run's shared ones):</p>"
+                + table(
+                    ["strategy", "recipe", "shortlist", "sampling", "exact controls"],
+                    recipes,
+                    left=5,
+                )  # fmt: skip
+            )
+    return "".join(parts)
+
+
 def _status(run: RunData) -> str:
     statuses = [s for s in agg.STATUS_ORDER]
     rows = []
@@ -730,6 +813,7 @@ def _run_section(run: RunData, min_samples: int) -> str:
         f"· {esc(len(run.case_ids))} case(s) × {esc(len(run.algorithms))} algorithm(s)</p>"
         + "".join(banners)
         + _labels(run)
+        + _strategy_groups(run, min_samples)
         + _status(run)
         + _vs_direct(run, min_samples)
         + _pairwise(run, min_samples)

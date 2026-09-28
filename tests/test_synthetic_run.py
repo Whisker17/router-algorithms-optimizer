@@ -2,8 +2,12 @@
 (docs/DESIGN.md §4.4 core flows). This is the offline command documented in the
 issue's Testing/Verification section:
 
-    uv run python main.py run --bundle tests/fixtures/synthetic --profile config/smoke.yaml
+    uv run python main.py run --bundle tests/fixtures/synthetic --profile config/smoke.yaml \
+        --strategies profile
 
+(`--strategies profile`: the smoke profile's exact one-algorithm selection; the default
+`all` would add the optimized strategies, which need `search.*` values smoke.yaml does not
+declare -- WHI-1528.)
 Also proves the WHI-1427 acceptance criteria: a documented offline command
 produces the expected integer output and identical deterministic replay, and no
 credentials/network are needed for synthetic prepare/validate/run.
@@ -84,6 +88,8 @@ def test_run_produces_expected_integer_output_and_typed_no_route(tmp_path: Path)
             str(SMOKE_PROFILE),
             "--results-dir",
             str(results_dir),
+            "--strategies",
+            "profile",
         ]
     )
     assert rc == 0
@@ -117,6 +123,8 @@ def test_run_is_deterministic_across_repeated_replays(tmp_path: Path) -> None:
                 str(SMOKE_PROFILE),
                 "--results-dir",
                 str(results_dir),
+                "--strategies",
+                "profile",
             ]
         )
         assert rc == 0
@@ -152,6 +160,8 @@ def test_offline_guarantee_no_network_for_prepare_validate_run(
                 str(SMOKE_PROFILE),
                 "--results-dir",
                 str(results_dir),
+                "--strategies",
+                "profile",
             ]
         )
         == 0

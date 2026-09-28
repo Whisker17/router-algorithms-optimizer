@@ -125,6 +125,8 @@ All algorithms implement §4.3 and use the same admitted simulator/cost context.
 | `incremental_graph` | Allocate chunks while maintaining consistent tentative shared-pool state and funding; re-evaluate/normalize complete plans | Shared-pool graph heuristic |
 | `uni_sor_port` | Scoped, upstream-pinned Uniswap SOR routing-core port, as specified next | SOR V2/V3 compatible subset |
 
+**Base and optimized strategy groups (owner decision, WHI-1528).** The six algorithms above are the **base strategies** and remain the references. The ordinary CLI also compares two named **optimized strategies**: `uni_sor_adaptive` (the frozen L08 v1 arm H3, near-full candidates plus adaptive percentage sampling) and `uni_sor_optimized` (arm H4, shortlist plus sampling with the L02–L04 exact quote controls and no L05). Both are experimental heuristics over `uni_sor_port`'s routing core, with its V2/V3 capabilities. They form a separate group: they are not defaults, are not adopted, and imply no loss tolerance. `main.py run|quote` runs both groups by default: base first, sequentially, under the same objective, budget and search constraints. `--strategies base|optimized|profile` narrows the selection, with `profile` meaning the profile's exact selection. Reports keep the groups apart. Details are in [strategy-groups.md](references/strategy-groups.md).
+
 Keep the best valid simpler route as a candidate so optimization cannot accidentally discard it. Candidate discovery samples multiple input sizes, since a pool bad at 100% can be useful for a small split. Report candidate truncation and quote budgets. Do not label greedy/BFS/finite-grid results optimal. Incremental graph search must make its final execution structure agree with its state accounting: `f(x+delta)-f(x)` is not automatically equivalent to two sequential on-chain fee-bearing swaps.
 
 ### 2.7 Mandatory Uniswap SOR introduction
@@ -210,6 +212,7 @@ Non-secret parameters live in validated YAML under `config/`; the public default
 | `corpus.window_start/end`, pairs, amount strata, seed | Explicit frozen values selected by preparation evidence | Not silently inferred at run time |
 | Quote/time/candidate caps; warmup/repeats | Explicit profile values calibrated on the reference machine | No invented universal defaults |
 | Cost sensitivity | Held-out error-derived scenarios or labeled stress inputs | Must cite model/data version |
+| Named optimized strategy settings (`strategies.<name>`) | Exactly the sha256-pinned L08 v1 arm (H3 / H4); a differing value or changed file is refused | WHI-1510 registered values; not tuned for WHI-1528 |
 | Protocol math tolerance | Exact raw output on the admitted contract domain | Correctness requirement; scoped exception requires spec change and evidence |
 
 All profile values appear in output even if inherited from defaults. Profile calibration fixes representative daily corpus/budgets before the final comparison. Report runtime, but do not fail acceptance or request an owner waiver solely because of duration. Retain explicit per-case time/quote limits, honest timeout status and full corpus/algorithm coverage. Python integers govern money; floating point is permitted for timing/statistics and approximate internal optimization only.

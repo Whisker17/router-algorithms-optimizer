@@ -77,7 +77,9 @@ def _digests(directory: Path) -> dict[str, str]:
 
 
 def _quote(tmp_path: Path, profile: Path, *extra: str, pair: tuple[str, str] = ("USDC", "USDT0"),
-           amount: str = "1500.25") -> list[str]:  # fmt: skip
+           amount: str = "1500.25", strategies: str | None = "profile") -> list[str]:  # fmt: skip
+    """`strategies="profile"` (default here): the source profile's exact selection -- these
+    WHI-1498 tests pin its algorithms; `None` leaves the CLI default (`all`, WHI-1528)."""
     return [
         "quote",
         "--bundle", str(FIXTURE),
@@ -86,6 +88,7 @@ def _quote(tmp_path: Path, profile: Path, *extra: str, pair: tuple[str, str] = (
         "--token-out", pair[1],
         "--amount", amount,
         "--quotes-dir", str(tmp_path / "quotes"),
+        *([] if strategies is None else ["--strategies", strategies]),
         *extra,
     ]  # fmt: skip
 
@@ -294,7 +297,7 @@ def test_report_command_renders_a_quote_run_as_a_single_case_report(
     monkeypatch.chdir(REPO)
     assert main.main(
         ["run", "--bundle", "tests/fixtures/synthetic", "--profile", "config/smoke.yaml",
-         "--results-dir", str(tmp_path / "batch")]
+         "--results-dir", str(tmp_path / "batch"), "--strategies", "profile"]
     ) == 0  # fmt: skip
     batch = next((tmp_path / "batch").iterdir())
     capsys.readouterr()

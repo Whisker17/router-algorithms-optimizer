@@ -36,11 +36,26 @@ the sections above it is an **optional all-or-none group**: without the section
 is defaulted); with it, every key must be written explicitly (`soft_max_quotes` may be an
 explicit `null`: no soft cap declared). A profile without the section resolves exactly as
 before.
+
+The optional `strategies` section (WHI-1528) holds the settings of the **named optimized
+strategies** (`uni_sor_adaptive`, `uni_sor_optimized`; `AlgorithmFactory.strategy_recipe`),
+one entry per selected strategy: its `recipe` identity (a frozen, sha256-pinned arms file
+and arm) and that arm's `shortlist`, `sampling` and exact quote `controls`, written out in
+full. The loader re-reads the pinned arms file (the shared, sha256-verified
+`uni_sor_strategies.registered_settings`, which the factory's `prepare` also checks) and
+refuses any entry whose settings differ from the registered arm, so a strategy name always
+means exactly its recipe; each strategy gets only its own entry (never the global
+`shortlist` / `sampling` sections). A profile listing such a strategy must declare its
+entry. The optional `selection` section records how `main.py run|quote --strategies`
+derived an effective profile (mode, source profile identity, the `base` / `optimized` /
+`custom` groups); it is validated against `algorithms` and persisted for offline
+reporting. Profiles without either section resolve exactly as before.
 """
 
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -48,8 +63,9 @@ from typing import Any, Literal
 import yaml
 
 from benchmark.objective import ObjectiveContext, empirical_cost, gross_only, synthetic_fixed_cost
+from routing.algorithms import uni_sor_strategies
 from routing.algorithms.base import AlgorithmConfig, AlgorithmFactory, Budget
-from routing.algorithms.registry import ALGORITHMS
+from routing.algorithms.registry import ALGORITHMS, BASE_STRATEGIES, OPTIMIZED_STRATEGIES
 
 SUPPORTED_SCHEMA_VERSION = 2
 
@@ -134,13 +150,18 @@ class RunProfile:
     graph: dict[str, int] = field(default_factory=dict)
     shortlist: dict[str, Any] = field(default_factory=dict)
     sampling: dict[str, Any] = field(default_factory=dict)
+    strategies: dict[str, dict[str, Any]] = field(default_factory=dict)
+    selection: dict[str, Any] = field(default_factory=dict)
 
     def algorithm_config(self, factory: AlgorithmFactory) -> AlgorithmConfig:
         """The `prepare` configuration for `factory`: exactly the `search.*`, `graph.*`
         and `shortlist.*` values it declares it needs (the loader already guaranteed they
         are present; every value is an int or a tuple of ints, so nothing mutable is
-        shared with the prepared state)."""
-        params = {key: self.search[key] for key in factory.search_params if key in self.search}
+        shared with the prepared state). A named strategy (WHI-1528) gets its own
+        `strategies.<name>` recipe settings (plus a fresh copy of its `controls`) instead."""
+        params: dict[str, Any] = {
+            key: self.search[key] for key in factory.search_params if key in self.search
+        }
         params.update({key: self.graph[key] for key in factory.graph_params if key in self.graph})
         params.update(
             {key: self.shortlist[key] for key in factory.shortlist_params if key in self.shortlist}
@@ -148,6 +169,11 @@ class RunProfile:
         params.update(
             {key: self.sampling[key] for key in factory.sampling_params if key in self.sampling}
         )
+        entry = self.strategies.get(factory.name) if factory.strategy_recipe is not None else None
+        if entry is not None:  # a named strategy: its own recipe settings only
+            params.update(entry["shortlist"])
+            params.update(entry["sampling"])
+            params["controls"] = {k: dict(v) for k, v in entry["controls"].items()}
         return AlgorithmConfig(name=factory.name, params=params)
 
     def resolved(self) -> dict[str, Any]:
@@ -166,10 +192,15 @@ class RunProfile:
             # existing profile resolves byte-identically (WHI-1508).
             **({"shortlist": _plain(self.shortlist)} if self.shortlist else {}),
             **({"sampling": dict(self.sampling)} if self.sampling else {}),
+            # WHI-1528: only a profile that declares them records these sections.
+            **({"strategies": json.loads(json.dumps(self.strategies))} if self.strategies else {}),
+            **({"selection": json.loads(json.dumps(self.selection))} if self.selection else {}),
             "algorithm_config": {
                 name: {
                     "capabilities": ALGORITHMS[name].capabilities.to_dict(),
-                    "params": _plain(self.algorithm_config(ALGORITHMS[name]).params),
+                    "params": json.loads(
+                        json.dumps(_plain(self.algorithm_config(ALGORITHMS[name]).params))
+                    ),
                     **(
                         {
                             "provenance": json.loads(
@@ -384,6 +415,118 @@ def _parse_sampling(obj: Any, where: str, percent_step: int | None) -> dict[str,
     }
 
 
+# ------------------------------------------------------------------ WHI-1528 strategies
+
+STRATEGY_KEYS = ("recipe", "shortlist", "sampling", "controls")
+
+
+def recipe_settings(recipe: Mapping[str, Any], where: str) -> dict[str, Any]:
+    """The registered settings of `recipe`'s arm (`shortlist`, `sampling`, `controls`): the
+    one shared, sha256-verified reader (`uni_sor_strategies.registered_settings`) the
+    factory's `prepare` uses too."""
+    try:
+        return uni_sor_strategies.registered_settings(recipe)
+    except uni_sor_strategies.UniSorStrategyError as exc:
+        raise ProfileError(f"{where}: {exc}") from exc
+
+
+def strategy_entry(name: str) -> dict[str, Any]:
+    """The complete `strategies.<name>` entry of a named strategy, from its recipe."""
+    factory = ALGORITHMS[name]
+    if factory.strategy_recipe is None:
+        raise ProfileError(f"{name!r} is not a named optimized strategy")
+    recipe = dict(factory.strategy_recipe)
+    return {"recipe": recipe, **recipe_settings(recipe, f"strategies.{name}")}
+
+
+def _parse_strategies(
+    obj: Any, where: str, algorithms: list[str], percent_step: int | None
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(obj, dict) or not obj:
+        raise ProfileError(f"{where}: expected a non-empty mapping")
+    out: dict[str, dict[str, Any]] = {}
+    for name, entry in obj.items():
+        at = f"{where}.{name}"
+        factory = ALGORITHMS.get(name) if isinstance(name, str) else None
+        if factory is None or factory.strategy_recipe is None:
+            raise ProfileError(
+                f"{at}: not a named optimized strategy (known: {list(OPTIMIZED_STRATEGIES)})"
+            )
+        if name not in algorithms:
+            raise ProfileError(f"{at}: declared but {name!r} is not in algorithms")
+        _require_keys(entry, set(STRATEGY_KEYS), set(), at)
+        recipe = dict(factory.strategy_recipe)
+        if entry["recipe"] != recipe:
+            raise ProfileError(
+                f"{at}.recipe: expected the registered recipe {recipe}, got {entry['recipe']!r}"
+            )
+        shortlist = _parse_shortlist(entry["shortlist"], f"{at}.shortlist", percent_step)
+        missing = [k for k in SHORTLIST_KEYS if k not in shortlist]
+        if missing:
+            raise ProfileError(f"{at}.shortlist: missing required key(s) {missing}")
+        sampling = _parse_sampling(entry["sampling"], f"{at}.sampling", percent_step)
+        if not isinstance(entry["controls"], dict):
+            raise ProfileError(f"{at}.controls: expected a mapping")
+        declared = {"shortlist": _plain(shortlist), "sampling": sampling,
+                    "controls": entry["controls"]}  # fmt: skip
+        registered = recipe_settings(recipe, at)  # a changed recipe file is refused first
+        try:  # the same check the factory's `prepare` applies
+            uni_sor_strategies.check_recipe(recipe, declared)
+        except uni_sor_strategies.UniSorStrategyError as exc:
+            raise ProfileError(f"{at}.{exc}") from exc
+        out[name] = {
+            "recipe": recipe,
+            "shortlist": shortlist,
+            "sampling": sampling,
+            "controls": {k: dict(v) for k, v in registered["controls"].items()},
+        }
+    return out
+
+
+SELECTION_MODES = ("all", "base", "optimized")
+GROUPS = ("base", "optimized", "custom")
+
+
+def strategy_group(name: str) -> str:
+    """`base` (the six mandatory references), `optimized` (the named strategies) or `custom`
+    (any other profile-selected algorithm, e.g. the configurable `uni_sor_fast`)."""
+    if name in BASE_STRATEGIES:
+        return "base"
+    if name in OPTIMIZED_STRATEGIES:
+        return "optimized"
+    return "custom"
+
+
+def _parse_selection(obj: Any, where: str, algorithms: list[str]) -> dict[str, Any]:
+    _require_keys(obj, {"mode", "source_profile", "groups"}, set(), where)
+    if obj["mode"] not in SELECTION_MODES:
+        raise ProfileError(f"{where}.mode: expected one of {list(SELECTION_MODES)}")
+    source = obj["source_profile"]
+    _require_keys(source, {"path", "sha256"}, set(), f"{where}.source_profile")
+    if not all(isinstance(source[k], str) and source[k] for k in ("path", "sha256")):
+        raise ProfileError(f"{where}.source_profile: path and sha256 must be non-empty strings")
+    groups = obj["groups"]
+    _require_keys(groups, set(GROUPS), set(), f"{where}.groups")
+    for group in GROUPS:
+        members = groups[group]
+        at = f"{where}.groups.{group}"
+        if not isinstance(members, list) or not all(isinstance(m, str) for m in members):
+            raise ProfileError(f"{at}: expected a list of algorithm names")
+        wrong = [m for m in members if strategy_group(m) != group]
+        if wrong:
+            raise ProfileError(f"{at}: {wrong} do not belong to the {group} group")
+        if members != [a for a in algorithms if a in members]:
+            raise ProfileError(f"{at}: {members} is not in the algorithms' order")
+    listed = [m for g in GROUPS for m in groups[g]]
+    if sorted(listed) != sorted(algorithms):
+        raise ProfileError(f"{where}.groups: must list every algorithm exactly once")
+    return {
+        "mode": obj["mode"],
+        "source_profile": {"path": source["path"], "sha256": source["sha256"]},
+        "groups": {g: list(groups[g]) for g in GROUPS},
+    }
+
+
 def parse_profile(raw: Any, source_path: str) -> RunProfile:
     if isinstance(raw, dict) and raw.get("schema_version") == 1:
         raise ProfileError(
@@ -393,7 +536,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
     _require_keys(
         raw,
         {"schema_version", "algorithms", "objective", "budget", "measurement", "worker"},
-        {"search", "graph", "shortlist", "sampling"},
+        {"search", "graph", "shortlist", "sampling", "strategies", "selection"},
         "<root>",
     )
     if raw["schema_version"] != SUPPORTED_SCHEMA_VERSION:
@@ -426,9 +569,14 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         if "sampling" in raw
         else {}
     )
+    declared_strategies = raw.get("strategies")
     for name in algorithms_obj:
         factory = ALGORITHMS[name]
         missing = [f"search.{key}" for key in factory.search_params if key not in search]
+        if factory.strategy_recipe is not None and not (
+            isinstance(declared_strategies, dict) and name in declared_strategies
+        ):
+            missing.append(f"strategies.{name}")
         missing += [f"graph.{key}" for key in factory.graph_params if key not in graph]
         missing += [f"shortlist.{key}" for key in factory.shortlist_params if key not in shortlist]
         if missing:
@@ -437,6 +585,18 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
                 + ", ".join(missing)
                 + " to be declared explicitly (no built-in default)"
             )
+    strategies = (
+        _parse_strategies(
+            raw["strategies"], "strategies", algorithms_obj, search.get("percent_step")
+        )
+        if "strategies" in raw
+        else {}
+    )
+    selection = (
+        _parse_selection(raw["selection"], "selection", algorithms_obj)
+        if "selection" in raw
+        else {}
+    )
     return RunProfile(
         schema_version=raw["schema_version"],
         algorithms=tuple(algorithms_obj),
@@ -449,6 +609,8 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         graph=graph,
         shortlist=shortlist,
         sampling=sampling,
+        strategies=strategies,
+        selection=selection,
     )
 
 

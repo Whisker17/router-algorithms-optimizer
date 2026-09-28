@@ -342,6 +342,7 @@ def test_offline_cli_replay_of_the_saved_bundle(
     assert main.main(["validate", "--bundle", str(bundle_dir)]) == 0
     results = tmp_path / "results"
     argv = ["run", "--bundle", str(bundle_dir), "--profile", str(SMOKE_PROFILE)]
+    argv += ["--strategies", "profile"]  # the smoke profile's exact selection
     assert main.main([*argv, "--results-dir", str(results)]) == 0
     (run_dir,) = results.iterdir()
     records = [json.loads(line) for line in (run_dir / "cases.jsonl").read_text().splitlines()]

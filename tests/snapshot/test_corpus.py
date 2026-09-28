@@ -478,6 +478,7 @@ def test_validate_and_run_replay_the_fixture_offline(
     assert main.main(["validate", "--bundle", str(FIXTURE)]) == 0
     results = tmp_path / "results"
     argv = ["run", "--bundle", str(FIXTURE), "--profile", str(REPO / "config" / "smoke.yaml")]
+    argv += ["--strategies", "profile"]  # the smoke profile's exact selection
     assert main.main([*argv, "--results-dir", str(results)]) == 0
     (run_dir,) = results.iterdir()
     records = [json.loads(line) for line in (run_dir / "cases.jsonl").read_text().splitlines()]

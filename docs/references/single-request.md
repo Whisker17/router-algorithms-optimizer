@@ -1,7 +1,11 @@
 # Single-request comparison (WHI-1498)
 
-Compare the six routing algorithms on **one** exact-input request against a frozen
-snapshot, with exactly one solve attempt per algorithm:
+Compare the routing strategies on **one** exact-input request against a frozen snapshot,
+with exactly one solve attempt per strategy. By default (`--strategies all`, WHI-1528) these
+are the profile's six base algorithms followed by the two named optimized strategies
+`uni_sor_adaptive` and `uni_sor_optimized`. `--strategies base|optimized` runs one group,
+and `--strategies profile` runs the profile's exact selection
+([`strategy-groups.md`](strategy-groups.md)):
 
 ```bash
 uv run python main.py quote \
@@ -10,7 +14,8 @@ uv run python main.py quote \
   --token-in USDC --token-out USDT --amount 10000 --details
 ```
 
-Without `--details` it prints one row per selected algorithm (failures included):
+Without `--details` it prints one row per selected algorithm (failures included), under
+*Base strategies* / *Optimized strategies* headings when groups were selected:
 status, evaluated gross output in human and raw units, gain versus a valid nonzero
 `direct` baseline (otherwise `N/A`, with the reason), solve latency and counted quotes. A
 net column appears only for an objective that produces a net output. `--details` adds,
@@ -27,14 +32,17 @@ This is an **exploratory** request, not a held-out corpus result.
 ## What runs
 
 `benchmark/quote.py` validates everything before writing anything or starting a solver:
-the bundle and source profile load, the objective is supported, both tokens resolve and
-the amount converts exactly. It then writes
+the bundle and source profile load, the `--strategies` selection derives a valid effective
+profile (an incompatible `search` grid or an empty selection is refused), the objective is
+supported, both tokens resolve and the amount converts exactly. It then writes
 
 ```
 data/quotes/<quote id>/
   quote.json      inputs, resolved tokens and raw amount, parent bundle and source-profile
-                  identity (sha256), effective-profile identity, replay command
-  profile.yaml    the source profile with warmup 0, repeats 1, memory_pass false
+                  identity (sha256), effective-profile identity, replay command, the
+                  strategy mode and groups
+  profile.yaml    the effective profile: the source's (or the --strategies derivation's)
+                  algorithms and settings with warmup 0, repeats 1, memory_pass false
   bundle/         the derived single-case bundle
   runs/<run id>/  manifest.json + cases.jsonl from the ordinary runner
 ```
@@ -95,7 +103,8 @@ is not modified and batch `run` behaviour is unchanged.
 ## Replay and report
 
 `quote.json` and the run manifest record the exact replay command, which is a plain
-`main.py run` over the derived bundle and effective profile. The saved run also renders
+`main.py run --strategies profile` over the derived bundle and effective profile. It
+reruns exactly the saved algorithms and recipe settings, never a re-expansion. The saved run also renders
 offline without credentials:
 
 ```bash
@@ -109,6 +118,7 @@ mix an exploratory run with corpus runs.
 ## References and algorithm guides
 
 For first-principles explanations, mathematical derivations, pseudocode, and reproducible
-worked examples of all six routing algorithms compared here, see
-[`routing-algorithms.md`](routing-algorithms.md).
+worked examples of the six base routing algorithms compared here, see
+[`routing-algorithms.md`](routing-algorithms.md). The optimized strategies and their
+registered recipes are described in [`strategy-groups.md`](strategy-groups.md).
 

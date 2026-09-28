@@ -958,6 +958,49 @@ def representative_traces(run: RunData) -> list[dict[str, Any]]:
     return out
 
 
+# --------------------------------------------------------------------------- groups
+
+# WHI-1528: the persisted strategy groups of a run (`resolved_profile.selection.groups`).
+STRATEGY_GROUPS = ("base", "optimized", "custom")
+STRATEGY_GROUP_TITLES = {
+    "base": "Base strategies",
+    "optimized": "Optimized strategies",
+    "custom": "Other profile-selected strategies",
+}
+
+
+def strategy_groups(manifest: RunManifest) -> list[tuple[str, list[str]]] | None:
+    """(group, algorithms) -- groups in base / optimized / custom order, members in their
+    recorded order (a presentation, not the schedule: a custom algorithm may have run between
+    base ones; `manifest.algorithms` is the execution order) -- read only from the run's own
+    persisted selection
+    record -- never from the current registry -- or `None` for a run without one (older
+    records and `--strategies profile` runs keep their ungrouped presentation). A recorded
+    algorithm missing from every group is still shown, under `custom`."""
+    selection = manifest.resolved_profile.get("selection")
+    groups = selection.get("groups") if isinstance(selection, dict) else None
+    if not isinstance(groups, dict):
+        return None
+    algorithms = list(manifest.algorithms)
+    out: list[tuple[str, list[str]]] = []
+    placed: set[str] = set()
+    for group in STRATEGY_GROUPS:
+        listed = groups.get(group)
+        members = [a for a in algorithms if isinstance(listed, list) and a in listed]
+        if group == "custom":
+            members += [a for a in algorithms if a not in placed and a not in members]
+        placed.update(members)
+        if members:
+            out.append((group, members))
+    return out
+
+
+def strategy_recipe(manifest: RunManifest, algorithm: str) -> dict[str, Any] | None:
+    """The persisted `strategies.<algorithm>` entry (recipe identity and settings)."""
+    entry = manifest.resolved_profile.get("strategies", {}).get(algorithm)
+    return entry if isinstance(entry, dict) else None
+
+
 # --------------------------------------------------------------------------- labels
 
 
@@ -973,6 +1016,18 @@ def algorithm_label(run: RunData, algorithm: str) -> dict[str, Any]:
                 f"Uniswap SOR — scoped routing-core port of {upstream.get('package')} "
                 f"{upstream.get('version')} @ {str(upstream.get('commit', ''))[:12]}; "
                 "NOT the full upstream product"
+            ),
+            "provenance": provenance,
+        }
+    if isinstance(provenance, dict) and provenance.get("strategy_group") == "optimized":
+        recipe = provenance.get("recipe") or {}
+        return {
+            "kind": "optimized_strategy",
+            "title": (
+                "Optimized strategy — experimental heuristic over the "
+                f"{provenance.get('reference')} routing core, recipe {recipe.get('key')} "
+                f"arm {recipe.get('arm')}: "
+                f"{provenance.get('recipe_summary')}; NOT a default router, not adopted"
             ),
             "provenance": provenance,
         }
