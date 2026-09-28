@@ -15,6 +15,12 @@ algorithm (docs/DESIGN.md §2.6) adds one `AlgorithmFactory` entry here, with it
 candidate-shortlist heuristic over `uni_sor_port`'s core that also requires the
 `shortlist.*` settings. Registration only makes it selectable by a profile that names it;
 no existing profile lists it and it never replaces `uni_sor_port`.
+
+The two **named optimized strategies** (WHI-1528) follow: `uni_sor_adaptive` (L08 arm H3)
+and `uni_sor_optimized` (L08 arm H4), thin adapters that run the unchanged `uni_sor_fast`
+solve with their registered recipe settings (`routing/algorithms/uni_sor_strategies.py`).
+`BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` name the two comparison groups the CLI selects
+with `--strategies`; `uni_sor_fast` is in neither (a profile-selected custom experiment).
 """
 
 from __future__ import annotations
@@ -27,10 +33,11 @@ from routing.algorithms import (
     single_path,
     uni_sor_fast,
     uni_sor_port,
+    uni_sor_strategies,
 )
 from routing.algorithms.base import AlgorithmFactory, SolveFn
 
-__all__ = ["ALGORITHMS", "SolveFn", "get_algorithm"]
+__all__ = ["ALGORITHMS", "BASE_STRATEGIES", "OPTIMIZED_STRATEGIES", "SolveFn", "get_algorithm"]
 
 ALGORITHMS: dict[str, AlgorithmFactory] = {
     direct.NAME: direct.FACTORY,
@@ -40,7 +47,21 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     incremental_graph.NAME: incremental_graph.FACTORY,
     uni_sor_port.NAME: uni_sor_port.FACTORY,
     uni_sor_fast.NAME: uni_sor_fast.FACTORY,  # opt-in experiment, not a reference
+    # Named optimized strategies (WHI-1528): registered recipes, not references or defaults.
+    uni_sor_strategies.ADAPTIVE: uni_sor_strategies.ADAPTIVE_FACTORY,
+    uni_sor_strategies.OPTIMIZED: uni_sor_strategies.OPTIMIZED_FACTORY,
 }
+
+# The comparison groups, in their deterministic run order (base first, then optimized).
+BASE_STRATEGIES: tuple[str, ...] = (
+    direct.NAME,
+    single_path.NAME,
+    direct_split.NAME,
+    path_split.NAME,
+    incremental_graph.NAME,
+    uni_sor_port.NAME,
+)
+OPTIMIZED_STRATEGIES: tuple[str, ...] = (uni_sor_strategies.ADAPTIVE, uni_sor_strategies.OPTIMIZED)
 
 
 def get_algorithm(name: str) -> AlgorithmFactory:

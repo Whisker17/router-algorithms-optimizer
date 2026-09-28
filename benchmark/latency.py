@@ -104,8 +104,7 @@ from benchmark.runner import (
     _WorkerSlot,
 )
 from benchmark.worker import AttemptOutcome, SolveRequest, Worker
-from pools import concentrated, liquidity_book
-from pools.cl_math import TickMathReuse
+from pools import exact_controls
 from routing.algorithms import incremental_graph
 from routing.algorithms.base import AlgorithmFactory, Budget, SolveResult
 from routing.algorithms.registry import get_algorithm
@@ -268,10 +267,9 @@ def load_protocol(path: str | Path) -> Protocol:
 
 ARMS_SCHEMA = "latency-arms/1"
 # Explicit controls an arm may select, with exactly these settings keys (WHI-1504..1507).
+# The L02-L04 quote-control keys are shared with `pools.exact_controls` (WHI-1528).
 CONTROL_KEYS = {
-    "L02": {"skip_empty_spans"},
-    "L03": {"tick_capacity", "bin_capacity", "lifetime"},
-    "L04": {"max_keys", "max_checkpoints", "lifetime"},
+    **{name: set(keys) for name, keys in exact_controls.QUOTE_CONTROL_KEYS.items()},
     "L05": {"graph_reuse", "lifetime"},
 }
 OVERLAY_ALGORITHM = "uni_sor_fast"  # the only identity with shortlist/sampling settings
@@ -483,9 +481,10 @@ def arm_profile(arm: Arm, protocol: Protocol | str) -> RunProfile:
     return _ArmProfile(**values, arm=arm.record())
 
 
-# The reference quote kernels, captured once per process: controls always start from them.
-_REFERENCE_CL_SWAP = concentrated.swap
-_REFERENCE_LB_SWAP = liquidity_book.swap
+# The reference quote kernels, captured once per process (`pools.exact_controls`): controls
+# always start from them.
+_REFERENCE_CL_SWAP = exact_controls.REFERENCE_CL_SWAP
+_REFERENCE_LB_SWAP = exact_controls.REFERENCE_LB_SWAP
 
 
 def controlled_solve(
@@ -496,31 +495,18 @@ def controlled_solve(
     only (L05 is bound into `solve` by `arm_factory`). Fresh memo/prefix instances per
     call, so construction and population are inside the timed solve window; the reference
     kernels are restored before returning, so nothing outlives the solve and the parent's
-    independent evaluation (another process) never sees a control."""
-    if concentrated.swap is not _REFERENCE_CL_SWAP or liquidity_book.swap is not _REFERENCE_LB_SWAP:
-        raise RuntimeError("quote kernels already replaced: controls must start from the reference")
-    l03, l04 = controls.get("L03"), controls.get("L04")
-    tick = TickMathReuse(l03["tick_capacity"]) if l03 else None
-    bins = liquidity_book.BinMathReuse(l03["bin_capacity"]) if l03 else None
-    prefix = concentrated.CLPrefixReuse(l04["max_keys"], l04["max_checkpoints"]) if l04 else None
-    concentrated.swap = functools.partial(
-        _REFERENCE_CL_SWAP, skip_empty_spans="L02" in controls, math_reuse=tick,
-        prefix_reuse=prefix,
-    )  # fmt: skip
-    liquidity_book.swap = functools.partial(_REFERENCE_LB_SWAP, math_reuse=bins)
-    try:
+    independent evaluation (another process) never sees a control. The installation itself
+    is `pools.exact_controls`, shared with the named optimized strategy (WHI-1528)."""
+    quote_controls = exact_controls.QuoteControls.fresh(controls)
+    with exact_controls.installed(quote_controls):
         result = solve(case, context, budget)
-    finally:
-        concentrated.swap, liquidity_book.swap = _REFERENCE_CL_SWAP, _REFERENCE_LB_SWAP
     if not isinstance(result, SolveResult):
         return result  # the worker reports it as an algorithm error
     search = dict(result.search_stats)
     search[CONTROL_STATS_KEY] = {
         "arm": label, "controls": sorted(controls), "lifetime": "per_solve",
         "graph_reuse_bound": isinstance(solve, functools.partial),
-        "tick_math": tick.stats() if tick else None,
-        "bin_math": bins.stats() if bins else None,
-        "prefix": prefix.stats() if prefix else None,
+        **quote_controls.stats(),
     }  # fmt: skip
     fast = search.get("sor_fast")
     if isinstance(fast, Mapping) and "quote_path" in fast:  # not the static "all off" label
@@ -900,7 +886,10 @@ def _quote_cli(
         command = [sys.executable, str(REPO_ROOT / "main.py"), "quote", "--bundle", bundle_path,
                    "--profile", profile.source_path, "--token-in", s["token_in"],
                    "--token-out", s["token_out"], "--amount", s["amount"],
-                   "--quotes-dir", str(quotes_dir)]  # fmt: skip
+                   "--quotes-dir", str(quotes_dir),
+                   # The measured default path is the pinned profile's own six algorithms:
+                   # never the CLI's default base + optimized expansion (WHI-1528).
+                   "--strategies", "profile"]  # fmt: skip
         log.sample(stage="quote_cli", invocation=index, point="before")
         started = time.perf_counter_ns()
         proc = subprocess.run(

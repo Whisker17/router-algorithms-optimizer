@@ -332,6 +332,9 @@ def test_experiment_over_the_corpus_fixture_records_every_stage(tmp_path: Path) 
     assert timing["samples_per_case"] == {"n": 3, "min": 4, "median": 4, "max": 4}
     quote = summary["quote_cli"]
     assert quote["one_solve_per_algorithm_per_invocation"] is True
+    # WHI-1528: the measured CLI path is the pinned profile's exact selection, never the
+    # CLI's default base + optimized expansion (the records above are its two algorithms).
+    assert all(e["command"].endswith(" --strategies profile") for e in doc["quote_cli"])
     # The full-source sentinel bundle is exactly the one `main.py quote` derives.
     assert quote["bundle_hashes"] == [doc["bundles"]["full_source/sentinel"]["bundle_hash"]]
     cold = summary["cold"]["full_source/matrix"]["single_path"]
@@ -1221,7 +1224,9 @@ def test_control_construction_is_charged_inside_the_solve_window(
         def stats(self) -> dict[str, int]:
             return {}
 
-    monkeypatch.setattr(latency, "TickMathReuse", SlowMemo)
+    from pools import exact_controls
+
+    monkeypatch.setattr(exact_controls, "TickMathReuse", SlowMemo)  # shared installation
     arm = latency.load_arms(ARMS).arms["E2"]
     base = dataclasses.replace(fake_solvers.ALL[0], solve=_swap_probe([]))
     factory = latency.arm_factory(base, arm)

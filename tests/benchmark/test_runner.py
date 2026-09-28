@@ -571,11 +571,12 @@ def test_cli_run_with_reverse_order_and_order_check(
 ) -> None:
     results = tmp_path / "results"
     base = ["run", "--bundle", "tests/fixtures/synthetic", "--profile", "config/smoke.yaml"]
+    base += ["--strategies", "profile"]  # the smoke profile's exact selection
     assert main.main([*base, "--results-dir", str(results)]) == 0
     assert main.main([*base, "--results-dir", str(results), "--order", "reverse"]) == 0
     run_a, run_b = sorted(results.iterdir())
     manifest_b = load_manifest(run_b)
-    assert manifest_b.replay_command.endswith("--order reverse")
+    assert manifest_b.replay_command.endswith("--order reverse --strategies profile")
     assert manifest_b.measurement["order"] == "reverse"
     capsys.readouterr()
     assert main.main(["order-check", str(run_a), str(run_b)]) == 0

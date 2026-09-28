@@ -3,11 +3,14 @@ only: the run manifest and `cases.jsonl` plus the hash-verified request bundle (
 provenance carries the request, the parent bundle identity and the token metadata; its
 pools file the source of every pool).
 
-`render_compact` prints one row per selected algorithm, failures included. `render_details`
-adds, for EVERY algorithm, the final plan exactly as the independent evaluation replayed
-it -- steps in execution order, the fund ledger (how each fund was split between later
-steps, which steps merged funds, which physical pools were reused) with exact raw amounts
-that reconcile -- and this one execution's timings. Nothing here re-runs a solver or
+`render_compact` prints one row per selected algorithm, failures included; a run that
+persisted its strategy groups (`main.py quote --strategies`, WHI-1528) shows them as
+separate "Base strategies" / "Optimized strategies" blocks, older runs keep one ungrouped
+table (and `render_details` the same group headings). `render_details` adds, for EVERY
+algorithm, the final plan exactly as the independent evaluation replayed it -- steps in
+execution order, the fund ledger (how each fund was split between later steps, which steps
+merged funds, which physical pools were reused) with exact raw amounts that reconcile --
+and this one execution's timings. Nothing here re-runs a solver or
 re-evaluates a plan.
 
 A single execution has one latency observation per algorithm, reported as that: this
@@ -25,11 +28,14 @@ from typing import Any
 
 from benchmark.results import RunManifest, load_case_records, load_manifest
 from report.aggregate import (
+    STRATEGY_GROUP_TITLES,
     ReportInputError,
     _pool_sources,
     _read_checked,
     _verified_bundle,
     bundle_path_from_replay,
+    strategy_groups,
+    strategy_recipe,
 )
 from snapshot.request import EXPLORATORY_MARK, REQUEST_SCHEMA, format_amount
 
@@ -221,6 +227,24 @@ def render_header(view: QuoteView) -> list[str]:
         + f", Python {env.get('python_version') or '?'}, "
         f"{env.get('cpu_model') or env.get('machine') or 'CPU unknown'}",
     ]
+    groups = strategy_groups(m)
+    if groups is not None:
+        mode = m.resolved_profile.get("selection", {}).get("mode")
+        lines.append(
+            f"strategies: --strategies {mode} -- "
+            + "; ".join(f"{STRATEGY_GROUP_TITLES[g]} ({len(n)})" for g, n in groups)
+            + ", run sequentially in that order under the same objective, budget and search"
+        )
+        for group, names in groups:
+            for name in names:
+                entry = strategy_recipe(m, name)
+                if group == "optimized" and entry is not None:
+                    recipe = entry.get("recipe", {})
+                    lines.append(
+                        f"  {name}: experimental optimized strategy, recipe {recipe.get('key')} "
+                        f"arm {recipe.get('arm')} ({recipe.get('path')}); exact controls "
+                        f"{', '.join(entry.get('controls') or {}) or 'none'}; not a default"
+                    )
     if SOR in m.algorithms:
         lb = sum(v for k, v in scope["sources"].items() if k.startswith("moe_lb"))
         lines.append(
@@ -282,7 +306,16 @@ def render_compact(view: QuoteView) -> str:
             notes.append(
                 f"  {name}: {record['status']}{limit}: {record.get('error') or 'no detail'}"
             )
-    lines = [*render_header(view), "", *_table(header, rows)]
+    table = _table(header, rows)
+    groups = strategy_groups(view.manifest)
+    if groups is not None:  # each group's rows under its own heading, in run order
+        by_name = dict(zip((n for n, _ in records), table[2:], strict=True))
+        table = table[:2] + [
+            line
+            for group, names in groups
+            for line in (f"{STRATEGY_GROUP_TITLES[group]}:", *(by_name[n] for n in names))
+        ]
+    lines = [*render_header(view), "", *table]
     if direct_gross is None:
         status = "not selected" if direct is None else direct["status"]
         lines.append(f"vs direct: N/A -- the direct baseline has no valid output ({status})")
@@ -442,7 +475,14 @@ def _performance_lines(view: QuoteView, record: dict[str, Any]) -> list[str]:
 
 def render_details(view: QuoteView) -> str:
     lines: list[str] = []
-    for name, record in _records_by_algorithm(view):
+    records = dict(_records_by_algorithm(view))
+    groups = strategy_groups(view.manifest)
+    heading = {names[0]: STRATEGY_GROUP_TITLES[g] for g, names in groups or [] if names}
+    order = [n for _, names in groups for n in names] if groups else list(records)
+    for name in order:
+        record = records[name]
+        if name in heading:
+            lines += ["", f"== {heading[name]} =="]
         lines.append("")
         if record is None:
             lines.append(f"[{name}] missing: no record (incomplete run)")

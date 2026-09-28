@@ -97,6 +97,53 @@ def _csvs(runs: Sequence[RunData], out: Path, min_samples: int) -> dict[str, Pat
             for e in agg.status_table(r)
         ),
     )
+    grouped = [(r, g) for r in runs if (g := agg.strategy_groups(r.manifest)) is not None]
+    if grouped:  # WHI-1528: only runs that persisted their base / optimized selection
+
+        def versus(r: RunData, a: str, baseline: str) -> list[Any]:
+            if baseline not in r.algorithms or a == baseline:
+                return [None, None]
+            s = agg.paired_gross(r, a, baseline, r.case_ids, min_samples)
+            return [s["n"], s["p50"]]
+
+        emit(
+            "strategy_groups",
+            [
+                "run_id",
+                "cohort",
+                "group",
+                "algorithm",
+                "recipe",
+                "scheduled",
+                *agg.STATUS_ORDER,
+                "other",
+                "ok_share",
+                "vs_direct_n",
+                "vs_direct_p50_bps",
+                "vs_uni_sor_port_n",
+                "vs_uni_sor_port_p50_bps",
+            ],
+            (
+                [
+                    r.manifest.run_id,
+                    r.cohort,
+                    group,
+                    e["algorithm"],
+                    (agg.strategy_recipe(r.manifest, e["algorithm"]) or {}).get("recipe"),
+                    e["scheduled"],
+                    *[e[st] for st in agg.STATUS_ORDER],
+                    e["other"],
+                    e["ok_share"],
+                    *versus(r, e["algorithm"], "direct"),
+                    *versus(r, e["algorithm"], "uni_sor_port"),
+                ]
+                for r, groups in grouped
+                for table in (agg.status_table(r),)
+                for group, members in groups
+                for e in table
+                if e["algorithm"] in members
+            ),
+        )
     emit(
         "paired_gross",
         [

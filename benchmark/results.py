@@ -54,6 +54,7 @@ RESULT_SCHEMA_VERSION = 2
 MANIFEST_FILE = "manifest.json"
 CASES_FILE = "cases.jsonl"
 MEMORY_FILE = "memory.jsonl"
+PROFILE_FILE = "profile.yaml"  # the CLI-derived effective profile of a run (WHI-1528)
 
 STATE_RUNNING = "running"
 STATE_COMPLETE = "complete"
@@ -430,7 +431,11 @@ class RunWriter:
         environment: Mapping[str, Any] | None = None,
         memory: bool = False,
         run_id: str | None = None,
+        profile_text: str | None = None,
     ) -> RunWriter:
+        """`profile_text` (WHI-1528, `main.py run --strategies`): the effective profile the
+        CLI derived, written as `<run dir>/profile.yaml` before the manifest -- `profile`
+        must have been parsed from exactly that text at exactly that path."""
         results_dir = Path(results_dir)
         run_id = run_id or new_run_id()
         run_dir = results_dir / run_id
@@ -439,6 +444,11 @@ class RunWriter:
             run_dir.mkdir()  # exclusive claim: never reuse/overwrite an existing run
         except FileExistsError as exc:
             raise ResultError(f"{run_dir}: a run with id {run_id!r} already exists") from exc
+        if profile_text is not None:
+            saved = run_dir / PROFILE_FILE
+            if profile.source_path != str(saved):
+                raise ResultError(f"{saved}: the effective profile must be read from here")
+            saved.write_text(profile_text, encoding="utf-8")
         (run_dir / CASES_FILE).touch()
         if memory:
             (run_dir / MEMORY_FILE).touch()

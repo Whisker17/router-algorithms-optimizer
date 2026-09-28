@@ -223,3 +223,9 @@ class AlgorithmFactory:
     # nothing is passed and the algorithm keeps its non-sampling behaviour. Empty for
     # every reference algorithm.
     sampling_params: tuple[str, ...] = ()
+    # A named optimized strategy (WHI-1528): the identity of the registered recipe its
+    # settings come from (`path`, `sha256`, `key`, `version`, `arm` of a frozen arms file).
+    # The profile loader requires `strategies.<name>` to declare exactly that recipe's
+    # settings, and hands them over as `AlgorithmConfig.params`; the global `shortlist` /
+    # `sampling` sections never reach such a factory. `None` for every other algorithm.
+    strategy_recipe: Mapping[str, Any] | None = None

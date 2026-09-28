@@ -102,7 +102,13 @@ No loader code ships with the template — write it when the first config file l
   gross-only profile for its algorithms, objective, search, seed, budget and worker
   values but always runs it with `warmup: 0`, `repeats: 1`, `memory_pass: false`, saving
   that effective copy next to its results; the source YAML is never edited
-  (`docs/references/single-request.md`).
+  (`docs/references/single-request.md`). `main.py run|quote --strategies` (WHI-1528,
+  default `all`) additionally derives the base group plus the two named optimized
+  strategies from such a profile. The effective profile gains an optional `strategies`
+  section (per named strategy: its recipe identity plus that recipe's `shortlist`,
+  `sampling` and `controls`, checked against the sha256-pinned `latency/l08.yaml` arm)
+  and a `selection` record. No checked-in profile declares either; they are never edited
+  (`docs/references/strategy-groups.md`).
 - `calibration/` — the WHI-1447 tuning-split calibration profiles: `probe-h3-*.yaml`
   (uncapped 3-hop demand probes), `sweep-base.yaml` and the `sweep-*.yaml` grid points
   generated from it by `main.py calibrate profiles` (do not edit; regenerate).
@@ -130,4 +136,6 @@ No loader code ships with the template — write it when the first config file l
   stage sets and the only accepted comparisons and dispositions, on top of the unchanged
   L01 v1 / L01-SB v1. Read by `python -m benchmark.latency run|sufficient|session --arms`
   and `python -m report.latency compare|final`. Selects nothing by default. See
-  `docs/references/latency-optimization-results.md`.
+  `docs/references/latency-optimization-results.md`. Its unchanged v1 arms H3 and H4 are
+  also the pinned recipes of the named optimized strategies `uni_sor_adaptive` /
+  `uni_sor_optimized` (WHI-1528); nothing in the file was added or edited for that.

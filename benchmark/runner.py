@@ -555,10 +555,13 @@ def run_experiment(
     run_id: str | None = None,
     order: CaseOrder | None = None,
     progress: Callable[[CaseRecord], None] | None = None,
+    profile_text: str | None = None,
 ) -> RunManifest:
     """Measure every profiled algorithm on every bundle case (see module
     docstring). `order` overrides `profile.measurement.order` (and is recorded);
-    `progress` is called after each case record is durably appended."""
+    `progress` is called after each case record is durably appended; `profile_text` is a
+    CLI-derived effective profile saved into the run directory (`RunWriter.create`). The
+    profile's algorithms run exactly as given: nothing is expanded here."""
     # The objective every solver and the independent evaluation share, bound to this
     # bundle (empirical_cost takes its frozen price context; others are unchanged).
     profile = replace(profile, objective=profile.objective.bind(bundle))
@@ -584,6 +587,7 @@ def run_experiment(
         environment=environment_record(profile.worker.to_dict()),
         memory=settings.memory_pass,
         run_id=run_id,
+        profile_text=profile_text,
     )
     run = _Run(bundle=bundle, profile=profile, writer=writer)
     timing: dict[str, Any] = {"clock": "perf_counter_ns"}

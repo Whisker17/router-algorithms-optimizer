@@ -18,6 +18,14 @@ valid candidates, exactly like a batch run. The recorded replay command is a pla
 `main.py run` over the derived bundle and effective profile; `main.py report RUN_DIR`
 renders the saved run offline.
 
+`--strategies` (WHI-1528, `benchmark.strategies`; default `all`) derives the compared set
+from the source profile first: `all` = the source's base (and custom) algorithms, then the
+named optimized strategies; `base`, `optimized`, or `profile` = the source's exact
+selection. The single-run override applies to the derived document, which is the saved
+effective profile; the replay command runs it with `--strategies profile`, so a replay
+keeps exactly the saved algorithms and recipe settings. `quote.json` records the mode and
+groups. In `profile` mode the effective profile is byte-for-byte the pre-WHI-1528 one.
+
 `empirical_cost` profiles are refused: the derived bundle carries no frozen price
 context, and without one that objective ranks plans differently (unranked gross), so the
 comparison would silently differ from the same objective on the corpus.
@@ -44,6 +52,7 @@ from benchmark.profile import (
 )
 from benchmark.results import RunManifest, new_run_id
 from benchmark.runner import run_experiment
+from benchmark.strategies import DEFAULT_MODE, derive, selected_groups
 from snapshot.bundle import load_bundle, sha256_file
 from snapshot.models import Case, SnapshotBundle
 from snapshot.request import (
@@ -74,6 +83,9 @@ class PreparedQuote:
     token_in: TokenInfo
     token_out: TokenInfo
     case: Case
+    strategies: str = "profile"
+    # The validated single-run effective document (source + strategy derivation + override).
+    effective_document: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -84,12 +96,22 @@ class QuoteRun:
 
 
 def prepare_quote(
-    *, bundle: str, profile: str, token_in: str, token_out: str, amount: str
+    *,
+    bundle: str,
+    profile: str,
+    token_in: str,
+    token_out: str,
+    amount: str,
+    strategies: str = DEFAULT_MODE,
 ) -> PreparedQuote:
     """Every validation, before any write or solver work."""
     parent = load_bundle(bundle)
     document = read_profile_document(profile)
-    parsed: RunProfile = parse_profile(document, profile)
+    derived, _ = derive(
+        document, strategies, source_path=profile, source_sha256=sha256_file(Path(profile))
+    )
+    effective = single_run_document(derived)
+    parsed: RunProfile = parse_profile(effective, profile)
     if parsed.objective.mode == "empirical_cost":
         raise QuoteError(
             f"{profile}: objective empirical_cost is not supported by quote -- the "
@@ -112,6 +134,8 @@ def prepare_quote(
         token_in=tin,
         token_out=tout,
         case=case,
+        strategies=strategies,
+        effective_document=effective,
     )
 
 
@@ -127,10 +151,16 @@ def run_quote(prepared: PreparedQuote, quotes_dir: str | Path) -> QuoteRun:
         "# Override: measurement.warmup 0, measurement.repeats 1, measurement.memory_pass "
         "false -- one solve attempt per algorithm, no separate memory pass.\n"
     )
-    effective_path.write_text(
-        header + yaml.safe_dump(single_run_document(prepared.source_profile), sort_keys=False),
-        encoding="utf-8",
-    )
+    if prepared.strategies != "profile":
+        header += (
+            f"# Strategies: --strategies {prepared.strategies} (WHI-1528): `algorithms`, "
+            "`strategies` and `selection` are derived from the source; replay with "
+            "--strategies profile.\n"
+        )
+    effective = prepared.effective_document
+    if effective is None:  # a PreparedQuote built without prepare_quote: the source as is
+        effective = single_run_document(prepared.source_profile)
+    effective_path.write_text(header + yaml.safe_dump(effective, sort_keys=False), encoding="utf-8")
     profile = load_profile(effective_path)
     bundle = derive_request_bundle(prepared.parent, prepared.case, quote_dir / "bundle")
     results_dir = quote_dir / "runs"
@@ -140,6 +170,7 @@ def run_quote(prepared: PreparedQuote, quotes_dir: str | Path) -> QuoteRun:
             "--bundle", str(quote_dir / "bundle"),
             "--profile", str(effective_path),
             "--results-dir", str(results_dir),
+            "--strategies", "profile",
         ]
     )  # fmt: skip
     record = {
@@ -172,6 +203,10 @@ def run_quote(prepared: PreparedQuote, quotes_dir: str | Path) -> QuoteRun:
         },
         "results_dir": str(results_dir),
         "replay_command": replay,
+        "strategies": {
+            "mode": prepared.strategies,
+            "groups": {g: members for g, members in selected_groups(profile)},
+        },
     }
     (quote_dir / QUOTE_FILE).write_text(
         json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
