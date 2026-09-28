@@ -12,7 +12,7 @@ Build an offline, reproducible experimental tool for choosing and improving Mant
 
 The Linear project is [Mantle Router Algorithm Optimizer](https://linear.app/whisker-personal/project/mantle-router-algorithm-optimizer-3abba3f613f7), project UUID `29829418-7ca6-43c9-bf03-a49f05c76b1a`, team `Whisker-Personal` (`WHI`). Its description calls for a pluggable benchmark, static liquidity snapshots, and historical fee calibration using Dune.
 
-The colleague's `plan-and-compilation.html`, attached to the Linear project description linked above (not archived in this repository; fetch the current attachment URL from Linear), explains compilation and execution after route selection. Its conservation, rounding and ordered-state lessons are useful; its IR, opcodes, JIT policies, registry and ABI are not requirements here. The local [pre-research](references/pre-research-from-gpt-6-pro.md) supplies algorithm leads, not a validated implementation specification. Its unresolved citation markers and illustrative numeric parameters must not be treated as verified evidence.
+The colleague's `plan-and-compilation.html`, attached to the Linear project description linked above (not archived in this repository; fetch the current attachment URL from Linear), explains compilation and execution after route selection. Its conservation, rounding and ordered-state lessons are useful; its IR, opcodes, JIT policies, registry and ABI are not requirements here. Release 0.2.0 adds it as an optional comparator; its boundary is §2.13. The local [pre-research](references/pre-research-from-gpt-6-pro.md) supplies algorithm leads, not a validated implementation specification. Its unresolved citation markers and illustrative numeric parameters must not be treated as verified evidence.
 
 ### 1.2 v1 Scope
 
@@ -216,6 +216,17 @@ Non-secret parameters live in validated YAML under `config/`; the public default
 | Protocol math tolerance | Exact raw output on the admitted contract domain | Correctness requirement; scoped exception requires spec change and evidence |
 
 All profile values appear in output even if inherited from defaults. Profile calibration fixes representative daily corpus/budgets before the final comparison. Report runtime, but do not fail acceptance or request an owner waiver solely because of duration. Retain explicit per-case time/quote limits, honest timeout status and full corpus/algorithm coverage. Python integers govern money; floating point is permitted for timing/statistics and approximate internal optimization only.
+
+### 2.13 Optional colleague comparator boundary (Release 0.2.0)
+
+The owner added the colleague's design to Release 0.2.0 as an **optional comparator**. It does not replace `RoutePlan`, the evaluator, the six base strategies or the optimized strategies. [colleague-routing-contract.md](references/colleague-routing-contract.md) (WHI-1536) is the source register and contract. It pins the attachment by SHA-256 and keeps route search, fixed-plan replay, policy resolution and encoding separate:
+
+- **Fixed-plan replay.** The source's funding-graph rules (per-layer bps on frozen bases, final remainder, pure split/merge, merge-then-split, zero inputs, selected call order) map onto ordinary ordered `RoutePlan` steps with explicit `FundInput` amounts. Recovery is charged to solve, holds for one snapshot and request only, and adds no swap, same-token step, compiler or second plan standard. Evaluator checks are not weakened.
+- **Policy resolution.** Baseline/JIT candidate policies are `unsupported` until their unresolved rules are decided. Real JIT/RFQ providers are outside the offline domain. An AMM-only local-candidate policy may exist only as a labeled adaptation.
+- **Route search.** The attachment starts after topology and shares were chosen. No accessible source defines the search, and none may be inferred from encoding examples. A colleague solver needs a source-backed contract, or an owner-authored `colleague_inspired` contract with explicit deviations. A research no-go leaves the solver unimplemented, never Done.
+- **Encoding.** Encoding, calldata, Router/ABI and byte-size results are not benchmark requirements or performance evidence.
+
+Comparisons keep a known plan's replay time apart from routing solve time and use matched cohorts (§2.11).
 
 ## 3. Cross-cutting Policies
 
