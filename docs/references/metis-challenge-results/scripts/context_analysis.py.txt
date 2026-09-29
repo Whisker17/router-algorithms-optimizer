@@ -1,0 +1,164 @@
+"""WHI-1449 held-out CONTEXT rows (direct, path_split, uni_sor_port): combine the interrupted
+original context run with the supplemental uni_sor_port completion run. Written before the
+supplemental run finished; computed once; write-once output. NEVER part of the H-M1b verdict.
+
+usage: context_analysis.py <this campaign dir> <bundle_report dir> <supplemental run dir>
+
+Rules:
+- Exactly one record per (original bundle_report case, algorithm); denominator 3 x 302 = 906.
+  direct/path_split and the first uni_sor_port rows come from the original (still `running`,
+  never finalized) run, whose raw files must still match the recovery manifest byte for byte;
+  the remaining uni_sor_port rows come from the complete, checksummed supplemental run over
+  the derived missing-case bundle, which must cover exactly the recorded missing ids.
+- Every row is labeled with its component; every status is kept (`invalid_plan` stays
+  `invalid_plan`; a last_valid_candidate is never ok).
+- Paired rows versus A0/M4 (raw integer gross, ok in both) are descriptive and scope-limited:
+  the capability universes differ (direct: one pool; path_split: no shared pools;
+  uni_sor_port: V2/V3 only), so they are not matched-capability search-quality evidence.
+- Timing is secondary and per component (different processes, windows and host load)."""
+import hashlib, json, re, sys
+from pathlib import Path
+from benchmark.results import load_case_records, load_manifest
+from snapshot.bundle import load_bundle, sha256_file
+
+SOURCE = "446674e80e66ad93834786e1493f223dc38de3eb"
+ALGOS = ["direct", "path_split", "uni_sor_port"]
+campaign, bundle_dir, supp_dir = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+out = campaign / "context-analysis.json"
+if out.exists():
+    raise SystemExit(f"refusing to overwrite {out}")
+rec = json.loads((campaign / "context-interruption-recovery.json").read_text())
+orig = rec["original_run"]
+orig_dir = Path(orig["run_dir"])
+heldout = orig_dir.parent.parent
+plan = json.loads((heldout / "plan.json").read_text())
+primary = json.loads((heldout / "heldout-analysis.json").read_text())
+bundle = load_bundle(bundle_dir)
+assert bundle.bundle_hash == plan["bundle"]["bundle_hash"]
+ids = [c.case_id for c in bundle.cases]
+meta = json.loads((bundle_dir / "corpus.json").read_text())["case_metadata"]
+
+problems = []
+for f, h in orig["raw_files_sha256"].items():
+    if Path(f).name.startswith("load_sampler"):
+        continue
+    if sha256_file(Path(f)) != h:
+        problems.append(f"original file changed since recovery: {f}")
+m_orig = load_manifest(orig_dir, allow_incomplete=True)
+if m_orig.state != "running" or m_orig.complete:
+    problems.append("original run state changed")
+orig_recs = load_case_records(orig_dir)
+if len(orig_recs) != orig["complete_records"]:
+    problems.append("original record count changed")
+m_supp = load_manifest(supp_dir)  # strict: complete + cases checksum
+sup = rec["supplement"]
+if m_supp.bundle_hash != sup["derived_bundle"]["bundle_hash"]: problems.append("supplemental bundle")
+if m_supp.algorithms != ("uni_sor_port",): problems.append("supplemental algorithms")
+if m_supp.git_revision != SOURCE or m_supp.git_dirty is not False: problems.append("supplemental source")
+if m_supp.resolved_profile != sup["profile"]["resolved_profile"]: problems.append("supplemental settings")
+if m_supp.profile_sha256 != sup["profile"]["sha256"]: problems.append("supplemental profile file")
+if m_supp.scheduled_count != orig["missing"]["count"] or m_supp.case_count != m_supp.scheduled_count: problems.append("supplemental counts")
+supp_recs = load_case_records(supp_dir)
+if [r["case_id"] for r in supp_recs] != orig["missing"]["case_ids"]: problems.append("supplemental case ids/order")
+combined = {}
+for component, recs in (("original-interrupted", orig_recs), ("supplemental-completion", supp_recs)):
+    for r in recs:
+        key = (r["algorithm"], r["case_id"])
+        if key in combined or r["algorithm"] not in ALGOS or r["case_id"] not in set(ids):
+            problems.append(f"record {key} from {component}")
+        combined[key] = (component, r)
+if len(combined) != len(ids) * len(ALGOS): problems.append(f"coverage {len(combined)}")
+if problems:
+    raise SystemExit(f"context combination refused: {problems}")
+
+def load_primary(d):
+    return {r["case_id"]: r for r in load_case_records(Path(d))}
+
+a0 = load_primary(heldout / "runs-a0" / primary["runs"]["A0"]["run_id"])
+m4 = load_primary(heldout / "runs-m4" / primary["runs"]["M4"]["run_id"])
+
+def gross(r):
+    ev = r.get("evaluation") if r["status"] == "ok" else None
+    return int(ev["gross_output"]) if isinstance(ev, dict) else None
+
+def dist(xs):
+    xs = sorted(xs)
+    if not xs:
+        return {"n": 0}
+    return {"n": len(xs), "mean": sum(xs) / len(xs), "p50": xs[len(xs) // 2] if len(xs) % 2 else (xs[len(xs) // 2 - 1] + xs[len(xs) // 2]) / 2,
+            "p95": xs[int(0.95 * (len(xs) - 1))], "min": xs[0], "max": xs[-1]}
+
+def loads(path, start, end):
+    vals = []
+    for line in path.read_text().splitlines():
+        t, rest = line.split(" ", 1)
+        if start <= t <= end:
+            vals.append(float(re.findall(r"[\d.]+", rest)[0]))
+    return {"samples": len(vals), "max_1min": max(vals) if vals else None, "above_5": sum(v > 5.0 for v in vals)}
+
+algos = {}
+for algo in ALGOS:
+    rows = [combined[(algo, c)] for c in ids]
+    st, comp, non_ok = {}, {}, []
+    for component, r in rows:
+        st[r["status"]] = st.get(r["status"], 0) + 1
+        c = comp.setdefault(component, {})
+        c[r["status"]] = c.get(r["status"], 0) + 1
+        if r["status"] != "ok":
+            non_ok.append({"case_id": r["case_id"], "component": component, "status": r["status"], "error": r.get("error"),
+                           "limit_hit": r.get("limit_hit"), "last_valid_candidate": bool(r.get("last_valid_candidate")),
+                           "stratum": meta[r["case_id"]]["stratum"]})
+    paired = {}
+    for ref_name, ref in (("A0", a0), ("M4", m4)):
+        w = l = t = 0
+        for component, r in rows:
+            gc, gr = gross(r), gross(ref[r["case_id"]])
+            if gc is None or gr is None:
+                continue
+            w, l, t = w + (gr > gc), l + (gr < gc), t + (gr == gc)
+        paired[ref_name] = {"paired_ok": w + l + t, f"{ref_name}_higher": w, f"{ref_name}_lower": l, "equal": t}
+    algos[algo] = {
+        "scheduled": len(ids), "records": len(rows), "statuses": dict(sorted(st.items())),
+        "statuses_by_component": comp,
+        "limit_hit": sum(1 for _, r in rows if r.get("limit_hit")),
+        "last_valid_candidates_not_counted_ok": sum(1 for _, r in rows if r.get("last_valid_candidate")),
+        "non_ok": non_ok,
+        "paired_descriptive_scope_limited": paired,
+        "quotes_counted": dist([(r.get("quotes") or {}).get("counted") for _, r in rows if isinstance((r.get("quotes") or {}).get("counted"), int)]),
+        "solve_seconds_secondary_by_component": {k: dist([r["measurement"]["solve_seconds"][0] for c, r in rows if c == k and (r.get("measurement") or {}).get("solve_seconds")])
+                                                 for k in sorted(comp)},
+    }
+orig_start = orig["start_marker"]["started_utc"]
+supp_start = json.loads((campaign / "ctx_sor.start.json").read_text())["started_utc"]
+supp_done = json.loads((campaign / "ctx_sor.completion.json").read_text())
+doc = {
+    "analysis": "WHI-1449 held-out CONTEXT rows, combined interrupted original + supplemental completion; descriptive only, never the H-M1b verdict",
+    "script_sha256": sha256_file(Path(__file__)),
+    "recovery_manifest_sha256": sha256_file(campaign / "context-interruption-recovery.json"),
+    "plan_sha256": sha256_file(heldout / "plan.json"),
+    "heldout_analysis_sha256": sha256_file(heldout / "heldout-analysis.json"),
+    "bundle": {"bundle_hash": bundle.bundle_hash, "cases": len(ids)},
+    "denominator": len(ids) * len(ALGOS),
+    "records_by_component": {k: sum(1 for c, _ in combined.values() if c == k) for k in ("original-interrupted", "supplemental-completion")},
+    "components": {
+        "original-interrupted": {"run_id": m_orig.run_id, "run_dir": str(orig_dir), "state": m_orig.state, "complete": m_orig.complete,
+                                 "exit_code": None, "cases_jsonl_sha256": sha256_file(orig_dir / "cases.jsonl"),
+                                 "records": len(orig_recs), "bundle_hash": m_orig.bundle_hash,
+                                 "window_load": loads(heldout / "load_samples.txt", orig_start, "9999")},
+        "supplemental-completion": {"run_id": m_supp.run_id, "run_dir": str(supp_dir), "state": m_supp.state, "complete": m_supp.complete,
+                                    "exit_code": supp_done["exit_code"], "started_utc": supp_start, "ended_utc": supp_done["ended_utc"],
+                                    "manifest_sha256": sha256_file(supp_dir / "manifest.json"), "cases_sha256": m_supp.cases_sha256,
+                                    "records": len(supp_recs), "bundle_hash": m_supp.bundle_hash, "bundle_id": m_supp.bundle_id,
+                                    "total_seconds": m_supp.timing.get("total_seconds"),
+                                    "window_load": loads(campaign / "load_samples.txt", supp_start, supp_done["ended_utc"])},
+    },
+    "scope": plan["context"]["scope"],
+    "algorithms": algos,
+    "per_row": [{"algorithm": a, "case_id": c, "component": combined[(a, c)][0], "status": combined[(a, c)][1]["status"],
+                 "gross": None if gross(combined[(a, c)][1]) is None else str(gross(combined[(a, c)][1]))} for a in ALGOS for c in ids],
+}
+out.write_text(json.dumps(doc, indent=1) + "\n")
+out.chmod(0o444)
+print(json.dumps({"denominator": doc["denominator"], "records_by_component": doc["records_by_component"],
+                  "algorithms": {a: {k: v[k] for k in ("statuses", "statuses_by_component", "paired_descriptive_scope_limited")} for a, v in algos.items()}}, indent=1))
+print(out, hashlib.sha256(out.read_bytes()).hexdigest())

@@ -1,0 +1,145 @@
+"""WHI-1449: build the small tracked summary of the Metis-inspired challenge from the
+immutable campaign evidence (stdlib only; reads, never writes, the evidence).
+
+usage: python3 docs/references/metis-challenge-results/build_summary.py.txt [ROOT] [OUT_DIR]
+  ROOT    durable evidence root (default
+          /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge)
+  OUT_DIR default docs/references/metis-challenge-results
+
+Writes summary.json (every gate/verdict number with the SHA-256 of the artifact it came
+from) and heldout-per-case.csv (one row per held-out case). Run from the repository root."""
+import csv, hashlib, json, re, sys
+from pathlib import Path
+
+ROOT = Path(sys.argv[1] if len(sys.argv) > 1 else
+            "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge")
+OUT = Path(sys.argv[2] if len(sys.argv) > 2 else "docs/references/metis-challenge-results")
+S2S3 = ROOT / "campaign-s2s3-446674e-20260928T153446Z"
+S4 = ROOT / "campaign-s4-446674e-20260928T163229Z"
+H4 = ROOT / "campaign-h4diag-446674e-20260928T185905Z"
+HO = ROOT / "campaign-heldout-446674e-20260928T191326Z"
+CX = ROOT / "campaign-ctxsor-446674e-20260929T024043Z"
+
+
+def sha(p):
+    return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
+
+def js(p):
+    return json.loads(Path(p).read_text())
+
+
+def records(run_dir):
+    return [json.loads(line) for line in (Path(run_dir) / "cases.jsonl").read_text().splitlines() if line]
+
+
+def loads(path, start, end):
+    vals = []
+    for line in Path(path).read_text().splitlines():
+        t, rest = line.split(" ", 1)
+        if start <= t <= end:
+            vals.append(float(re.findall(r"[\d.]+", rest)[0]))
+    return {"samples_1min": len(vals), "max_1min": max(vals) if vals else None, "samples_above_5.0": sum(v > 5.0 for v in vals)}
+
+
+def median(xs):
+    xs = sorted(xs)
+    n = len(xs)
+    return None if not n else xs[n // 2] if n % 2 else (xs[n // 2 - 1] + xs[n // 2]) / 2
+
+
+s2 = js(S2S3 / "s2-diagnostic.json")
+s2_classes = {}
+for c in s2["cases"]:
+    for k, v in ((c.get("diagnostic") or {}).get("classes") or {}).items():
+        s2_classes[k] = s2_classes.get(k, 0) + v
+s3 = js(S2S3 / "s3-work-gate.json")
+s4 = js(S4 / "s4-disposition.json")
+h4 = js(H4 / "h4-diagnostic.json")
+ho = js(HO / "heldout-analysis.json")
+plan = js(HO / "plan.json")
+cx = js(CX / "context-analysis.json")
+rec = js(CX / "context-interruption-recovery.json")
+
+a0_dir = HO / "runs-a0" / ho["runs"]["A0"]["run_id"]
+m4_dir = HO / "runs-m4" / ho["runs"]["M4"]["run_id"]
+a0 = {r["case_id"]: r for r in records(a0_dir)}
+m4 = {r["case_id"]: r for r in records(m4_dir)}
+hops = {}
+for r in m4.values():
+    for k, v in ((r.get("search") or {}).get("chunk_path_hops") or {}).items():
+        hops[k] = hops.get(k, 0) + v
+a0_hops = {}
+for r in a0.values():
+    for k, v in ((r.get("search") or {}).get("chunk_path_hops") or {}).items():
+        a0_hops[k] = a0_hops.get(k, 0) + v
+
+
+def work(recs, key):
+    xs = [(r.get("search") or {}).get(key) for r in recs]
+    xs = [x for x in xs if isinstance(x, int)]
+    return {"n": len(xs), "median": median(xs), "min": min(xs) if xs else None, "max": max(xs) if xs else None}
+
+
+marks = {a: js(HO / f"{a}.completion.json") for a in ("a0", "m4")}
+summary = {
+    "issue": "WHI-1449",
+    "identity": "metis_inspired: Metis-inspired experimental Python variant; NOT Jupiter Metis; no production equivalence, global-optimality or source-parity claim",
+    "empirical_source": plan["code"],
+    "bundles": {"bundle_tuning": s3["bundle_hash"], "bundle_report": plan["bundle"]["bundle_hash"],
+                "context_missing_case_derivation": rec["supplement"]["derived_bundle"]["bundle_hash"]},
+    "S2": {"artifact": "campaign-s2s3-446674e-20260928T153446Z/s2-diagnostic.json", "sha256": sha(S2S3 / "s2-diagnostic.json"),
+           "cases": len(s2["cases"]), "verdicts": s2["verdicts"], "gate": s2["s2_gate"], "chunk_classes": s2_classes,
+           "allowed_classes": s2["allowed_classes"], "label_hops": s2["label_hops"]},
+    "S3": {"artifact": "campaign-s2s3-446674e-20260928T153446Z/s3-work-gate.json", "sha256": sha(S2S3 / "s3-work-gate.json"),
+           "condition_met": s3["s3_condition_met"], "units": s3["units"],
+           "median_A0_paths_scored": s3["work"]["A0_paths_scored"]["median"],
+           "median_M3_label_relaxations": s3["work"]["M3_label_relaxations"]["median"],
+           "paired_m3_below_a0": s3["paired_m3_below_a0"], "paired": s3["paired_cases_with_both_counters"],
+           "statuses": s3["statuses"]},
+    "S4": {"artifact": "campaign-s4-446674e-20260928T163229Z/s4-disposition.json", "sha256": sha(S4 / "s4-disposition.json"),
+           "per_arm": {a: {k: v[k] for k in ("statuses", "timeouts", "limit_hit", "declared_truncation", "last_valid_candidates",
+                                              "work_unit", "work_counter", "quotes_executed", "cases_final_plan_uses_4hop_chunk")}
+                       for a, v in s4["per_arm"].items()},
+           "m4_vs_m4off": {k: v for k, v in s4["m4_vs_m4off"].items() if k != "different_gross"},
+           "m4_vs_m4off_different_gross": s4["m4_vs_m4off"]["different_gross"],
+           "m4off_finished_all_96_within_caps": s4["m4off_finished_all_96_within_caps"],
+           "m4off_same_gross_as_m4_on_all_96": s4["m4off_same_gross_as_m4_on_all_96"],
+           "m4_more_timeouts_than_a0": s4["m4_more_timeouts_than_a0"],
+           "m4_vs_a0_tuning_descriptive_not_the_verdict": s4["m4_vs_a0_tuning_descriptive_not_the_verdict"]},
+    "H4_diagnostic": {"artifact": "campaign-h4diag-446674e-20260928T185905Z/h4-diagnostic.json", "sha256": sha(H4 / "h4-diagnostic.json"),
+                      "exit_code": js(H4 / "h4diag.completion.json")["exit_code"], "cases": h4["cases"],
+                      "allowed_classes": h4["allowed_classes"], "class_totals": h4["class_totals"],
+                      "unexplained_chunks": h4["unexplained_chunks"], "cases_with_findings": h4["cases_with_findings"],
+                      "stop": h4["stop"], "limitation": h4["limitation"],
+                      "m4_minus_m4off": {r["case_id"]: r["m4_minus_m4off"] for r in h4["rows"]}},
+    "heldout": {"artifact": "campaign-heldout-446674e-20260928T191326Z/heldout-analysis.json", "sha256": sha(HO / "heldout-analysis.json"),
+                "plan_sha256": sha(HO / "plan.json"), "analysis_script_sha256": sha(HO / "heldout_analysis.py"),
+                "analysis_exit_code": js(HO / "heldout_analysis.completion.json")["exit_code"],
+                "runs": ho["runs"], "arm_exit_codes": {a: v["exit_code"] for a, v in marks.items()},
+                **{k: ho[k] for k in ("paired_ok_cases", "excluded_from_pairing", "wins", "losses", "ties", "sign_test", "verdict",
+                                      "keep", "decision", "zero_baseline_paired_cases", "bps_overall", "per_stratum",
+                                      "m4_wins_with_final_4hop_plan", "m4_wins_4hop_share", "m4_final_plans_with_4hop_chunk")},
+                "arms": {a: {k: v for k, v in s.items() if k != "non_ok"} | {"non_ok": s["non_ok"]} for a, s in ho["arms"].items()},
+                "m4_chunk_path_hops_total": dict(sorted(hops.items())), "a0_chunk_path_hops_total": dict(sorted(a0_hops.items())),
+                "work": {"A0_paths_scored": work(a0.values(), "paths_scored"), "M4_label_relaxations": work(m4.values(), "label_relaxations"),
+                         "units_differ": True},
+                "window_load": {"A0": loads(HO / "load_samples.txt", marks["a0"]["started_utc"], marks["a0"]["ended_utc"]),
+                                "M4": loads(HO / "load_samples.txt", marks["m4"]["started_utc"], marks["m4"]["ended_utc"])}},
+    "context": {"artifact": "campaign-ctxsor-446674e-20260929T024043Z/context-analysis.json", "sha256": sha(CX / "context-analysis.json"),
+                "recovery_manifest_sha256": sha(CX / "context-interruption-recovery.json"),
+                **{k: cx[k] for k in ("denominator", "records_by_component", "components", "scope")},
+                "algorithms": {a: {k: v for k, v in s.items()} for a, s in cx["algorithms"].items()}},
+}
+OUT.mkdir(parents=True, exist_ok=True)
+(OUT / "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
+rows = [r for r in ho["per_case"]]
+with (OUT / "heldout-per-case.csv").open("w", newline="") as f:
+    w = csv.writer(f, lineterminator="\n")
+    cols = ["case_id", "stratum", "a0_status", "m4_status", "a0_gross", "m4_gross", "outcome", "bps", "a0_chosen_source",
+            "m4_chosen_source", "m4_final_plan_4hop"]
+    w.writerow(cols)
+    for r in rows:
+        w.writerow([r.get(c) if r.get(c) is not None else "" for c in cols])
+print(OUT / "summary.json", sha(OUT / "summary.json"))
+print(OUT / "heldout-per-case.csv", sha(OUT / "heldout-per-case.csv"))

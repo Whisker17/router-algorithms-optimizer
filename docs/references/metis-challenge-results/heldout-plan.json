@@ -1,0 +1,706 @@
+{
+ "campaign": "campaign-heldout-446674e-20260928T191326Z",
+ "issue": "WHI-1449",
+ "stage": "held-out H-M1b (memo \u00a710.6), computed once; A0 then M4 on bundle_report, then context rows",
+ "created_at_utc": "2026-09-28T19:15:37.333146+00:00",
+ "code": {
+  "git_revision": "446674e80e66ad93834786e1493f223dc38de3eb",
+  "git_dirty": false,
+  "git_diff_sha256": null
+ },
+ "bundle": {
+  "path": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_report",
+  "bundle_id": "mantle-5src-101082044-091b0759-report-split",
+  "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+  "cases": 302,
+  "case_ids": [
+   "emp-09bc4e-201eba-large-1",
+   "emp-09bc4e-201eba-large-2",
+   "emp-09bc4e-201eba-large-4",
+   "emp-09bc4e-201eba-low-1",
+   "emp-09bc4e-201eba-low-3",
+   "emp-09bc4e-201eba-low-4",
+   "emp-09bc4e-201eba-medium-1",
+   "emp-09bc4e-201eba-medium-3",
+   "emp-09bc4e-201eba-medium-4",
+   "emp-09bc4e-779ded-large-1",
+   "emp-09bc4e-779ded-large-3",
+   "emp-09bc4e-779ded-large-4",
+   "emp-09bc4e-779ded-low-1",
+   "emp-09bc4e-779ded-low-3",
+   "emp-09bc4e-779ded-low-4",
+   "emp-09bc4e-779ded-medium-1",
+   "emp-09bc4e-779ded-medium-2",
+   "emp-09bc4e-779ded-medium-4",
+   "emp-09bc4e-78c1b0-large-2",
+   "emp-09bc4e-78c1b0-large-3",
+   "emp-09bc4e-78c1b0-large-4",
+   "emp-09bc4e-78c1b0-low-2",
+   "emp-09bc4e-78c1b0-low-3",
+   "emp-09bc4e-78c1b0-low-4",
+   "emp-09bc4e-78c1b0-medium-1",
+   "emp-09bc4e-78c1b0-medium-2",
+   "emp-09bc4e-78c1b0-medium-4",
+   "emp-1bdd88-78c1b0-large-1",
+   "emp-1bdd88-78c1b0-large-2",
+   "emp-1bdd88-78c1b0-large-3",
+   "emp-1bdd88-78c1b0-low-2",
+   "emp-1bdd88-78c1b0-low-3",
+   "emp-1bdd88-78c1b0-low-4",
+   "emp-1bdd88-78c1b0-medium-1",
+   "emp-1bdd88-78c1b0-medium-2",
+   "emp-1bdd88-78c1b0-medium-4",
+   "emp-201eba-09bc4e-large-1",
+   "emp-201eba-09bc4e-large-2",
+   "emp-201eba-09bc4e-large-4",
+   "emp-201eba-09bc4e-low-1",
+   "emp-201eba-09bc4e-low-2",
+   "emp-201eba-09bc4e-low-3",
+   "emp-201eba-09bc4e-medium-1",
+   "emp-201eba-09bc4e-medium-2",
+   "emp-201eba-09bc4e-medium-4",
+   "emp-201eba-779ded-large-1",
+   "emp-201eba-779ded-large-3",
+   "emp-201eba-779ded-large-4",
+   "emp-201eba-779ded-low-2",
+   "emp-201eba-779ded-low-3",
+   "emp-201eba-779ded-low-4",
+   "emp-201eba-779ded-medium-1",
+   "emp-201eba-779ded-medium-2",
+   "emp-201eba-779ded-medium-3",
+   "emp-201eba-78c1b0-large-2",
+   "emp-201eba-78c1b0-large-3",
+   "emp-201eba-78c1b0-large-4",
+   "emp-201eba-78c1b0-low-1",
+   "emp-201eba-78c1b0-low-2",
+   "emp-201eba-78c1b0-low-4",
+   "emp-201eba-78c1b0-medium-1",
+   "emp-201eba-78c1b0-medium-2",
+   "emp-201eba-78c1b0-medium-3",
+   "emp-201eba-cda86a-large-2",
+   "emp-201eba-cda86a-large-3",
+   "emp-201eba-cda86a-large-4",
+   "emp-201eba-cda86a-low-1",
+   "emp-201eba-cda86a-low-3",
+   "emp-201eba-cda86a-low-4",
+   "emp-201eba-cda86a-medium-2",
+   "emp-201eba-cda86a-medium-3",
+   "emp-201eba-cda86a-medium-4",
+   "emp-779ded-09bc4e-large-1",
+   "emp-779ded-09bc4e-large-2",
+   "emp-779ded-09bc4e-large-3",
+   "emp-779ded-09bc4e-low-1",
+   "emp-779ded-09bc4e-low-2",
+   "emp-779ded-09bc4e-low-4",
+   "emp-779ded-09bc4e-medium-2",
+   "emp-779ded-09bc4e-medium-3",
+   "emp-779ded-09bc4e-medium-4",
+   "emp-779ded-201eba-large-2",
+   "emp-779ded-201eba-large-3",
+   "emp-779ded-201eba-large-4",
+   "emp-779ded-201eba-low-1",
+   "emp-779ded-201eba-low-3",
+   "emp-779ded-201eba-low-4",
+   "emp-779ded-201eba-medium-2",
+   "emp-779ded-201eba-medium-3",
+   "emp-779ded-201eba-medium-4",
+   "emp-779ded-78c1b0-large-1",
+   "emp-779ded-78c1b0-large-3",
+   "emp-779ded-78c1b0-large-4",
+   "emp-779ded-78c1b0-low-1",
+   "emp-779ded-78c1b0-low-3",
+   "emp-779ded-78c1b0-low-4",
+   "emp-779ded-78c1b0-medium-1",
+   "emp-779ded-78c1b0-medium-2",
+   "emp-779ded-78c1b0-medium-3",
+   "emp-779ded-c96de2-large-1",
+   "emp-779ded-c96de2-large-3",
+   "emp-779ded-c96de2-large-4",
+   "emp-779ded-c96de2-low-1",
+   "emp-779ded-c96de2-low-3",
+   "emp-779ded-c96de2-low-4",
+   "emp-779ded-c96de2-medium-1",
+   "emp-779ded-c96de2-medium-2",
+   "emp-779ded-c96de2-medium-3",
+   "emp-779ded-cda86a-large-1",
+   "emp-779ded-cda86a-large-2",
+   "emp-779ded-cda86a-large-4",
+   "emp-779ded-cda86a-low-1",
+   "emp-779ded-cda86a-low-2",
+   "emp-779ded-cda86a-low-4",
+   "emp-779ded-cda86a-medium-1",
+   "emp-779ded-cda86a-medium-3",
+   "emp-779ded-cda86a-medium-4",
+   "emp-78c1b0-09bc4e-large-2",
+   "emp-78c1b0-09bc4e-large-3",
+   "emp-78c1b0-09bc4e-large-4",
+   "emp-78c1b0-09bc4e-low-1",
+   "emp-78c1b0-09bc4e-low-3",
+   "emp-78c1b0-09bc4e-low-4",
+   "emp-78c1b0-09bc4e-medium-1",
+   "emp-78c1b0-09bc4e-medium-2",
+   "emp-78c1b0-09bc4e-medium-3",
+   "emp-78c1b0-1bdd88-large-1",
+   "emp-78c1b0-1bdd88-large-2",
+   "emp-78c1b0-1bdd88-large-3",
+   "emp-78c1b0-1bdd88-low-1",
+   "emp-78c1b0-1bdd88-low-2",
+   "emp-78c1b0-1bdd88-low-3",
+   "emp-78c1b0-1bdd88-medium-1",
+   "emp-78c1b0-1bdd88-medium-3",
+   "emp-78c1b0-1bdd88-medium-4",
+   "emp-78c1b0-201eba-large-1",
+   "emp-78c1b0-201eba-large-2",
+   "emp-78c1b0-201eba-large-3",
+   "emp-78c1b0-201eba-low-1",
+   "emp-78c1b0-201eba-low-2",
+   "emp-78c1b0-201eba-low-4",
+   "emp-78c1b0-201eba-medium-2",
+   "emp-78c1b0-201eba-medium-3",
+   "emp-78c1b0-201eba-medium-4",
+   "emp-78c1b0-779ded-large-1",
+   "emp-78c1b0-779ded-large-2",
+   "emp-78c1b0-779ded-large-4",
+   "emp-78c1b0-779ded-low-2",
+   "emp-78c1b0-779ded-low-3",
+   "emp-78c1b0-779ded-low-4",
+   "emp-78c1b0-779ded-medium-1",
+   "emp-78c1b0-779ded-medium-3",
+   "emp-78c1b0-779ded-medium-4",
+   "emp-78c1b0-deadde-large-1",
+   "emp-78c1b0-deadde-large-2",
+   "emp-78c1b0-deadde-large-3",
+   "emp-78c1b0-deadde-low-1",
+   "emp-78c1b0-deadde-low-3",
+   "emp-78c1b0-deadde-low-4",
+   "emp-78c1b0-deadde-medium-1",
+   "emp-78c1b0-deadde-medium-2",
+   "emp-78c1b0-deadde-medium-3",
+   "emp-c96de2-779ded-large-1",
+   "emp-c96de2-779ded-large-2",
+   "emp-c96de2-779ded-large-4",
+   "emp-c96de2-779ded-low-1",
+   "emp-c96de2-779ded-low-2",
+   "emp-c96de2-779ded-low-3",
+   "emp-c96de2-779ded-medium-2",
+   "emp-c96de2-779ded-medium-3",
+   "emp-c96de2-779ded-medium-4",
+   "emp-cda86a-201eba-large-1",
+   "emp-cda86a-201eba-large-3",
+   "emp-cda86a-201eba-large-4",
+   "emp-cda86a-201eba-low-1",
+   "emp-cda86a-201eba-low-2",
+   "emp-cda86a-201eba-low-4",
+   "emp-cda86a-201eba-medium-1",
+   "emp-cda86a-201eba-medium-2",
+   "emp-cda86a-201eba-medium-3",
+   "emp-cda86a-779ded-large-2",
+   "emp-cda86a-779ded-large-3",
+   "emp-cda86a-779ded-large-4",
+   "emp-cda86a-779ded-low-1",
+   "emp-cda86a-779ded-low-2",
+   "emp-cda86a-779ded-low-3",
+   "emp-cda86a-779ded-medium-1",
+   "emp-cda86a-779ded-medium-3",
+   "emp-cda86a-779ded-medium-4",
+   "emp-cda86a-deadde-large-1",
+   "emp-cda86a-deadde-large-2",
+   "emp-cda86a-deadde-large-4",
+   "emp-cda86a-deadde-low-1",
+   "emp-cda86a-deadde-low-2",
+   "emp-cda86a-deadde-low-4",
+   "emp-cda86a-deadde-medium-2",
+   "emp-cda86a-deadde-medium-3",
+   "emp-cda86a-deadde-medium-4",
+   "emp-deadde-78c1b0-large-1",
+   "emp-deadde-78c1b0-large-2",
+   "emp-deadde-78c1b0-large-3",
+   "emp-deadde-78c1b0-low-1",
+   "emp-deadde-78c1b0-low-3",
+   "emp-deadde-78c1b0-low-4",
+   "emp-deadde-78c1b0-medium-1",
+   "emp-deadde-78c1b0-medium-2",
+   "emp-deadde-78c1b0-medium-4",
+   "emp-deadde-cda86a-large-1",
+   "emp-deadde-cda86a-large-3",
+   "emp-deadde-cda86a-large-4",
+   "emp-deadde-cda86a-low-2",
+   "emp-deadde-cda86a-low-3",
+   "emp-deadde-cda86a-low-4",
+   "emp-deadde-cda86a-medium-1",
+   "emp-deadde-cda86a-medium-3",
+   "emp-deadde-cda86a-medium-4",
+   "nod-09bc4e-c96de2-large-2",
+   "nod-09bc4e-c96de2-low-1",
+   "nod-09bc4e-c96de2-medium-1",
+   "nod-c96de2-09bc4e-large-2",
+   "nod-c96de2-09bc4e-low-2",
+   "nod-c96de2-09bc4e-medium-2",
+   "nod-c96de2-deadde-large-1",
+   "nod-c96de2-deadde-low-1",
+   "nod-c96de2-deadde-medium-2",
+   "nod-deadde-c96de2-large-2",
+   "nod-deadde-c96de2-low-1",
+   "nod-deadde-c96de2-medium-1",
+   "nod-09bc4e-1bdd88-large-1",
+   "nod-09bc4e-1bdd88-low-1",
+   "nod-09bc4e-1bdd88-medium-1",
+   "nod-1bdd88-09bc4e-large-2",
+   "nod-1bdd88-09bc4e-low-2",
+   "nod-1bdd88-09bc4e-medium-2",
+   "nod-1bdd88-779ded-large-1",
+   "nod-1bdd88-779ded-low-2",
+   "nod-1bdd88-779ded-medium-1",
+   "nod-779ded-1bdd88-large-1",
+   "nod-779ded-1bdd88-low-1",
+   "nod-779ded-1bdd88-medium-1",
+   "bnd-779ded-78c1b0-dust",
+   "bnd-78c1b0-779ded-dust",
+   "bnd-78c1b0-779ded-round_below",
+   "bnd-78c1b0-779ded-round_at",
+   "bnd-cda86a-deadde-dust",
+   "bnd-cda86a-deadde-liq_at",
+   "bnd-cda86a-deadde-liq_above",
+   "bnd-deadde-cda86a-dust",
+   "bnd-deadde-cda86a-liq_at",
+   "bnd-deadde-cda86a-liq_above",
+   "bnd-779ded-cda86a-dust",
+   "bnd-cda86a-779ded-dust",
+   "bnd-cda86a-779ded-round_below",
+   "bnd-cda86a-779ded-round_at",
+   "bnd-201eba-78c1b0-dust",
+   "bnd-78c1b0-201eba-dust",
+   "bnd-78c1b0-201eba-round_below",
+   "bnd-78c1b0-201eba-round_at",
+   "bnd-78c1b0-deadde-dust",
+   "bnd-78c1b0-deadde-round_below",
+   "bnd-78c1b0-deadde-round_at",
+   "bnd-78c1b0-deadde-liq_at",
+   "bnd-78c1b0-deadde-liq_above",
+   "bnd-deadde-78c1b0-dust",
+   "bnd-deadde-78c1b0-liq_at",
+   "bnd-deadde-78c1b0-liq_above",
+   "bnd-09bc4e-78c1b0-dust",
+   "bnd-09bc4e-78c1b0-liq_at",
+   "bnd-09bc4e-78c1b0-liq_above",
+   "bnd-78c1b0-09bc4e-dust",
+   "bnd-78c1b0-09bc4e-round_below",
+   "bnd-78c1b0-09bc4e-round_at",
+   "bnd-78c1b0-09bc4e-liq_at",
+   "bnd-78c1b0-09bc4e-liq_above",
+   "bnd-779ded-c96de2-dust",
+   "bnd-779ded-c96de2-round_below",
+   "bnd-779ded-c96de2-round_at",
+   "bnd-c96de2-779ded-dust",
+   "bnd-09bc4e-779ded-dust",
+   "bnd-779ded-09bc4e-dust",
+   "bnd-201eba-779ded-dust",
+   "bnd-201eba-779ded-round_below",
+   "bnd-201eba-779ded-round_at",
+   "bnd-779ded-201eba-dust",
+   "bnd-09bc4e-201eba-dust",
+   "bnd-09bc4e-201eba-liq_at",
+   "bnd-09bc4e-201eba-liq_above",
+   "bnd-201eba-09bc4e-dust",
+   "bnd-201eba-09bc4e-liq_at",
+   "bnd-201eba-09bc4e-liq_above",
+   "bnd-201eba-cda86a-dust",
+   "bnd-201eba-cda86a-liq_at",
+   "bnd-201eba-cda86a-liq_above",
+   "bnd-cda86a-201eba-dust",
+   "bnd-cda86a-201eba-round_below",
+   "bnd-cda86a-201eba-round_at",
+   "bnd-cda86a-201eba-liq_at",
+   "bnd-cda86a-201eba-liq_above",
+   "bnd-1bdd88-78c1b0-dust",
+   "bnd-1bdd88-78c1b0-round_below",
+   "bnd-1bdd88-78c1b0-round_at",
+   "bnd-78c1b0-1bdd88-dust"
+  ],
+  "case_ids_sha256": "c578853114306749bbc1be610ab581897f9c9225dae19b5fa13331d28e000cc9",
+  "strata": {
+   "boundary": 62,
+   "large": 80,
+   "low": 80,
+   "medium": 80
+  }
+ },
+ "arms": {
+  "A0": {
+   "profile": "config/metis_challenge/a0.yaml",
+   "profile_sha256": "c0c4973b6c680afc6204e5c602fdca05ce2a3a3642932fbae91879f9ba21e641",
+   "resolved_profile": {
+    "schema_version": 2,
+    "algorithms": [
+     "incremental_graph"
+    ],
+    "objective": {
+     "mode": "gross_only",
+     "fixed_cost": 0
+    },
+    "budget": {
+     "time_limit_seconds": 900.0,
+     "max_quotes": 300000,
+     "max_candidates": null
+    },
+    "measurement": {
+     "warmup": 0,
+     "repeats": 1,
+     "seed": 1447,
+     "order": "fixed",
+     "memory_pass": false
+    },
+    "worker": {
+     "start_method": "spawn",
+     "scope": "algorithm",
+     "prepare_time_limit_seconds": 120.0
+    },
+    "search": {
+     "max_hops": 3,
+     "max_splits": 4,
+     "percent_step": 5
+    },
+    "graph": {
+     "chunks": 50
+    },
+    "algorithm_config": {
+     "incremental_graph": {
+      "capabilities": {
+       "multi_hop": true,
+       "split": true,
+       "shared_pools": true
+      },
+      "params": {
+       "max_hops": 3,
+       "max_splits": 4,
+       "percent_step": 5,
+       "chunks": 50
+      }
+     }
+    }
+   },
+   "resolved_profile_sha256": "a27364f29335cd6926c42eb967e2ecebfc96c4cff3497f8361a4c3c54fc591aa"
+  },
+  "M4": {
+   "profile": "config/metis_challenge/m4.yaml",
+   "profile_sha256": "661311df6ff7a36a43954fff0e42f6b30b824d35d96c06f0e215960f256d4471",
+   "resolved_profile": {
+    "schema_version": 2,
+    "algorithms": [
+     "metis_inspired"
+    ],
+    "objective": {
+     "mode": "gross_only",
+     "fixed_cost": 0
+    },
+    "budget": {
+     "time_limit_seconds": 900.0,
+     "max_quotes": 300000,
+     "max_candidates": null
+    },
+    "measurement": {
+     "warmup": 0,
+     "repeats": 1,
+     "seed": 1447,
+     "order": "fixed",
+     "memory_pass": false
+    },
+    "worker": {
+     "start_method": "spawn",
+     "scope": "algorithm",
+     "prepare_time_limit_seconds": 120.0
+    },
+    "search": {
+     "max_hops": 3,
+     "max_splits": 4,
+     "percent_step": 5
+    },
+    "graph": {
+     "chunks": 50,
+     "label_hops": 4,
+     "label_pruning": true
+    },
+    "algorithm_config": {
+     "metis_inspired": {
+      "capabilities": {
+       "multi_hop": true,
+       "split": true,
+       "shared_pools": true
+      },
+      "params": {
+       "max_hops": 3,
+       "max_splits": 4,
+       "percent_step": 5,
+       "chunks": 50,
+       "label_hops": 4,
+       "label_pruning": true
+      },
+      "provenance": {
+       "experimental": true,
+       "opt_in": true,
+       "issue": "WHI-1449",
+       "identity": "Metis-inspired experimental Python variant; NOT Jupiter Metis; no production equivalence, global-optimality or source-parity claim",
+       "contract": "docs/references/jupiter-metis-challenge.md \u00a79.2 and \u00a7\u00a710.3-10.6 (WHI-1448, PR #50, c5b56369155b4beddef8de4df64e63dd0118662c)",
+       "reference": "incremental_graph",
+       "sources": {
+        "J1": {
+         "title": "Archived: Jupiter v3: The Metis Routing Algo (historical)",
+         "url": "https://discuss.jup.ag/raw/21712",
+         "sha256": "825598a5af7e5457721433f11d0e008304a7a1b92a91fa403efe50fb66492169",
+         "retrieved": "2026-09-28",
+         "used_for": "C1 Bellman-Ford variant; C4 route generation and quoting combined"
+        },
+        "J2": {
+         "title": "Jupiter docs: Reduce Latency (current mode=fast beta)",
+         "url": "https://developers.jup.ag/docs/swap/advanced/reduce-latency.md",
+         "sha256": "d7ab87af2f137ff94c3ded402df6b62d152cf01f66f990d0925ea81acc113e53",
+         "retrieved": "2026-09-28",
+         "used_for": "C8 Bellman-Ford path engine with splitting as a separate layer"
+        },
+        "W1": {
+         "title": "Bellman-Ford algorithm (public textbook algorithm)",
+         "url": "https://en.wikipedia.org/wiki/Bellman%E2%80%93Ford_algorithm",
+         "used_for": "hop-layered label relaxation shape only; no code reused"
+        }
+       },
+       "source_gaps": "no public Metis routing source; J1's modifications, the current splitter, Metis's accounting for reused DEXs and its budgets are unknown",
+       "inferred": [
+        "one label per (hop layer, token), strict greater-than dominance, ties keep the earlier label",
+        "layers relaxed from the previous layer only (no in-place relaxation)",
+        "deterministic token insertion order and bundle adjacency order",
+        "token-simple relaxations; never back to the source or through the target",
+        "structural hops-to-target prune",
+        "atomic creates_cycle admission of each relaxation prefix before its quote",
+        "chunk marginals f(x+m)-f(x) on original pool states (incremental_graph rule)"
+       ],
+       "deviations": [
+        "no k-best labels: token-revisit pruning (label_hops >= 4) is accepted, not repaired",
+        "Budget.max_candidates caps relaxations per chunk in label mode (unit change)",
+        "label_hops may exceed search.max_hops; the retained path_split candidate stays at search.max_hops"
+       ],
+       "divergence_classes": [
+        "tie",
+        "quote_failure (non-downward-closed)",
+        "budget_order",
+        "token_revisit (label_hops >= 4)",
+        "prefix_admission (label_hops >= 4)"
+       ],
+       "ablation": "graph.label_pruning false: incremental_graph's per-chunk enumeration"
+      }
+     }
+    }
+   },
+   "resolved_profile_sha256": "b9d2f5e3976b019420868876f591c4aa5595a70d6fa7ae692264f1bb57930db2"
+  },
+  "context": {
+   "profile": "data/metis_challenge/campaign-heldout-446674e-20260928T191326Z/context_full_gross.yaml",
+   "profile_sha256": "2f32e2dd6aa03d1d01d349f2ca55114f3d191b44a0f110953e573450ef06f3d4",
+   "resolved_profile": {
+    "schema_version": 2,
+    "algorithms": [
+     "direct",
+     "path_split",
+     "uni_sor_port"
+    ],
+    "objective": {
+     "mode": "gross_only",
+     "fixed_cost": 0
+    },
+    "budget": {
+     "time_limit_seconds": 900.0,
+     "max_quotes": 300000,
+     "max_candidates": null
+    },
+    "measurement": {
+     "warmup": 0,
+     "repeats": 1,
+     "seed": 1447,
+     "order": "fixed",
+     "memory_pass": false
+    },
+    "worker": {
+     "start_method": "spawn",
+     "scope": "algorithm",
+     "prepare_time_limit_seconds": 120.0
+    },
+    "search": {
+     "max_hops": 3,
+     "max_splits": 4,
+     "percent_step": 5
+    },
+    "graph": {
+     "chunks": 50
+    },
+    "algorithm_config": {
+     "direct": {
+      "capabilities": {
+       "multi_hop": false,
+       "split": false,
+       "shared_pools": false
+      },
+      "params": {}
+     },
+     "path_split": {
+      "capabilities": {
+       "multi_hop": true,
+       "split": true,
+       "shared_pools": false
+      },
+      "params": {
+       "max_hops": 3,
+       "max_splits": 4,
+       "percent_step": 5
+      }
+     },
+     "uni_sor_port": {
+      "capabilities": {
+       "multi_hop": true,
+       "split": true,
+       "shared_pools": false,
+       "protocols": [
+        "V2",
+        "V3"
+       ]
+      },
+      "params": {
+       "max_hops": 3,
+       "max_splits": 4,
+       "percent_step": 5
+      },
+      "provenance": {
+       "upstream": {
+        "repository": "https://github.com/Uniswap/smart-order-router",
+        "commit": "04c7c0b4d85ac2a19a3ff53987d21f9c8f1fe647",
+        "package": "@uniswap/smart-order-router",
+        "version": "4.31.10",
+        "npm_integrity": "sha512-Bmg46KXDSfE1AAf1tPg+vDzMngVoGfzdohekhjJ1hIQG13tXcjEykqapQy+CrJUqXLL3lQvZj2uVEKfzCNH74Q==",
+        "license": "GPL-3.0-only",
+        "v8_sort_reference": "V8 13.6.233.17 third_party/v8/builtins/array-sort.tq (PSF-2.0)"
+       },
+       "contract": "docs/references/uni-sor-port-contract.md",
+       "port_scope": "exact-input V2/V3 routing core: bounded route enumeration (V3, V2, mixed V2+V3), percentage grid, quote-list order, per-percent sort, BFS seeds/expansion, pool-disjointness, split limits and pruning, V8 final route order, remainder step. Not reproduced: candidate/quote/gas providers (replaced: A-1/A-2/A-3), V4/hooks, native routes, exact output, L1 fees, calldata, caching, Liquidity Book.",
+       "adaptations": [
+        "A-1",
+        "A-2",
+        "A-3",
+        "A-4",
+        "A-5",
+        "A-6",
+        "A-7",
+        "A-8"
+       ],
+       "deviations": [
+        "D-1",
+        "D-2",
+        "D-3",
+        "D-4"
+       ],
+       "candidate_provider": "frozen bundle's SOR-compatible pools (catalog sor_protocol; V3 and V2 lists each in ascending lowercase pool_id; mixed = V3 ++ V2), pool identity = pool_id (A-1, A-5)",
+       "quote_provider": "benchmark simulator: pools.quote.quote_exact_in chained per route on the frozen state, independently per (route, percent) at quotient(amount*p/100) (A-2)",
+       "gas_score_provider": "zero: the declared ObjectiveContext has no per-route cost (gross_only: none; synthetic_fixed_cost: one plan-level constant; empirical_cost: a complete-plan shape cost with no SOR route-gas parity mapping) (A-3)",
+       "min_splits": 1,
+       "parity_evidence": "tests/routing/test_uni_sor_parity.py over tests/fixtures/uni_sor/"
+      }
+     }
+    }
+   },
+   "resolved_profile_sha256": "00895aae50c713c74848ebea3df707374d10dc99df3215872617c3daa34b0d56"
+  }
+ },
+ "context": {
+  "algorithms": [
+   "direct",
+   "path_split",
+   "uni_sor_port"
+  ],
+  "scope": "full five-source bundle_report, full_gross controls; context only, never the verdict. uni_sor_port is V2/V3-only (LB pools excluded, LB-only cases unsupported), so its gaps are capability/candidate-universe differences, not search quality. No matched V2/V3 cohort view is run: it would need further A0/M4 arms on sor_cohort_report outside the registered one-pass schedule."
+ },
+ "prior_gates": {
+  "s2_established": true,
+  "s3_met": true,
+  "s2_diagnostic_sha256": "651629a4af3677aa959b56ba5d69eaedbb57181584fde89b1df4ef916b93f65a",
+  "s3_work_gate_sha256": "3eed525b7ea6c0ea5db8be3af95035b808a56553143449653f898ea5cf3237a0",
+  "s4_disposition_sha256": "4c69df9a68f49a6751f6a30c5bd99b2c0098527d371c90c4d5613114428bafc4",
+  "h4_diagnostic_sha256": "a0306f02ce2ee5ee0abaf05b662d4ec102293cf9517285e5f542ee1576596d9a",
+  "h4_class_totals": {
+   "agree": 398,
+   "prefix_admission": 6,
+   "tie": 174,
+   "token_revisit": 22
+  },
+  "h4_unexplained_chunks": 0
+ },
+ "protocol": {
+  "arms_order": [
+   "A0",
+   "M4",
+   "context"
+  ],
+  "one_pass": true,
+  "sequential": true,
+  "no_retries_for_timing": true,
+  "no_parameter_changes": true,
+  "denominators": "all 302 scheduled cases per arm, every status kept; last_valid_candidate never counted ok",
+  "paired_set": "cases ok in both A0 and M4",
+  "outcome": "raw integer gross of the runner's independent evaluation: win M4 > A0, loss M4 < A0, tie equal (ties excluded from the sign test)",
+  "sign_test": "exact two-sided binomial: p = min(1, 2 * sum_{i<=min(w,l)} C(n,i) / 2^n), n = w + l, integer/Fraction arithmetic",
+  "verdict": "better: w > l and p < 0.05; worse: l > w and p < 0.05; otherwise inconclusive",
+  "keep_rule": "keep only if S2 passed, S3 passed and the verdict is better; otherwise drop / inconclusive",
+  "bps": "10^4 * (M4 - A0) / A0 per paired case with A0 > 0; A0 == 0 -> undefined, counted as zero_baseline; overall and per stratum (corpus case_metadata.stratum): n, mean, p50, p95, min, max",
+  "four_hop_attribution": "M4 wins whose final plan is metis_inspired's incremental plan (chosen_source) with >= 1 four-hop chunk (chunk_path_hops); retained simpler plans never count",
+  "timing": "secondary; L01 rule (1-minute load > 5.0 on the 10-core host contaminates timing); no speed claim from contaminated windows; timeout/coverage outcomes are host-load-sensitive (900 s wall clock)"
+ },
+ "analysis_script": {
+  "path": "data/metis_challenge/campaign-heldout-446674e-20260928T191326Z/heldout_analysis.py",
+  "sha256": "7b12a48cf3eaa75dbd930e802434dc48a2ceb09c41a8514cf5da03f0c8ae9a6d"
+ },
+ "commands": [
+  "sh run_arm.sh <campaign> a0 uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_report --profile config/metis_challenge/a0.yaml --strategies profile --results-dir data/metis_challenge/campaign-heldout-446674e-20260928T191326Z/runs-a0",
+  "sh run_arm.sh <campaign> m4 uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_report --profile config/metis_challenge/m4.yaml --strategies profile --results-dir data/metis_challenge/campaign-heldout-446674e-20260928T191326Z/runs-m4",
+  "sh run_arm.sh <campaign> context uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_report --profile data/metis_challenge/campaign-heldout-446674e-20260928T191326Z/context_full_gross.yaml --strategies profile --results-dir data/metis_challenge/campaign-heldout-446674e-20260928T191326Z/runs-context",
+  "PYTHONPATH=. uv run python <campaign>/heldout_analysis.py <campaign> <bundle_report> <A0 run> <M4 run> <context run>"
+ ],
+ "prelaunch_load_samples_1min_5min_15min": [
+  [
+   2.7,
+   2.5,
+   2.46
+  ],
+  [
+   2.99,
+   2.59,
+   2.5
+  ],
+  [
+   2.46,
+   2.49,
+   2.46
+  ],
+  [
+   2.09,
+   2.4,
+   2.43
+  ],
+  [
+   2.05,
+   2.36,
+   2.41
+  ]
+ ],
+ "prelaunch_host_note": "No competing benchmark or test run observed; interactive desktop load only (WindowServer, Telegram, Chrome, terminals, pi). The H4 diagnostic pass ended at 19:13:13Z before these samples.",
+ "host": {
+  "python_version": "3.13.13",
+  "os": "Darwin",
+  "os_release": "27.0.0",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "cpu_model": "Apple M2 Pro",
+  "cpu_count": 10,
+  "dependencies": {
+   "pycryptodome": "3.23.0",
+   "pyyaml": "6.0.3"
+  }
+ },
+ "writer_script_sha256": "eb7e78cfbf48fb7b3ad0df5142fdba076a7dbcdd98369bfa8215e58ad43a846a",
+ "run_arm_sh_sha256": "365d679fa9b637b84fd4afcfa887cd9e21a4a6ca18398def55b2a122d4fc2b16"
+}

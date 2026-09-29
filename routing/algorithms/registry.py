@@ -21,6 +21,12 @@ and `uni_sor_optimized` (L08 arm H4), thin adapters that run the unchanged `uni_
 solve with their registered recipe settings (`routing/algorithms/uni_sor_strategies.py`).
 `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` name the two comparison groups the CLI selects
 with `--strategies`; `uni_sor_fast` is in neither (a profile-selected custom experiment).
+
+`metis_inspired` (WHI-1449) is a further **opt-in experimental** identity: the Metis-inspired
+(NOT Jupiter Metis) hop-layered label search over `incremental_graph`'s chunk allocation
+(docs/references/jupiter-metis-challenge.md §9.2). It requires `incremental_graph`'s keys
+plus `graph.label_hops` and `graph.label_pruning`, carries its source/inference provenance,
+and is in neither comparison group: only a profile that names it runs it.
 """
 
 from __future__ import annotations
@@ -29,6 +35,7 @@ from routing.algorithms import (
     direct,
     direct_split,
     incremental_graph,
+    metis_inspired,
     path_split,
     single_path,
     uni_sor_fast,
@@ -47,6 +54,7 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     incremental_graph.NAME: incremental_graph.FACTORY,
     uni_sor_port.NAME: uni_sor_port.FACTORY,
     uni_sor_fast.NAME: uni_sor_fast.FACTORY,  # opt-in experiment, not a reference
+    metis_inspired.NAME: metis_inspired.FACTORY,  # opt-in experiment (WHI-1449), not a reference
     # Named optimized strategies (WHI-1528): registered recipes, not references or defaults.
     uni_sor_strategies.ADAPTIVE: uni_sor_strategies.ADAPTIVE_FACTORY,
     uni_sor_strategies.OPTIMIZED: uni_sor_strategies.OPTIMIZED_FACTORY,
