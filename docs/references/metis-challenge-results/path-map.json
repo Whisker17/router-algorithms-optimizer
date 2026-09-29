@@ -38,7 +38,7 @@
    "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/campaign-ctxsor-446674e-20260929T024043Z"
   }
  },
- "replay_shim": "in a fresh checkout of the empirical source: ln -s /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge data/metis_challenge  (recorded relative paths then resolve unchanged)",
+ "replay_shim": "in a fresh checkout of the empirical source (no tracked data/ directory): mkdir -p data && ln -s /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge data/metis_challenge  (recorded relative paths then resolve unchanged)",
  "inputs": {
   "bundle_tuning": {
    "old": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_tuning",

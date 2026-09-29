@@ -65,8 +65,11 @@ are never compared as the same unit.
 
 **S1.** The final implementation checkpoint at `446674e` passed Ruff, mypy, the strict driver
 mypy, 176 focused tests and 1,242 relevant tests (3 skips): `tests/routing/test_metis_inspired.py`
-X1–X7 plus X4b, and `tests/routing/test_metis_challenge_tool.py`. The parent reproduced this
-(Linear WHI-1449, 2026-09-28T15:29Z). A four-case measured fixture check
+X1–X7 plus X4b, and `tests/routing/test_metis_challenge_tool.py`. These results are the
+implementer's (PR #51). The parent inspected that check evidence, reproduced the two S2 gate
+defects and their fixes, and independently verified the fixture and artifact bindings
+(Linear WHI-1449, 2026-09-28T15:29Z). The parent did not rerun the 176/1,242 tests. A
+four-case measured fixture check
 (`fix-446674e/s2-fixture-measured.json`: identical 4, X7 true) confirmed that the corrected
 S2 driver binds measured records. An earlier three-case smoke at `4b446ff`
 (`stage1-4b446ff/`) was superseded by that fix and is kept only as history.
@@ -320,8 +323,9 @@ ROOT=/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimize
 # 2. rebuild the tracked summary from the archive (stdlib only)
 python3 docs/references/metis-challenge-results/build_summary.py.txt "$ROOT" /tmp/metis-summary
 # 3. a replay checkout of the empirical source; recorded relative paths resolve via the link
+#    (a fresh checkout has no tracked data/ directory, so create it first)
 git worktree add ../metis-replay 446674e80e66ad93834786e1493f223dc38de3eb
-cd ../metis-replay && uv sync && ln -s "$ROOT" data/metis_challenge
+cd ../metis-replay && uv sync && mkdir -p data && ln -s "$ROOT" data/metis_challenge
 # 4. recompute a write-once analysis in a scratch copy (outputs refuse to overwrite)
 cp -R "$ROOT/campaign-heldout-446674e-20260928T191326Z" /tmp/ho && chmod -R u+w /tmp/ho && rm /tmp/ho/heldout-analysis.json
 PYTHONPATH=. uv run python /tmp/ho/heldout_analysis.py /tmp/ho "$ROOT/inputs/bundle_report" \
