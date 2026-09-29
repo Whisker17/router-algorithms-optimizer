@@ -9,6 +9,10 @@
 >
 > **定位**：本文只做导航和提供上下文。算法细节以 `docs/references/routing-algorithms.md` 为准，
 > 实验结论以各结果文档为准；本文与它们不一致时，以它们为准，并请在交付物里指出矛盾（见第 8 节）。
+>
+> **0.2.1 勘误（WHI-1547）**：§5.1、§5.2、§6.1、§6.6 的措辞按
+> `docs/references/research-021/sources.md` §4 的 D1–D3 做了限定；数字、出处和冻结证据都没有改。
+> 比较域、证书、计时和工作量单位的定义见 `docs/references/research-021/contract.md`（D4、D5）。
 
 **全文适用范围**：除非另有说明，本文引用的所有质量和工作量结论都只适用于以下条件：
 
@@ -172,9 +176,14 @@
 - **拆单和共享池计划在 net 下没有成本**：`empirical_cost` 下，拆单搜索会退回到可排名的单路线计划，
   在改变了计划的 case 里中位放弃 14–22 bps gross（`v1-acceptance.md` §5.4）。
 - **`search.max_splits` 从来没有扫过**，4 是 DESIGN 的试验值，未经验证（`v1-acceptance.md` §3.3）。
-- **`metis_inspired` 不允许同一路径重复经过同一个 token**，会漏掉最优路径。在构造的 fixture X4 上
-  损失 4994.98 bps；这是有意接受、没有修复的局限（`routing-algorithms.md` §10.5 第 8 步）。
-  `label_hops ≥ 4` 时还有 prefix-dependent admission 损失（fixture X4b）。
+- **`metis_inspired` 每个（层, token）只保留一个 label，会丢掉合法前缀**：在构造的 fixture X4 上，
+  最优 4 跳路径 S–A–X–Y–D 本身不重复任何 token；但 X 处金额占优的 2 跳 label S–Y–X 已经访问过 Y，
+  不能再接 X→Y，于是合法的较小前缀 S–A–X 被丢掉（`label_skipped_revisit`）。损失 4994.98 bps；
+  这是有意接受、没有修复的局限（`routing-algorithms.md` §10.5 第 8 步）。
+  `label_hops ≥ 4` 时还有 prefix-dependent admission 损失（fixture X4b：丢掉的后续 S–B–V–X–D 也合法，
+  只有占优 label 的后续会与已提交的计划形成 token 环）。
+  - 这两类都不是“最优路径本身含环”。真正重复 token 的候选在 v1 evaluator 下本来就不可行
+    （`research-021/sources.md` D3，重算 R1、R7、R8）。
 - **`metis_inspired` 在小图上不省工作量**：
   - 教学图第 1 块用了 10 次 relaxation，逐条枚举是 6 条路径（§10.5 第 4 步）。
   - 只有每跳有多个并行池时才明显省：fixture X1 上是 100 次 relaxation 对比 280 条路径，848 次报价
@@ -195,7 +204,10 @@
 - **reject**：已否决或不再继续；
 - **未做**：考虑过但有意没有实施。
 
-所有 L08 决策比较都是 `inconclusive`，唯一原因是主机负载超过 L01 的 5.0 规则。这**不是**“更慢”的
+L08 的 7 个预登记**决策**比较（L02、L03、L04、L05、L06、L07-combined、L07-adaptive-only）都是
+`inconclusive`，唯一原因是主机负载超过 L01 的 5.0 规则。5 个信息性比较里只有 L07-sampling-ablation
+（H1→H2，两边都未超负载）是干净的，判定 `opt_in_only`；其余 4 个同样因负载 inconclusive
+（`latency-optimization-results.md` §3.3；`research-021/sources.md` D2）。这**不是**“更慢”的
 证据，只是没有可用于采用决策的干净计时。
 
 **A. 延迟优化 L01–L08（0.1.2，WHI-1503–1510）**
@@ -268,6 +280,8 @@
    - 已有背景：WHI-1448 **有意不修复**这一点，因为 k-best 是没有来源依据的额外参数
      （`jupiter-metis-challenge.md` §9.3）。它没有被测过，也没有被否决。
    - 代价：relaxation 次数增加。
+   - 注意：只按金额保留前 k 个 label 不是一般性的修复，金额更高的几个 label 可能访问过同一批 token
+     （外部报告 §2.2，本仓库未复现；安全的支配规则由 WHI-1549 研究）。
    - 验证：fixture X4 / X4b，以及 H4 诊断里的 22 个 token_revisit 块和 6 个 prefix_admission 块
      （`metis-challenge-results.md` §4）。
 2. **把机制和跳数的效应分开**：在 report split 上补跑 M4-off（4 跳枚举），或跑一个同为 4 跳的
@@ -295,8 +309,10 @@
 6. **SOR 系列支持 LB**：扩大覆盖的协议。
    - 这没有被尝试过。但 `uni_sor_port` 的 LB 缺失是契约偏差 D-4，给它加 LB 会破坏和上游的
      parity。只能在一个新命名的变体里做，类似 `uni_sor_fast`。
-   - 可测的上限：五源全语料上与 `path_split` 的覆盖差距 p95 为 +31.31 bps（`v1-acceptance.md`
-     §5.3）。
+   - 历史覆盖差距（只是动机，不是上限）：五源全语料上与 `path_split` 的覆盖差距 p95 为 +31.31 bps
+     （`v1-acceptance.md` §5.3）。p95 不是最大值（同一行的均值为 +1598.63 bps），而且这是两个覆盖
+     范围不同的策略之间的差距，不是给固定策略加 LB 后可达的收益或收益上界
+     （`research-021/sources.md` D1）。
 7. **修复 SOR 的 token 环**：用一个有文档记录的适配偏差，跳过会形成环的路线组合
    （`DEFERRED_ISSUES.md` 给出的修法）。可以放在新变体里；held-out 上有 12 个 case 可用来验证。
 8. **扣成本的目标函数**：

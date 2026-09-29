@@ -12,6 +12,7 @@ Team: Whisker-Personal (`WHI`), UUID `37abcce9-0070-470b-a57b-d8213047c418`.
 | --- | --- | --- | ---: |
 | 0.1.0 | [Reproducible Mantle routing benchmark](https://linear.app/whisker-personal/pipeline/router-algorithms-optimizer/release/010-reproducible-mantle-routing-benchmark-68441970a261) | `c257e99c-df35-41d6-8576-a072601dcb5b` | 23 |
 | 0.2.0 | [Jupiter Metis challenge](https://linear.app/whisker-personal/pipeline/router-algorithms-optimizer/release/020-jupiter-metis-challenge-14714fc6ff72) | `a65958a5-f0b4-42e7-9ace-1d376e363bca` | 2 |
+| 0.2.1 | 0.2.1 — Independent routing strategies and CFMM dual routing (see [below](#021--independent-routing-strategies-and-cfmm-dual-routing)) | `ed16e106-fa3e-4b8a-b022-e7208eb8ef41` | 16 |
 
 The counts above describe the original product/bootstrap plan, not a live tracker total.
 Documentation/workflow follow-ups are tracked separately; current membership is visible
@@ -66,6 +67,15 @@ Deliver a source-backed assessment of Metis methods and, if feasible, a distinct
 - If go: implement the Metis-inspired variant, run matched-budget ablations and deliver measured results, including negative results.
 - If no-go: the research may be complete, but C02 is not Done and the release does not automatically pass. An explicit owner disposition must remove/defer/cancel implementation or amend the release scope; the evidence and reason must remain visible.
 - Do not call live Jupiter/Solana quotes a Mantle benchmark or claim reproduction of the full production Metis engine.
+
+## 0.2.1 — Independent routing strategies and CFMM dual routing
+
+**Planned issues: 16** — WHI-1547 to WHI-1562, titled `[0.2.1]` and bound to Release `ed16e106-fa3e-4b8a-b022-e7208eb8ef41`. Release state, dependencies and review rounds live in the Linear document [Release 0.2.1 — orchestration](https://linear.app/whisker-personal/document/release-021-orchestration-dcfa31f5326c); this section only fixes scope and gates.
+
+- Five independent experimental strategies — `metis_history`, `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual` (CPMM, then validated concentrated liquidity) — each behind its own research contract, plus the shared per-strategy options/diagnostics seam (WHI-1548), an LB scoping study (WHI-1560), worked-example documentation (WHI-1561) and the paired batch/single-request comparison (WHI-1562).
+- The shared comparison contract is [`research-021/contract.md`](references/research-021/contract.md) (`R021-C/1`, WHI-1547): identities, domains, certificates, work units, holdout exposure, presets and the `keep_experimental` / `reject` / `inconclusive` / `not_implemented` vocabulary.
+- Research precedes implementation: an implementation issue keeps `needs-info` until its research contract is committed and implementable. A research `no_go` or `blocked` outcome is a completed research result, never a completed implementation.
+- Exit gates: every implemented strategy is selectable in batch and single-request mode and appears once in the ordinary comparison; old profiles replay literally; every scheduled row stays visible; the frozen dispositions are backed by pre-registered raw evidence; the complete release candidate passes the [whole-release review gate](GIT_WORKFLOW.md#release-review-gate). No default-router adoption, loss tolerance, runtime ceiling or performance gain is implied.
 
 ## Governance assignment exception for this publication
 
