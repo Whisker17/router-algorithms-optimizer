@@ -1,0 +1,179 @@
+"""WHI-1449 recovery of the INTERRUPTED optional held-out CONTEXT run (never the H-M1b verdict).
+
+usage: prepare_recovery.py <this campaign dir> <bundle_report dir> <original context run dir> <host note>
+
+Additive and write-once. It does not touch the original run directory, its `running`
+manifest or its cases.jsonl. It:
+1. records the interruption: raw SHA-256 of every original context file, every one of the
+   complete parseable per-case records (key, status, schedule index, line SHA-256), the
+   exact missing (algorithm, case) set, and the facts known about the stop (no completion
+   marker, so NO observed exit code);
+2. derives, with the existing `snapshot.corpus.subset_corpus_bundle`, a NEW immutable bundle
+   with ALL original bundle_report pools unchanged and exactly the missing uni_sor_port cases
+   (changed case-set identity: new bundle_id / bundle_hash, `subset_of` names bundle_report);
+3. writes the supplemental SOR-only profile: the original context profile with only
+   `algorithms` reduced to [uni_sor_port], so objective, budgets, search/graph, measurement
+   (seed 1447, fixed order, warmup 0, repeats 1) and worker values are unchanged.
+"""
+import dataclasses, datetime, hashlib, json, subprocess, sys
+from pathlib import Path
+import yaml
+from benchmark.profile import load_profile
+from benchmark.results import environment_record, load_case_records, load_manifest
+from snapshot.bundle import load_bundle, sha256_file
+from snapshot.corpus import subset_corpus_bundle, validate_corpus_bundle
+
+SOURCE = "446674e80e66ad93834786e1493f223dc38de3eb"
+REPORT_HASH = "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0"
+ALGOS = ["direct", "path_split", "uni_sor_port"]
+campaign, bundle_dir, ctx_dir, note = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4]
+heldout = ctx_dir.parent.parent
+out = campaign / "context-interruption-recovery.json"
+derived_dir = campaign / "bundle_report_ctx_sor_missing"
+profile_path = campaign / "context_sor_supplement.yaml"
+for p in (out, derived_dir, profile_path):
+    if p.exists():
+        raise SystemExit(f"refusing to overwrite {p}")
+env = environment_record()
+if env["git_revision"] != SOURCE or env["git_dirty"] is not False:
+    raise SystemExit(f"not the frozen clean source: {env['git_revision']} dirty={env['git_dirty']}")
+
+plan = json.loads((heldout / "plan.json").read_text())
+full = load_bundle(bundle_dir)
+assert full.bundle_hash == REPORT_HASH == plan["bundle"]["bundle_hash"]
+ids = [c.case_id for c in full.cases]
+assert ids == plan["bundle"]["case_ids"] and len(ids) == 302
+
+# ---- 1. the interrupted original: raw hashes and every complete record
+m = load_manifest(ctx_dir, allow_incomplete=True)
+assert m.state == "running" and not m.complete and m.cases_sha256 is None and m.finished_at is None
+assert m.bundle_hash == REPORT_HASH and m.algorithms == tuple(ALGOS) and m.scheduled_count == 906
+assert m.git_revision == SOURCE and m.git_dirty is False
+assert m.resolved_profile == plan["arms"]["context"]["resolved_profile"]
+raw = (ctx_dir / "cases.jsonl").read_bytes()
+assert raw.endswith(b"\n"), "torn final line"
+lines = raw.decode().split("\n")[:-1]
+recs = load_case_records(ctx_dir)
+assert len(recs) == len(lines) and all(json.loads(l) == r for l, r in zip(lines, recs, strict=True))
+keys = [(r["algorithm"], r["case_id"]) for r in recs]
+assert len(keys) == len(set(keys)), "duplicate records"
+order = m.measurement["case_order"]
+assert order == ids
+schedule = [(a, c) for a in ALGOS for c in order]
+assert keys == schedule[: len(keys)], "records are not the schedule prefix"
+done = set(keys)
+missing = [(a, c) for a, c in schedule if (a, c) not in done]
+assert all(a == "uni_sor_port" for a, _ in missing)
+missing_ids = [c for _, c in missing]
+assert missing_ids == order[len(order) - len(missing_ids):]
+by_algo = {}
+for r in recs:
+    s = by_algo.setdefault(r["algorithm"], {})
+    s[r["status"]] = s.get(r["status"], 0) + 1
+files = sorted(p for p in heldout.glob("context*") if p.is_file()) + [heldout / "load_samples.txt", heldout / "load_sampler.pid"]
+files += sorted(p for p in ctx_dir.iterdir() if p.is_file())
+load_lines = (heldout / "load_samples.txt").read_text().splitlines()
+ps = subprocess.run(["ps", "-axo", "pid,lstart,command"], capture_output=True, text=True).stdout.splitlines()
+live = [l for l in ps if "main.py run" in l or "campaign-heldout" in l]
+boot = subprocess.run(["sysctl", "-n", "kern.boottime"], capture_output=True, text=True).stdout.strip()
+
+# ---- 2. the derived missing-case bundle (existing seam, all original pools)
+derived = subset_corpus_bundle(full, full.pools, missing_ids, derived_dir, id_suffix=f"ctx-sor-completion-{len(missing_ids)}")
+summary = validate_corpus_bundle(derived)
+derived = load_bundle(derived_dir)
+assert [c.case_id for c in derived.cases] == missing_ids, "derived case order differs"
+assert derived.pools == full.pools, "pool records changed"
+assert [dataclasses.asdict(c) for c in derived.cases] == [dataclasses.asdict(c) for c in full.cases if c.case_id in set(missing_ids)]
+assert derived.block == full.block
+assert {k: derived.corpus[k] for k in ("envelope", "cohorts")} == {k: full.corpus[k] for k in ("envelope", "cohorts")}
+assert all(derived.corpus["case_metadata"][c] == full.corpus["case_metadata"][c] for c in missing_ids)
+
+# ---- 3. the supplemental SOR-only profile
+ctx_profile = heldout / "context_full_gross.yaml"
+assert sha256_file(ctx_profile) == plan["arms"]["context"]["profile_sha256"]
+doc = yaml.safe_load(ctx_profile.read_text())
+doc["algorithms"] = ["uni_sor_port"]
+profile_path.write_text(
+    "# WHI-1449 interrupted-context COMPLETION rows only (never the H-M1b verdict):\n"
+    f"# {ctx_profile} (sha256 {sha256_file(ctx_profile)}) with only `algorithms` reduced to uni_sor_port.\n"
+    + yaml.safe_dump(doc, sort_keys=False))
+profile_path.chmod(0o444)
+p = load_profile(str(profile_path))
+resolved = json.loads(json.dumps(dataclasses.replace(p, objective=p.objective.bind(derived)).resolved()))
+orig = plan["arms"]["context"]["resolved_profile"]
+for k in orig:
+    if k == "algorithms":
+        assert resolved[k] == ["uni_sor_port"]
+    elif k == "algorithm_config":
+        assert resolved[k] == {"uni_sor_port": orig[k]["uni_sor_port"]}
+    else:
+        assert resolved[k] == orig[k], k
+
+rec_doc = {
+    "record": "WHI-1449 recovery manifest for the INTERRUPTED optional held-out context run (additive; the original run is NOT complete and is not rewritten)",
+    "written_at_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+    "source": {"git_revision": env["git_revision"], "git_dirty": env["git_dirty"]},
+    "original_run": {
+        "run_dir": str(ctx_dir), "run_id": m.run_id, "manifest_state": m.state, "manifest_complete": m.complete,
+        "manifest_case_count_field": m.case_count, "scheduled_count": m.scheduled_count,
+        "manifest_status_counts_field": m.status_counts,
+        "note_on_manifest_fields": "case_count/status_counts are the runner's last periodic manifest write (after path_split); cases.jsonl holds more complete records",
+        "created_at": m.created_at, "finished_at": m.finished_at, "cases_sha256_field": m.cases_sha256,
+        "bundle_hash": m.bundle_hash, "algorithms": list(m.algorithms), "profile_path": m.profile_path, "profile_sha256": m.profile_sha256,
+        "resolved_profile_sha256": hashlib.sha256(json.dumps(m.resolved_profile, sort_keys=True).encode()).hexdigest(),
+        "start_marker": json.loads((heldout / "context.start.json").read_text()),
+        "completion_marker": None,
+        "exit_code": None,
+        "exit_code_note": "NOT observed: no context.completion.json exists; the wrapper never returned. Not inferred.",
+        "raw_files_sha256": {str(f): sha256_file(f) for f in files},
+        "raw_files_bytes": {str(f): f.stat().st_size for f in files},
+        "cases_jsonl_mtime_utc": datetime.datetime.fromtimestamp((ctx_dir / "cases.jsonl").stat().st_mtime, datetime.UTC).isoformat(),
+        "complete_records": len(recs), "malformed_lines": 0, "torn_tail": False, "duplicate_records": 0,
+        "records_are_schedule_prefix": True,
+        "status_counts_by_algorithm": by_algo,
+        "records": [{"line": i + 1, "algorithm": r["algorithm"], "case_id": r["case_id"], "status": r["status"],
+                     "schedule_index": (r.get("measurement") or {}).get("schedule_index"),
+                     "worker_id": (r.get("measurement") or {}).get("worker_id"),
+                     "line_sha256": hashlib.sha256(l.encode()).hexdigest()} for i, (l, r) in enumerate(zip(lines, recs, strict=True))],
+        "invalid_plan_records": [{"case_id": r["case_id"], "algorithm": r["algorithm"], "error": r.get("error"),
+                                  "last_valid_candidate": r.get("last_valid_candidate"), "limit_hit": r.get("limit_hit")}
+                                 for r in recs if r["status"] == "invalid_plan"],
+        "missing": {"count": len(missing), "algorithm": "uni_sor_port", "case_ids": missing_ids,
+                    "first_missing_schedule_index": len(recs),
+                    "case_ids_sha256": hashlib.sha256("\n".join(missing_ids).encode()).hexdigest()},
+    },
+    "interruption_facts": {
+        "last_record_written_utc": "see cases_jsonl_mtime_utc",
+        "last_load_sample": load_lines[-1],
+        "load_sampler_stopped": "yes; its last sample is the line above",
+        "host_boot_time": boot,
+        "live_processes_matching_run_at_recovery": live,
+        "cause": "unknown; the host restarted (kern.boottime) after the last record/load sample; the in-flight case at the stop is the first missing case and produced no record",
+        "terminal_stop_time": "unknown; bounded by the last load sample and the boot time",
+        "host_note": note,
+    },
+    "supplement": {
+        "purpose": "interrupted-context COMPLETION of only the missing uni_sor_port rows; CHANGED case-set identity; NOT a full run and NOT the verdict",
+        "derived_bundle": {"path": str(derived_dir), "bundle_id": derived.bundle_id, "bundle_hash": derived.bundle_hash,
+                           "subset_of": derived.corpus["subset_of"], "pools": len(derived.pools), "cases": len(derived.cases),
+                           "validate_corpus_bundle": summary,
+                           "manifest_sha256": sha256_file(derived_dir / "manifest.json"),
+                           "equivalence_checks": ["pool records == bundle_report pool records (all pools)", "case objects and order == the missing suffix of the original fixed order",
+                                                  "block, envelope, cohorts and per-case metadata equal", "built with existing snapshot.corpus.subset_corpus_bundle"]},
+        "profile": {"path": str(profile_path), "sha256": sha256_file(profile_path), "resolved_profile": resolved,
+                    "resolved_profile_sha256": hashlib.sha256(json.dumps(resolved, sort_keys=True).encode()).hexdigest(),
+                    "equal_to_original_except": "algorithms and algorithm_config reduced to uni_sor_port (its entry identical)"},
+        "boundaries": ["new process / new uni_sor_port worker (cold start) at the first supplemental case; original worker_id 2 context is not continued",
+                       "per-case solver seed = sha256(1447:algorithm:case_id): identical for the same (algorithm, case) regardless of schedule position",
+                       "fixed order preserved: supplemental cases run in the original relative order; schedule_index restarts at 0",
+                       "different wall-clock window and host load; timing is secondary context only"],
+        "command": f"sh {campaign}/run_arm.sh {campaign} ctx_sor uv run python main.py run --bundle {derived_dir} --profile {profile_path} --strategies profile --results-dir {campaign}/runs-ctx-sor",
+    },
+    "combination_rule": "context analysis uses exactly one record per (original case, algorithm): the 727 original records plus the supplemental uni_sor_port records for exactly the missing ids; denominator 906; each row labeled with its component; the original run stays 'running'/incomplete.",
+    "script_sha256": sha256_file(Path(__file__)),
+}
+out.write_text(json.dumps(rec_doc, indent=1) + "\n")
+out.chmod(0o444)
+print(json.dumps({"missing": len(missing), "by_algo": by_algo, "derived": rec_doc["supplement"]["derived_bundle"]["bundle_hash"],
+                  "profile": rec_doc["supplement"]["profile"]["sha256"], "live": live}))
+print(out, hashlib.sha256(out.read_bytes()).hexdigest())

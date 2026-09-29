@@ -1,0 +1,93 @@
+"""WHI-1449 held-out campaign: the write-once plan, frozen before any held-out measurement.
+usage: write_plan.py <campaign> <bundle_report> <loads json> <host note>"""
+import dataclasses, datetime, hashlib, json, sys
+from pathlib import Path
+import yaml
+from benchmark.profile import load_profile
+from benchmark.results import environment_record
+from snapshot.bundle import load_bundle, sha256_file
+
+campaign, bundle_dir, loads, note = Path(sys.argv[1]), Path(sys.argv[2]), json.loads(sys.argv[3]), sys.argv[4]
+out = campaign / "plan.json"
+if out.exists():
+    raise SystemExit(f"refusing to overwrite {out}")
+env = environment_record()
+if env["git_revision"] != "446674e80e66ad93834786e1493f223dc38de3eb" or env["git_dirty"] is not False:
+    raise SystemExit("not the frozen clean source")
+bundle = load_bundle(bundle_dir)
+if bundle.bundle_hash != "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0" or len(bundle.cases) != 302:
+    raise SystemExit("bundle identity mismatch")
+meta = json.loads((bundle_dir / "corpus.json").read_text())["case_metadata"]
+strata = {}
+for c in bundle.cases:
+    s = meta[c.case_id]["stratum"]; strata[s] = strata.get(s, 0) + 1
+# Context profile: config/full_gross.yaml with only `algorithms` replaced (stored with the campaign).
+full = yaml.safe_load(Path("config/full_gross.yaml").read_text())
+ctx = {**full, "algorithms": ["direct", "path_split", "uni_sor_port"]}
+ctx_path = campaign / "context_full_gross.yaml"
+ctx_path.write_text("# WHI-1449 held-out CONTEXT rows only (never the H-M1b verdict): config/full_gross.yaml\n"
+                    "# (sha256 " + sha256_file(Path("config/full_gross.yaml")) + ") with only `algorithms` replaced.\n"
+                    + yaml.safe_dump(ctx, sort_keys=False))
+ctx_path.chmod(0o444)
+arms = {}
+for arm, path in (("A0", "config/metis_challenge/a0.yaml"), ("M4", "config/metis_challenge/m4.yaml"), ("context", str(ctx_path))):
+    p = load_profile(path)
+    resolved = json.loads(json.dumps(dataclasses.replace(p, objective=p.objective.bind(bundle)).resolved()))
+    arms[arm] = {"profile": path, "profile_sha256": sha256_file(Path(path)), "resolved_profile": resolved,
+                 "resolved_profile_sha256": hashlib.sha256(json.dumps(resolved, sort_keys=True).encode()).hexdigest()}
+s2s3 = Path("data/metis_challenge/campaign-s2s3-446674e-20260928T153446Z")
+s4 = Path("data/metis_challenge/campaign-s4-446674e-20260928T163229Z")
+h4 = Path(sys.argv[5])
+s2 = json.loads((s2s3 / "s2-diagnostic.json").read_text())
+s3 = json.loads((s2s3 / "s3-work-gate.json").read_text())
+h4doc = json.loads((h4 / "h4-diagnostic.json").read_text())
+if h4doc["stop"] or h4doc["unexplained_chunks"]:
+    raise SystemExit("H4 diagnostic did not pass: held-out must not start")
+cmd = "uv run python main.py run --bundle {b} --profile {p} --strategies profile --results-dir {c}/runs-{a}"
+doc = {
+    "campaign": campaign.name,
+    "issue": "WHI-1449",
+    "stage": "held-out H-M1b (memo §10.6), computed once; A0 then M4 on bundle_report, then context rows",
+    "created_at_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+    "code": {k: env[k] for k in ("git_revision", "git_dirty", "git_diff_sha256")},
+    "bundle": {"path": str(bundle_dir), "bundle_id": bundle.bundle_id, "bundle_hash": bundle.bundle_hash, "cases": 302,
+               "case_ids": [c.case_id for c in bundle.cases],
+               "case_ids_sha256": hashlib.sha256("\n".join(c.case_id for c in bundle.cases).encode()).hexdigest(),
+               "strata": dict(sorted(strata.items()))},
+    "arms": arms,
+    "context": {"algorithms": ["direct", "path_split", "uni_sor_port"],
+                "scope": "full five-source bundle_report, full_gross controls; context only, never the verdict. uni_sor_port is V2/V3-only (LB pools excluded, LB-only cases unsupported), so its gaps are capability/candidate-universe differences, not search quality. No matched V2/V3 cohort view is run: it would need further A0/M4 arms on sor_cohort_report outside the registered one-pass schedule."},
+    "prior_gates": {"s2_established": bool(s2["s2_gate"]["established"]), "s3_met": bool(s3["s3_condition_met"]),
+                    "s2_diagnostic_sha256": sha256_file(s2s3 / "s2-diagnostic.json"), "s3_work_gate_sha256": sha256_file(s2s3 / "s3-work-gate.json"),
+                    "s4_disposition_sha256": sha256_file(s4 / "s4-disposition.json"),
+                    "h4_diagnostic_sha256": sha256_file(h4 / "h4-diagnostic.json"),
+                    "h4_class_totals": h4doc["class_totals"], "h4_unexplained_chunks": h4doc["unexplained_chunks"]},
+    "protocol": {
+        "arms_order": ["A0", "M4", "context"],
+        "one_pass": True, "sequential": True, "no_retries_for_timing": True, "no_parameter_changes": True,
+        "denominators": "all 302 scheduled cases per arm, every status kept; last_valid_candidate never counted ok",
+        "paired_set": "cases ok in both A0 and M4",
+        "outcome": "raw integer gross of the runner's independent evaluation: win M4 > A0, loss M4 < A0, tie equal (ties excluded from the sign test)",
+        "sign_test": "exact two-sided binomial: p = min(1, 2 * sum_{i<=min(w,l)} C(n,i) / 2^n), n = w + l, integer/Fraction arithmetic",
+        "verdict": "better: w > l and p < 0.05; worse: l > w and p < 0.05; otherwise inconclusive",
+        "keep_rule": "keep only if S2 passed, S3 passed and the verdict is better; otherwise drop / inconclusive",
+        "bps": "10^4 * (M4 - A0) / A0 per paired case with A0 > 0; A0 == 0 -> undefined, counted as zero_baseline; overall and per stratum (corpus case_metadata.stratum): n, mean, p50, p95, min, max",
+        "four_hop_attribution": "M4 wins whose final plan is metis_inspired's incremental plan (chosen_source) with >= 1 four-hop chunk (chunk_path_hops); retained simpler plans never count",
+        "timing": "secondary; L01 rule (1-minute load > 5.0 on the 10-core host contaminates timing); no speed claim from contaminated windows; timeout/coverage outcomes are host-load-sensitive (900 s wall clock)",
+    },
+    "analysis_script": {"path": str(campaign / "heldout_analysis.py"), "sha256": sha256_file(campaign / "heldout_analysis.py")},
+    "commands": [
+        "sh run_arm.sh <campaign> a0 " + cmd.format(b=bundle_dir, p="config/metis_challenge/a0.yaml", c=campaign, a="a0"),
+        "sh run_arm.sh <campaign> m4 " + cmd.format(b=bundle_dir, p="config/metis_challenge/m4.yaml", c=campaign, a="m4"),
+        "sh run_arm.sh <campaign> context " + cmd.format(b=bundle_dir, p=str(ctx_path), c=campaign, a="context"),
+        "PYTHONPATH=. uv run python <campaign>/heldout_analysis.py <campaign> <bundle_report> <A0 run> <M4 run> <context run>",
+    ],
+    "prelaunch_load_samples_1min_5min_15min": loads,
+    "prelaunch_host_note": note,
+    "host": {k: env[k] for k in ("python_version", "os", "os_release", "platform", "machine", "cpu_model", "cpu_count", "dependencies")},
+    "writer_script_sha256": sha256_file(Path(__file__)),
+    "run_arm_sh_sha256": sha256_file(campaign / "run_arm.sh"),
+}
+out.write_text(json.dumps(doc, indent=1) + "\n")
+out.chmod(0o444)
+print(out, hashlib.sha256(out.read_bytes()).hexdigest())

@@ -1,0 +1,55 @@
+{
+ "issue": "WHI-1449",
+ "durable_root": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge",
+ "rule": "every path recorded inside the evidence as data/metis_challenge/<X> (relative to the whi-1449 worktree root) or /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1449/data/metis_challenge/<X> is now <durable_root>/<X>; the corpus inputs are copied under <durable_root>/inputs/. Contents are byte-identical (SHA256SUMS, paths relative to durable_root).",
+ "prefix_map": {
+  "data/metis_challenge/": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/",
+  "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-wt/whi-1449/data/metis_challenge/": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/",
+  "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_tuning": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/inputs/bundle_tuning",
+  "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_report": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/inputs/bundle_report"
+ },
+ "campaigns": {
+  "stage1-4b446ff": {
+   "old": "data/metis_challenge/stage1-4b446ff",
+   "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/stage1-4b446ff"
+  },
+  "fix-446674e": {
+   "old": "data/metis_challenge/fix-446674e",
+   "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/fix-446674e"
+  },
+  "campaign-s2s3-446674e-20260928T153446Z": {
+   "old": "data/metis_challenge/campaign-s2s3-446674e-20260928T153446Z",
+   "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/campaign-s2s3-446674e-20260928T153446Z"
+  },
+  "campaign-s4-446674e-20260928T163229Z": {
+   "old": "data/metis_challenge/campaign-s4-446674e-20260928T163229Z",
+   "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/campaign-s4-446674e-20260928T163229Z"
+  },
+  "campaign-h4diag-446674e-20260928T185905Z": {
+   "old": "data/metis_challenge/campaign-h4diag-446674e-20260928T185905Z",
+   "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/campaign-h4diag-446674e-20260928T185905Z"
+  },
+  "campaign-heldout-446674e-20260928T191326Z": {
+   "old": "data/metis_challenge/campaign-heldout-446674e-20260928T191326Z",
+   "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/campaign-heldout-446674e-20260928T191326Z"
+  },
+  "campaign-ctxsor-446674e-20260929T024043Z": {
+   "old": "data/metis_challenge/campaign-ctxsor-446674e-20260929T024043Z",
+   "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/campaign-ctxsor-446674e-20260929T024043Z"
+  }
+ },
+ "replay_shim": "in a fresh checkout of the empirical source: ln -s /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge data/metis_challenge  (recorded relative paths then resolve unchanged)",
+ "inputs": {
+  "bundle_tuning": {
+   "old": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_tuning",
+   "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/inputs/bundle_tuning",
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b"
+  },
+  "bundle_report": {
+   "old": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_report",
+   "durable": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/metis-challenge/inputs/bundle_report",
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0"
+  }
+ },
+ "not_moved": "the worktree originals were not deleted or modified; the archive is a verified copy"
+}

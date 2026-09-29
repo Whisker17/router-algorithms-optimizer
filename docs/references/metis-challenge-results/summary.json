@@ -1,0 +1,1103 @@
+{
+ "issue": "WHI-1449",
+ "identity": "metis_inspired: Metis-inspired experimental Python variant; NOT Jupiter Metis; no production equivalence, global-optimality or source-parity claim",
+ "empirical_source": {
+  "git_revision": "446674e80e66ad93834786e1493f223dc38de3eb",
+  "git_dirty": false,
+  "git_diff_sha256": null
+ },
+ "bundles": {
+  "bundle_tuning": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+  "bundle_report": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+  "context_missing_case_derivation": "b6ee6a79d4e408a1762b4871e0714eab873c9d4da8f6de9f3ae4734042133ca2"
+ },
+ "S2": {
+  "artifact": "campaign-s2s3-446674e-20260928T153446Z/s2-diagnostic.json",
+  "sha256": "651629a4af3677aa959b56ba5d69eaedbb57181584fde89b1df4ef916b93f65a",
+  "cases": 96,
+  "verdicts": {
+   "attributed": 7,
+   "identical": 89
+  },
+  "gate": {
+   "established": true,
+   "not_established_because": []
+  },
+  "chunk_classes": {
+   "agree": 4588,
+   "tie": 212
+  },
+  "allowed_classes": [
+   "quote_failure",
+   "tie"
+  ],
+  "label_hops": 3
+ },
+ "S3": {
+  "artifact": "campaign-s2s3-446674e-20260928T153446Z/s3-work-gate.json",
+  "sha256": "3eed525b7ea6c0ea5db8be3af95035b808a56553143449653f898ea5cf3237a0",
+  "condition_met": true,
+  "units": {
+   "A0": "search.paths_scored (paths per chunk, summed)",
+   "M3": "search.label_relaxations (quote-backed relaxations, summed)"
+  },
+  "median_A0_paths_scored": 218591.0,
+  "median_M3_label_relaxations": 9229.5,
+  "paired_m3_below_a0": 96,
+  "paired": 96,
+  "statuses": {
+   "A0": {
+    "ok": 96
+   },
+   "M3": {
+    "ok": 96
+   }
+  }
+ },
+ "S4": {
+  "artifact": "campaign-s4-446674e-20260928T163229Z/s4-disposition.json",
+  "sha256": "4c69df9a68f49a6751f6a30c5bd99b2c0098527d371c90c4d5613114428bafc4",
+  "per_arm": {
+   "A0": {
+    "statuses": {
+     "ok": 96
+    },
+    "timeouts": 0,
+    "limit_hit": {},
+    "declared_truncation": {},
+    "last_valid_candidates": 0,
+    "work_unit": "paths_scored",
+    "work_counter": {
+     "n": 96,
+     "min": 23450,
+     "p25": 85700,
+     "median": 218591.0,
+     "p75": 285038,
+     "p95": 445550,
+     "max": 475550
+    },
+    "quotes_executed": {
+     "n": 96,
+     "min": 105,
+     "p25": 15456,
+     "median": 27175.5,
+     "p75": 38098,
+     "p95": 47950,
+     "max": 58955
+    },
+    "cases_final_plan_uses_4hop_chunk": null
+   },
+   "M4": {
+    "statuses": {
+     "ok": 96
+    },
+    "timeouts": 0,
+    "limit_hit": {},
+    "declared_truncation": {},
+    "last_valid_candidates": 0,
+    "work_unit": "label_relaxations",
+    "work_counter": {
+     "n": 96,
+     "min": 200,
+     "p25": 11798,
+     "median": 13080.5,
+     "p75": 14743,
+     "p95": 16950,
+     "max": 18900
+    },
+    "quotes_executed": {
+     "n": 96,
+     "min": 105,
+     "p25": 11657,
+     "median": 19945.0,
+     "p75": 23862,
+     "p95": 31874,
+     "max": 34360
+    },
+    "cases_final_plan_uses_4hop_chunk": 64
+   },
+   "M4-off": {
+    "statuses": {
+     "ok": 96
+    },
+    "timeouts": 0,
+    "limit_hit": {},
+    "declared_truncation": {},
+    "last_valid_candidates": 0,
+    "work_unit": "paths_scored",
+    "work_counter": {
+     "n": 96,
+     "min": 398400,
+     "p25": 1320780,
+     "median": 1778207.5,
+     "p75": 2594859,
+     "p95": 6163450,
+     "max": 7299600
+    },
+    "quotes_executed": {
+     "n": 96,
+     "min": 105,
+     "p25": 71869,
+     "median": 116745.0,
+     "p75": 157158,
+     "p95": 217444,
+     "max": 264947
+    },
+    "cases_final_plan_uses_4hop_chunk": 64
+   }
+  },
+  "m4_vs_m4off": {
+   "paired_both_ok": 96,
+   "same_gross": 84,
+   "same_plan": 80,
+   "m4_higher": 7,
+   "m4off_higher": 5
+  },
+  "m4_vs_m4off_different_gross": [
+   {
+    "case_id": "emp-09bc4e-78c1b0-low-1",
+    "m4_minus_m4off": 97234747446109
+   },
+   {
+    "case_id": "emp-09bc4e-78c1b0-medium-3",
+    "m4_minus_m4off": 1472592160599
+   },
+   {
+    "case_id": "emp-201eba-09bc4e-large-3",
+    "m4_minus_m4off": -13
+   },
+   {
+    "case_id": "emp-201eba-09bc4e-low-4",
+    "m4_minus_m4off": -1704
+   },
+   {
+    "case_id": "emp-201eba-779ded-medium-4",
+    "m4_minus_m4off": -280
+   },
+   {
+    "case_id": "emp-cda86a-201eba-low-3",
+    "m4_minus_m4off": 3
+   },
+   {
+    "case_id": "nod-09bc4e-c96de2-large-1",
+    "m4_minus_m4off": -2
+   },
+   {
+    "case_id": "nod-09bc4e-c96de2-low-2",
+    "m4_minus_m4off": 2
+   },
+   {
+    "case_id": "nod-09bc4e-c96de2-medium-2",
+    "m4_minus_m4off": 1
+   },
+   {
+    "case_id": "nod-deadde-c96de2-large-1",
+    "m4_minus_m4off": 1
+   },
+   {
+    "case_id": "nod-deadde-c96de2-low-2",
+    "m4_minus_m4off": 2
+   },
+   {
+    "case_id": "nod-09bc4e-1bdd88-low-2",
+    "m4_minus_m4off": -71759872223944
+   }
+  ],
+  "m4off_finished_all_96_within_caps": true,
+  "m4off_same_gross_as_m4_on_all_96": false,
+  "m4_more_timeouts_than_a0": false,
+  "m4_vs_a0_tuning_descriptive_not_the_verdict": {
+   "paired_both_ok": 96,
+   "m4_higher": 56,
+   "equal": 27,
+   "m4_lower": 13,
+   "bps": {
+    "n": 96,
+    "min": -8.82774993608754,
+    "p25": 0.0,
+    "median": 0.2976638857980626,
+    "p75": 3.4507138013036722,
+    "p95": 25.661887216005685,
+    "max": 42.30862740573834
+   },
+   "m4_wins_whose_final_plan_uses_4hop_chunk": 56
+  }
+ },
+ "H4_diagnostic": {
+  "artifact": "campaign-h4diag-446674e-20260928T185905Z/h4-diagnostic.json",
+  "sha256": "a0306f02ce2ee5ee0abaf05b662d4ec102293cf9517285e5f542ee1576596d9a",
+  "exit_code": 0,
+  "cases": [
+   "emp-09bc4e-78c1b0-low-1",
+   "emp-09bc4e-78c1b0-medium-3",
+   "emp-201eba-09bc4e-large-3",
+   "emp-201eba-09bc4e-low-4",
+   "emp-201eba-779ded-medium-4",
+   "emp-cda86a-201eba-low-3",
+   "nod-09bc4e-c96de2-large-1",
+   "nod-09bc4e-c96de2-low-2",
+   "nod-09bc4e-c96de2-medium-2",
+   "nod-deadde-c96de2-large-1",
+   "nod-deadde-c96de2-low-2",
+   "nod-09bc4e-1bdd88-low-2"
+  ],
+  "allowed_classes": [
+   "prefix_admission",
+   "quote_failure",
+   "tie",
+   "token_revisit"
+  ],
+  "class_totals": {
+   "agree": 398,
+   "prefix_admission": 6,
+   "tie": 174,
+   "token_revisit": 22
+  },
+  "unexplained_chunks": 0,
+  "cases_with_findings": [],
+  "stop": false,
+  "limitation": "local same-state attribution per chunk on M4's trajectory; not a proof of every final-plan counterfactual",
+  "m4_minus_m4off": {
+   "emp-09bc4e-78c1b0-low-1": 97234747446109,
+   "emp-09bc4e-78c1b0-medium-3": 1472592160599,
+   "emp-201eba-09bc4e-large-3": -13,
+   "emp-201eba-09bc4e-low-4": -1704,
+   "emp-201eba-779ded-medium-4": -280,
+   "emp-cda86a-201eba-low-3": 3,
+   "nod-09bc4e-c96de2-large-1": -2,
+   "nod-09bc4e-c96de2-low-2": 2,
+   "nod-09bc4e-c96de2-medium-2": 1,
+   "nod-deadde-c96de2-large-1": 1,
+   "nod-deadde-c96de2-low-2": 2,
+   "nod-09bc4e-1bdd88-low-2": -71759872223944
+  }
+ },
+ "heldout": {
+  "artifact": "campaign-heldout-446674e-20260928T191326Z/heldout-analysis.json",
+  "sha256": "6072cb188d6b5f76283f1dedac7649d75c9c41705a6ec47296c7b18d02c4e9f8",
+  "plan_sha256": "c05f7b2e9fa10461d27fbd4ad01179ac3c3ada69f77eca18de99b63079f8d9f5",
+  "analysis_script_sha256": "7b12a48cf3eaa75dbd930e802434dc48a2ceb09c41a8514cf5da03f0c8ae9a6d",
+  "analysis_exit_code": 0,
+  "runs": {
+   "A0": {
+    "run_id": "20260928T191548206673Z-c0f7ec41",
+    "manifest_sha256": "d9ff3d5b54474f8669a0319792a8f6479a00ebf440caa5fdd07389ae81ead461",
+    "cases_sha256": "67dedc7aee59cb57a914d5326cdee4d4b156be4506902bf52db19cef235661ec",
+    "status_counts": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "git_revision": "446674e80e66ad93834786e1493f223dc38de3eb",
+    "git_dirty": false,
+    "created_at": "2026-09-28T19:15:48.252910+00:00",
+    "finished_at": "2026-09-28T20:26:37.566102+00:00",
+    "total_seconds": 4249.29426
+   },
+   "M4": {
+    "run_id": "20260928T202655510485Z-eedca7fe",
+    "manifest_sha256": "d34e7c6f8a79ec4669d4d2917156e09cf1e5ec1fe3a78105185452551644af7f",
+    "cases_sha256": "97bc64e0eccd0de1a114fc38f056c8d67030661c7a80065356cbf521b219c3d2",
+    "status_counts": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "git_revision": "446674e80e66ad93834786e1493f223dc38de3eb",
+    "git_dirty": false,
+    "created_at": "2026-09-28T20:26:55.562588+00:00",
+    "finished_at": "2026-09-28T21:11:45.592102+00:00",
+    "total_seconds": 2690.019725666
+   }
+  },
+  "arm_exit_codes": {
+   "a0": 0,
+   "m4": 0
+  },
+  "paired_ok_cases": 301,
+  "excluded_from_pairing": [
+   "bnd-1bdd88-78c1b0-dust"
+  ],
+  "wins": 132,
+  "losses": 48,
+  "ties": 121,
+  "sign_test": {
+   "n": 180,
+   "k": 48,
+   "p_two_sided": "224532446445110415429566036833811931023680861/766247770432944429179173513575154591809369561091801088",
+   "p_float": 2.930285151997837e-10,
+   "alpha": "1/20"
+  },
+  "verdict": "better",
+  "keep": true,
+  "decision": "keep",
+  "zero_baseline_paired_cases": 10,
+  "bps_overall": {
+   "n": 291,
+   "mean": 1.4113060541682663,
+   "p50": 0.0,
+   "p95": 10.35140671611636,
+   "min": -10.068658949733965,
+   "max": 55.56359925298997
+  },
+  "per_stratum": {
+   "boundary": {
+    "scheduled": 62,
+    "paired": 61,
+    "wins": 7,
+    "ties": 46,
+    "losses": 8,
+    "zero_baseline": 10,
+    "bps": {
+     "n": 51,
+     "mean": -0.15520986999043193,
+     "p50": 0.0,
+     "p95": 2.3266482147483107,
+     "min": -8.1054434843116,
+     "max": 10.834236186348862
+    }
+   },
+   "large": {
+    "scheduled": 80,
+    "paired": 80,
+    "wins": 31,
+    "ties": 37,
+    "losses": 12,
+    "zero_baseline": 0,
+    "bps": {
+     "n": 80,
+     "mean": 0.18842117285007692,
+     "p50": 0.0,
+     "p95": 3.8125674011489763,
+     "min": -10.068658949733965,
+     "max": 8.271633249186767
+    }
+   },
+   "low": {
+    "scheduled": 80,
+    "paired": 80,
+    "wins": 49,
+    "ties": 18,
+    "losses": 13,
+    "zero_baseline": 0,
+    "bps": {
+     "n": 80,
+     "mean": 3.675513472758862,
+     "p50": 0.31389405821301564,
+     "p95": 21.832827368503217,
+     "min": -6.714846427594524,
+     "max": 55.56359925298997
+    }
+   },
+   "medium": {
+    "scheduled": 80,
+    "paired": 80,
+    "wins": 45,
+    "ties": 20,
+    "losses": 15,
+    "zero_baseline": 0,
+    "bps": {
+     "n": 80,
+     "mean": 1.3686374185470302,
+     "p50": 0.060058351704372626,
+     "p95": 10.375799968980925,
+     "min": -7.99294612886212,
+     "max": 36.80266885541052
+    }
+   }
+  },
+  "m4_wins_with_final_4hop_plan": 131,
+  "m4_wins_4hop_share": 0.9924242424242424,
+  "m4_final_plans_with_4hop_chunk": 161,
+  "arms": {
+   "A0": {
+    "statuses": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "limit_hit": {},
+    "declared_truncation": {},
+    "last_valid_candidates_not_counted_ok": 0,
+    "accounting_matches_evaluation_true": 301,
+    "chosen_source": {
+     "None": 1,
+     "direct_split": 1,
+     "incremental_graph": 197,
+     "path_split": 5,
+     "single_path": 98
+    },
+    "quotes_executed": {
+     "n": 302,
+     "mean": 28449.692052980132,
+     "p50": 26815.5,
+     "p95": 58836,
+     "min": 4,
+     "max": 192277
+    },
+    "solve_seconds_secondary": {
+     "n": 302,
+     "mean": 14.04945686407947,
+     "p50": 11.779324625000001,
+     "p95": 39.047129209,
+     "min": 0.003213458,
+     "max": 54.088876833
+    },
+    "non_ok": [
+     {
+      "case_id": "bnd-1bdd88-78c1b0-dust",
+      "status": "no_route",
+      "limit_hit": null,
+      "error": "every one of the 469 cycle-free path(s) within max_hops=3 failed (insufficient_liquidity: 2, insufficient_output_amount: 2; 465 pruned by a failed shared prefix)"
+     }
+    ]
+   },
+   "M4": {
+    "statuses": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "limit_hit": {},
+    "declared_truncation": {},
+    "last_valid_candidates_not_counted_ok": 0,
+    "accounting_matches_evaluation_true": 301,
+    "chosen_source": {
+     "None": 1,
+     "direct_split": 1,
+     "metis_inspired": 197,
+     "path_split": 20,
+     "single_path": 83
+    },
+    "quotes_executed": {
+     "n": 302,
+     "mean": 17631.98344370861,
+     "p50": 19978.0,
+     "p95": 32099,
+     "min": 4,
+     "max": 61125
+    },
+    "solve_seconds_secondary": {
+     "n": 302,
+     "mean": 8.883756035476821,
+     "p50": 8.10304025,
+     "p95": 19.708214459,
+     "min": 0.001622875,
+     "max": 33.834658333
+    },
+    "non_ok": [
+     {
+      "case_id": "bnd-1bdd88-78c1b0-dust",
+      "status": "no_route",
+      "limit_hit": null,
+      "error": "every one of the 469 cycle-free path(s) within max_hops=3 failed (insufficient_liquidity: 2, insufficient_output_amount: 2; 465 pruned by a failed shared prefix)"
+     }
+    ]
+   }
+  },
+  "m4_chunk_path_hops_total": {
+   "1": 5945,
+   "2": 2990,
+   "3": 2400,
+   "4": 1800
+  },
+  "a0_chunk_path_hops_total": {},
+  "work": {
+   "A0_paths_scored": {
+    "n": 302,
+    "median": 231560.0,
+    "min": 469,
+    "max": 502100
+   },
+   "M4_label_relaxations": {
+    "n": 302,
+    "median": 13224.5,
+    "min": 4,
+    "max": 18900
+   },
+   "units_differ": true
+  },
+  "window_load": {
+   "A0": {
+    "samples_1min": 71,
+    "max_1min": 3.85,
+    "samples_above_5.0": 0
+   },
+   "M4": {
+    "samples_1min": 44,
+    "max_1min": 3.75,
+    "samples_above_5.0": 0
+   }
+  }
+ },
+ "context": {
+  "artifact": "campaign-ctxsor-446674e-20260929T024043Z/context-analysis.json",
+  "sha256": "a5b79ed1c92f5a83ec48f9341c75321c9cc96240356ac89e862f47b3cc9facae",
+  "recovery_manifest_sha256": "9cb8bb6d2faddd6d1c5ae9cef471438c7b0e8148b6912e55cf4bb3f8f25822cc",
+  "denominator": 906,
+  "records_by_component": {
+   "original-interrupted": 727,
+   "supplemental-completion": 179
+  },
+  "components": {
+   "original-interrupted": {
+    "run_id": "20260928T211201673200Z-4ffd7323",
+    "run_dir": "data/metis_challenge/campaign-heldout-446674e-20260928T191326Z/runs-context/20260928T211201673200Z-4ffd7323",
+    "state": "running",
+    "complete": false,
+    "exit_code": null,
+    "cases_jsonl_sha256": "5602eaf06205e9a1cb978c7a76153066717e078e3ac27bb26b108eea82704458",
+    "records": 727,
+    "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+    "window_load": {
+     "samples": 110,
+     "max_1min": 3.92,
+     "above_5": 0
+    }
+   },
+   "supplemental-completion": {
+    "run_id": "20260929T024301783999Z-be6f4cdd",
+    "run_dir": "data/metis_challenge/campaign-ctxsor-446674e-20260929T024043Z/runs-ctx-sor/20260929T024301783999Z-be6f4cdd",
+    "state": "complete",
+    "complete": true,
+    "exit_code": 0,
+    "started_utc": "2026-09-29T02:43:01Z",
+    "ended_utc": "2026-09-29T03:45:11Z",
+    "manifest_sha256": "6c0ac142dc0949c1af2a9988e7a7c2b58d265fa071457df9718d4e26ee105df4",
+    "cases_sha256": "28462b5ca15aa8f3a953cd420412e431fca997b8333785ebb0d97e367bf41468",
+    "records": 179,
+    "bundle_hash": "b6ee6a79d4e408a1762b4871e0714eab873c9d4da8f6de9f3ae4734042133ca2",
+    "bundle_id": "mantle-5src-101082044-091b0759-report-split-ctx-sor-completion-179",
+    "total_seconds": 3729.20014925,
+    "window_load": {
+     "samples": 63,
+     "max_1min": 19.9,
+     "above_5": 12
+    }
+   }
+  },
+  "scope": "full five-source bundle_report, full_gross controls; context only, never the verdict. uni_sor_port is V2/V3-only (LB pools excluded, LB-only cases unsupported), so its gaps are capability/candidate-universe differences, not search quality. No matched V2/V3 cohort view is run: it would need further A0/M4 arms on sor_cohort_report outside the registered one-pass schedule.",
+  "algorithms": {
+   "direct": {
+    "scheduled": 302,
+    "records": 302,
+    "statuses": {
+     "no_route": 25,
+     "ok": 277
+    },
+    "statuses_by_component": {
+     "original-interrupted": {
+      "ok": 277,
+      "no_route": 25
+     }
+    },
+    "limit_hit": 0,
+    "last_valid_candidates_not_counted_ok": 0,
+    "non_ok": [
+     {
+      "case_id": "nod-09bc4e-c96de2-large-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9/0xc96de26018a54d51c097160568752c4e3bd6c364",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "large"
+     },
+     {
+      "case_id": "nod-09bc4e-c96de2-low-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9/0xc96de26018a54d51c097160568752c4e3bd6c364",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "nod-09bc4e-c96de2-medium-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9/0xc96de26018a54d51c097160568752c4e3bd6c364",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "nod-c96de2-09bc4e-large-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0xc96de26018a54d51c097160568752c4e3bd6c364/0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "large"
+     },
+     {
+      "case_id": "nod-c96de2-09bc4e-low-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0xc96de26018a54d51c097160568752c4e3bd6c364/0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "nod-c96de2-09bc4e-medium-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0xc96de26018a54d51c097160568752c4e3bd6c364/0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "nod-c96de2-deadde-large-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0xc96de26018a54d51c097160568752c4e3bd6c364/0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "large"
+     },
+     {
+      "case_id": "nod-c96de2-deadde-low-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0xc96de26018a54d51c097160568752c4e3bd6c364/0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "nod-c96de2-deadde-medium-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0xc96de26018a54d51c097160568752c4e3bd6c364/0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "nod-deadde-c96de2-large-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111/0xc96de26018a54d51c097160568752c4e3bd6c364",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "large"
+     },
+     {
+      "case_id": "nod-deadde-c96de2-low-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111/0xc96de26018a54d51c097160568752c4e3bd6c364",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "nod-deadde-c96de2-medium-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111/0xc96de26018a54d51c097160568752c4e3bd6c364",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "nod-09bc4e-1bdd88-large-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9/0x1bdd8878252daddd3af2ba30628813271294edc0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "large"
+     },
+     {
+      "case_id": "nod-09bc4e-1bdd88-low-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9/0x1bdd8878252daddd3af2ba30628813271294edc0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "nod-09bc4e-1bdd88-medium-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9/0x1bdd8878252daddd3af2ba30628813271294edc0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "nod-1bdd88-09bc4e-large-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x1bdd8878252daddd3af2ba30628813271294edc0/0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "large"
+     },
+     {
+      "case_id": "nod-1bdd88-09bc4e-low-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x1bdd8878252daddd3af2ba30628813271294edc0/0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "nod-1bdd88-09bc4e-medium-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x1bdd8878252daddd3af2ba30628813271294edc0/0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "nod-1bdd88-779ded-large-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x1bdd8878252daddd3af2ba30628813271294edc0/0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "large"
+     },
+     {
+      "case_id": "nod-1bdd88-779ded-low-2",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x1bdd8878252daddd3af2ba30628813271294edc0/0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "nod-1bdd88-779ded-medium-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x1bdd8878252daddd3af2ba30628813271294edc0/0x779ded0c9e1022225f8e0630b35a9b54be713736",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "nod-779ded-1bdd88-large-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x779ded0c9e1022225f8e0630b35a9b54be713736/0x1bdd8878252daddd3af2ba30628813271294edc0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "large"
+     },
+     {
+      "case_id": "nod-779ded-1bdd88-low-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x779ded0c9e1022225f8e0630b35a9b54be713736/0x1bdd8878252daddd3af2ba30628813271294edc0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "nod-779ded-1bdd88-medium-1",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool for 0x779ded0c9e1022225f8e0630b35a9b54be713736/0x1bdd8878252daddd3af2ba30628813271294edc0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "bnd-1bdd88-78c1b0-dust",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "no admitted direct pool produced a valid route",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "boundary"
+     }
+    ],
+    "paired_descriptive_scope_limited": {
+     "A0": {
+      "paired_ok": 277,
+      "A0_higher": 201,
+      "A0_lower": 0,
+      "equal": 76
+     },
+     "M4": {
+      "paired_ok": 277,
+      "M4_higher": 210,
+      "M4_lower": 0,
+      "equal": 67
+     }
+    },
+    "quotes_counted": {
+     "n": 302,
+     "mean": 7.231788079470198,
+     "p50": 4.0,
+     "p95": 16,
+     "min": 0,
+     "max": 16
+    },
+    "solve_seconds_secondary_by_component": {
+     "original-interrupted": {
+      "n": 302,
+      "mean": 0.0038956036357615893,
+      "p50": 0.000693979,
+      "p95": 0.016861125,
+      "min": 1.7917e-05,
+      "max": 0.037631208
+     }
+    }
+   },
+   "path_split": {
+    "scheduled": 302,
+    "records": 302,
+    "statuses": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "statuses_by_component": {
+     "original-interrupted": {
+      "ok": 301,
+      "no_route": 1
+     }
+    },
+    "limit_hit": 0,
+    "last_valid_candidates_not_counted_ok": 0,
+    "non_ok": [
+     {
+      "case_id": "bnd-1bdd88-78c1b0-dust",
+      "component": "original-interrupted",
+      "status": "no_route",
+      "error": "every one of the 469 cycle-free path(s) within max_hops=3 failed (insufficient_liquidity: 2, insufficient_output_amount: 2; 465 pruned by a failed shared prefix)",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "boundary"
+     }
+    ],
+    "paired_descriptive_scope_limited": {
+     "A0": {
+      "paired_ok": 301,
+      "A0_higher": 197,
+      "A0_lower": 0,
+      "equal": 104
+     },
+     "M4": {
+      "paired_ok": 301,
+      "M4_higher": 197,
+      "M4_lower": 0,
+      "equal": 104
+     }
+    },
+    "quotes_counted": {
+     "n": 302,
+     "mean": 15099.509933774834,
+     "p50": 16987.0,
+     "p95": 28478,
+     "min": 4,
+     "max": 52375
+    },
+    "solve_seconds_secondary_by_component": {
+     "original-interrupted": {
+      "n": 302,
+      "mean": 7.427922353334437,
+      "p50": 6.824951208,
+      "p95": 15.784782833,
+      "min": 0.001480584,
+      "max": 33.443082959
+     }
+    }
+   },
+   "uni_sor_port": {
+    "scheduled": 302,
+    "records": 302,
+    "statuses": {
+     "invalid_plan": 12,
+     "no_route": 2,
+     "ok": 288
+    },
+    "statuses_by_component": {
+     "original-interrupted": {
+      "ok": 116,
+      "invalid_plan": 7
+     },
+     "supplemental-completion": {
+      "ok": 172,
+      "invalid_plan": 5,
+      "no_route": 2
+     }
+    },
+    "limit_hit": 0,
+    "last_valid_candidates_not_counted_ok": 0,
+    "non_ok": [
+     {
+      "case_id": "emp-09bc4e-201eba-low-1",
+      "component": "original-interrupted",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0xcda86a272531e8640cd7f1a92c01839911b90bb0 -> 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111 -> 0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "emp-09bc4e-201eba-low-3",
+      "component": "original-interrupted",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0xcda86a272531e8640cd7f1a92c01839911b90bb0 -> 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111 -> 0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "emp-09bc4e-201eba-medium-1",
+      "component": "original-interrupted",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0xcda86a272531e8640cd7f1a92c01839911b90bb0 -> 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111 -> 0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "emp-09bc4e-201eba-medium-3",
+      "component": "original-interrupted",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0xcda86a272531e8640cd7f1a92c01839911b90bb0 -> 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111 -> 0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "medium"
+     },
+     {
+      "case_id": "emp-201eba-cda86a-low-1",
+      "component": "original-interrupted",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9 -> 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111 -> 0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8 -> 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "emp-201eba-cda86a-low-3",
+      "component": "original-interrupted",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9 -> 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111 -> 0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8 -> 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "emp-78c1b0-09bc4e-low-3",
+      "component": "original-interrupted",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0x201eba5cc46d216ce6dc03f6a759e8e766e956ae -> 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111 -> 0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "emp-78c1b0-deadde-low-1",
+      "component": "supplemental-completion",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9 -> 0xcda86a272531e8640cd7f1a92c01839911b90bb0 -> 0x201eba5cc46d216ce6dc03f6a759e8e766e956ae -> 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "emp-78c1b0-deadde-low-3",
+      "component": "supplemental-completion",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9 -> 0xcda86a272531e8640cd7f1a92c01839911b90bb0 -> 0x201eba5cc46d216ce6dc03f6a759e8e766e956ae -> 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "emp-78c1b0-deadde-low-4",
+      "component": "supplemental-completion",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9 -> 0xcda86a272531e8640cd7f1a92c01839911b90bb0 -> 0x201eba5cc46d216ce6dc03f6a759e8e766e956ae -> 0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "low"
+     },
+     {
+      "case_id": "bnd-09bc4e-201eba-liq_at",
+      "component": "supplemental-completion",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0xcda86a272531e8640cd7f1a92c01839911b90bb0 -> 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111 -> 0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "boundary"
+     },
+     {
+      "case_id": "bnd-09bc4e-201eba-liq_above",
+      "component": "supplemental-completion",
+      "status": "invalid_plan",
+      "error": "economic token cycle: 0xcda86a272531e8640cd7f1a92c01839911b90bb0 -> 0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111 -> 0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "boundary"
+     },
+     {
+      "case_id": "bnd-1bdd88-78c1b0-dust",
+      "component": "supplemental-completion",
+      "status": "no_route",
+      "error": "no complete selection over 0 valid quote entries (B-S10)",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "boundary"
+     },
+     {
+      "case_id": "bnd-1bdd88-78c1b0-round_below",
+      "component": "supplemental-completion",
+      "status": "no_route",
+      "error": "no complete selection over 0 valid quote entries (B-S10)",
+      "limit_hit": null,
+      "last_valid_candidate": false,
+      "stratum": "boundary"
+     }
+    ],
+    "paired_descriptive_scope_limited": {
+     "A0": {
+      "paired_ok": 288,
+      "A0_higher": 198,
+      "A0_lower": 0,
+      "equal": 90
+     },
+     "M4": {
+      "paired_ok": 288,
+      "M4_higher": 212,
+      "M4_lower": 2,
+      "equal": 74
+     }
+    },
+    "quotes_counted": {
+     "n": 302,
+     "mean": 29924.761589403974,
+     "p50": 23449.5,
+     "p95": 66128,
+     "min": 1,
+     "max": 84342
+    },
+    "solve_seconds_secondary_by_component": {
+     "original-interrupted": {
+      "n": 123,
+      "mean": 34.97983478052032,
+      "p50": 16.695050583,
+      "p95": 101.320931625,
+      "min": 0.000412584,
+      "max": 107.00313225
+     },
+     "supplemental-completion": {
+      "n": 179,
+      "mean": 20.82597230444693,
+      "p50": 10.919531375,
+      "p95": 57.375054042,
+      "min": 0.000127333,
+      "max": 64.4556525
+     }
+    }
+   }
+  }
+ }
+}

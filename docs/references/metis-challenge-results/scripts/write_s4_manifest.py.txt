@@ -1,0 +1,68 @@
+"""WHI-1449 S4 campaign: the write-once initial record (identity before any timed arm)."""
+import dataclasses, datetime, hashlib, json, sys
+from pathlib import Path
+from benchmark.profile import load_profile
+from benchmark.results import environment_record, load_manifest
+from snapshot.bundle import load_bundle, sha256_file
+
+campaign, bundle_dir, loads, host_note = Path(sys.argv[1]), Path(sys.argv[2]), json.loads(sys.argv[3]), sys.argv[4]
+out = campaign / "campaign.json"
+if out.exists():
+    raise SystemExit(f"refusing to overwrite {out}")
+bundle = load_bundle(bundle_dir)
+prior = Path("data/metis_challenge/campaign-s2s3-446674e-20260928T153446Z")
+a0_dir = next((prior / "runs-a0").iterdir())
+a0 = load_manifest(a0_dir)  # strict: complete + checksum
+arms = {}
+for arm, path in (("M4", "config/metis_challenge/m4.yaml"), ("M4-off", "config/metis_challenge/m4_off.yaml"),
+                  ("A0-reference", "config/metis_challenge/a0.yaml")):
+    profile = load_profile(path)
+    resolved = json.loads(json.dumps(dataclasses.replace(profile, objective=profile.objective.bind(bundle)).resolved()))
+    arms[arm] = {"profile": path, "profile_sha256": sha256_file(Path(path)),
+                 "resolved_profile_sha256": hashlib.sha256(json.dumps(resolved, sort_keys=True).encode()).hexdigest(),
+                 "resolved_profile": resolved}
+if a0.resolved_profile != arms["A0-reference"]["resolved_profile"]:
+    raise SystemExit("prior A0 run settings differ from a0.yaml")
+env = environment_record()
+cmd = "uv run python main.py run --bundle {b} --profile {p} --strategies profile --results-dir {c}/runs-{a}"
+doc = {
+    "campaign": campaign.name,
+    "issue": "WHI-1449",
+    "stage": "S4 tractability on the tuning split: M4 then M4-off (one pass each); A0 reference is the prior immutable S2/S3 run; no held-out, no sweep",
+    "created_at_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+    "code": {k: env[k] for k in ("git_revision", "git_dirty", "git_diff_sha256")},
+    "bundle": {"path": str(bundle_dir), "bundle_id": bundle.bundle_id, "bundle_hash": bundle.bundle_hash,
+               "expected_bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+               "cases": len(bundle.cases), "case_ids": [c.case_id for c in bundle.cases],
+               "case_ids_sha256": hashlib.sha256("\n".join(c.case_id for c in bundle.cases).encode()).hexdigest()},
+    "arms": arms,
+    "prior_s2s3": {
+        "campaign": str(prior),
+        "artifacts_sha256": {n: sha256_file(prior / n) for n in ("campaign.json", "campaign-records.json", "s2-diagnostic.json",
+                                                                 "s3-work-gate.json", "timing-validity-addendum.json")},
+        "a0_run": {"run_id": a0.run_id, "run_dir": str(a0_dir), "manifest_sha256": sha256_file(a0_dir / "manifest.json"),
+                   "cases_sha256": a0.cases_sha256, "status_counts": a0.status_counts, "git_revision": a0.git_revision,
+                   "git_dirty": a0.git_dirty, "bundle_hash": a0.bundle_hash},
+    },
+    "plan": [
+        "sh run_arm.sh <campaign> m4 " + cmd.format(b=bundle_dir, p="config/metis_challenge/m4.yaml", c=campaign, a="m4"),
+        "(M4 must finish and verify before M4-off starts: sequential, never concurrent)",
+        "sh run_arm.sh <campaign> m4_off " + cmd.format(b=bundle_dir, p="config/metis_challenge/m4_off.yaml", c=campaign, a="m4_off"),
+        "S4 disposition from the original records: each arm vs A0 status/coverage, timeouts/truncation/limit_hit, paired exact gross M4 vs M4-off, 4-hop chunk use and plan provenance (chosen_source)",
+    ],
+    "exit_codes": "run_arm.sh writes <arm>.start.json (wrapper/child PID, cwd, command, HEAD) and <arm>.completion.json with the child's actual exit status after wait",
+    "timing_validity_rule": "L01: 1-minute load > 5.0 (0.5 x 10 logical CPUs) contaminates timing; no speed claim is made from contaminated windows and no timing retries are run. Timeout/coverage outcomes are host-load-sensitive (900 s wall clock); exact completed outputs and logical work counters are deterministic.",
+    "prelaunch_load_samples_1min_5min_15min": loads,
+    "prelaunch_host_note": host_note,
+    "host": {k: env[k] for k in ("python_version", "python_implementation", "os", "os_release", "platform", "machine", "cpu_model", "cpu_count", "dependencies")},
+    "writer_script_sha256": sha256_file(Path(__file__)),
+    "run_arm_sh_sha256": sha256_file(campaign / "run_arm.sh"),
+    "load_sampler_sh_sha256": sha256_file(campaign / "load_sampler.sh"),
+}
+if doc["bundle"]["bundle_hash"] != doc["bundle"]["expected_bundle_hash"] or len(bundle.cases) != 96:
+    raise SystemExit("bundle identity mismatch")
+if doc["code"]["git_dirty"] is not False or doc["code"]["git_revision"] != "446674e80e66ad93834786e1493f223dc38de3eb":
+    raise SystemExit("code is not the frozen clean 446674e")
+out.write_text(json.dumps(doc, indent=1) + "\n")
+out.chmod(0o444)
+print(out, hashlib.sha256(out.read_bytes()).hexdigest())

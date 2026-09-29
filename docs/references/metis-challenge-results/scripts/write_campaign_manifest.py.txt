@@ -1,0 +1,50 @@
+"""WHI-1449 S2/S3 campaign: the write-once initial manifest (identity before any run)."""
+import hashlib, json, subprocess, sys, datetime
+from pathlib import Path
+from benchmark.profile import load_profile
+from benchmark.results import environment_record
+from snapshot.bundle import load_bundle, sha256_file
+
+campaign = Path(sys.argv[1]); bundle_dir = Path(sys.argv[2]); loads = json.loads(sys.argv[3])
+out = campaign / "campaign.json"
+if out.exists():
+    raise SystemExit(f"refusing to overwrite {out}")
+bundle = load_bundle(bundle_dir)
+arms = {}
+for arm, path in (("A0", "config/metis_challenge/a0.yaml"), ("M3", "config/metis_challenge/m3.yaml")):
+    profile = load_profile(path)
+    bound = profile.__class__(**{**profile.__dict__, "objective": profile.objective.bind(bundle)})
+    resolved = json.loads(json.dumps(bound.resolved()))
+    arms[arm] = {"profile": path, "profile_sha256": sha256_file(Path(path)),
+                 "resolved_profile_sha256": hashlib.sha256(json.dumps(resolved, sort_keys=True).encode()).hexdigest(),
+                 "resolved_profile": resolved}
+env = environment_record()
+doc = {
+    "campaign": campaign.name,
+    "issue": "WHI-1449",
+    "stage": "S2 (M3 vs A0 per-chunk diagnostic) and S3 (work gate) on the tuning split; no M4/M4-off, no held-out",
+    "created_at_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+    "code": {k: env[k] for k in ("git_revision", "git_dirty", "git_diff_sha256")},
+    "bundle": {"path": str(bundle_dir), "bundle_id": bundle.bundle_id, "bundle_hash": bundle.bundle_hash,
+               "expected_bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+               "cases": len(bundle.cases),
+               "case_ids_sha256": hashlib.sha256("\n".join(c.case_id for c in bundle.cases).encode()).hexdigest()},
+    "arms": arms,
+    "plan": [
+        f"uv run python main.py run --bundle {bundle_dir} --profile config/metis_challenge/a0.yaml --strategies profile --results-dir {campaign}/runs-a0",
+        "(A0 must finish before M3 starts: sequential, never concurrent)",
+        f"uv run python main.py run --bundle {bundle_dir} --profile config/metis_challenge/m3.yaml --strategies profile --results-dir {campaign}/runs-m3",
+        f"uv run python tools/metis_challenge.py diagnose --bundle {bundle_dir} --profile config/metis_challenge/m3.yaml --reference-profile config/metis_challenge/a0.yaml --metis-run <A0/M3 run dirs> --reference-run <...> --chunk-records --output {campaign}/s2-diagnostic.json",
+        "S3: median M3 search.label_relaxations vs A0 search.paths_scored over the measured records (strict: M3 median < A0 median), statuses/truncation/missing explicit",
+    ],
+    "timing_validity_rule": "L01: 1-minute load > 5.0 (0.5 x 10 logical CPUs) contaminates timing; timing is secondary, S2/S3 are load-independent (exact gross, statuses, quotes, work counters)",
+    "prelaunch_load_samples_1min_5min_15min": loads,
+    "host": {k: env[k] for k in ("python_version", "python_implementation", "os", "os_release", "platform", "machine", "cpu_model", "cpu_count", "dependencies")},
+    "writer_script_sha256": sha256_file(Path(__file__)),
+}
+if doc["bundle"]["bundle_hash"] != doc["bundle"]["expected_bundle_hash"] or len(bundle.cases) != 96:
+    raise SystemExit("bundle identity mismatch")
+if doc["code"]["git_dirty"] is not False or doc["code"]["git_revision"] != "446674e80e66ad93834786e1493f223dc38de3eb":
+    raise SystemExit("code is not the frozen clean 446674e")
+out.write_text(json.dumps(doc, indent=1) + "\n")
+print(out, hashlib.sha256(out.read_bytes()).hexdigest())

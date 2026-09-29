@@ -1,0 +1,205 @@
+"""WHI-1449 held-out H-M1b analysis (memo §10.6), frozen before any held-out outcome exists.
+Computed exactly once from the original measured records; write-once output.
+
+usage: heldout_analysis.py <campaign dir> <bundle_report dir> <A0 run> <M4 run> [<context run>]
+
+Rules (registered in plan.json before the runs):
+- Denominators: all 302 scheduled cases per arm, every status kept. A last_valid_candidate is
+  never counted as ok. Paired verdict set = cases whose status is `ok` in BOTH A0 and M4.
+- Per paired case the RAW integer gross (runner's independent evaluation) decides:
+  win = M4 > A0, loss = M4 < A0, tie = equal. Ties are excluded from the sign test.
+- Exact two-sided binomial sign test, p = min(1, 2 * sum_{i<=min(w,l)} C(n,i) / 2^n),
+  n = w + l, computed with integers/Fractions. n == 0 -> p = 1.
+- Verdict: better if w > l and p < 0.05; worse if l > w and p < 0.05; else inconclusive.
+- Keep the variant only if S2 and S3 passed AND the verdict is better; otherwise drop /
+  inconclusive (S2 established and S3 met are read from the prior immutable artifacts).
+- bps = 10^4 * (M4 - A0) / A0 per paired case with A0 > 0 (A0 == 0: bps undefined, counted
+  as zero_baseline and excluded from bps statistics, never from win/loss). Reported overall
+  and per corpus stratum (case_metadata.stratum): n, mean, p50, p95 (floor-index percentile),
+  min, max, plus raw win/tie/loss counts per stratum.
+- Four-hop share: M4 wins whose FINAL plan is metis_inspired's incremental plan
+  (search.chosen_source == metis_inspired) with >= 1 chunk of 4 hops (search.chunk_path_hops);
+  a retained path_split/single_path/direct_split plan is never counted as a 4-hop route.
+- Context rows (optional run): per algorithm statuses and paired raw comparisons against A0
+  and M4 on cases ok in both; descriptive only, never part of the verdict.
+- Timing is secondary; contamination is judged by the L01 rule from load_samples.txt."""
+import hashlib, json, math, statistics, sys
+from fractions import Fraction
+from pathlib import Path
+from benchmark.results import load_case_records, load_manifest
+from snapshot.bundle import load_bundle, sha256_file
+
+SOURCE = "446674e80e66ad93834786e1493f223dc38de3eb"
+campaign, bundle_dir = Path(sys.argv[1]), Path(sys.argv[2])
+a0_dir, m4_dir = Path(sys.argv[3]), Path(sys.argv[4])
+ctx_dir = Path(sys.argv[5]) if len(sys.argv) > 5 else None
+out = campaign / "heldout-analysis.json"
+if out.exists():
+    raise SystemExit(f"refusing to overwrite {out}")
+plan = json.loads((campaign / "plan.json").read_text())
+bundle = load_bundle(bundle_dir)
+assert bundle.bundle_hash == plan["bundle"]["bundle_hash"] == "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0"
+ids = [c.case_id for c in bundle.cases]
+assert len(ids) == 302 == len(set(ids))
+meta = json.loads((bundle_dir / "corpus.json").read_text())["case_metadata"]
+
+def load(arm, d, algorithms):
+    m = load_manifest(d)  # strict: complete + cases checksum
+    problems = []
+    if m.bundle_hash != bundle.bundle_hash: problems.append("bundle")
+    if m.algorithms != tuple(algorithms): problems.append(f"algorithms {m.algorithms}")
+    if m.git_revision != SOURCE or m.git_dirty is not False: problems.append("source")
+    if m.resolved_profile != plan["arms"][arm]["resolved_profile"]: problems.append("effective settings")
+    if m.measurement.get("budget") != plan["arms"][arm]["resolved_profile"]["budget"]: problems.append("budget")
+    if m.scheduled_count != len(ids) * len(algorithms) or m.case_count != m.scheduled_count: problems.append("counts")
+    recs = load_case_records(d)
+    by = {}
+    for r in recs:
+        key = (r["algorithm"], r["case_id"])
+        if r["algorithm"] not in algorithms or r["case_id"] not in set(ids) or key in by:
+            problems.append(f"record {key}")
+        by[key] = r
+    if len(by) != len(ids) * len(algorithms): problems.append("coverage")
+    if problems:
+        raise SystemExit(f"{arm} {d}: {problems}")
+    return m, by
+
+def gross(r):
+    ev = r.get("evaluation") if r["status"] == "ok" else None
+    return int(ev["gross_output"]) if isinstance(ev, dict) else None
+
+def four_hop_final(r):
+    s = r.get("search") or {}
+    hops = s.get("chunk_path_hops") or {}
+    return r["status"] == "ok" and s.get("chosen_source") == "metis_inspired" and int(hops.get("4", 0)) > 0
+
+def dist(xs):
+    xs = sorted(xs)
+    if not xs:
+        return {"n": 0}
+    return {"n": len(xs), "mean": sum(xs) / len(xs), "p50": statistics.median(xs),
+            "p95": xs[int(0.95 * (len(xs) - 1))], "min": xs[0], "max": xs[-1]}
+
+def sign_test(w, l):
+    n = w + l
+    if n == 0:
+        return Fraction(1)
+    k = min(w, l)
+    tail = sum(math.comb(n, i) for i in range(k + 1))
+    return min(Fraction(1), Fraction(2 * tail, 2 ** n))
+
+def arm_summary(by, algorithm):
+    recs = [by[(algorithm, c)] for c in ids]
+    st = {}
+    for r in recs:
+        st[r["status"]] = st.get(r["status"], 0) + 1
+    src = {}
+    for r in recs:
+        s = str((r.get("search") or {}).get("chosen_source"))
+        src[s] = src.get(s, 0) + 1
+    return {"statuses": dict(sorted(st.items())),
+            "limit_hit": {k: sum(1 for r in recs if r.get("limit_hit") == k) for k in sorted({str(r.get("limit_hit")) for r in recs if r.get("limit_hit")})},
+            "declared_truncation": {k: sum(1 for r in recs if (r.get("search") or {}).get("truncated_by") == k) for k in sorted({str((r.get("search") or {}).get("truncated_by")) for r in recs if (r.get("search") or {}).get("truncated_by")})},
+            "last_valid_candidates_not_counted_ok": sum(1 for r in recs if r.get("last_valid_candidate")),
+            "accounting_matches_evaluation_true": sum(1 for r in recs if (r.get("search") or {}).get("accounting_matches_evaluation") is True),
+            "chosen_source": dict(sorted(src.items())),
+            "non_ok": [{"case_id": r["case_id"], "status": r["status"], "limit_hit": r.get("limit_hit"), "error": r.get("error")} for r in recs if r["status"] != "ok"],
+            "quotes_executed": dist([(r.get("search") or {}).get("quotes_executed") for r in recs if isinstance((r.get("search") or {}).get("quotes_executed"), int)]),
+            "solve_seconds_secondary": dist([r["measurement"]["solve_seconds"][0] for r in recs if (r.get("measurement") or {}).get("solve_seconds")])}
+
+m_a0, a0 = load("A0", a0_dir, ["incremental_graph"])
+m_m4, m4 = load("M4", m4_dir, ["metis_inspired"])
+rows, wins, losses, ties = [], 0, 0, 0
+strata = {}
+zero_baseline = 0
+win_4hop = 0
+for cid in ids:
+    r0, r4 = a0[("incremental_graph", cid)], m4[("metis_inspired", cid)]
+    g0, g4 = gross(r0), gross(r4)
+    stratum = meta.get(cid, {}).get("stratum", "unlabeled")
+    row = {"case_id": cid, "stratum": stratum, "a0_status": r0["status"], "m4_status": r4["status"],
+           "a0_gross": None if g0 is None else str(g0), "m4_gross": None if g4 is None else str(g4),
+           "a0_chosen_source": (r0.get("search") or {}).get("chosen_source"),
+           "m4_chosen_source": (r4.get("search") or {}).get("chosen_source"),
+           "m4_chunk_path_hops": (r4.get("search") or {}).get("chunk_path_hops"),
+           "m4_final_plan_4hop": four_hop_final(r4), "paired": g0 is not None and g4 is not None}
+    s = strata.setdefault(stratum, {"scheduled": 0, "paired": 0, "wins": 0, "ties": 0, "losses": 0, "zero_baseline": 0, "bps": []})
+    s["scheduled"] += 1
+    if row["paired"]:
+        s["paired"] += 1
+        outcome = "win" if g4 > g0 else "loss" if g4 < g0 else "tie"
+        row["outcome"] = outcome
+        if outcome == "win":
+            wins += 1; s["wins"] += 1
+            win_4hop += row["m4_final_plan_4hop"]
+        elif outcome == "loss":
+            losses += 1; s["losses"] += 1
+        else:
+            ties += 1; s["ties"] += 1
+        if g0 > 0:
+            bps = float(Fraction(10**4 * (g4 - g0), g0))
+            row["bps"] = bps
+            s["bps"].append(bps)
+        else:
+            row["bps"] = None
+            zero_baseline += 1; s["zero_baseline"] += 1
+    rows.append(row)
+p = sign_test(wins, losses)
+alpha = Fraction(1, 20)
+verdict = "better" if wins > losses and p < alpha else "worse" if losses > wins and p < alpha else "inconclusive"
+prior = plan["prior_gates"]
+keep = prior["s2_established"] and prior["s3_met"] and verdict == "better"
+all_bps = [r["bps"] for r in rows if r.get("bps") is not None]
+doc = {
+    "analysis": "WHI-1449 H-M1b held-out verdict, computed once (script frozen in plan.json before the runs)",
+    "plan_sha256": sha256_file(campaign / "plan.json"),
+    "bundle": {"bundle_hash": bundle.bundle_hash, "cases": len(ids)},
+    "runs": {name: {"run_id": m.run_id, "manifest_sha256": sha256_file(Path(m.run_dir) / "manifest.json"),
+                    "cases_sha256": m.cases_sha256, "status_counts": m.status_counts, "git_revision": m.git_revision,
+                    "git_dirty": m.git_dirty, "created_at": m.created_at, "finished_at": m.finished_at,
+                    "total_seconds": m.timing.get("total_seconds")} for name, m in (("A0", m_a0), ("M4", m_m4))},
+    "arms": {"A0": arm_summary(a0, "incremental_graph"), "M4": arm_summary(m4, "metis_inspired")},
+    "paired_ok_cases": wins + losses + ties,
+    "excluded_from_pairing": [r["case_id"] for r in rows if not r["paired"]],
+    "wins": wins, "losses": losses, "ties": ties,
+    "sign_test": {"n": wins + losses, "k": min(wins, losses), "p_two_sided": str(p), "p_float": float(p), "alpha": "1/20"},
+    "verdict": verdict,
+    "prior_gates": prior,
+    "keep": keep,
+    "decision": "keep" if keep else ("drop" if verdict == "worse" else "inconclusive" if verdict == "inconclusive" else "drop"),
+    "zero_baseline_paired_cases": zero_baseline,
+    "bps_overall": dist(all_bps),
+    "per_stratum": {k: {**{kk: v for kk, v in s.items() if kk != "bps"}, "bps": dist(s["bps"])} for k, s in sorted(strata.items())},
+    "m4_wins_with_final_4hop_plan": win_4hop,
+    "m4_wins_4hop_share": None if not wins else win_4hop / wins,
+    "m4_final_plans_with_4hop_chunk": sum(1 for r in rows if r["m4_final_plan_4hop"]),
+    "per_case": rows,
+}
+if ctx_dir is not None:
+    algos = plan["context"]["algorithms"]
+    m_ctx, ctx = load("context", ctx_dir, algos)
+    doc["runs"]["context"] = {"run_id": m_ctx.run_id, "manifest_sha256": sha256_file(Path(m_ctx.run_dir) / "manifest.json"),
+                              "cases_sha256": m_ctx.cases_sha256, "status_counts": m_ctx.status_counts,
+                              "git_revision": m_ctx.git_revision, "git_dirty": m_ctx.git_dirty,
+                              "created_at": m_ctx.created_at, "finished_at": m_ctx.finished_at,
+                              "total_seconds": m_ctx.timing.get("total_seconds")}
+    context = {}
+    for algo in algos:
+        summ = arm_summary(ctx, algo)
+        cmp = {}
+        for ref_name, ref, ref_algo in (("A0", a0, "incremental_graph"), ("M4", m4, "metis_inspired")):
+            w = l = t = 0
+            for cid in ids:
+                gc, gr = gross(ctx[(algo, cid)]), gross(ref[(ref_algo, cid)])
+                if gc is None or gr is None:
+                    continue
+                w, l, t = w + (gr > gc), l + (gr < gc), t + (gr == gc)
+            cmp[f"{ref_name}_vs_{algo}"] = {"paired_ok": w + l + t, f"{ref_name}_higher": w, f"{ref_name}_lower": l, "equal": t}
+        context[algo] = {**summ, "paired": cmp}
+    doc["context"] = {"scope": plan["context"]["scope"], "algorithms": context}
+out.write_text(json.dumps(doc, indent=1) + "\n")
+out.chmod(0o444)
+print(json.dumps({k: doc[k] for k in ("paired_ok_cases", "wins", "losses", "ties", "sign_test", "verdict", "keep", "decision",
+                                      "zero_baseline_paired_cases", "bps_overall", "m4_wins_with_final_4hop_plan", "m4_final_plans_with_4hop_chunk")}, indent=1))
+print(json.dumps({a: {k: v for k, v in s.items() if k in ("statuses", "limit_hit", "declared_truncation", "last_valid_candidates_not_counted_ok", "chosen_source")} for a, s in doc["arms"].items()}))
+print(out, hashlib.sha256(out.read_bytes()).hexdigest())
