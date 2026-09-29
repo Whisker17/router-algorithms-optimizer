@@ -7,7 +7,10 @@ ordinary CLI compares. It covers:
   `incremental_graph`, `uni_sor_port`), which are the references;
 - the two **named optimized strategies** (`uni_sor_adaptive`, `uni_sor_optimized`). These are
   frozen, experimental recipes of the opt-in `uni_sor_fast` heuristic over the `uni_sor_port`
-  core ([`strategy-groups.md`](strategy-groups.md)).
+  core ([`strategy-groups.md`](strategy-groups.md));
+- the **experimental** `metis_inspired` (WHI-1449), a Metis-inspired Python variant of
+  `incremental_graph` (**NOT Jupiter Metis**). The CLI runs it in the *Experimental and other
+  strategies* group.
 
 For each strategy it describes the mathematical foundations, search mechanics, state management
 and practical trade-offs against frozen Mantle liquidity snapshots. To compare them on a single
@@ -17,8 +20,9 @@ Inspected source commits:
 
 - Sections 2–7: `b2a680578f65ac65653a8160f04a3d97a5c5e71e` (Release 0.1.1). The
   `incremental_graph` line references were refreshed at `c5b5636`.
-- Sections 8–9 and the eight-strategy rows of Sections 10–12:
-  `c5b56369155b4beddef8de4df64e63dd0118662c`.
+- Sections 8–9: `c5b56369155b4beddef8de4df64e63dd0118662c`.
+- Section 10 and the nine-strategy rows of Sections 11–13:
+  `391f5e380f151a0ad23cb9d90c23dd12e5d9a639` (WHI-1540 merged).
 
 All numeric traces and intermediate transitions are verified offline by
 `tests/docs/test_routing_algorithm_examples.py` and can be run via
@@ -57,9 +61,10 @@ subject to:
 - **Section 7:** `uni_sor_port` — Upstream Uniswap SOR V2/V3 parity core, amount distribution, BFS seed queues, and adapter fill.
 - **Section 8:** `uni_sor_adaptive` (optimized, recipe H3) — Coarse-to-fine percentage sampling over the unchanged SOR core, validated anytime incumbent.
 - **Section 9:** `uni_sor_optimized` (optimized, recipe H4) — Amount-aware 5 % / 100 % route shortlist, the same sampling, and the exact L02–L04 quote controls.
-- **Section 10:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044).
-- **Section 11:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map.
-- **Section 12:** Operational Boundaries, Limitations, and Known Debt.
+- **Section 10:** `metis_inspired` (experimental, NOT Jupiter Metis) — Hop-layered, quote-driven label search replacing `incremental_graph`'s per-chunk path enumeration.
+- **Section 11:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044).
+- **Section 12:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map.
+- **Section 13:** Operational Boundaries, Limitations, and Known Debt.
 
 ### 1.3 Terminology and Symbol Table
 
@@ -140,7 +145,7 @@ the reserve of token $T_{\text{out}}$. When an input $\Delta x$ is provided:
 
 *Note:* This integer formula governs Uniswap V2 and Merchant Moe Classic (`moe_classic_v1`).
 Concentrated Liquidity (CL) and Liquidity Book (LB) use tick bitmaps and bin discrete trees,
-which are evaluated in Section 10 via their exact protocol simulators.
+which are evaluated in Section 11 via their exact protocol simulators.
 
 ---
 
@@ -1152,7 +1157,7 @@ $A = 10\,000$ TKA $\to$ TKB, $H = 2$, $S = 2$, $\delta = 5$ ($G = 20$).
   quotes for non-grid D-1 remainders.
   - Sampled entries are a subset of the reference table. Several incumbents may be replayed,
     though, so the evidence counts quotes against the reference per case and assumes no bound.
-  - Measured: 66 vs 120 on the teaching graph; 12 vs 40 on the fixed-block request of §10;
+  - Measured: 66 vs 120 on the teaching graph; 12 vs 40 on the fixed-block request of §11;
     **0.467 ×** the reference's quotes over the L08 matrix.
 - **CPU:** One SOR-core combination per round (at most $G$ rounds), each over
   $\lvert L \rvert \cdot \lvert S_k \rvert$ entries. Add one evaluator replay per new distinct
@@ -1392,7 +1397,7 @@ flowchart TD
   at most 16 shortlisted routes, plus replay quotes. The probe cost is the only term that grows
   with $\lvert \Pi \rvert$.
   - With a fallback, the full-table work is added and charged.
-  - Measured: 66 vs 120 (teaching graph), 119 vs 200 (wide graph), 12 vs 40 (§10) and
+  - Measured: 66 vs 120 (teaching graph), 119 vs 200 (wide graph), 12 vs 40 (§11) and
     **0.152 ×** the reference's quotes over the L08 matrix.
 - **Per-quote work:** L02–L04 remove executed CL iterations, tick/bin price computations and
   repeated full steps. On the WHI-1504 L01 records, L02 alone executed 6.26 M of 36.00 M logical
@@ -1426,10 +1431,312 @@ flowchart TD
 
 ---
 
-## 10. Real-State Fixed-Block Walkthrough (Block 101082044)
+## 10. Algorithm 9: `metis_inspired` (Experimental Hop-Layered Label Search per Chunk)
 
-To demonstrate how these strategies behave on real blockchain liquidity, we execute all eight
-strategies (six base, two optimized) against the verified frozen Mantle snapshot
+### 10.1 Problem and Inclusion Rationale
+For every chunk, `incremental_graph` scores **every** enumerated cycle-free path. That number
+grows roughly as the product of the parallel-pool counts along each hop, so deep hop bounds
+become expensive. Jupiter's archived Metis post (J1) describes a "heavily modified"
+Bellman-Ford variant that combines route generation and quoting. It does not describe the
+modifications, and no Metis routing source is public.
+
+`metis_inspired` tests one narrow, falsifiable hypothesis, H-M1
+([`jupiter-metis-challenge.md`](jupiter-metis-challenge.md) §9). The hypothesis: keep
+`incremental_graph` exactly, and replace only its per-chunk path choice with a **hop-layered,
+quote-driven label search** in the textbook Bellman-Ford shape (W1).
+
+- **Identity:** It is an experimental Python variant, **NOT Jupiter Metis**. It carries no
+  production-equivalence, global-optimality or source-parity claim. Every label rule below is
+  this repository's inference (*[inferred]* in the contract), not a Metis fact.
+- **Group:** In the CLI it is in the *Experimental and other strategies* group (WHI-1540). It is
+  neither a seventh base reference nor an SOR optimization
+  ([`strategy-groups.md`](strategy-groups.md)).
+- **Recorded verdict (WHI-1449):** **keep, experimental opt-in**. It is not a default
+  ([`metis-challenge-results.md`](metis-challenge-results.md)).
+
+| Setting (`graph.*`, explicit, no default) | Meaning |
+|---|---|
+| `chunks` | Chunk count $K$, exactly as in `incremental_graph` |
+| `label_hops` | Label-layer depth $H_L \ge$ `search.max_hops`; only the chunk search uses it |
+| `label_pruning` | `true` = label search; `false` = the disabled-mechanism ablation (`incremental_graph`'s own per-chunk enumeration at $H_L$ hops) |
+
+There is no k-best label count and no other knob.
+
+### 10.2 Mathematical Model and Assumptions
+Everything outside the per-chunk choice is §6.2 unchanged:
+
+- integer chunks $\Delta_k$ with carry;
+- aggregate accounting $f_p(x_p + d) - f_p(x_p)$ on the pools' original states;
+- atomic `creates_cycle` admission;
+- one merged `SwapStep` per pool;
+- the independent evaluator replay;
+- the retained simpler `path_split` candidate at `search.max_hops`, which is kept unless the
+  incremental plan scores strictly better.
+
+**Edge marginal.** With committed flows $x_e$ and $f_e(x_e)$, one edge of a chunk that carries
+$m$ units of its input token has the marginal
+$$g_e(m) = f_e(x_e + m) - f_e(x_e).$$
+A zero $m$ makes no pool call. A failing or partial quote, or an output below the committed
+one (`nonmonotone`), yields no label and is counted.
+
+**Labels.** $L_k[t] = (a, \pi)$ is the one label per token $t$ reached in **exactly** $k$ hops.
+It holds the largest chunk marginal $a$ found at $t$ and its path $\pi$.
+
+- Initialization: $L_0 = \{S : (\Delta, ())\}$, where $\Delta$ is the chunk amount including
+  carry.
+- Relaxation of layer $k$ from layer $k-1$ only (never in place): for every label $(a, \pi)$
+  at $t \in L_{k-1}$, in token insertion order, and every edge $e = (t \to v)$, in the bundle's
+  adjacency order, the candidate label is
+  $$(g_e(a),\ \pi \cdot e).$$
+- A candidate is skipped **before** its quote when any of these holds:
+  - $v = S$ (never back to the source);
+  - $v \in \text{tokens}(\pi)$ (token-simple; counted as `label_skipped_revisit`);
+  - $v \ne D$ and $\text{dist}(v) > H_L - k$ (target out of reach; `label_pruned_distance`);
+  - `creates_cycle(committed token edges, \pi \cdot e)` (atomic over the prefix;
+    `label_rejected_cycle`).
+- $\text{dist}(v)$ is the breadth-first pool-hop distance to $D$ on the graph without edges into
+  $S$ or out of $D$. It is a lower bound on every token-simple completion, so this prune is
+  exact: it removes only prefixes that no enumerated path extends.
+- **Dominance (strict):** $L_k[v]$ is replaced only if the new marginal is **strictly** larger.
+  On a tie, the label found first is kept. A relaxation into $D$ competes, strictly, for the
+  chunk's choice. The target is never expanded further.
+
+**Why it usually agrees with enumeration** (§9.3 of the contract, checked empirically by gate
+S2).
+
+- With the committed state fixed, $g_e(m)$ is nondecreasing in $m$ for exact-input AMMs.
+- A larger amount at $t$ therefore does at least as well on every admissible, non-failing
+  continuation from $t$.
+- For $H_L \le 3$, token-simple pruning can never remove a needed continuation. Every
+  relaxation is a prefix that `incremental_graph` also quotes at the same amount, so the label
+  search's quotes are a subset of the reference's.
+
+**Divergence classes** (a chunk choice can differ from exhaustive enumeration only by):
+
+1. **tie** — several paths share the maximal marginal, and the orders differ;
+2. **non-downward-closed quote failure** — the maximal label's larger amount makes a later edge
+   fail, while a dominated smaller amount would succeed;
+3. **budget order** — `max_quotes` / `max_candidates` truncate at a different point;
+4. **token-revisit pruning**, $H_L \ge 4$ only — the best prefix to $v$ visits a token that the
+   best continuation needs (§10.5 step 8);
+5. **prefix-dependent admission** (4b), $H_L \ge 4$ only — the best prefix's token edges close a
+   committed cycle on a continuation that a dominated prefix could take.
+
+### 10.3 Concise Pseudocode
+```python
+def solve_metis_inspired(case, bundle, max_hops, label_hops, label_pruning, chunks_K, cache):
+    retained = solve_path_split(..., max_hops=max_hops)       # simpler candidate, unchanged
+    dist = hops_to_target(index, case.token_in, case.token_out)  # structural BFS, exact prune
+    flows, token_edges, carry = {}, set(), 0
+    for k, chunk in enumerate(chunk_amounts(case.amount_in, chunks_K)):
+        if chunk == 0:
+            continue
+        amount = carry + chunk
+        choice = (choose_labels(amount, label_hops, dist) if label_pruning
+                  else choose_enumeration(amount, enumerate_paths(..., label_hops)))
+        ...                                                    # carry / commit / abandon: §6.3
+    return select_best(retained, evaluate(merged_plan(case, flows)))
+
+def choose_labels(amount, H, dist):
+    layers, best = [{S: Label(amount, path=(), tokens={S})}], None
+    for k in range(1, H + 1):
+        layer = {}
+        for t, lab in layers[k - 1].items():               # insertion order
+            for e in index.edges_from(t):                  # adjacency order
+                v = e.token_out
+                if v == S:                          continue
+                if v != D and dist.get(v, H + 1) > H - k:  continue   # label_pruned_distance
+                if v in lab.tokens:                 continue           # label_skipped_revisit
+                p = lab.path + (e,)
+                if creates_cycle(token_edges, p):   continue           # label_rejected_cycle
+                result = marginal_edge(e, lab.amount)                  # one guarded quote
+                if result is FAILED:                continue           # counted failure
+                m, update = result
+                if v == D:
+                    if best is None or m > best.marginal:              # strict
+                        best = (m, p, lab.updates + [update])
+                elif v not in layer or m > layer[v].amount:           # strict dominance
+                    layer[v] = Label(m, p, lab.updates + [update], lab.tokens | {v})
+        layers.append(layer)
+    return best
+```
+
+### 10.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart TD
+    subgraph Per-Chunk Label Search
+        L0([Layer 0: TKA = 1000]) -->|P_AC 1974| C1[Layer 1: TKC 1974]
+        L0 -->|P_AD 1480| D1[Layer 1: TKD 1480]
+        L0 -->|P_AB1 987 / P_AB2 892| T1{{Target candidates}}
+        C1 -->|P_CB 1461| T1
+        C1 -->|P_CD 1930| D2[Layer 2: TKD 1930]
+        D1 -->|P_DB 1168| T1
+        D1 -->|P_CD 1454| C2[Layer 2: TKC 1454]
+        D2 -->|P_DB 1519| T1
+        C2 -->|P_CB 1079| T1
+        D2 -. P_CD: dist prune .-> X1[skipped]
+        C2 -. P_CD: dist prune .-> X1
+        T1 --> Best([Chunk choice: TKA-TKC-TKD-TKB, 1519])
+    end
+```
+
+### 10.5 Hand-Worked Numeric Example
+The example uses the teaching graph of §6.5: $A = 10\,000$ TKA $\to$ TKB, $K = 10$ chunks of
+$1\,000$, `search.max_hops` 3, `label_hops` 3, `label_pruning` true.
+
+1. **Structural distances:** `dist` = {TKB: 0, TKC: 1, TKD: 1}.
+2. **Chunk 1, layer 1:** 4 relaxations from TKA, each quoting $1\,000$ TKA.
+   - `P_AC`:
+     $$\Delta x_{\text{fee}} = 1000 \cdot 9970 = 9\,970\,000$$
+     $$\Delta y = \lfloor 9\,970\,000 \cdot 200\,000 / (10^9 + 9\,970\,000) \rfloor = \lfloor 1\,994\,000\,000\,000 / 1\,009\,970\,000 \rfloor = 1974$$
+   - The layer holds TKC = 1974 (`P_AC`) and TKD = 1480 (`P_AD`).
+   - The target candidates are `P_AB1` 987 and `P_AB2` 892.
+3. **Chunk 1, layer 2:** 4 relaxations.
+   - From TKC 1974:
+     - `P_CB` $\to$ TKB = 1461;
+     - `P_CD` $\to$ TKD:
+       $$\lfloor 19\,680\,780 \cdot 100\,000 / (10^9 + 19\,680\,780) \rfloor = \lfloor 1\,968\,078\,000\,000 / 1\,019\,680\,780 \rfloor = 1930$$
+   - From TKD 1480:
+     - `P_DB` $\to$ TKB = 1168;
+     - `P_CD` $\to$ TKC = 1454.
+   - The layer holds TKD = 1930 (via TKC) and TKC = 1454 (via TKD). These are layer-2 labels.
+     They do not compete with the layer-1 labels of the same tokens.
+4. **Chunk 1, layer 3:** Only edges into TKB survive. `P_CD` out of either label has
+   $\text{dist} = 1 > 3 - 3$, so both are distance-pruned (2 skips).
+   - TKD 1930 $\to$ `P_DB`:
+     $$\lfloor 19\,242\,100 \cdot 120\,000 / (1.5 \cdot 10^9 + 19\,242\,100) \rfloor = \lfloor 2\,309\,052\,000\,000 / 1\,519\,242\,100 \rfloor = \mathbf{1519}$$
+   - TKC 1454 $\to$ `P_CB` = 1079.
+   - The chunk choice is the maximum over the six target candidates
+     $\{987, 892, 1461, 1168, 1519, 1079\}$: `TKA -[P_AC]-> TKC -[P_CD]-> TKD -[P_DB]-> TKB`,
+     marginal **1519**. This is exactly `incremental_graph`'s chunk-1 choice.
+   - Work: **10 relaxations** ($4 + 4 + 2$) vs **6 enumerated paths**, both with 10 executed
+     quotes.
+5. **Remaining chunks and the plan:**
+   - Later chunks see the committed aggregates. For example, chunk 2's best marginal is
+     `P_AC -> P_CB` at 1433.
+   - The chunk sequence is `[0, 1, 1, 0, 1, 1, 1, 0, 1, 1]`, identical to §6.5.
+   - The merged plan is also identical: `P_AC` 10000 $\to$ 18132, then 5562 / 12570 split at TKC,
+     for $\mathbf{12892}$ TKB.
+   - The S2 diagnostic classifies all 10 chunks as `agree`, with 0 quote-subset violations.
+   - Totals are 82 relaxations (9 cycle-rejected, 11 distance-pruned) vs `incremental_graph`'s
+     51 scored paths, and 128 quotes on both sides.
+   - **On this 4-token graph the label search does not save anything.** The two work units
+     differ (relaxations vs paths) and are never compared as the same unit.
+6. **Where it saves work: parallel pools (fixture X1).**
+   - Setup: $k = 3$ parallel CPMM pools on every hop of S–B–C–D, plus one shallow S–D pool;
+     10 chunks, $H_L = 3$.
+   - Per chunk, the label search relaxes $3k + 1 = 10$ edges: $k$ S→B plus the direct pool,
+     $k$ B→C, and $k$ C→D. It distance-prunes the $k$ C→B edges.
+   - Enumeration scores $k^3 + 1 = 28$ paths per chunk.
+   - Totals: 100 relaxations vs 280 paths, and 848 vs 1011 quotes. Plan and gross are identical
+     (9692524563).
+7. **Where it gains: a 4-hop-only route (fixture X3).**
+   - Setup: deep 5 bps pools only along S–B–C–E–D, plus a shallow direct S–D pool;
+     $A = 10^{10}$, 1 chunk.
+   - `incremental_graph` at 3 hops can use only the direct pool: 4992488733.
+   - `metis_inspired` with `label_hops` 4 takes the 4-hop path:
+     $10^{10} \to 9994900100 \to 9989802852 \to 9984708255 \to \mathbf{9979616307}$.
+   - The embedded `path_split` candidate stays at `search.max_hops` 3.
+8. **Where it loses: token-revisit pruning (fixture X4, $H_L = 4$).**
+   - Setup: $A = 10^9$. The best 2-hop label at X runs S–Y–X ($19\,979\,965\,070$), which
+     dominates S–A–X ($9\,989\,982\,535$).
+   - The best 4-hop path S–A–X–Y–D needs X→Y, and the dominant label already visits Y.
+   - The label search skips it (`label_skipped_revisit` 2) and returns the 2-hop S–Y–D:
+     $998\,998\,253$.
+   - The ablation (`label_pruning: false`) finds $\mathbf{1\,995\,991\,039}$, a loss of
+     **4994.98 bps** on this constructed case.
+   - This heuristic limit is accepted, not repaired. A k-best label list would repair it, but it
+     would be an unsourced extra parameter.
+
+### 10.6 Implementation Map
+- File: `routing/algorithms/metis_inspired.py`
+- Settings: `GRAPH_PARAMS` (line 115); `prepare(bundle, config)` (line 206) validates the explicit
+  bool / integer settings and `label_hops >= search.max_hops`.
+- Structural prune: `hops_to_target(index, source, target)` (line 229).
+- Label record: `Label` (line 269).
+- Chunk choosers: `_Allocator` (line 283).
+  - `step` (line 312) is the edge marginal rule.
+  - `choose_enumeration` (line 356) is the ablation.
+  - `choose_labels` (lines 382–427) is the mechanism.
+  - `commit` (line 429).
+- Solver: `solve(case, context, budget)` (lines 446–658).
+- S2 diagnostic: `diagnose_case(case, bundle, prepared)` (line 721) and `_attribute` (line 682).
+  This is a separate correctness pass; `solve` never calls it.
+- CLI settings under `--strategies all`: `benchmark/strategies.py` `metis_graph_settings`
+  (line 142). It reads the sha256-pinned `config/metis_challenge/m4.yaml`.
+- Contract and results: [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md) §§9–10 and
+  [`metis-challenge-results.md`](metis-challenge-results.md). Fixtures X1–X7 and X4b are in
+  `tests/routing/test_metis_inspired.py`.
+
+### 10.7 Parameters, Budgets, and Ties
+- **Parameters:** `search.max_hops`, `search.max_splits` and `search.percent_step` (for the
+  retained `path_split`), plus `graph.chunks`, `graph.label_hops` and `graph.label_pruning`.
+  - Under `--strategies all`, a value the source profile declares wins.
+  - Undeclared values come from the registered arm M4: `label_hops` 4, `label_pruning` true,
+    and `chunks` 50 only if the source has none.
+  - `config/daily_gross.yaml` therefore runs `metis_inspired` at 4 label hops while the others
+    search at most 2 hops. The report prints this different hop domain.
+  - A source with `search.max_hops` > 4 and no `label_hops` is refused, not lowered.
+- **Budgets:**
+  - `max_quotes` is checked before the meter. A cut is declared truncation and yields
+    `timeout` when no valid route exists, never `no_route`.
+  - In label mode, `Budget.max_candidates` caps **relaxations per chunk** (a declared unit
+    change). In ablation mode it caps paths per chunk.
+- **Ties:** Dominance and the target choice are strict, so the earlier label wins. Tokens
+  expand in insertion order and edges in adjacency order, which is deterministic across
+  processes. The final plan is kept only if it scores strictly better than the retained
+  simpler candidate.
+- **Ablation identity (X7):** With `label_pruning: false` and `label_hops == search.max_hops`,
+  the whole solve equals `incremental_graph`: plan, evaluation, statuses and every logical
+  counter.
+
+### 10.8 Computational and Memory Cost
+- **Relaxations per chunk:**
+  $$\sum_{k=1}^{H_L} \sum_{t \in L_{k-1}} \deg^{+}(t) \quad \text{(minus skips)}$$
+  Each layer holds at most one label per token, so this is bounded by
+  $H_L \cdot \lvert T \rvert \cdot \deg_{\max}$. Enumeration's $\lvert \Pi_{H_L} \rvert$ can grow
+  exponentially with $H_L$.
+- **Quotes:** $\text{Quotes}(\text{path\_split})$ plus at most one quote per relaxation, through
+  the shared `QuoteCache`.
+- **Measured (WHI-1449 tuning split, 96 cases, different units):**
+
+  | Arm | Work unit | Median work | Median quotes | Max solve (s) |
+  |---|---|---|---|---|
+  | A0 (`incremental_graph`, 3 hops) | `paths_scored` | 218,591 | 27,175.5 | 51.8 |
+  | M3 (label, 3 hops) | `label_relaxations` | 9,229.5 | 17,491.5 | — |
+  | M4 (label, 4 hops) | `label_relaxations` | 13,080.5 | 19,945 | 20.0 |
+  | M4-off (enumeration, 4 hops) | `paths_scored` | 1,778,207.5 | 116,745 | 270.9 |
+
+  M3 did less work than A0 on 96/96 cases and executed at most as many quotes on 96/96.
+- **Memory:** $H_L + 1$ layers of at most $\lvert T \rvert$ labels. Each label stores its path and
+  pool-flow updates, so the size is $\mathcal{O}(H_L^2 \cdot \lvert T \rvert)$. The committed flows
+  are $\mathcal{O}(P)$ and chunk allocations $\mathcal{O}(K)$. There is no path list in label mode.
+
+### 10.9 Guarantees and Limitations
+- **Guarantees:**
+  - Every plan is protocol-exact, merged per pool, independently replayed and fully filled.
+  - It is never worse than the retained `path_split` candidate on objective score.
+  - For $H_L \le 3$, every relaxation is a prefix the reference quotes. S2 found 0 unexplained
+    chunks (4,588 agree, 212 tie over 4,800 chunks).
+- **Limitations:**
+  - It is a greedy chunk heuristic, like §6.
+  - For $H_L \ge 4$, token-revisit and prefix-admission losses are accepted (§10.5 step 8;
+    fixture X4b).
+  - A non-downward-closed quote failure can hide a path that enumeration finds (fixture X2).
+  - The recorded held-out effect is small: 132 wins, 48 losses and 121 ties over 301 paired
+    cases (p = 2.93 × 10⁻¹⁰), paired median 0 bps, mean +1.41 bps. It is gross-only and comes
+    from one block.
+  - That comparison changed the mechanism and the hop bound together, so the gain is not
+    attributed to the label mechanism alone. The unpruned 4-hop search also finished (S4), so
+    pruning is not what made 4 hops tractable.
+
+---
+
+## 11. Real-State Fixed-Block Walkthrough (Block 101082044)
+
+To demonstrate how these strategies behave on real blockchain liquidity, we execute all nine
+strategies (six base, two optimized, one experimental) against the verified frozen Mantle snapshot
 `mantle-5src-101082044-091b0759-fixture`:
 - **Parent Bundle:** `mantle-5src-101082044-091b0759-fixture`
 - **Bundle Hash:** `5401b1de8c83a3527e5f9b5afae4510a760f171f2b306d49dbb5c830256c9ad0`
@@ -1448,13 +1755,17 @@ strategies (six base, two optimized) against the verified frozen Mantle snapshot
     --token-in USDC --token-out USDT0 --amount 10000 --details
   ```
   `--strategies all` is the default. It runs the profile's six base strategies, then
-  `uni_sor_adaptive` and `uni_sor_optimized`, each in its own isolated worker.
-  `--strategies base` reproduces the six-row table.
+  `uni_sor_adaptive` and `uni_sor_optimized`, then `metis_inspired`, each in its own isolated
+  worker. `--strategies base` reproduces the six-row table.
+- **`metis_inspired` settings:** the profile's `search.*`, budget and `graph.chunks: 200`, plus
+  `label_hops: 4` and `label_pruning: true` from the pinned arm `config/metis_challenge/m4.yaml`.
+  Its chunk search therefore reaches 4 hops while the others search at most 2. This is a
+  different hop domain, and it is not the frozen WHI-1449 M4 arm.
 
 *Classification:* This is an **exploratory single request** evaluated on a checked-in 19-pool fixture
 subset, not a held-out corpus result.
 
-### 10.1 Summary Comparison Table
+### 11.1 Summary Comparison Table
 
 | Algorithm | Status | Evaluated Gross (USDT0) | Gross Raw Units | Quotes Counted | Trace Characteristics |
 |---|---|---|---|---|---|
@@ -1466,8 +1777,9 @@ subset, not a held-out corpus result.
 | `uni_sor_port` | `ok` | 10000.660449 | 10000660449 | 40 | 100% Agni V3 (LB pool excluded) |
 | `uni_sor_adaptive` | `ok` | 10000.660449 | 10000660449 | **12** | 100% Agni V3 (6 of 20 percents sampled) |
 | `uni_sor_optimized` | `ok` | 10000.660449 | 10000660449 | **12** | 100% Agni V3 (L02–L04 installed; result unchanged) |
+| `metis_inspired` | `ok` | **10000.663447** | **10000663447** | 264 | **99.5% Agni V3 + 0.5% Moe LB** (same plan as `incremental_graph`) |
 
-### 10.2 Execution Order and Fund Ledger Trace
+### 11.2 Execution Order and Fund Ledger Trace
 
 #### The Baseline Plan (`direct`, `single_path`, `direct_split`, `path_split`, `uni_sor_port`, `uni_sor_adaptive`, `uni_sor_optimized`)
 ```
@@ -1480,7 +1792,7 @@ Terminal Total: 10000660449 raw
 Residuals: None. Reconciled exactly.
 ```
 
-#### The Incremental Split Plan (`incremental_graph`)
+#### The Incremental Split Plan (`incremental_graph`, `metis_inspired`)
 ```
 Step 0: agni_v3 pool 0x36f66548cda219c6fc037037cee063b9f28b13ef
   Input:     REQUEST 9950000000 raw (99.5% = 9,950 USDC)
@@ -1492,7 +1804,7 @@ Terminal Total: 9950659893 + 50003554 = 10000663447 raw
 Residuals: None. Reconciled exactly.
 ```
 
-### 10.3 Analysis of Real-World Behavior
+### 11.3 Analysis of Real-World Behavior
 1. **Marginal Exploitation:** `incremental_graph` identified that Merchant Moe Liquidity Book pool
    `0x368b...` possessed an extremely favorable active bin exchange rate for the first $50$ USDC,
    capturing a marginal gain of $+2998$ raw base units ($+0.003\text{ bps}$, calculated as
@@ -1520,28 +1832,41 @@ Residuals: None. Reconciled exactly.
    - The controls leave the result, quotes and trace unchanged. Their saving grows with deep
      tick traversals, such as the large L08 sentinel (sentinel cold charge, contaminated:
      `uni_sor_fast` H2 0.64 s vs H4 0.27 s).
+5. **Label Search Degenerates to a Direct Choice Here:** In this fixture, USDC's only 4 pools all
+   lead directly to USDT0.
+   - Every chunk relaxes exactly those 4 edges and nothing else: 800 relaxations over 200 chunks,
+     with 0 distance, revisit or cycle skips.
+   - One of the four edges fails every chunk (`insufficient_liquidity`, 200 counted failures).
+   - All 200 committed chunk paths are 1-hop (`chunk_path_hops` = {"1": 200}): 199 chunks go to
+     Agni V3 and 1 goes to the Moe LB pool.
+   - The merged plan, gross and 264 quotes are identical to `incremental_graph`'s, and the plan
+     beats the retained `path_split` candidate (10000660449).
+   - The 4-hop label depth has nothing to reach on this request, so it neither helps nor costs
+     here.
 
 ---
 
-## 11. Algorithmic Comparison Matrix, Complexity, and Reading Map
+## 12. Algorithmic Comparison Matrix, Complexity, and Reading Map
 
-### 11.1 High-Level Comparison Matrix
+### 12.1 High-Level Comparison Matrix
 
 The two optimized strategies share `uni_sor_port`'s scope (multi-hop $\le H$, splits $\le S$,
-no shared pools, CPMM + CL only). They differ only in how the quote table is built:
+no shared pools, CPMM + CL only). They differ only in how the quote table is built.
+`metis_inspired` shares `incremental_graph`'s scope and changes only the per-chunk path choice.
+Its chunk search uses its own depth $H_L$ (`graph.label_hops`).
 
-| Property | `direct` | `single_path` | `direct_split` | `path_split` | `incremental_graph` | `uni_sor_port` | `uni_sor_adaptive` | `uni_sor_optimized` |
-|---|---|---|---|---|---|---|---|---|
-| **Multi-Hop Support** | No | Yes ($\le H$) | No | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) |
-| **Split Support** | No | No | Yes ($\le S$) | Yes ($\le S$) | Yes ($\le K$) | Yes ($\le S$) | Yes ($\le S$) | Yes ($\le S$) |
-| **Shared Intermediate Pools** | N/A | N/A | No | No | **Yes** | No | No | No |
-| **Supported Protocols** | All 5 | All 5 | All 5 | All 5 | All 5 | CPMM + CL only (No LB) | CPMM + CL only (No LB) | CPMM + CL only (No LB) |
-| **Search Mechanism** | Exhaustive scan | Hop-major bounded DFS | Exact Grid DP | Knapsack Branch & Bound | Greedy marginal chunks | FIFO layer priority queue | SOR core on a coarse-to-fine sampled table | 5 % / 100 % route shortlist + sampled SOR core |
-| **Optimality Scope** | Best evaluated | Best evaluated | Best on grid | Best disjoint grid | Local heuristic | Local heuristic | Local fixed point (approximates `uni_sor_port`) | Shortlist + local fixed point (approximates `uni_sor_port`) |
-| **Group / Default** | Base | Base | Base | Base | Base | Base (parity reference) | Optimized, experimental, opt-in | Optimized, experimental, opt-in |
-| **Quote Controls** | Reference | Reference | Reference | Reference | Reference | Reference | Reference | Exact L02–L04, per solve |
+| Property | `direct` | `single_path` | `direct_split` | `path_split` | `incremental_graph` | `uni_sor_port` | `uni_sor_adaptive` | `uni_sor_optimized` | `metis_inspired` |
+|---|---|---|---|---|---|---|---|---|---|
+| **Multi-Hop Support** | No | Yes ($\le H$) | No | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H$) | Yes ($\le H_L$ per chunk) |
+| **Split Support** | No | No | Yes ($\le S$) | Yes ($\le S$) | Yes ($\le K$) | Yes ($\le S$) | Yes ($\le S$) | Yes ($\le S$) | Yes ($\le K$) |
+| **Shared Intermediate Pools** | N/A | N/A | No | No | **Yes** | No | No | No | **Yes** |
+| **Supported Protocols** | All 5 | All 5 | All 5 | All 5 | All 5 | CPMM + CL only (No LB) | CPMM + CL only (No LB) | CPMM + CL only (No LB) | All 5 |
+| **Search Mechanism** | Exhaustive scan | Hop-major bounded DFS | Exact Grid DP | Knapsack Branch & Bound | Greedy marginal chunks | FIFO layer priority queue | SOR core on a coarse-to-fine sampled table | 5 % / 100 % route shortlist + sampled SOR core | Greedy chunks, hop-layered label search per chunk |
+| **Optimality Scope** | Best evaluated | Best evaluated | Best on grid | Best disjoint grid | Local heuristic | Local heuristic | Local fixed point (approximates `uni_sor_port`) | Shortlist + local fixed point (approximates `uni_sor_port`) | Local heuristic; one label per (layer, token) |
+| **Group / Default** | Base | Base | Base | Base | Base | Base (parity reference) | Optimized, experimental, opt-in | Optimized, experimental, opt-in | Experimental (NOT Jupiter Metis), opt-in |
+| **Quote Controls** | Reference | Reference | Reference | Reference | Reference | Reference | Reference | Exact L02–L04, per solve | Reference |
 
-### 11.2 Asymptotic Search Complexity
+### 12.2 Asymptotic Search Complexity
 
 Let:
 - $P$: Number of admitted pools in snapshot ($P_{\text{direct}}$ for direct pools).
@@ -1553,6 +1878,7 @@ Let:
 - $\Pi_H$: Cycle-free paths up to $H$ hops.
 - $L$: Routes searched after probing ($L = $ all ranked routes for `uni_sor_adaptive`; $\lvert L \rvert \le 16$ for `uni_sor_optimized`).
 - $\lvert S_f \rvert$: Percents sampled when refinement stops ($\le G$); $R \le G$ refinement rounds; $V$ validation replays.
+- $H_L$: Label-layer depth (`graph.label_hops`); $\lvert T \rvert$: tokens; $\deg_{\max}$: largest pool degree of a token.
 
 *Table Notation:* `\lvert \Pi_H \rvert` denotes the count of cycle-free candidate paths.
 
@@ -1566,8 +1892,9 @@ Let:
 | `uni_sor_port` | $\mathcal{O}(\sum_{\pi} \text{hops}(\pi) \cdot G \cdot c_q + \lvert Q \rvert \cdot \lvert \Pi_H \rvert)$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G + \text{hops}(\pi_{\text{last}})$ | $\mathcal{O}(\lvert \Pi_H \rvert \cdot G + \lvert Q \rvert)$ |
 | `uni_sor_adaptive` | $\mathcal{O}(\sum_{\pi \in L} \text{hops}(\pi) \cdot \lvert S_f \rvert \cdot c_q + R \cdot \text{Core}(\lvert L \rvert \cdot \lvert S_f \rvert) + V \cdot \text{Eval})$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G + \text{replay quotes}$ (grid completion); typically $\sum_{\pi \in L} \text{hops}(\pi) \cdot \lvert S_f \rvert$ | $\mathcal{O}(\lvert L \rvert \cdot \lvert S_f \rvert + \lvert Q \rvert)$ |
 | `uni_sor_optimized` | $\mathcal{O}(\sum_{\pi \in \Pi_H} \text{hops}(\pi) \cdot 2 \cdot c_q' + \text{Cost}(\text{adaptive over } L))$, $c_q' \le c_q$ under L02–L04 | $\le \sum_{\pi} 2\,\text{hops}(\pi) + \sum_{\pi \in L} \text{hops}(\pi) \cdot G$ + replay quotes, plus the full table on fallback | $\mathcal{O}(16 \cdot G + \lvert Q \rvert)$ + bounded per-solve memos |
+| `metis_inspired` | $\mathcal{O}(K \cdot H_L \cdot \lvert T \rvert \cdot \deg_{\max} \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot H_L \cdot \lvert T \rvert \cdot \deg_{\max} + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K + H_L^2 \cdot \lvert T \rvert)$ + cache |
 
-### 11.3 Source Reading Map
+### 12.3 Source Reading Map
 
 When navigating the codebase, consult these authoritative entry points:
 - **Interfaces & Context:** `routing/algorithms/base.py` (`SolveContext`, `Budget`, `SolveResult`, `SolveStatus`).
@@ -1583,15 +1910,17 @@ When navigating the codebase, consult these authoritative entry points:
   - `routing/algorithms/uni_sor_fast.py` (engine of both optimized strategies): `refine_percents` (line 273), `prepare` (line 294), `shortlist_routes` (line 323), `solve` (lines 367–969) with `sampled_search` (lines 648–811) and the full-table fallback (lines 857–866)
   - `routing/algorithms/uni_sor_strategies.py`: `registered_settings` (line 84), `check_recipe` (line 122), `STRATEGIES` (line 166), `_prepare` (line 260), `_solve` (line 290), `ADAPTIVE_FACTORY` / `OPTIMIZED_FACTORY` (lines 348–349)
   - `pools/exact_controls.py`: `QUOTE_CONTROL_KEYS` (line 32), `QuoteControls` (line 44), `installed` (line 74)
-  - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the two comparison groups)
+  - `routing/algorithms/metis_inspired.py`: `prepare` (line 206), `hops_to_target` (line 229), `_Allocator.step` (line 312), `choose_enumeration` (line 356), `choose_labels` (lines 382–427), `solve` (lines 446–658), `diagnose_case` (line 721)
+  - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the base and optimized comparison groups; `metis_inspired` is added by `benchmark/strategies.py` under `--strategies all`)
 - **Contract Verification:**
   - Uniswap SOR: [`uni-sor-port-contract.md`](uni-sor-port-contract.md) and `tests/routing/test_uni_sor_parity.py`.
   - Optimized strategies: [`strategy-groups.md`](strategy-groups.md), [`latency-optimization-results.md`](latency-optimization-results.md) (L08), `tests/routing/test_uni_sor_strategies.py` and `tests/routing/test_uni_sor_fast.py`.
+  - Metis-inspired: [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md), [`metis-challenge-results.md`](metis-challenge-results.md) and `tests/routing/test_metis_inspired.py` (fixtures X1–X7, X4b).
   - Cost Model: [`cost-model.md`](cost-model.md) and `benchmark/costs.py`.
 
 ---
 
-## 12. Operational Boundaries, Limitations, and Known Debt
+## 13. Operational Boundaries, Limitations, and Known Debt
 
 1. **`quote` CLI Profile Restrictions:**
    The `main.py quote` command explicitly refuses `empirical_cost` profiles (such as `config/daily.yaml`).
@@ -1636,6 +1965,13 @@ When navigating the codebase, consult these authoritative entry points:
        `no_route` / `incomplete_snapshot`.
      - A hard `max_quotes` stop is `timeout` with no plan.
      - Selections that never replay valid give `invalid_plan`.
+   - `metis_inspired`: Same carry, abandon and fallback rules as `incremental_graph`.
+     - A relaxation whose quote fails (including `incomplete_snapshot`) yields no label and is
+       counted.
+     - `incomplete_snapshot` is returned only when no valid route exists and a candidate needed
+       uncollected state.
+     - A `max_quotes` cut is `timeout` when no valid route exists, never `no_route`.
+     - In label mode, `max_candidates` caps relaxations per chunk.
 8. **Optimized Strategies Are Not Defaults:**
    - `uni_sor_adaptive` and `uni_sor_optimized` are experimental recipes.
      - Their L08 decision comparisons were `inconclusive` (host load), so neither is adopted.
@@ -1647,3 +1983,11 @@ When navigating the codebase, consult these authoritative entry points:
      - Use `--strategies base` or `--strategies profile` for such profiles.
    - `uni_sor_fast` stays a separate, profile-selected experiment
      ([`strategy-groups.md`](strategy-groups.md)).
+9. **`metis_inspired` Is Not Jupiter Metis and Not a Default:**
+   - It is a Metis-*inspired* experiment. No Metis routing source is public, and every label
+     rule is this repository's inference.
+   - Its WHI-1449 verdict (**keep, experimental opt-in**) holds only for the frozen corpus and
+     block, the gross-only objective and the registered arms.
+   - Under `--strategies all`, its chunk search can use more hops than the other strategies'
+     shared `search.max_hops`. The CLI and reports print the recorded `graph.label_hops`, so
+     that row is not an identical-search comparison.

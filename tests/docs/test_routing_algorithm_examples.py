@@ -11,11 +11,13 @@ import pytest
 
 from benchmark.objective import gross_only
 from benchmark.profile import load_profile
+from benchmark.strategies import metis_graph_settings
 from pools.constant_product import quote_exact_in as cp_quote
 from routing.algorithms import (
     direct,
     direct_split,
     incremental_graph,
+    metis_inspired,
     path_split,
     single_path,
     uni_sor_fast,
@@ -29,6 +31,7 @@ from routing.algorithms.base import (
     SolveResult,
     SolveStatus,
 )
+from routing.search import QuoteCache, path_label
 from snapshot.bundle import load_bundle
 from snapshot.models import BlockRef, Case, ConstantProductPoolState, SnapshotBundle
 
@@ -611,8 +614,188 @@ def test_uni_sor_optimized_wide_shortlist_and_small_probe() -> None:
     assert loss == 32_436 and round(loss * 10_000 / 974_119, 2) == 332.98
 
 
+# ------------------------------------------------------------ metis_inspired (§10, §11.3)
+
+
+def _metis_prepared(
+    bundle: SnapshotBundle, **params: object
+) -> metis_inspired.PreparedMetisInspired:
+    config: dict[str, object] = {"max_hops": 3, "max_splits": 4, "percent_step": 5, "chunks": 1}
+    config.update(params)
+    return metis_inspired.prepare(bundle, AlgorithmConfig("metis_inspired", config))
+
+
+def _metis_solve(bundle: SnapshotBundle, case: Case, **params: object) -> SolveResult:
+    prepared = _metis_prepared(bundle, **params)
+    return metis_inspired.solve(case, SolveContext(bundle, gross_only(), prepared), Budget())
+
+
+def _cp5(pid: str, t0: str, t1: str, r0: int, r1: int, fee: int = 5) -> ConstantProductPoolState:
+    return ConstantProductPoolState(pid, t0, t1, r0, r1, fee_bps=fee)
+
+
+def make_parallel_bundle() -> SnapshotBundle:
+    """Fixture X1 of tests/routing/test_metis_inspired.py: 3 parallel pools per hop."""
+    pools = [
+        *(_cp5(f"sb{i}", "S", "B", 10**12 + i * 10**10, 10**12, (5, 30, 100)[i]) for i in range(3)),
+        *(_cp5(f"bc{i}", "B", "C", 10**12, 10**12 - i * 10**10, (30, 5, 100)[i]) for i in range(3)),
+        *(
+            _cp5(f"cd{i}", "C", "D", 10**12 + i * 3 * 10**9, 10**12, (100, 30, 5)[i])
+            for i in range(3)
+        ),
+        _cp5("sd", "S", "D", 10**9, 10**9, 30),
+    ]
+    return _synthetic_bundle("x1_parallel", *pools)
+
+
+def make_four_hop_bundle() -> SnapshotBundle:
+    """Fixture X3: deep liquidity only along S-B-C-E-D."""
+    deep = 10**15
+    return _synthetic_bundle(
+        "x3_four_hop",
+        _cp5("sb", "S", "B", deep, deep),
+        _cp5("bc", "B", "C", deep, deep),
+        _cp5("ce", "C", "E", deep, deep),
+        _cp5("ed", "E", "D", deep, deep),
+        _cp5("sd", "S", "D", 10**10, 10**10, 30),
+    )
+
+
+def make_revisit_bundle() -> SnapshotBundle:
+    """Fixture X4: the best 2-prefix to X visits Y; the best 4-hop path needs X -> Y."""
+    deep = 10**15
+    return _synthetic_bundle(
+        "x4_revisit",
+        _cp5("sy", "S", "Y", deep, deep),
+        _cp5("sa", "S", "A", deep, deep),
+        _cp5("ax", "A", "X", deep, 10 * deep),
+        _cp5("yx", "Y", "X", deep, 20 * deep),
+        _cp5("xy", "X", "Y", 5 * deep, deep),
+        _cp5("yd", "Y", "D", deep, deep),
+    )
+
+
+def _cp_chain(bundle: SnapshotBundle, token: str, amount: int, *pool_ids: str) -> int:
+    for pid in pool_ids:
+        pool = bundle.pools[pid]
+        assert isinstance(pool, ConstantProductPoolState)
+        amount = cp_quote(pool, token, amount).amount_out
+        token = pool.other_token(token)
+    return amount
+
+
+def test_metis_inspired_label_layers_on_the_teaching_graph(
+    teaching_bundle: SnapshotBundle,
+) -> None:
+    """Verify §10.5 steps 1-5: chunk-1 layers, distance prunes, choice and final plan."""
+    b = teaching_bundle
+    case = Case(case_id="ex_metis", token_in="TKA", token_out="TKB", amount_in=10_000)
+    # Hand CPMM values of every chunk-1 relaxation (1000 TKA)
+    assert [_cp_chain(b, "TKA", 1000, p) for p in ("P_AB1", "P_AB2", "P_AC", "P_AD")] == [
+        987, 892, 1974, 1480
+    ]  # fmt: skip
+    assert _cp_chain(b, "TKA", 1000, "P_AC", "P_CB") == 1461
+    assert _cp_chain(b, "TKA", 1000, "P_AC", "P_CD") == 1930
+    assert _cp_chain(b, "TKA", 1000, "P_AD", "P_DB") == 1168
+    assert _cp_chain(b, "TKA", 1000, "P_AD", "P_CD") == 1454
+    assert _cp_chain(b, "TKA", 1000, "P_AC", "P_CD", "P_DB") == 1519
+    assert _cp_chain(b, "TKA", 1000, "P_AD", "P_CD", "P_CB") == 1079
+    assert 9_970_000 * 200_000 // (10**9 + 9_970_000) == 1974
+    assert 19_680_780 * 100_000 // (10**9 + 19_680_780) == 1930
+    assert 19_242_100 * 120_000 // (15 * 10**8 + 19_242_100) == 1519
+
+    params = {"max_splits": 2, "percent_step": 10, "chunks": 10, "label_hops": 3,
+              "label_pruning": True}  # fmt: skip
+    prepared = _metis_prepared(b, **params)
+    dist = metis_inspired.hops_to_target(prepared.index, "TKA", "TKB")
+    assert dist == {"TKB": 0, "TKA": 1, "TKC": 1, "TKD": 1}
+
+    # Chunk 1 through the solver's own chooser (a fresh allocator: nothing committed)
+    alloc = metis_inspired._Allocator(b, case, prepared.index, QuoteCache(b))
+    alloc.relaxed = []
+    choice = alloc.choose_labels(1000, 3, dist, Budget())
+    assert choice is not None and choice[0] == 1519
+    assert path_label(choice[1]) == "TKA -[P_AC]-> TKC -[P_CD]-> TKD -[P_DB]-> TKB"
+    assert alloc.layers is not None
+    layers = [{t: lab.amount for t, lab in layer.items()} for layer in alloc.layers]
+    assert layers == [{"TKA": 1000}, {"TKC": 1974, "TKD": 1480}, {"TKD": 1930, "TKC": 1454}, {}]
+    assert (alloc.relaxations, alloc.label_distance) == (10, 2)
+    assert (alloc.label_revisit, alloc.label_cycle) == (0, 0)
+
+    diag = metis_inspired.diagnose_case(case, b, prepared)
+    assert diag["classes"] == {"agree": 10} and diag["quote_subset_violations"] == 0
+    first = diag["chunk_records"][0]
+    assert (first["label_relaxations"], first["enumeration_paths_scored"]) == (10, 6)
+    assert first["label_quotes_executed"] == first["enumeration_quotes_executed"] == 10
+    assert diag["chunk_records"][1]["label"]["marginal"] == "1433"
+
+    res = _metis_solve(b, case, **params)
+    ig_cfg = {"max_hops": 3, "max_splits": 2, "percent_step": 10, "chunks": 10}
+    prep_ig = incremental_graph.prepare(b, AlgorithmConfig("incremental_graph", ig_cfg))
+    ref = incremental_graph.solve(case, SolveContext(b, gross_only(), prep_ig), Budget())
+    assert res.status == SolveStatus.OK and res.plan == ref.plan
+    assert res.evaluation is not None and res.evaluation.gross_output == 12892
+    s = res.search_stats
+    assert s["incremental_chunk_sequence"] == [0, 1, 1, 0, 1, 1, 1, 0, 1, 1]
+    assert s["chosen_source"] == "metis_inspired" and s["topology"] == "shared_pool"
+    assert (s["label_relaxations"], s["label_rejected_cycle"], s["label_pruned_distance"]) == (
+        82, 9, 11
+    )  # fmt: skip
+    assert ref.search_stats["paths_scored"] == 51
+    assert s["quotes_executed"] == ref.search_stats["quotes_executed"] == 128
+
+
+def test_metis_inspired_parallel_gain_and_revisit_loss() -> None:
+    """Verify §10.5 steps 6-8: X1 work, X3 four-hop gain, X4 token-revisit loss."""
+    # Step 6 (X1): 3k+1 relaxations vs k^3+1 paths per chunk, same plan
+    par = make_parallel_bundle()
+    case1 = Case(case_id="x1", token_in="S", token_out="D", amount_in=10**10)
+    m3 = _metis_solve(par, case1, chunks=10, label_hops=3, label_pruning=True)
+    ig_cfg = {"max_hops": 3, "max_splits": 4, "percent_step": 5, "chunks": 10}
+    prep_ig = incremental_graph.prepare(par, AlgorithmConfig("incremental_graph", ig_cfg))
+    a0 = incremental_graph.solve(case1, SolveContext(par, gross_only(), prep_ig), Budget())
+    assert m3.plan == a0.plan
+    assert m3.evaluation is not None and m3.evaluation.gross_output == 9_692_524_563
+    assert (m3.search_stats["label_relaxations"], m3.search_stats["label_pruned_distance"]) == (
+        100, 30
+    )  # fmt: skip
+    assert a0.search_stats["paths_scored"] == 280
+    assert (m3.search_stats["quotes_executed"], a0.search_stats["quotes_executed"]) == (848, 1011)
+
+    # Step 7 (X3): a four-hop-only route
+    four = make_four_hop_bundle()
+    case3 = Case(case_id="x3", token_in="S", token_out="D", amount_in=10**10)
+    prep_ig3 = incremental_graph.prepare(
+        four, AlgorithmConfig("incremental_graph", {**ig_cfg, "chunks": 1})
+    )
+    a0_3 = incremental_graph.solve(case3, SolveContext(four, gross_only(), prep_ig3), Budget())
+    m4 = _metis_solve(four, case3, label_hops=4, label_pruning=True)
+    assert a0_3.score == 4_992_488_733
+    assert m4.evaluation is not None and m4.score == 9_979_616_307
+    assert [(t.pool_id, t.amount_in, t.amount_out) for t in m4.evaluation.trace] == [
+        ("sb", 10**10, 9_994_900_100),
+        ("bc", 9_994_900_100, 9_989_802_852),
+        ("ce", 9_989_802_852, 9_984_708_255),
+        ("ed", 9_984_708_255, 9_979_616_307),
+    ]
+    assert m4.search_stats["path_split_score"] == "4992488733"  # embedded at max_hops 3
+
+    # Step 8 (X4): token-revisit pruning loses the best four-hop path
+    rev = make_revisit_bundle()
+    case4 = Case(case_id="x4", token_in="S", token_out="D", amount_in=10**9)
+    assert _cp_chain(rev, "S", 10**9, "sy", "yx") == 19_979_965_070
+    assert _cp_chain(rev, "S", 10**9, "sa", "ax") == 9_989_982_535
+    m4r = _metis_solve(rev, case4, label_hops=4, label_pruning=True)
+    off = _metis_solve(rev, case4, label_hops=4, label_pruning=False)
+    assert m4r.score == 998_998_253 == _cp_chain(rev, "S", 10**9, "sy", "yd")
+    assert off.score == 1_995_991_039
+    assert m4r.search_stats["label_skipped_revisit"] == 2
+    loss = 1_995_991_039 - 998_998_253
+    assert round(loss * 10_000 / 1_995_991_039, 2) == 4994.98
+
+
 def test_real_state_corpus_fixture_exact_evaluation() -> None:
-    """Verify all 8 strategies on real-state fixed-block fixture without mutating bundle."""
+    """Verify all 9 strategies on real-state fixed-block fixture without mutating bundle."""
     bundle_dir = ROOT / "tests" / "fixtures" / "corpus" / "bundle"
     manifest_before = (bundle_dir / "manifest.json").read_bytes()
     pools_before = (bundle_dir / "pools.json").read_bytes()
@@ -723,6 +906,24 @@ def test_real_state_corpus_fixture_exact_evaluation() -> None:
     assert (st["tick_math"]["misses"], st["tick_math"]["hits"]) == (1, 5)
     assert (st["prefix"]["queries"], st["prefix"]["keys"], st["prefix"]["resumed"]) == (6, 1, 0)
     assert st["prefix"]["reused_steps"] == 0
+
+    # 9. metis_inspired under --strategies all: daily_gross + the pinned M4 label settings
+    metis_params = {**profile.search, **profile.graph}
+    for key, value in metis_graph_settings().items():
+        metis_params.setdefault(key, value)
+    assert metis_params["chunks"] == 200 and metis_params["label_hops"] == 4
+    prep_mi = metis_inspired.prepare(bundle, AlgorithmConfig("metis_inspired", metis_params))
+    r_mi = metis_inspired.solve(case, SolveContext(bundle, obj, prep_mi), real_budget)
+    assert r_mi.status == SolveStatus.OK and r_mi.evaluation is not None
+    assert r_mi.plan == r_ig.plan and r_mi.evaluation.gross_output == 10000663447
+    sm = r_mi.search_stats
+    assert sm["quotes_executed"] == 264 and sm["label_relaxations"] == 800
+    assert sm["label_pruned_distance"] == sm["label_skipped_revisit"] == 0
+    assert sm["label_rejected_cycle"] == 0
+    assert sm["marginal_failures"] == {"insufficient_liquidity": 200}
+    assert sm["chunk_path_hops"] == {"1": 200}
+    assert [a["chunks"] for a in sm["incremental_allocation"]] == [199, 1]
+    assert sm["path_split_score"] == "10000660449"
 
     # Assert byte identity of original files
     assert (bundle_dir / "manifest.json").read_bytes() == manifest_before
