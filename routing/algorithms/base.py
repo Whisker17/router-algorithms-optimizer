@@ -9,10 +9,22 @@ Factories hold ordinary module-level Python functions: the benchmark runner
 serializes the functions *by reference* (module + qualified name). Lambdas and
 closures therefore cannot be registered -- by design, an algorithm is importable
 code, not a live object smuggled across the process boundary.
+
+Per-strategy options (WHI-1548, contract R021-C/1 §9.2): a factory that accepts
+`algorithm_options.<id>` names a module-level `options_validator`; `validated_options` is
+the one shared entry that both the profile loader and that factory's own `prepare` call,
+so a direct caller of the public `prepare` cannot bypass the checks. It refuses options for
+a factory without a validator, reserved shared-setting keys, non-string keys and non-finite
+or non-JSON values, then applies the factory's validator (the `option_*` helpers below keep
+its integer/bool/finite checks strict). The canonical hash of the normalized options is
+`settings_sha256`.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
+import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -145,10 +157,15 @@ class AlgorithmConfig:
     it declared in `AlgorithmFactory.shortlist_params` (the opt-in `uni_sor_fast`
     experiment, WHI-1508) and, only when the profile declares them, the `sampling.*` values
     of `AlgorithmFactory.sampling_params` (WHI-1509); empty for algorithms that declare
-    none."""
+    none.
+
+    `options` (WHI-1548) holds the validated `algorithm_options.<name>` of this algorithm
+    alone -- separate from `params`, never a sibling's -- and is empty for every factory
+    without an `AlgorithmFactory.options_validator`."""
 
     name: str
     params: Mapping[str, Any] = field(default_factory=dict)
+    options: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -190,6 +207,10 @@ class PrepareFn(Protocol):
     def __call__(self, bundle: SnapshotBundle, config: AlgorithmConfig) -> Any: ...
 
 
+# `(options) -> complete normalized options`, raising `OptionsError` naming the key.
+OptionsValidator = Callable[[Mapping[str, Any]], dict[str, Any]]
+
+
 @dataclass(frozen=True)
 class AlgorithmFactory:
     """`prepare(bundle, config) -> PreparedAlgorithm` (docs/DESIGN.md §4.3) plus
@@ -229,3 +250,127 @@ class AlgorithmFactory:
     # settings, and hands them over as `AlgorithmConfig.params`; the global `shortlist` /
     # `sampling` sections never reach such a factory. `None` for every other algorithm.
     strategy_recipe: Mapping[str, Any] | None = None
+    # WHI-1548 (R021-C/1 §9.2): the module-level validator of this algorithm's
+    # `algorithm_options.<name>` keys/types/ranges. `None` = the algorithm accepts no
+    # options (every pre-0.2.1 identity). Its `prepare` must call `validated_options`.
+    options_validator: OptionsValidator | None = None
+    # The pinned bounded comparison preset (`path`, `sha256`, `key`, `version` of a frozen
+    # file holding only these options, §7.1), read only when the algorithm is selected;
+    # `None` = no preset.
+    options_preset: Mapping[str, Any] | None = None
+
+
+# ------------------------------------------------------------------ WHI-1548 options
+
+# Keys naming a shared profile setting (R021-C/1 §9.1): the profile's `search`, `graph`,
+# `budget`, SOR-recipe, objective and seed values stay authoritative, so an option can never
+# shadow one of them.
+RESERVED_OPTION_KEYS = frozenset(
+    {
+        "max_hops", "max_splits", "percent_step", "chunks", "label_hops", "label_pruning",
+        "time_limit_seconds", "max_quotes", "max_candidates", "shortlist", "sampling",
+        "controls", "recipe", "objective", "seed",
+    }
+)  # fmt: skip
+
+
+class OptionsError(ValueError):
+    """`algorithm_options` that are unknown, reserved, mistyped, out of range or non-finite."""
+
+
+def settings_sha256(options: Mapping[str, Any]) -> str:
+    """The R021-C/1 §3.1 canonical hash (`json.dumps(sort_keys=True)`) of normalized options."""
+    return hashlib.sha256(json.dumps(options, sort_keys=True).encode()).hexdigest()
+
+
+def _json_copy(value: Any, where: str) -> Any:
+    """A plain JSON-shaped copy (mappings -> dict, lists -> list) of `value`, refusing
+    non-string keys, non-finite numbers and anything that is not a JSON value."""
+    if isinstance(value, float) and not math.isfinite(value):
+        raise OptionsError(f"{where}: expected a finite number, got {value!r}")
+    if isinstance(value, Mapping):
+        out = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise OptionsError(f"{where}: option keys must be strings, got {key!r}")
+            out[key] = _json_copy(item, f"{where}.{key}")
+        return out
+    if isinstance(value, list):
+        return [_json_copy(item, f"{where}[{index}]") for index, item in enumerate(value)]
+    if value is None or isinstance(value, str | int | float):
+        return value
+    raise OptionsError(f"{where}: expected a JSON value, got {type(value).__name__}")
+
+
+def validated_options(factory: AlgorithmFactory, options: Any) -> dict[str, Any]:
+    """The complete normalized `options` of `factory` (a fresh, JSON-shaped dict), or
+    `OptionsError`. Called by the profile loader and by the factory's own `prepare`."""
+    where = f"algorithm_options.{factory.name}"
+    if not isinstance(options, Mapping):
+        raise OptionsError(f"{where}: expected a mapping, got {type(options).__name__}")
+    if factory.options_validator is None:
+        if options:
+            raise OptionsError(f"{where}: {factory.name!r} accepts no algorithm_options")
+        return {}
+    plain = _json_copy(options, where)
+    reserved = sorted(set(plain) & RESERVED_OPTION_KEYS)
+    if reserved:
+        raise OptionsError(
+            f"{where}: {reserved} name shared profile settings (search/graph/budget/recipe/"
+            "objective/seed), which stay authoritative and cannot be set per strategy"
+        )
+    try:
+        out = factory.options_validator(plain)
+    except (ValueError, TypeError, KeyError) as exc:  # OptionsError is a ValueError
+        raise OptionsError(f"{where}: {exc}") from exc
+    if not isinstance(out, dict):
+        raise OptionsError(f"{where}: the validator must return a dict")
+    copy: dict[str, Any] = _json_copy(out, where)
+    return copy
+
+
+def require_option_keys(
+    options: Mapping[str, Any],
+    required: frozenset[str] | set[str],
+    optional: frozenset[str] | set[str] = frozenset(),
+) -> None:
+    """Refuse missing `required` and unknown keys (validator helper)."""
+    missing = sorted(required - options.keys())
+    if missing:
+        raise OptionsError(f"missing required key(s) {missing}")
+    unknown = sorted(options.keys() - required - optional)
+    if unknown:
+        raise OptionsError(f"unknown key(s) {unknown}")
+
+
+def option_int(value: Any, key: str, minimum: int, maximum: int | None = None) -> int:
+    """An integer in `[minimum, maximum]`; a bool is never an integer."""
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or value < minimum
+        or (maximum is not None and value > maximum)
+    ):
+        bound = f"in [{minimum}, {maximum}]" if maximum is not None else f">= {minimum}"
+        raise OptionsError(f"{key}: expected an integer {bound}, got {value!r}")
+    return value
+
+
+def option_number(value: Any, key: str, minimum: float, maximum: float | None = None) -> float:
+    """A finite number in `[minimum, maximum]` (an int is accepted, a bool is not)."""
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int | float)
+        or not math.isfinite(value)
+        or value < minimum
+        or (maximum is not None and value > maximum)
+    ):
+        bound = f"in [{minimum}, {maximum}]" if maximum is not None else f">= {minimum}"
+        raise OptionsError(f"{key}: expected a finite number {bound}, got {value!r}")
+    return float(value)
+
+
+def option_choice(value: Any, key: str, choices: tuple[str, ...]) -> str:
+    if not isinstance(value, str) or value not in choices:
+        raise OptionsError(f"{key}: expected one of {list(choices)}, got {value!r}")
+    return value

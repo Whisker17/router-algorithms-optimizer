@@ -54,24 +54,46 @@ entry. The optional `selection` section records how `main.py run|quote --strateg
 derived an effective profile (mode, source profile identity, the `base` / `optimized` /
 `custom` groups); it is validated against `algorithms` and persisted for offline
 reporting. Profiles without either section resolve exactly as before.
+
+The optional `algorithm_options` section (WHI-1548, contract R021-C/1 §9) maps a selected
+algorithm ID to that algorithm's own options. Only a factory with an
+`AlgorithmFactory.options_validator` accepts an entry; the shared `validated_options` check
+(the same one its `prepare` applies) refuses unknown IDs/keys, reserved shared-setting keys,
+booleans as integers, non-finite and out-of-range values before any worker or result exists.
+Each entry is handed only to its own algorithm (`AlgorithmConfig.options`), and its resolved
+form records the complete normalized `options`, their `settings_sha256` and a `source` derived
+from content alone: `{kind: preset, ...pin}` only when the options equal the factory's
+sha256-pinned preset (`preset_options`), otherwise `{kind: override}` -- a document can never
+claim the preset identity for other settings. A profile without the section resolves exactly
+as before (the key is omitted).
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Literal
 
 import yaml
 
 from benchmark.objective import ObjectiveContext, empirical_cost, gross_only, synthetic_fixed_cost
 from routing.algorithms import uni_sor_strategies
-from routing.algorithms.base import AlgorithmConfig, AlgorithmFactory, Budget
+from routing.algorithms.base import (
+    AlgorithmConfig,
+    AlgorithmFactory,
+    Budget,
+    OptionsError,
+    settings_sha256,
+    validated_options,
+)
 from routing.algorithms.registry import ALGORITHMS, BASE_STRATEGIES, OPTIMIZED_STRATEGIES
 
 SUPPORTED_SCHEMA_VERSION = 2
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 CaseOrder = Literal["fixed", "reverse", "shuffle"]
 CASE_ORDERS: tuple[CaseOrder, ...] = ("fixed", "reverse", "shuffle")
@@ -156,6 +178,8 @@ class RunProfile:
     sampling: dict[str, Any] = field(default_factory=dict)
     strategies: dict[str, dict[str, Any]] = field(default_factory=dict)
     selection: dict[str, Any] = field(default_factory=dict)
+    # WHI-1548: resolved `{options, source, settings_sha256}` per options-accepting algorithm.
+    algorithm_options: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def algorithm_config(self, factory: AlgorithmFactory) -> AlgorithmConfig:
         """The `prepare` configuration for `factory`: exactly the `search.*`, `graph.*`
@@ -178,7 +202,13 @@ class RunProfile:
             params.update(entry["shortlist"])
             params.update(entry["sampling"])
             params["controls"] = {k: dict(v) for k, v in entry["controls"].items()}
-        return AlgorithmConfig(name=factory.name, params=params)
+        resolved = self.algorithm_options.get(factory.name)
+        options = (  # a fresh read-only copy of this algorithm's own options only
+            MappingProxyType(json.loads(json.dumps(resolved["options"])))
+            if resolved is not None
+            else MappingProxyType({})
+        )
+        return AlgorithmConfig(name=factory.name, params=params, options=options)
 
     def resolved(self) -> dict[str, Any]:
         """Every profile value, including inherited defaults (docs/DESIGN.md §2.12:
@@ -199,6 +229,12 @@ class RunProfile:
             # WHI-1528: only a profile that declares them records these sections.
             **({"strategies": json.loads(json.dumps(self.strategies))} if self.strategies else {}),
             **({"selection": json.loads(json.dumps(self.selection))} if self.selection else {}),
+            # WHI-1548: only a profile selecting an options-accepting algorithm records it.
+            **(
+                {"algorithm_options": json.loads(json.dumps(self.algorithm_options))}
+                if self.algorithm_options
+                else {}
+            ),
             "algorithm_config": {
                 name: {
                     "capabilities": ALGORITHMS[name].capabilities.to_dict(),
@@ -496,6 +532,88 @@ def _parse_strategies(
     return out
 
 
+# ------------------------------------------------------------------ WHI-1548 algorithm_options
+
+
+def preset_options(factory: AlgorithmFactory) -> dict[str, Any]:
+    """The validated options of `factory`'s pinned bounded comparison preset (R021-C/1 §7.1):
+    a YAML file `{key, version, algorithm, options}` read only after its bytes hash to the
+    pin; a changed, unreadable or mismatching file is refused, never reinterpreted."""
+    pin = factory.options_preset
+    where = f"algorithm_options.{factory.name}: preset"
+    if pin is None:
+        raise ProfileError(f"{where}: {factory.name!r} has no registered preset")
+    try:
+        data = (REPO_ROOT / str(pin["path"])).read_bytes()
+    except OSError as exc:
+        raise ProfileError(f"{where} {pin['path']} unreadable: {exc}") from exc
+    digest = hashlib.sha256(data).hexdigest()
+    if digest != pin["sha256"]:
+        raise ProfileError(
+            f"{where} {pin['path']} sha256 {digest} differs from the pin {pin['sha256']} "
+            "(a registered preset is frozen; a changed file is refused)"
+        )
+    doc = yaml.safe_load(data)
+    if not isinstance(doc, dict) or (doc.get("key"), doc.get("version"), doc.get("algorithm")) != (
+        pin["key"], pin["version"], factory.name
+    ):  # fmt: skip
+        raise ProfileError(f"{where} {pin['path']} is not {pin['key']} v{pin['version']} of it")
+    try:
+        return validated_options(factory, doc.get("options"))
+    except OptionsError as exc:
+        raise ProfileError(f"{where} {pin['path']}: {exc}") from exc
+
+
+def options_entry(factory: AlgorithmFactory, options: Any) -> dict[str, Any]:
+    """The resolved `{options, source, settings_sha256}` of `factory`'s (declared) options.
+    `source` is the preset pin only when the normalized options equal the preset's."""
+    try:
+        normalized = validated_options(factory, options)
+    except OptionsError as exc:
+        raise ProfileError(str(exc)) from exc
+    source: dict[str, Any] = {"kind": "override"}
+    if factory.options_preset is not None and normalized == preset_options(factory):
+        source = {"kind": "preset", **json.loads(json.dumps(dict(factory.options_preset)))}
+    return {
+        "options": normalized,
+        "source": source,
+        "settings_sha256": settings_sha256(normalized),
+    }
+
+
+def _parse_algorithm_options(
+    obj: Any, where: str, algorithms: list[str]
+) -> dict[str, dict[str, Any]]:
+    """`obj` is the declared section, or `None` when the profile omits it."""
+    if obj is not None and (not isinstance(obj, dict) or not obj):
+        raise ProfileError(f"{where}: expected a non-empty mapping (omit the section instead)")
+    declared: dict[Any, Any] = obj or {}
+    for name in declared:
+        at = f"{where}.{name}"
+        if not isinstance(name, str) or name not in ALGORITHMS:
+            raise ProfileError(f"{at}: unknown algorithm; registered: {sorted(ALGORITHMS)}")
+        if name not in algorithms:
+            raise ProfileError(f"{at}: declared but {name!r} is not in algorithms")
+        if ALGORITHMS[name].options_validator is None:
+            raise ProfileError(f"{at}: {name!r} accepts no algorithm_options (no validator)")
+    out: dict[str, dict[str, Any]] = {}
+    for name in algorithms:
+        factory = ALGORITHMS[name]
+        if factory.options_validator is None:
+            continue
+        if name not in declared:
+            try:
+                validated_options(factory, {})
+            except OptionsError as exc:
+                raise ProfileError(
+                    f"algorithms: {name!r} requires algorithm_options.{name} to be declared "
+                    "explicitly (no built-in default; only an identity --strategies all adds "
+                    f"itself receives its pinned preset): {exc}"
+                ) from exc
+        out[name] = options_entry(factory, declared.get(name, {}))
+    return out
+
+
 SELECTION_MODES = ("all", "base", "optimized")
 GROUPS = ("base", "optimized", "custom")
 
@@ -549,7 +667,8 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
     _require_keys(
         raw,
         {"schema_version", "algorithms", "objective", "budget", "measurement", "worker"},
-        {"search", "graph", "shortlist", "sampling", "strategies", "selection"},
+        {"search", "graph", "shortlist", "sampling", "strategies", "selection"}
+        | {"algorithm_options"},
         "<root>",
     )
     if raw["schema_version"] != SUPPORTED_SCHEMA_VERSION:
@@ -618,6 +737,11 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         if "selection" in raw
         else {}
     )
+    algorithm_options = _parse_algorithm_options(
+        raw["algorithm_options"] if "algorithm_options" in raw else None,
+        "algorithm_options",
+        algorithms_obj,
+    )
     return RunProfile(
         schema_version=raw["schema_version"],
         algorithms=tuple(algorithms_obj),
@@ -632,6 +756,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         sampling=sampling,
         strategies=strategies,
         selection=selection,
+        algorithm_options=algorithm_options,
     )
 
 

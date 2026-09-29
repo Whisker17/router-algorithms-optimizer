@@ -37,6 +37,16 @@ a source without the `search.*` keys the added strategies need or with a grid th
 cannot use is refused with the alternatives. Nothing here edits a source profile; the caller
 saves the effective document and replays it with `--strategies profile`, so a replay never
 re-expands against later defaults.
+
+`algorithm_options` (WHI-1548, R021-C/1 §2, §9.3): under `all`, every implemented 0.2.1
+identity of `R021_ADDITIONS` (contract order; empty until an implementation ticket registers
+one) is appended once after `metis_inspired` unless the source lists it. A derived document
+keeps the source's declared entry of every selected algorithm (a declared entry wins; a source
+that lists an options algorithm must itself declare its entry, like any other required
+setting), writes out the sha256-pinned preset (`benchmark.profile.preset_options`) of an added
+algorithm the source does not configure, and drops entries of unselected algorithms; the
+section is omitted when empty, so a source without options derives exactly as before.
+`profile` mode copies it as is.
 """
 
 from __future__ import annotations
@@ -53,11 +63,12 @@ from benchmark.profile import (
     ProfileError,
     RunProfile,
     parse_profile,
+    preset_options,
     strategy_entry,
     strategy_group,
 )
 from routing.algorithms import metis_inspired
-from routing.algorithms.registry import OPTIMIZED_STRATEGIES
+from routing.algorithms.registry import ALGORITHMS, OPTIMIZED_STRATEGIES
 
 MODES = ("all", "base", "optimized", "profile")
 DEFAULT_MODE = "all"
@@ -77,6 +88,10 @@ METIS_SETTINGS = {
     "sha256": "661311df6ff7a36a43954fff0e42f6b30b824d35d96c06f0e215960f256d4471",
 }
 METIS_GRAPH_KEYS = ("label_hops", "label_pruning", "chunks")
+# WHI-1548: the implemented R021-C/1 §2 identities `all` appends after `metis_inspired`, in
+# contract order. Each implementation ticket adds its own ID here with its registry entry,
+# validator and preset; no placeholder is ever listed.
+R021_ADDITIONS: tuple[str, ...] = ()
 DERIVATION_NOTE = (
     "`algorithms`, `strategies` and `selection` are derived from the source; under `all`, a "
     f"graph.label_hops / label_pruning / chunks the source does not declare is copied for {METIS} "
@@ -111,6 +126,8 @@ def effective_document(
     selected += [a for a in optimized if a not in selected]
     if mode == "all" and METIS not in selected:
         selected.append(METIS)
+    if mode == "all":
+        selected += [a for a in R021_ADDITIONS if a not in selected]
     if not selected:
         raise StrategySelectionError(
             f"--strategies {mode}: {source_path} selects no base strategy (algorithms "
@@ -123,6 +140,16 @@ def effective_document(
             registered = metis_graph_settings()
             graph.update({key: registered[key] for key in missing})
     declared = source.get("strategies") or {}
+    declared_options = source.get("algorithm_options") or {}
+    document.pop("algorithm_options", None)
+    options = {
+        name: json.loads(json.dumps(declared_options[name])) if name in declared_options
+        else preset_options(ALGORITHMS[name])
+        for name in selected
+        if name in declared_options or ALGORITHMS[name].options_preset is not None
+    }  # fmt: skip
+    if options:
+        document["algorithm_options"] = options
     document["algorithms"] = selected
     document.pop("strategies", None)
     if optimized:
@@ -166,7 +193,8 @@ def derive(
     try:
         return document, parse_profile(document, source_path)
     except ProfileError as exc:
-        added = ", ".join(a for a in document["algorithms"] if a in (*OPTIMIZED_STRATEGIES, METIS))
+        additions = (*OPTIMIZED_STRATEGIES, METIS, *R021_ADDITIONS)
+        added = ", ".join(a for a in document["algorithms"] if a in additions)
         raise StrategySelectionError(
             f"--strategies {mode}: {source_path} cannot run the added strategies ({added}): "
             f"{exc}. They share the profile's objective, budget and search.max_hops/"
@@ -200,6 +228,7 @@ __all__ = [
     "METIS",
     "METIS_SETTINGS",
     "MODES",
+    "R021_ADDITIONS",
     "StrategySelectionError",
     "announce",
     "derive",
