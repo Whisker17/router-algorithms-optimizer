@@ -22,9 +22,9 @@ The ordinary CLI compares strategies in separate groups and, by default, runs th
 
 How the two recipes search, with hand-worked and test-verified examples, is explained in
 [`routing-algorithms.md`](routing-algorithms.md) §8 (`uni_sor_adaptive`) and §9
-(`uni_sor_optimized`). `metis_inspired`'s label search and the frozen WHI-1449 results are in
-[`jupiter-metis-challenge.md`](jupiter-metis-challenge.md) §9.2 and
-[`metis-challenge-results.md`](metis-challenge-results.md).
+(`uni_sor_optimized`). `metis_inspired`'s label search is explained the same way in §10 of that
+guide. Its contract is [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md) §9.2, and the
+frozen WHI-1449 results are in [`metis-challenge-results.md`](metis-challenge-results.md).
 
 The owner asked for this layout: the optimized strategies are **not** default strategies
 and are kept apart from the base ones, but the CLI runs them all. The owner then asked

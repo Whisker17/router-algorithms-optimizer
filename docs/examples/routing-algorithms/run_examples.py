@@ -1,4 +1,4 @@
-"""Reproducible worked examples runner for the eight routing strategies.
+"""Reproducible worked examples runner for the nine routing strategies.
 
 Verifies and outputs step-by-step traces for the six base strategies:
 1. direct
@@ -10,6 +10,8 @@ Verifies and outputs step-by-step traces for the six base strategies:
 and the two named optimized strategies (recipes of uni_sor_fast):
 7. uni_sor_adaptive (L08 arm H3)
 8. uni_sor_optimized (L08 arm H4)
+and the experimental Metis-inspired (NOT Jupiter Metis) strategy:
+9. metis_inspired (WHI-1449)
 along with the real-state fixed-block snapshot case.
 
 Run with:
@@ -27,11 +29,13 @@ if str(ROOT) not in sys.path:
 
 from benchmark.objective import gross_only  # noqa: E402
 from benchmark.profile import load_profile  # noqa: E402
+from benchmark.strategies import metis_graph_settings  # noqa: E402
 from pools.constant_product import quote_exact_in as cp_quote  # noqa: E402
 from routing.algorithms import (  # noqa: E402
     direct,
     direct_split,
     incremental_graph,
+    metis_inspired,
     path_split,
     single_path,
     uni_sor_fast,
@@ -455,9 +459,34 @@ def run_all() -> None:
     )
 
     # -------------------------------------------------------------
-    # 10. Fixed-Block Real State Case (Matching profile config/daily_gross.yaml)
+    # 10. metis_inspired (experimental, NOT Jupiter Metis)
     # -------------------------------------------------------------
-    print("--- 10. Real-State Fixed-Block Corpus Case ---")
+    print("--- 10. Experimental strategy: metis_inspired (NOT Jupiter Metis) ---")
+    mi_cfg = {"max_hops": 3, "max_splits": 2, "percent_step": 10, "chunks": 10,
+              "label_hops": 3, "label_pruning": True}  # fmt: skip
+    prep_mi = metis_inspired.prepare(bundle, AlgorithmConfig("metis_inspired", mi_cfg))
+    diag = metis_inspired.diagnose_case(case, bundle, prep_mi)
+    first = diag["chunk_records"][0]
+    assert (first["label_relaxations"], first["enumeration_paths_scored"]) == (10, 6)
+    assert first["label"]["marginal"] == "1519" and diag["classes"] == {"agree": 10}
+    res_mi = metis_inspired.solve(case, SolveContext(bundle, obj, prep_mi), budget)
+    assert res_mi.status == SolveStatus.OK and res_mi.evaluation is not None
+    assert res_mi.plan == res_ig.plan and res_mi.evaluation.gross_output == 12892
+    print(
+        f"Chunk 1 label search: {first['label_relaxations']} relaxations vs "
+        f"{first['enumeration_paths_scored']} enumerated paths -> {first['label']['path']} "
+        f"(marginal {first['label']['marginal']})"
+    )
+    print(
+        f"All 10 chunks agree with enumeration; plan identical to incremental_graph, "
+        f"{res_mi.evaluation.gross_output} TKB "
+        f"({res_mi.search_stats['label_relaxations']} relaxations) [OK]\n"
+    )
+
+    # -------------------------------------------------------------
+    # 11. Fixed-Block Real State Case (Matching profile config/daily_gross.yaml)
+    # -------------------------------------------------------------
+    print("--- 11. Real-State Fixed-Block Corpus Case ---")
     corpus_bundle_dir = ROOT / "tests" / "fixtures" / "corpus" / "bundle"
     corpus_bundle = load_bundle(corpus_bundle_dir)
     profile_path = ROOT / "config" / "daily_gross.yaml"
@@ -556,6 +585,19 @@ def run_all() -> None:
     assert (opt_ctl["tick_math"]["misses"], opt_ctl["tick_math"]["hits"]) == (1, 5)
     assert opt_ctl["prefix"]["resumed"] == 0
 
+    # 9. metis_inspired with daily_gross + the pinned M4 label settings (--strategies all)
+    metis_params = {**profile.search, **profile.graph}
+    for key, value in metis_graph_settings().items():
+        metis_params.setdefault(key, value)
+    prep_real_mi = metis_inspired.prepare(
+        corpus_bundle, AlgorithmConfig("metis_inspired", metis_params)
+    )
+    ctx_rmi = SolveContext(bundle=corpus_bundle, objective=obj, prepared=prep_real_mi)
+    r_mi = metis_inspired.solve(real_case, ctx_rmi, real_budget)
+    assert r_mi.status == SolveStatus.OK and r_mi.evaluation is not None
+    assert r_mi.evaluation.gross_output == 10000663447 and r_mi.plan == r_ig.plan
+    assert r_mi.search_stats["label_relaxations"] == 800
+
     q_dir = r_dir.candidates_considered
     q_sp = r_sp.search_stats["quotes_executed"]
     q_ds = r_ds.search_stats["quotes_executed"]
@@ -575,10 +617,14 @@ def run_all() -> None:
         f"  uni_sor_optimized: {r_opt.evaluation.gross_output} raw, 12 quotes "
         "[L02-L04: tick memo 1 miss / 5 hits]"
     )
+    print(
+        f"  metis_inspired:    {r_mi.evaluation.gross_output} raw, "
+        f"{r_mi.search_stats['quotes_executed']} quotes [label_hops 4; 800 relaxations]"
+    )
     print("All real-state assertions passed [OK]\n")
 
     print("=================================================================")
-    print("All 10 verification suites passed with 100% deterministic equality.")
+    print("All 11 verification suites passed with 100% deterministic equality.")
     print("=================================================================")
 
 

@@ -133,6 +133,7 @@ worked examples of the six base routing algorithms compared here, see
 [`routing-algorithms.md`](routing-algorithms.md) §§2–7. The same guide explains the two
 optimized strategies, `uni_sor_adaptive` and `uni_sor_optimized`, in §§8–9. Their grouping,
 selection and registered recipes are described in [`strategy-groups.md`](strategy-groups.md).
-`metis_inspired` is described in [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md)
-§9.2, and its frozen WHI-1449 results in [`metis-challenge-results.md`](metis-challenge-results.md).
+`metis_inspired`'s label search, with hand-worked examples, is in §10 of the same guide. Its
+contract is [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md) §9.2, and its frozen
+WHI-1449 results are in [`metis-challenge-results.md`](metis-challenge-results.md).
 
