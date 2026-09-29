@@ -261,7 +261,8 @@ def render_header(view: QuoteView) -> list[str]:
     for name, note in metis.items():
         lines.append(
             f"  {name}: experimental Metis-inspired Python variant, NOT Jupiter Metis (no "
-            f"production equivalence); {note}; not a default"
+            f"production equivalence); {note}; included for comparison only, not adopted as a "
+            "production routing default"
         )
     if SOR in m.algorithms:
         lb = sum(v for k, v in scope["sources"].items() if k.startswith("moe_lb"))

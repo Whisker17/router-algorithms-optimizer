@@ -147,6 +147,13 @@ def test_standard_profiles_default_to_six_base_two_optimized_then_metis(name: st
     # the base strategies receive exactly what they did before
     assert profile.algorithm_config(ALGORITHMS["incremental_graph"]).params == {
         **raw["search"], **raw["graph"]}  # fmt: skip
+    # deriving `all` from the saved nine (twice) changes nothing but the source record
+    again, repeated = _derive(document, "all")
+    third = _derive(again, "all")[0]
+    assert again["algorithms"] == third["algorithms"] == NINE
+    assert again["graph"] == third["graph"] == document["graph"]
+    assert again["strategies"] == third["strategies"] == document["strategies"]
+    assert repeated.resolved()["algorithm_config"] == profile.resolved()["algorithm_config"]
     assert source.read_bytes() == before
 
 
@@ -198,8 +205,12 @@ def test_custom_subsets_are_kept_and_nothing_is_duplicated() -> None:
          {"chunks": 20, "label_hops": 3, "label_pruning": False},
          ["direct", METIS, "path_split", *OPTIMIZED_STRATEGIES],
          {"chunks": 20, "label_hops": 3, "label_pruning": False}),
-        # listed after every other one: stays last, explicit label_hops 5 kept
-        ([*SIX, METIS], {"chunks": 200, "label_hops": 5, "label_pruning": True}, NINE,
+        # listed last among base/custom, no optimized entries: optimized appended AFTER it
+        (["direct", METIS], {"chunks": 11, "label_hops": 3, "label_pruning": False},
+         ["direct", METIS, *OPTIMIZED_STRATEGIES],
+         {"chunks": 11, "label_hops": 3, "label_pruning": False}),
+        ([*SIX, METIS], {"chunks": 200, "label_hops": 5, "label_pruning": True},
+         [*SIX, METIS, *OPTIMIZED_STRATEGIES],
          {"chunks": 200, "label_hops": 5, "label_pruning": True}),
         # not listed, no graph at all: every key from M4 (chunks 50 only because it is absent)
         (["direct", "path_split"], None, ["direct", "path_split", *OPTIMIZED_STRATEGIES, METIS],
@@ -229,6 +240,7 @@ def test_metis_position_and_declared_settings_survive_derivation(
     assert {k: params[k] for k in ("chunks", "label_hops", "label_pruning")} == effective_graph
     again, repeated = _derive(document, "all")  # idempotent for algorithms and settings
     assert again["algorithms"] == expected and again["graph"] == effective_graph
+    assert _derive(again, "all")[0]["algorithms"] == expected
     assert repeated.resolved() == profile.resolved()
     if METIS in algorithms:  # the exact selection stays literal
         assert list(_derive(doc, "profile")[1].algorithms) == algorithms

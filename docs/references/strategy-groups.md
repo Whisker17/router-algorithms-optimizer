@@ -74,9 +74,11 @@ receives exactly the values it received before.
   `search.max_hops: 5` and no `label_hops` is refused under `all` before anything is
   written, not lowered to fit; declare `graph.label_hops` explicitly, or use
   `--strategies base` / `profile`.
-- A profile that lists `metis_inspired` itself keeps its position and every setting. If it
-  is listed after every other base/custom algorithm, it stays last (after the optimized
-  strategies), so deriving `all` from a saved effective profile changes nothing.
+- A profile that lists `metis_inspired` itself keeps its position and every setting; the
+  optimized strategies are appended after the listed algorithms (`[direct, metis_inspired]`
+  runs `direct`, `metis_inspired`, `uni_sor_adaptive`, `uni_sor_optimized`). A saved `all`
+  effective profile (`selection.mode: all`) keeps its recorded order, so deriving `all` from
+  it again changes nothing.
 - No checked-in profile was edited to add Metis-inspired settings, and the WHI-1449 profiles
   and results are unchanged.
 

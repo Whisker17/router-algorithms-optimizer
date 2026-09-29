@@ -13,10 +13,11 @@ The strategies are compared in groups (`benchmark.profile.strategy_group`):
 
 Modes (`all` is the CLI default):
 
-- `all`: the source's base and custom algorithms (source order), then every optimized
-  strategy, then `metis_inspired` (an already listed one is not repeated; a listed
-  `metis_inspired` keeps its place, and one listed after every other base/custom algorithm
-  stays last, so deriving `all` again changes nothing);
+- `all`: the source's base and custom algorithms (source order, so a listed
+  `metis_inspired` keeps its place), then every optimized strategy, then `metis_inspired`
+  when the source does not list it (an already listed one is not repeated). A source that is
+  itself an `all` effective profile (`selection.mode: all`) also keeps its listed optimized
+  strategies in place, so deriving `all` again changes nothing;
 - `base`: the source's base algorithms only;
 - `optimized`: the optimized strategies only;
 - `profile`: the source profile exactly as written (no derivation, no `selection` record).
@@ -101,14 +102,15 @@ def effective_document(
         return document
     listed = [str(a) for a in source["algorithms"]]
     keep = {"all": ("base", "custom"), "base": ("base",), "optimized": ()}[mode]
-    selected = [a for a in listed if strategy_group(a) in keep]
+    # An already derived `all` profile keeps its recorded order (idempotent re-derivation).
+    rederived = mode == "all" and (source.get("selection") or {}).get("mode") == "all"
+    selected = [
+        a for a in listed if strategy_group(a) in keep or (rederived and a in OPTIMIZED_STRATEGIES)
+    ]
     optimized = [] if mode == "base" else list(OPTIMIZED_STRATEGIES)
-    added = list(optimized)
-    if mode == "all" and (METIS not in selected or selected[-1] == METIS):
-        # absent, or listed after every other base/custom algorithm: it runs last
-        selected = [a for a in selected if a != METIS]
-        added.append(METIS)
-    selected += added
+    selected += [a for a in optimized if a not in selected]
+    if mode == "all" and METIS not in selected:
+        selected.append(METIS)
     if not selected:
         raise StrategySelectionError(
             f"--strategies {mode}: {source_path} selects no base strategy (algorithms "

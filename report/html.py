@@ -218,7 +218,8 @@ def _strategy_groups(run: RunData, min_samples: int) -> str:
         if metis:
             parts.append(
                 "<p class='note'>Metis-inspired experimental Python variant — NOT Jupiter "
-                "Metis, no production equivalence, not a default. Settings as recorded in "
+                "Metis, no production equivalence; included for comparison only, not adopted as "
+                "a production routing default. Settings as recorded in "
                 "this run:</p>" + table(["strategy", "recorded settings"], metis, left=2)
             )
         recipes = [
