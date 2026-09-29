@@ -671,7 +671,7 @@ def test_sor_and_metis_labels_cannot_pass_as_full_upstream_products(tmp_path: Pa
     assert "04c7c0b4d85a" in label["title"]
     html = render_report(run.manifest, tmp_path / "out").html.read_text()
     assert "04c7c0b4d85ac2a19a3ff53987d21f9c8f1fe647" in html and "A-1, A-2" in html
-    assert "label is reserved" in html
+    assert "variant (WHI-1449) is not part of this run" in html and "label is reserved" not in html
     metis = load(
         write_run(
             tmp_path / "x", [rec("c1", "metis_inspired", gross=5)], algorithms=["metis_inspired"]

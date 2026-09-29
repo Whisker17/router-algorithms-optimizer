@@ -1,10 +1,11 @@
 # Single-request comparison (WHI-1498)
 
 Compare the routing strategies on **one** exact-input request against a frozen snapshot,
-with exactly one solve attempt per strategy. By default (`--strategies all`, WHI-1528) these
-are the profile's six base algorithms followed by the two named optimized strategies
-`uni_sor_adaptive` and `uni_sor_optimized`. `--strategies base|optimized` runs one group,
-and `--strategies profile` runs the profile's exact selection
+with exactly one solve attempt per strategy. By default (`--strategies all`, WHI-1528 and
+WHI-1540) these are nine: the profile's six base algorithms, the two named optimized
+strategies `uni_sor_adaptive` and `uni_sor_optimized`, then the experimental Metis-inspired
+(NOT Jupiter Metis) `metis_inspired`. `--strategies base|optimized` runs one group, and
+`--strategies profile` runs the profile's exact selection
 ([`strategy-groups.md`](strategy-groups.md)):
 
 ```bash
@@ -15,7 +16,8 @@ uv run python main.py quote \
 ```
 
 Without `--details` it prints one row per selected algorithm (failures included), under
-*Base strategies* / *Optimized strategies* headings when groups were selected:
+*Base strategies* / *Optimized strategies* / *Experimental and other strategies* headings
+when groups were selected:
 status, evaluated gross output in human and raw units, gain versus a valid nonzero
 `direct` baseline (otherwise `N/A`, with the reason), solve latency and counted quotes. A
 net column appears only for an objective that produces a net output. `--details` adds,
@@ -26,6 +28,14 @@ drains the remaining balance and so takes any integer remainder, merges, reused 
 terminal outputs, residuals) and a reconciliation check — plus this execution's
 preparation, worker start-up, solve and final-evaluation durations, counters and limit
 hit. `--details` changes presentation only; it adds no solver run or measurement pass.
+
+With `config/daily_gross.yaml`, `metis_inspired` uses the source's `chunks: 200`, budget
+and `search.*` values plus `label_hops: 4` and `label_pruning: true` from
+`config/metis_challenge/m4.yaml` (the source declares neither). Its label search can
+therefore reach 4 hops while the others search at most 2. The header prints these recorded
+settings next to the shared `search.max_hops` instead of claiming one identical search. This
+is not the frozen WHI-1449 M4 arm, whose 3-hop search and 900 s / 300,000-quote budget
+are not used here ([`strategy-groups.md`](strategy-groups.md)).
 
 This is an **exploratory** request, not a held-out corpus result.
 
@@ -104,7 +114,8 @@ is not modified and batch `run` behaviour is unchanged.
 
 `quote.json` and the run manifest record the exact replay command, which is a plain
 `main.py run --strategies profile` over the derived bundle and effective profile. It
-reruns exactly the saved algorithms and recipe settings, never a re-expansion. The saved run also renders
+reruns exactly the saved algorithms and recipe/graph settings, never a re-expansion: a quote
+saved before WHI-1540 replays its eight algorithms, without `metis_inspired`. The saved run also renders
 offline without credentials:
 
 ```bash
@@ -122,4 +133,6 @@ worked examples of the six base routing algorithms compared here, see
 [`routing-algorithms.md`](routing-algorithms.md) §§2–7. The same guide explains the two
 optimized strategies, `uni_sor_adaptive` and `uni_sor_optimized`, in §§8–9. Their grouping,
 selection and registered recipes are described in [`strategy-groups.md`](strategy-groups.md).
+`metis_inspired` is described in [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md)
+§9.2, and its frozen WHI-1449 results in [`metis-challenge-results.md`](metis-challenge-results.md).
 

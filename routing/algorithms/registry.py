@@ -26,7 +26,9 @@ with `--strategies`; `uni_sor_fast` is in neither (a profile-selected custom exp
 (NOT Jupiter Metis) hop-layered label search over `incremental_graph`'s chunk allocation
 (docs/references/jupiter-metis-challenge.md §9.2). It requires `incremental_graph`'s keys
 plus `graph.label_hops` and `graph.label_pruning`, carries its source/inference provenance,
-and is in neither comparison group: only a profile that names it runs it.
+and is in neither the base nor the optimized group (a `custom` experimental comparator): a
+profile that names it runs it, and `main.py run|quote --strategies all` adds it to the
+default comparison (WHI-1540, `benchmark.strategies`), never as a reference or a default.
 """
 
 from __future__ import annotations

@@ -108,7 +108,14 @@ No loader code ships with the template — write it when the first config file l
   section (per named strategy: its recipe identity plus that recipe's `shortlist`,
   `sampling` and `controls`, checked against the sha256-pinned `latency/l08.yaml` arm)
   and a `selection` record. No checked-in profile declares either; they are never edited
-  (`docs/references/strategy-groups.md`).
+  (`docs/references/strategy-groups.md`). Since WHI-1540 `all` also adds the experimental
+  `metis_inspired`; a `graph.label_hops` / `label_pruning` / `chunks` the profile does not
+  declare is copied into the effective profile from `metis_challenge/m4.yaml` (below).
+- `metis_challenge/{a0,m3,m4,m4_off}.yaml` — the frozen WHI-1449 Metis-inspired challenge arm
+  profiles (`docs/references/metis-challenge-results.md`), run with `--strategies profile`.
+  `m4.yaml` (sha256 `661311df…4471`) is also the pinned source of the Metis-inspired graph
+  settings a profile does not declare under `--strategies all` (WHI-1540); nothing in these
+  files was edited for that.
 - `calibration/` — the WHI-1447 tuning-split calibration profiles: `probe-h3-*.yaml`
   (uncapped 3-hop demand probes), `sweep-base.yaml` and the `sweep-*.yaml` grid points
   generated from it by `main.py calibrate profiles` (do not edit; regenerate).
