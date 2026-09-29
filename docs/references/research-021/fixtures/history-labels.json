@@ -309,5 +309,80 @@
     "l4_minus_e4_gross": "-71759872223944"
    }
   ]
+ },
+ "probe": {
+  "pass": "WHI-1549 bounded tuning probe: selector trajectory only, separate diagnostic pass, not a measured solve; loaded shared host, no timing claim",
+  "source_commit": "91702da3e79bad69bbbb2f5c5cae3ef3e264ddfb",
+  "artifacts": "router-algorithms-optimizer-artifacts/research-021/whi-1549/probe-91702da3e79bad69bbbb2f5c5cae3ef3e264ddfb/",
+  "summary_sha256": "0142102253d01a7c1109938eb954b599f0dff8ecd03864cca1f6c14187cf6da2",
+  "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+  "settings": {
+   "chunks": 50,
+   "label_hops": 4
+  },
+  "spec_sha256": "4f2b5df51d2862aadcd9946d749e8b75b74debecd659a7ef84b0e6001d1ddee4",
+  "cases": 96,
+  "statuses": [
+   "ok"
+  ],
+  "chunk_classes": {
+   "agree": 4595,
+   "tie_capped": 205
+  },
+  "chunks_capped": 4650,
+  "label_relaxations": {
+   "max": 41000,
+   "p50": 19490.5
+  },
+  "quotes_executed": {
+   "max": 14997,
+   "p50": 3120.5
+  },
+  "peak_frontier_labels_max": 27,
+  "labels_dropped_frontier_cap": 0,
+  "labels_dropped_signature_cap": 649628,
+  "certified_strict_insertions": 0,
+  "gross_vs_frozen_incremental": {
+   "E4": {
+    "equal": 89,
+    "higher": 7,
+    "lower": 0
+   },
+   "L4": {
+    "equal": 87,
+    "higher": 6,
+    "lower": 3
+   }
+  },
+  "frozen_records_sha256": {
+   "m4": "ce8395de607db1b6f315feb9a61ba8ce7781e95cc357d65d99bcb242ac664a2c",
+   "m4_off": "1c3d1d23237b1ae2b5968aa1ccf75fb8a7dc3d96e8471aa8c67d3adf2c3db5e7"
+  },
+  "uncapped_h4": {
+   "cases": 12,
+   "file_sha256": "feef6ba026aa6034650790855b674734270d25745e56db57499f1d20588f57f4",
+   "label_relaxations": {
+    "max": 1379299,
+    "p50": 815108.0
+   },
+   "peak_frontier_labels": {
+    "max": 12165,
+    "p50": 7254.0
+   },
+   "peak_signature_labels": {
+    "max": 1666,
+    "p50": 1539.0
+   },
+   "quotes_executed": {
+    "max": 236781,
+    "p50": 169518.0
+   },
+   "spec_sha256": "4f2b5df51d2862aadcd9946d749e8b75b74debecd659a7ef84b0e6001d1ddee4"
+  },
+  "options": {
+   "dominance": "history",
+   "max_labels_per_signature": 1,
+   "max_frontier_labels": null
+  }
  }
 }

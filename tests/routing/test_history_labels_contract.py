@@ -1076,17 +1076,24 @@ def test_relaxation_budget_is_declared_truncation_in_the_registered_unit() -> No
 # ================================================================ 3f. memo bindings
 
 
-def test_memo_records_every_fixture_and_the_h4_classification() -> None:
+def test_memo_records_every_fixture_the_h4_classification_and_the_probe() -> None:
     for name in FIX["fixtures"]:
         assert f"`{name}`" in MEMO, name
     h4 = FIX["h4_real_corpus"]
-    assert h4["class_totals"] == {
-        "agree": 398,
-        "prefix_admission": 6,
-        "tie": 174,
-        "token_revisit": 22,
-    }
-    assert sum(h4["class_totals"].values()) == 600 and len(h4["cases"]) == 12
+    assert h4["sha256"].startswith("a0306f02") and h4["unexplained_chunks"] == 0
+    totals = {"agree": 398, "prefix_admission": 6, "tie": 174, "token_revisit": 22}
+    assert h4["class_totals"] == totals and len(h4["cases"]) == 12
+    per_case: dict[str, int] = {}
+    for row in h4["cases"]:
+        for cls, n in row["classes"].items():
+            per_case[cls] = per_case.get(cls, 0) + n
+    assert per_case == totals
+    assert sum(int(r["l4_minus_e4_gross"]) > 0 for r in h4["cases"]) == 7
+    probe = FIX["probe"]
+    assert probe["spec_sha256"] == spec_sha256()  # the evidence was produced by this spec
+    assert probe["chunk_classes"] == {"agree": 4595, "tie_capped": 205}
+    assert probe["cases"] == 96 and probe["labels_dropped_frontier_cap"] == 0
+    assert probe["peak_frontier_labels_max"] == 27 and "max_frontier_labels: 1024" in MEMO
     for word in ("narrow_go", "labels_retained_unknown", "max_labels_per_signature", "state_cap"):
         assert word in MEMO
 
