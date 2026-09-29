@@ -5,8 +5,10 @@ pools file the source of every pool).
 
 `render_compact` prints one row per selected algorithm, failures included; a run that
 persisted its strategy groups (`main.py quote --strategies`, WHI-1528) shows them as
-separate "Base strategies" / "Optimized strategies" blocks, older runs keep one ungrouped
-table (and `render_details` the same group headings). Groups are a presentation: the
+separate "Base strategies" / "Optimized strategies" / "Experimental and other strategies"
+blocks, older runs keep one ungrouped table (and `render_details` the same group headings).
+A Metis-inspired algorithm's recorded label settings (WHI-1540) are printed in the header,
+so its hop domain is never presented as the shared `search.max_hops`. Groups are a presentation: the
 header prints the recorded execution order separately, since a profile's custom algorithm
 may run between its base ones. `render_details` adds, for EVERY
 algorithm, the final plan exactly as the independent evaluation replayed it -- steps in
@@ -36,6 +38,7 @@ from report.aggregate import (
     _read_checked,
     _verified_bundle,
     bundle_path_from_replay,
+    metis_settings,
     strategy_groups,
     strategy_recipe,
 )
@@ -230,13 +233,19 @@ def render_header(view: QuoteView) -> list[str]:
         f"{env.get('cpu_model') or env.get('machine') or 'CPU unknown'}",
     ]
     groups = strategy_groups(m)
+    metis = {n: note for n in m.algorithms if (note := metis_settings(m, n)) is not None}
     if groups is not None:
         mode = m.resolved_profile.get("selection", {}).get("mode")
         lines.append(
             f"strategies: --strategies {mode} -- "
             + "; ".join(f"{STRATEGY_GROUP_TITLES[g]} ({len(n)})" for g, n in groups)
             + " (groups are a presentation, not the schedule), under the same objective, "
-            "budget and search"
+            + (
+                "budget and search"
+                if not metis
+                else "budget and search.* values; the Metis-inspired label search adds its "
+                "own recorded hop/chunk/pruning settings (below)"
+            )
         )
         lines.append(f"  execution order (sequential, as recorded): {', '.join(m.algorithms)}")
         for group, names in groups:
@@ -249,6 +258,12 @@ def render_header(view: QuoteView) -> list[str]:
                         f"arm {recipe.get('arm')} ({recipe.get('path')}); exact controls "
                         f"{', '.join(entry.get('controls') or {}) or 'none'}; not a default"
                     )
+    for name, note in metis.items():
+        lines.append(
+            f"  {name}: experimental Metis-inspired Python variant, NOT Jupiter Metis (no "
+            f"production equivalence); {note}; included for comparison only, not adopted as a "
+            "production routing default"
+        )
     if SOR in m.algorithms:
         lb = sum(v for k, v in scope["sources"].items() if k.startswith("moe_lb"))
         lines.append(

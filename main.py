@@ -45,9 +45,12 @@ runner). `report` renders such a run as a single-case text report (`report.quote
 `run` and `quote` take `--strategies all|base|optimized|profile` (WHI-1528,
 `benchmark.strategies`; default `all`): the six base strategies the profile selects, then
 the two named optimized strategies (`uni_sor_adaptive`, `uni_sor_optimized`: registered
-L08 recipes of the heuristic over the `uni_sor_port` core), run sequentially under the
+L08 recipes of the heuristic over the `uni_sor_port` core), then the experimental
+Metis-inspired (NOT Jupiter Metis) `metis_inspired` (WHI-1540; undeclared graph.label_hops /
+label_pruning / chunks from `config/metis_challenge/m4.yaml`), run sequentially under the
 profile's objective, budget and search. `base` / `optimized` run one group; `profile`
-runs the profile's exact selection. The derived effective profile is validated before
+runs the profile's exact selection (the replay path: a saved eight-algorithm profile stays
+eight). The derived effective profile is validated before
 anything is written, saved (`run`: `<results-dir>/<run id>/profile.yaml`; `quote`: its
 `profile.yaml`) and replayed with `--strategies profile`; source profiles are never edited.
 
@@ -287,9 +290,12 @@ def _strategies_argument(parser: argparse.ArgumentParser) -> None:
         "--strategies",
         choices=list(MODES),
         default=DEFAULT_MODE,
-        help="all (default): the profile's base strategies, then the named optimized "
-        "strategies uni_sor_adaptive / uni_sor_optimized; base / optimized: one group; "
-        "profile: the profile's exact algorithm selection",
+        help="all (default): the profile's base (and other listed) strategies, then the "
+        "named optimized strategies uni_sor_adaptive / uni_sor_optimized, then the "
+        "experimental metis_inspired (Metis-inspired, NOT Jupiter Metis; undeclared "
+        "graph.label_hops/label_pruning/chunks from config/metis_challenge/m4.yaml); "
+        "base / optimized: one group; profile: the profile's exact algorithm selection "
+        "(the replay path)",
     )
 
 
@@ -612,7 +618,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
 
     from benchmark.profile import parse_profile
     from benchmark.results import PROFILE_FILE, new_run_id
-    from benchmark.strategies import announce, derive
+    from benchmark.strategies import DERIVATION_NOTE, announce, derive
     from snapshot.bundle import sha256_file
 
     try:
@@ -642,7 +648,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
             f"# Effective run profile written by `main.py run --strategies {args.strategies}` "
             f"(WHI-1528).\n# Source profile: {args.profile} (sha256 "
             f"{profile.selection['source_profile']['sha256']}); the source is unchanged.\n"
-            + yaml.safe_dump(effective, sort_keys=False)
+            f"# {DERIVATION_NOTE}\n" + yaml.safe_dump(effective, sort_keys=False)
         )
         try:
             profile = parse_profile(yaml.safe_load(profile_text), str(saved))  # as read back

@@ -20,11 +20,12 @@ renders the saved run offline.
 
 `--strategies` (WHI-1528, `benchmark.strategies`; default `all`) derives the compared set
 from the source profile first: `all` = the source's base (and custom) algorithms, then the
-named optimized strategies; `base`, `optimized`, or `profile` = the source's exact
-selection. The single-run override applies to the derived document, which is the saved
-effective profile; the replay command runs it with `--strategies profile`, so a replay
-keeps exactly the saved algorithms and recipe settings. `quote.json` records the mode and
-groups. In `profile` mode the effective profile is byte-for-byte the pre-WHI-1528 one.
+named optimized strategies, then the experimental `metis_inspired` (WHI-1540); `base`,
+`optimized`, or `profile` = the source's exact selection. The single-run override applies to
+the derived document, which is the saved effective profile; the replay command runs it with
+`--strategies profile`, so a replay keeps exactly the saved algorithms and recipe settings.
+`quote.json` records the mode and groups. In `profile` mode the effective profile is
+byte-for-byte the pre-WHI-1528 one.
 
 `empirical_cost` profiles are refused: the derived bundle carries no frozen price
 context, and without one that objective ranks plans differently (unranked gross), so the
@@ -52,7 +53,7 @@ from benchmark.profile import (
 )
 from benchmark.results import RunManifest, new_run_id
 from benchmark.runner import run_experiment
-from benchmark.strategies import DEFAULT_MODE, derive, selected_groups
+from benchmark.strategies import DEFAULT_MODE, DERIVATION_NOTE, derive, selected_groups
 from snapshot.bundle import load_bundle, sha256_file
 from snapshot.models import Case, SnapshotBundle
 from snapshot.request import (
@@ -153,9 +154,8 @@ def run_quote(prepared: PreparedQuote, quotes_dir: str | Path) -> QuoteRun:
     )
     if prepared.strategies != "profile":
         header += (
-            f"# Strategies: --strategies {prepared.strategies} (WHI-1528): `algorithms`, "
-            "`strategies` and `selection` are derived from the source; replay with "
-            "--strategies profile.\n"
+            f"# Strategies: --strategies {prepared.strategies} (WHI-1528, WHI-1540): "
+            f"{DERIVATION_NOTE}\n"
         )
     effective = prepared.effective_document
     if effective is None:  # a PreparedQuote built without prepare_quote: the source as is

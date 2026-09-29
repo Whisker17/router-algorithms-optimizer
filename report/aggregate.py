@@ -965,7 +965,7 @@ STRATEGY_GROUPS = ("base", "optimized", "custom")
 STRATEGY_GROUP_TITLES = {
     "base": "Base strategies",
     "optimized": "Optimized strategies",
-    "custom": "Other profile-selected strategies",
+    "custom": "Experimental and other strategies",
 }
 
 
@@ -999,6 +999,29 @@ def strategy_recipe(manifest: RunManifest, algorithm: str) -> dict[str, Any] | N
     """The persisted `strategies.<algorithm>` entry (recipe identity and settings)."""
     entry = manifest.resolved_profile.get("strategies", {}).get(algorithm)
     return entry if isinstance(entry, dict) else None
+
+
+def algorithm_params(manifest: RunManifest, algorithm: str) -> dict[str, Any]:
+    """The run's own recorded `prepare` parameters of `algorithm` (`resolved_profile.
+    algorithm_config.<algorithm>.params`), `{}` when none were recorded."""
+    config = manifest.resolved_profile.get("algorithm_config", {}).get(algorithm)
+    params = config.get("params") if isinstance(config, dict) else None
+    return params if isinstance(params, dict) else {}
+
+
+def metis_settings(manifest: RunManifest, algorithm: str) -> str | None:
+    """WHI-1540: the recorded label-search settings of a Metis-inspired algorithm, stated
+    against the run's shared `search.max_hops` (its hop domain may differ), or `None`."""
+    params = algorithm_params(manifest, algorithm)
+    if "metis" not in algorithm.lower() or "label_hops" not in params:
+        return None
+    hops, max_hops = params["label_hops"], params.get("max_hops")
+    domain = "the same hop bound as" if hops == max_hops else "a DIFFERENT hop domain from"
+    return (
+        f"graph.label_hops {hops}, graph.chunks {params.get('chunks')}, graph.label_pruning "
+        f"{json.dumps(params.get('label_pruning'))} (recorded) -- {domain} the shared "
+        f"search.max_hops {max_hops}"
+    )
 
 
 # --------------------------------------------------------------------------- labels

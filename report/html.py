@@ -138,9 +138,8 @@ def _labels(run: RunData) -> str:
     metis_note = (
         ""
         if metis
-        else "<p class='note'>The <code>metis_inspired</code> label is reserved for a future "
-        "(0.2.0) experimental variant; no Metis-inspired algorithm is part of this run, and "
-        "nothing here is Jupiter Metis.</p>"
+        else "<p class='note'>The experimental <code>metis_inspired</code> variant (WHI-1449) "
+        "is not part of this run, and nothing here is Jupiter Metis.</p>"
     )
     return (
         "<h3>Algorithms and what their names claim</h3>"
@@ -171,7 +170,9 @@ def _strategy_groups(run: RunData, min_samples: int) -> str:
         f"<p>Selected with <code>--strategies {esc(selection.get('mode'))}</code> from source "
         f"profile <code>{esc(source.get('path'))}</code> (sha256 "
         f"<code>{esc(source.get('sha256'))}</code>); groups are read from this run's own "
-        "records. Every group ran under the same objective, budget and search settings. "
+        "records. Every group ran under the same objective, budget and search.* values; "
+        "an experimental algorithm's own recorded settings are listed with its group (a "
+        "Metis-inspired label search may use a different hop domain). "
         "Groups are a presentation, not the schedule: the algorithms ran sequentially in "
         f"the recorded order <code>{esc(', '.join(run.manifest.algorithms))}</code>. "
         "Optimized strategies are experimental heuristics with registered recipes: "
@@ -209,6 +210,18 @@ def _strategy_groups(run: RunData, min_samples: int) -> str:
                 rows,
             )  # fmt: skip
         )
+        metis = [
+            [f"<code>{esc(algorithm)}</code>", esc(note)]
+            for algorithm in members
+            if (note := agg.metis_settings(run.manifest, algorithm)) is not None
+        ]
+        if metis:
+            parts.append(
+                "<p class='note'>Metis-inspired experimental Python variant — NOT Jupiter "
+                "Metis, no production equivalence; included for comparison only, not adopted as "
+                "a production routing default. Settings as recorded in "
+                "this run:</p>" + table(["strategy", "recorded settings"], metis, left=2)
+            )
         recipes = [
             [
                 f"<code>{esc(algorithm)}</code>",
