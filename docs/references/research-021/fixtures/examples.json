@@ -1,0 +1,1351 @@
+{
+  "_comment": "R021-C/1 example records (contract.md §4-§8). Positives must validate; each negative is a minimal mutation of a positive and must fail with exactly its declared violation. Values are illustrative records whose numbers were derived independently (reconstruction R6), not outputs of any 0.2.1 implementation.",
+  "domain_hashes": {
+    "grid38_p1p2": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+    "grid38_p2p1": "f98ddef619154380151ea9b9d4835c9c067aba59a52d1fbe212033e979add84c",
+    "raw38": "5925efb238b2aec6e0461905277c4cbb94722dfb31176b57deb334c26f8765c7",
+    "cfmm38": "e0379a96b2164ef9622a86749911f57831a9ffc0343b83b8a8bfb27f5a579201",
+    "chunk38": "c22ebb126347f51b63928e37e4ece2310cab4552d2cb71f45b2e9876e8bcfa89"
+  },
+  "domains": {
+    "grid38_p1p2": {
+      "schema": "r021.domain/1",
+      "universe": {
+        "bundle": "fixture:R021-FX-GRID38",
+        "cohort": "fixture",
+        "pools": ["p1", "p2"]
+      },
+      "protocols": ["constant_product"],
+      "pool_order": ["p1", "p2"],
+      "hops": {
+        "max": 1,
+        "param": null
+      },
+      "splits": {
+        "max": 2,
+        "param": "search.max_splits",
+        "governs": "allocation"
+      },
+      "amount_grid": {
+        "kind": "repository_grid",
+        "percent_step": 5,
+        "remainder": "last_leg_all_remaining"
+      },
+      "zero_output_leg": "infeasible",
+      "token_reuse": "simple_path",
+      "pool_reuse": "disjoint",
+      "dag_admission": "plan_token_dag",
+      "full_fill": "v1_full_fill"
+    },
+    "grid38_p2p1": {
+      "schema": "r021.domain/1",
+      "universe": {
+        "bundle": "fixture:R021-FX-GRID38",
+        "cohort": "fixture",
+        "pools": ["p1", "p2"]
+      },
+      "protocols": ["constant_product"],
+      "pool_order": ["p2", "p1"],
+      "hops": {
+        "max": 1,
+        "param": null
+      },
+      "splits": {
+        "max": 2,
+        "param": "search.max_splits",
+        "governs": "allocation"
+      },
+      "amount_grid": {
+        "kind": "repository_grid",
+        "percent_step": 5,
+        "remainder": "last_leg_all_remaining"
+      },
+      "zero_output_leg": "infeasible",
+      "token_reuse": "simple_path",
+      "pool_reuse": "disjoint",
+      "dag_admission": "plan_token_dag",
+      "full_fill": "v1_full_fill"
+    },
+    "raw38": {
+      "schema": "r021.domain/1",
+      "universe": {
+        "bundle": "fixture:R021-FX-GRID38",
+        "cohort": "fixture",
+        "pools": ["p1", "p2"]
+      },
+      "protocols": ["constant_product"],
+      "pool_order": ["p1", "p2"],
+      "hops": {
+        "max": 1,
+        "param": null
+      },
+      "splits": {
+        "max": 2,
+        "param": "search.max_splits",
+        "governs": "allocation"
+      },
+      "amount_grid": {
+        "kind": "raw_integer",
+        "percent_step": null,
+        "remainder": "explicit_integer_legs"
+      },
+      "zero_output_leg": "infeasible",
+      "token_reuse": "simple_path",
+      "pool_reuse": "disjoint",
+      "dag_admission": "plan_token_dag",
+      "full_fill": "v1_full_fill"
+    },
+    "cfmm38": {
+      "schema": "r021.domain/1",
+      "universe": {
+        "bundle": "fixture:R021-FX-GRID38",
+        "cohort": "fixture",
+        "pools": ["p1", "p2"]
+      },
+      "protocols": ["constant_product"],
+      "pool_order": ["p1", "p2"],
+      "hops": {
+        "max": 1,
+        "param": null
+      },
+      "splits": {
+        "max": 2,
+        "param": "search.max_splits",
+        "governs": "allocation"
+      },
+      "amount_grid": {
+        "kind": "recovered_continuous",
+        "percent_step": null,
+        "remainder": "explicit_integer_legs"
+      },
+      "zero_output_leg": "infeasible",
+      "token_reuse": "simple_path",
+      "pool_reuse": "disjoint",
+      "dag_admission": "plan_token_dag",
+      "full_fill": "v1_full_fill"
+    },
+    "chunk38": {
+      "schema": "r021.domain/1",
+      "universe": {
+        "bundle": "fixture:R021-FX-GRID38",
+        "cohort": "fixture",
+        "pools": ["p1", "p2"]
+      },
+      "protocols": ["constant_product"],
+      "pool_order": ["p1", "p2"],
+      "hops": {
+        "max": 1,
+        "param": "graph.label_hops"
+      },
+      "splits": {
+        "max": 38,
+        "param": "graph.chunks",
+        "governs": "allocation"
+      },
+      "amount_grid": {
+        "kind": "chunk_grid",
+        "chunks": 38,
+        "remainder": "floor_chunks"
+      },
+      "zero_output_leg": "infeasible",
+      "token_reuse": "simple_path",
+      "pool_reuse": "shared_merged",
+      "dag_admission": "plan_token_dag",
+      "full_fill": "v1_full_fill"
+    }
+  },
+  "positives": [
+    {
+      "id": "P-DSC-GRID",
+      "kind": "diagnostics",
+      "note": "repository_grid optimum 58, proven by exhaustive enumeration of the 21-point grid (R6)",
+      "record": {
+        "schema": "r021.diagnostics/1",
+        "contract": "R021-C/1",
+        "algorithm": "direct_split_certified",
+        "domain": {
+          "schema": "r021.domain/1",
+          "universe": {
+            "bundle": "fixture:R021-FX-GRID38",
+            "cohort": "fixture",
+            "pools": ["p1", "p2"]
+          },
+          "protocols": ["constant_product"],
+          "pool_order": ["p1", "p2"],
+          "hops": {
+            "max": 1,
+            "param": null
+          },
+          "splits": {
+            "max": 2,
+            "param": "search.max_splits",
+            "governs": "allocation"
+          },
+          "amount_grid": {
+            "kind": "repository_grid",
+            "percent_step": 5,
+            "remainder": "last_leg_all_remaining"
+          },
+          "zero_output_leg": "infeasible",
+          "token_reuse": "simple_path",
+          "pool_reuse": "disjoint",
+          "dag_admission": "plan_token_dag",
+          "full_fill": "v1_full_fill"
+        },
+        "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+        "certificate": {
+          "schema": "r021.certificate/1",
+          "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+          "objective": "gross_only",
+          "source": {
+            "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+            "bundle_hash": "fixture:R021-FX-GRID38",
+            "algorithm": "direct_split_certified",
+            "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+          },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
+          "lower_raw": "58",
+          "upper_raw": "58",
+          "gap_raw": "0",
+          "bound_kind": "certified",
+          "upper_source": "exhaustive",
+          "estimate": null,
+          "optimality_proven": true,
+          "termination": "complete"
+        },
+        "certificate_unavailable_reason": null,
+        "max_candidates_unit": "finalist_plans_evaluated",
+        "work": {
+          "quotes_executed": 41,
+          "quotes_memoized": 2,
+          "internal_evaluations": 2,
+          "bb_nodes_expanded": 1,
+          "bound_evaluations": 1,
+          "peak_open_nodes": 1
+        }
+      },
+      "context": {
+        "status": "ok",
+        "final_score": "58",
+        "objective": "gross_only",
+        "quotes_counted": 41,
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "direct_split_certified",
+          "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
+      }
+    },
+    {
+      "id": "P-DSC-GAP",
+      "kind": "diagnostics",
+      "note": "budget-truncated: single-pool incumbent 57, exact-rational tangent bound 59 at z=10 over [0,38] (R6)",
+      "record": {
+        "schema": "r021.diagnostics/1",
+        "contract": "R021-C/1",
+        "algorithm": "direct_split_certified",
+        "domain": {
+          "schema": "r021.domain/1",
+          "universe": {
+            "bundle": "fixture:R021-FX-GRID38",
+            "cohort": "fixture",
+            "pools": ["p1", "p2"]
+          },
+          "protocols": ["constant_product"],
+          "pool_order": ["p1", "p2"],
+          "hops": {
+            "max": 1,
+            "param": null
+          },
+          "splits": {
+            "max": 2,
+            "param": "search.max_splits",
+            "governs": "allocation"
+          },
+          "amount_grid": {
+            "kind": "repository_grid",
+            "percent_step": 5,
+            "remainder": "last_leg_all_remaining"
+          },
+          "zero_output_leg": "infeasible",
+          "token_reuse": "simple_path",
+          "pool_reuse": "disjoint",
+          "dag_admission": "plan_token_dag",
+          "full_fill": "v1_full_fill"
+        },
+        "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+        "certificate": {
+          "schema": "r021.certificate/1",
+          "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+          "objective": "gross_only",
+          "source": {
+            "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+            "bundle_hash": "fixture:R021-FX-GRID38",
+            "algorithm": "direct_split_certified",
+            "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+          },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
+          "lower_raw": "57",
+          "upper_raw": "59",
+          "gap_raw": "2",
+          "bound_kind": "certified",
+          "upper_source": "exact_rational",
+          "estimate": null,
+          "optimality_proven": false,
+          "termination": "node_cap"
+        },
+        "certificate_unavailable_reason": null,
+        "max_candidates_unit": "finalist_plans_evaluated",
+        "work": {
+          "quotes_executed": 3,
+          "internal_evaluations": 1,
+          "bb_nodes_expanded": 1,
+          "bound_evaluations": 1,
+          "peak_open_nodes": 1
+        }
+      },
+      "context": {
+        "status": "ok",
+        "final_score": "57",
+        "objective": "gross_only",
+        "quotes_counted": 3,
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "direct_split_certified",
+          "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
+      }
+    },
+    {
+      "id": "P-DSC-RAW",
+      "kind": "diagnostics",
+      "note": "raw_integer domain: incumbent x=10 gives 59 = floor of the tangent bound (R6)",
+      "record": {
+        "schema": "r021.diagnostics/1",
+        "contract": "R021-C/1",
+        "algorithm": "direct_split_certified",
+        "domain": {
+          "schema": "r021.domain/1",
+          "universe": {
+            "bundle": "fixture:R021-FX-GRID38",
+            "cohort": "fixture",
+            "pools": ["p1", "p2"]
+          },
+          "protocols": ["constant_product"],
+          "pool_order": ["p1", "p2"],
+          "hops": {
+            "max": 1,
+            "param": null
+          },
+          "splits": {
+            "max": 2,
+            "param": "search.max_splits",
+            "governs": "allocation"
+          },
+          "amount_grid": {
+            "kind": "raw_integer",
+            "percent_step": null,
+            "remainder": "explicit_integer_legs"
+          },
+          "zero_output_leg": "infeasible",
+          "token_reuse": "simple_path",
+          "pool_reuse": "disjoint",
+          "dag_admission": "plan_token_dag",
+          "full_fill": "v1_full_fill"
+        },
+        "candidate_domain_hash": "5925efb238b2aec6e0461905277c4cbb94722dfb31176b57deb334c26f8765c7",
+        "certificate": {
+          "schema": "r021.certificate/1",
+          "candidate_domain_hash": "5925efb238b2aec6e0461905277c4cbb94722dfb31176b57deb334c26f8765c7",
+          "objective": "gross_only",
+          "source": {
+            "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+            "bundle_hash": "fixture:R021-FX-GRID38",
+            "algorithm": "direct_split_certified",
+            "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+          },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
+          "lower_raw": "59",
+          "upper_raw": "59",
+          "gap_raw": "0",
+          "bound_kind": "certified",
+          "upper_source": "exact_rational",
+          "estimate": null,
+          "optimality_proven": true,
+          "termination": "complete"
+        },
+        "certificate_unavailable_reason": null,
+        "max_candidates_unit": "finalist_plans_evaluated",
+        "work": {
+          "quotes_executed": 5,
+          "internal_evaluations": 1,
+          "bb_nodes_expanded": 1,
+          "bound_evaluations": 1,
+          "peak_open_nodes": 1
+        }
+      },
+      "context": {
+        "status": "ok",
+        "final_score": "59",
+        "objective": "gross_only",
+        "quotes_counted": 5,
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "direct_split_certified",
+          "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
+      }
+    },
+    {
+      "id": "P-CFMM-EST",
+      "kind": "diagnostics",
+      "note": "numerical continuous optimum ~59.3676 is an estimate, never a certified gap",
+      "record": {
+        "schema": "r021.diagnostics/1",
+        "contract": "R021-C/1",
+        "algorithm": "cfmm_dual",
+        "domain": {
+          "schema": "r021.domain/1",
+          "universe": {
+            "bundle": "fixture:R021-FX-GRID38",
+            "cohort": "fixture",
+            "pools": ["p1", "p2"]
+          },
+          "protocols": ["constant_product"],
+          "pool_order": ["p1", "p2"],
+          "hops": {
+            "max": 1,
+            "param": null
+          },
+          "splits": {
+            "max": 2,
+            "param": "search.max_splits",
+            "governs": "allocation"
+          },
+          "amount_grid": {
+            "kind": "recovered_continuous",
+            "percent_step": null,
+            "remainder": "explicit_integer_legs"
+          },
+          "zero_output_leg": "infeasible",
+          "token_reuse": "simple_path",
+          "pool_reuse": "disjoint",
+          "dag_admission": "plan_token_dag",
+          "full_fill": "v1_full_fill"
+        },
+        "candidate_domain_hash": "e0379a96b2164ef9622a86749911f57831a9ffc0343b83b8a8bfb27f5a579201",
+        "certificate": {
+          "schema": "r021.certificate/1",
+          "candidate_domain_hash": "e0379a96b2164ef9622a86749911f57831a9ffc0343b83b8a8bfb27f5a579201",
+          "objective": "gross_only",
+          "source": {
+            "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+            "bundle_hash": "fixture:R021-FX-GRID38",
+            "algorithm": "cfmm_dual",
+            "effective_settings_sha256": "5a719fb806d92f4b317f5a62117de383183b907efc08b41e3c56659fe9def971"
+          },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
+          "lower_raw": "59",
+          "upper_raw": null,
+          "gap_raw": null,
+          "bound_kind": "estimate",
+          "upper_source": null,
+          "estimate": {
+            "value": "59.3676",
+            "residual": "1e-12",
+            "tolerance": "1e-9"
+          },
+          "optimality_proven": false,
+          "termination": "converged"
+        },
+        "certificate_unavailable_reason": null,
+        "max_candidates_unit": "declared_by_research",
+        "work": {
+          "quotes_executed": 4,
+          "exact_replay_quotes": 2,
+          "internal_evaluations": 1,
+          "market_oracle_calls": 24,
+          "gradient_evaluations": 12,
+          "optimizer_iterations": 6,
+          "recovery_attempts": 1
+        }
+      },
+      "context": {
+        "status": "ok",
+        "final_score": "59",
+        "objective": "gross_only",
+        "quotes_counted": 4,
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "cfmm_dual",
+          "effective_settings_sha256": "5a719fb806d92f4b317f5a62117de383183b907efc08b41e3c56659fe9def971"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
+      }
+    },
+    {
+      "id": "P-HEUR-UNKNOWN",
+      "kind": "diagnostics",
+      "note": "a heuristic that claims no bound: unknown, upper null (never 0)",
+      "record": {
+        "schema": "r021.diagnostics/1",
+        "contract": "R021-C/1",
+        "algorithm": "metis_history",
+        "domain": {
+          "schema": "r021.domain/1",
+          "universe": {
+            "bundle": "fixture:R021-FX-GRID38",
+            "cohort": "fixture",
+            "pools": ["p1", "p2"]
+          },
+          "protocols": ["constant_product"],
+          "pool_order": ["p1", "p2"],
+          "hops": {
+            "max": 1,
+            "param": "graph.label_hops"
+          },
+          "splits": {
+            "max": 38,
+            "param": "graph.chunks",
+            "governs": "allocation"
+          },
+          "amount_grid": {
+            "kind": "chunk_grid",
+            "chunks": 38,
+            "remainder": "floor_chunks"
+          },
+          "zero_output_leg": "infeasible",
+          "token_reuse": "simple_path",
+          "pool_reuse": "shared_merged",
+          "dag_admission": "plan_token_dag",
+          "full_fill": "v1_full_fill"
+        },
+        "candidate_domain_hash": "c22ebb126347f51b63928e37e4ece2310cab4552d2cb71f45b2e9876e8bcfa89",
+        "certificate": {
+          "schema": "r021.certificate/1",
+          "candidate_domain_hash": "c22ebb126347f51b63928e37e4ece2310cab4552d2cb71f45b2e9876e8bcfa89",
+          "objective": "gross_only",
+          "source": {
+            "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+            "bundle_hash": "fixture:R021-FX-GRID38",
+            "algorithm": "metis_history",
+            "effective_settings_sha256": "51b94943f4c5beee709ba2987f83c2385aa59165867807a68de64ece8d8ddbf6"
+          },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
+          "lower_raw": "58",
+          "upper_raw": null,
+          "gap_raw": null,
+          "bound_kind": "unknown",
+          "upper_source": null,
+          "estimate": null,
+          "optimality_proven": false,
+          "termination": "complete"
+        },
+        "certificate_unavailable_reason": null,
+        "max_candidates_unit": "label_relaxations_per_chunk",
+        "work": {
+          "quotes_executed": 9,
+          "internal_evaluations": 1,
+          "label_relaxations": 4,
+          "labels_discarded_dominance": 0,
+          "labels_retained_unknown": 1,
+          "peak_frontier_labels": 2
+        }
+      },
+      "context": {
+        "status": "ok",
+        "final_score": "58",
+        "objective": "gross_only",
+        "quotes_counted": 9,
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "metis_history",
+          "effective_settings_sha256": "51b94943f4c5beee709ba2987f83c2385aa59165867807a68de64ece8d8ddbf6"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
+      }
+    },
+    {
+      "id": "P-UNAVAILABLE",
+      "kind": "diagnostics",
+      "note": "hard-killed solve: no certificate survives, only the runner's last_valid_candidate",
+      "record": {
+        "schema": "r021.diagnostics/1",
+        "contract": "R021-C/1",
+        "algorithm": "direct_split_certified",
+        "domain": {
+          "schema": "r021.domain/1",
+          "universe": {
+            "bundle": "fixture:R021-FX-GRID38",
+            "cohort": "fixture",
+            "pools": ["p1", "p2"]
+          },
+          "protocols": ["constant_product"],
+          "pool_order": ["p1", "p2"],
+          "hops": {
+            "max": 1,
+            "param": null
+          },
+          "splits": {
+            "max": 2,
+            "param": "search.max_splits",
+            "governs": "allocation"
+          },
+          "amount_grid": {
+            "kind": "repository_grid",
+            "percent_step": 5,
+            "remainder": "last_leg_all_remaining"
+          },
+          "zero_output_leg": "infeasible",
+          "token_reuse": "simple_path",
+          "pool_reuse": "disjoint",
+          "dag_admission": "plan_token_dag",
+          "full_fill": "v1_full_fill"
+        },
+        "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+        "certificate": null,
+        "certificate_unavailable_reason": "hard_timeout",
+        "max_candidates_unit": "finalist_plans_evaluated",
+        "work": {}
+      },
+      "context": {
+        "status": "timeout",
+        "final_score": null,
+        "objective": "gross_only",
+        "quotes_counted": 0,
+        "hard_killed": true,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "direct_split_certified",
+          "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
+      }
+    },
+    {
+      "id": "P-CMP-SAME",
+      "kind": "comparison",
+      "record": {
+        "class": "same_domain",
+        "ranked": true,
+        "left": {
+          "algorithm": "direct_split",
+          "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+          "objective": "gross_only",
+          "budget": {
+            "time_limit_seconds": 120,
+            "max_quotes": 50000,
+            "max_candidates": null
+          }
+        },
+        "right": {
+          "algorithm": "direct_split_certified",
+          "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+          "objective": "gross_only",
+          "budget": {
+            "time_limit_seconds": 120,
+            "max_quotes": 50000,
+            "max_candidates": null
+          }
+        },
+        "metrics": [
+          {
+            "name": "quotes",
+            "numerator_unit": "quotes_executed",
+            "denominator_unit": "quotes_executed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "P-CMP-EXPANDED",
+      "kind": "comparison",
+      "record": {
+        "class": "expanded_domain",
+        "ranked": true,
+        "left": {
+          "algorithm": "direct_split",
+          "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+          "objective": "gross_only",
+          "budget": {
+            "time_limit_seconds": 120,
+            "max_quotes": 50000,
+            "max_candidates": null
+          }
+        },
+        "right": {
+          "algorithm": "direct_split_certified",
+          "candidate_domain_hash": "5925efb238b2aec6e0461905277c4cbb94722dfb31176b57deb334c26f8765c7",
+          "objective": "gross_only",
+          "budget": {
+            "time_limit_seconds": 120,
+            "max_quotes": 50000,
+            "max_candidates": null
+          }
+        },
+        "metrics": []
+      }
+    },
+    {
+      "id": "P-TIME-QUOTE",
+      "kind": "timing",
+      "record": {
+        "mode": "quote",
+        "samples": 1,
+        "solve_wall_seconds": [0.012],
+        "percentiles": null,
+        "host_load_contaminated": false,
+        "verdict": null
+      }
+    },
+    {
+      "id": "P-TIME-BATCH",
+      "kind": "timing",
+      "record": {
+        "mode": "batch_comparison",
+        "samples": 10,
+        "solve_wall_seconds": null,
+        "percentiles": {
+          "p50": 0.8
+        },
+        "host_load_contaminated": true,
+        "verdict": "inconclusive"
+      }
+    },
+    {
+      "id": "P-DISP",
+      "kind": "disposition",
+      "record": {
+        "algorithm": "metis_history",
+        "research_outcome": "go",
+        "disposition": "keep_experimental",
+        "evidence": {
+          "split": "report",
+          "holdout_exposure": "previously_exposed"
+        },
+        "loss_tolerance_bps": null
+      }
+    },
+    {
+      "id": "P-DISP-NOGO",
+      "kind": "disposition",
+      "record": {
+        "algorithm": "cfmm_dual",
+        "research_outcome": "no_go",
+        "disposition": "not_implemented",
+        "evidence": {
+          "split": null,
+          "holdout_exposure": null
+        },
+        "loss_tolerance_bps": null
+      }
+    }
+  ],
+  "negatives": [
+    {
+      "id": "N-UNKNOWN-ZERO",
+      "kind": "negative",
+      "base": "P-HEUR-UNKNOWN",
+      "patch": {
+        "certificate.upper_raw": "0"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_UNCERTIFIED_BOUND",
+      "note": "an unknown bound is null, never zero"
+    },
+    {
+      "id": "N-ESTIMATE-GAP",
+      "kind": "negative",
+      "base": "P-CFMM-EST",
+      "patch": {
+        "certificate.upper_raw": "60",
+        "certificate.gap_raw": "1"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_UNCERTIFIED_BOUND",
+      "note": "a numerical estimate cannot populate a certified gap"
+    },
+    {
+      "id": "N-FLOAT-CERT",
+      "kind": "negative",
+      "base": "P-DSC-GAP",
+      "patch": {
+        "certificate.upper_source": "float_optimizer"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_CERTIFIED_SOURCE",
+      "note": "a float optimizer value is not an outward-safe certified bound"
+    },
+    {
+      "id": "N-ORDER",
+      "kind": "negative",
+      "base": "P-DSC-GAP",
+      "patch": {
+        "certificate.upper_raw": "56",
+        "certificate.gap_raw": "-1"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_ORDER",
+      "note": "a certified upper bound below the validated incumbent"
+    },
+    {
+      "id": "N-GAP",
+      "kind": "negative",
+      "base": "P-DSC-GAP",
+      "patch": {
+        "certificate.gap_raw": "0"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_GAP",
+      "note": "gap_raw must equal upper_raw - lower_raw"
+    },
+    {
+      "id": "N-OPT",
+      "kind": "negative",
+      "base": "P-DSC-GAP",
+      "patch": {
+        "certificate.optimality_proven": true
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_OPTIMALITY",
+      "note": "optimality needs a certified zero gap"
+    },
+    {
+      "id": "N-COMPLETE-GAP",
+      "kind": "negative",
+      "base": "P-DSC-GAP",
+      "patch": {
+        "certificate.termination": "complete"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_TERMINATION",
+      "note": "a complete search closes the gap"
+    },
+    {
+      "id": "N-AMOUNT-TYPE",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.lower_raw": 58
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_AMOUNT_TYPE",
+      "note": "raw amounts are decimal strings"
+    },
+    {
+      "id": "N-DOMAIN-TRANSFER",
+      "kind": "negative",
+      "base": "P-DSC-RAW",
+      "patch": {
+        "certificate": "@P-DSC-GRID.certificate"
+      },
+      "context_patch": {
+        "final_score": "58"
+      },
+      "rehash": false,
+      "violation": "C_DOMAIN",
+      "note": "the grid certificate (upper 58) does not cover the raw_integer domain whose optimum is 59"
+    },
+    {
+      "id": "N-OBJECTIVE",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {},
+      "context_patch": {
+        "objective": "empirical_cost"
+      },
+      "rehash": false,
+      "violation": "C_OBJECTIVE",
+      "note": "a gross-only certificate in an empirical_cost run"
+    },
+    {
+      "id": "N-LOWER-EVAL",
+      "kind": "negative",
+      "base": "P-DSC-GAP",
+      "patch": {
+        "certificate.lower_raw": "58",
+        "certificate.gap_raw": "1"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_LOWER_EVAL",
+      "note": "lower_raw must equal the independently evaluated score"
+    },
+    {
+      "id": "N-IDENTITY",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.source.effective_settings_sha256": null
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_IDENTITY",
+      "note": "certificate identity needs source, bundle and settings"
+    },
+    {
+      "id": "N-SOURCE-ALGORITHM",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.source.algorithm": "direct_split"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_IDENTITY",
+      "note": "a nonempty but different algorithm is not this run's certificate"
+    },
+    {
+      "id": "N-SOURCE-REVISION",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.source.git_revision": "358bbe0c0a86965607c950d12ee0ce0e84915b2d"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_IDENTITY",
+      "note": "a certificate from another source revision"
+    },
+    {
+      "id": "N-SOURCE-BUNDLE",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.source.bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_IDENTITY",
+      "note": "a certificate from another bundle"
+    },
+    {
+      "id": "N-SOURCE-SETTINGS",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.source.effective_settings_sha256": "582d8d3229b133bbb88f9fbb077c116e25e590805d3ddc0da123abf572a4ce18"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_IDENTITY",
+      "note": "a certificate from other effective settings"
+    },
+    {
+      "id": "N-REQUEST-MISSING",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request": "@delete"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "a certificate names its exact request"
+    },
+    {
+      "id": "N-REQUEST-CASE",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request.case_id": "r021-other"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "another case id"
+    },
+    {
+      "id": "N-REQUEST-TOKEN-IN",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request.token_in": "T"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "another input token"
+    },
+    {
+      "id": "N-REQUEST-TOKEN-OUT",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request.token_out": "S"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "another output token"
+    },
+    {
+      "id": "N-REQUEST-AMOUNT",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request.amount_in": "39"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "another raw input amount"
+    },
+    {
+      "id": "N-REQUEST-TRANSFER",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {},
+      "context_patch": {
+        "request": {
+          "case_id": "r021-grid135-rev",
+          "token_in": "T",
+          "token_out": "S",
+          "amount_in": "135"
+        }
+      },
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "the S->T 38 proof reused for the T->S 135 request, whose repository-grid optimum is also 58 (R6): a matching score does not transfer a proof"
+    },
+    {
+      "id": "N-KILLED",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {},
+      "context_patch": {
+        "status": "timeout",
+        "hard_killed": true,
+        "final_score": null
+      },
+      "rehash": false,
+      "violation": "C_KILLED",
+      "note": "no certificate may be reconstructed for a hard-killed solve"
+    },
+    {
+      "id": "N-UNAVAILABLE-REASON",
+      "kind": "negative",
+      "base": "P-UNAVAILABLE",
+      "patch": {
+        "certificate_unavailable_reason": null
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_UNAVAILABLE_REASON",
+      "note": "an absent certificate states why"
+    },
+    {
+      "id": "N-DOM-MISSING",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "domain.dag_admission": "@delete"
+      },
+      "context_patch": {},
+      "rehash": true,
+      "violation": "D_MISSING_FIELD",
+      "note": "every domain field is explicit"
+    },
+    {
+      "id": "N-DOM-ORDER",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "domain.pool_order": []
+      },
+      "context_patch": {},
+      "rehash": true,
+      "violation": "D_POOL_ORDER",
+      "note": "repository_grid domains name the admitted pool order"
+    },
+    {
+      "id": "N-DOM-ENUM",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "domain.token_reuse": "walk"
+      },
+      "context_patch": {},
+      "rehash": true,
+      "violation": "D_ENUM",
+      "note": "repeated-token walks are outside the v1 feasible set"
+    },
+    {
+      "id": "N-DOM-HASH",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "domain.pool_order": ["p2", "p1"]
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "D_HASH",
+      "note": "equal parameter values, different admitted order: a different domain (58 vs 59)"
+    },
+    {
+      "id": "N-WORK-UNIT",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "work.quotes": 41
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "W_UNIT",
+      "note": "only registered work units"
+    },
+    {
+      "id": "N-WORK-BOOL",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "work.bb_nodes_expanded": true
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "W_TYPE",
+      "note": "counters are non-negative integers, not booleans"
+    },
+    {
+      "id": "N-WORK-LEDGER",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "work.quotes_executed": 39
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "W_LEDGER",
+      "note": "incumbent and internal validation quotes stay in the one metered ledger"
+    },
+    {
+      "id": "N-WORK-MAXCAND",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "max_candidates_unit": "bb_nodes_expanded"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "W_MAX_CANDIDATES",
+      "note": "node caps are separate options, not a new meaning of max_candidates"
+    },
+    {
+      "id": "N-WORK-REPLAY",
+      "kind": "negative",
+      "base": "P-CFMM-EST",
+      "patch": {
+        "work.exact_replay_quotes": "@delete"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "W_NUMERIC_REPLAY",
+      "note": "numeric work is reported next to its exact replay quotes"
+    },
+    {
+      "id": "N-CMP-SAME-ORDER",
+      "kind": "negative",
+      "base": "P-CMP-SAME",
+      "patch": {
+        "right.candidate_domain_hash": "f98ddef619154380151ea9b9d4835c9c067aba59a52d1fbe212033e979add84c"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "K_SAME_DOMAIN",
+      "note": "same parameters, different pool order: not same_domain"
+    },
+    {
+      "id": "N-CMP-SAME-BUDGET",
+      "kind": "negative",
+      "base": "P-CMP-SAME",
+      "patch": {
+        "right.budget.max_quotes": 300000
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "K_SAME_DOMAIN",
+      "note": "a same-domain mechanism test also matches the budget"
+    },
+    {
+      "id": "N-CMP-RATIO",
+      "kind": "negative",
+      "base": "P-CMP-SAME",
+      "patch": {
+        "metrics": [
+          {
+            "name": "work",
+            "numerator_unit": "label_relaxations",
+            "denominator_unit": "paths_scored"
+          }
+        ]
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "K_UNIT_RATIO",
+      "note": "never divide unlike work units"
+    },
+    {
+      "id": "N-CMP-OBJECTIVE",
+      "kind": "negative",
+      "base": "P-CMP-EXPANDED",
+      "patch": {
+        "right.objective": "empirical_cost"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "K_OBJECTIVE",
+      "note": "different objectives are never ranked against each other"
+    },
+    {
+      "id": "N-TIME-P95",
+      "kind": "negative",
+      "base": "P-TIME-QUOTE",
+      "patch": {
+        "percentiles": {
+          "p95": 0.012
+        }
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "T_SINGLE_PERCENTILE",
+      "note": "one quote call has no p95"
+    },
+    {
+      "id": "N-TIME-LOAD",
+      "kind": "negative",
+      "base": "P-TIME-BATCH",
+      "patch": {
+        "verdict": "faster"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "T_CONTAMINATED_VERDICT",
+      "note": "a load-contaminated host cannot support a speed verdict"
+    },
+    {
+      "id": "N-DISP-ADOPT",
+      "kind": "negative",
+      "base": "P-DISP",
+      "patch": {
+        "disposition": "adopt"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "V_VOCAB",
+      "note": "default adoption is an owner decision outside this vocabulary"
+    },
+    {
+      "id": "N-DISP-FRESH",
+      "kind": "negative",
+      "base": "P-DISP",
+      "patch": {
+        "evidence.holdout_exposure": "fresh"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "V_EXPOSURE",
+      "note": "the report split is previously exposed"
+    },
+    {
+      "id": "N-DISP-NOGO",
+      "kind": "negative",
+      "base": "P-DISP-NOGO",
+      "patch": {
+        "disposition": "keep_experimental"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "V_NO_GO",
+      "note": "a research no-go never counts as an implementation"
+    },
+    {
+      "id": "N-DISP-TOL",
+      "kind": "negative",
+      "base": "P-DISP",
+      "patch": {
+        "loss_tolerance_bps": 1
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "V_TOLERANCE",
+      "note": "no invented owner loss tolerance"
+    }
+  ]
+}
