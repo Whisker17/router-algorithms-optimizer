@@ -203,68 +203,6 @@ def upward_safe_edges(bundle: SnapshotBundle) -> frozenset[tuple[str, str]]:
     return frozenset(safe)
 
 
-def closure(edges: set[tuple[str, str]]) -> dict[str, frozenset[str]]:
-    """Transitive closure of the committed token DAG: token -> every token it reaches."""
-    succ: dict[str, set[str]] = {}
-    for u, v in edges:
-        succ.setdefault(u, set()).add(v)
-    reach: dict[str, frozenset[str]] = {}
-    for start in succ:
-        seen: set[str] = set()
-        stack = list(succ[start])
-        while stack:
-            t = stack.pop()
-            if t not in seen:
-                seen.add(t)
-                stack.extend(succ.get(t, ()))
-        reach[start] = frozenset(seen)
-    return reach
-
-
-class SignatureContext:
-    """Per-chunk admission signature (history-labels.md §3.3): the committed closure and,
-    per visited set, its entry and exit tokens."""
-
-    def __init__(self, token_edges: set[tuple[str, str]]) -> None:
-        self.reach = closure(token_edges)
-        self._ports: dict[frozenset[str], tuple[frozenset[str], frozenset[str]]] = {}
-
-    def ports(self, tokens: frozenset[str]) -> tuple[frozenset[str], frozenset[str]]:
-        hit = self._ports.get(tokens)
-        if hit is None:
-            entry = frozenset(
-                u for u in tokens if any(u in r for x, r in self.reach.items() if x not in tokens)
-            )
-            exit_ = frozenset(u for u in tokens if not self.reach.get(u, frozenset()) <= tokens)
-            hit = self._ports[tokens] = (entry, exit_)
-        return hit
-
-    def relation(self, tokens: frozenset[str], path: Path_) -> frozenset[tuple[str, str]]:
-        """`Rel(P)`: the pairs (u, w) of the prefix's visited set with u an entry token, w an
-        exit token or the label's own token, such that u reaches w in committed-plus-prefix
-        edges. Empty when nothing committed can enter the visited set (e.g. chunk 1)."""
-        entry, exit_ = self.ports(tokens)
-        if not entry:
-            return frozenset()
-        v = path[-1].token_out
-        succ: dict[str, set[str]] = {
-            u: set(self.reach.get(u, frozenset()) & tokens) for u in tokens
-        }
-        for e in path:
-            succ[e.token_in].add(e.token_out)
-        rel: set[tuple[str, str]] = set()
-        for u in entry:
-            seen: set[str] = set()
-            stack = list(succ[u])
-            while stack:
-                t = stack.pop()
-                if t not in seen:
-                    seen.add(t)
-                    stack.extend(succ[t])
-            rel.update((u, w) for w in seen if w != u and (w in exit_ or w == v))
-        return frozenset(rel)
-
-
 def region_certified(
     index: GraphIndex,
     safe: frozenset[tuple[str, str]],
@@ -321,18 +259,20 @@ def choose_history(
     Identical to `metis_inspired._Allocator.choose_labels` in expansion order, filters
     (source, distance, token-simple, `creates_cycle` before the quote), the budgeted
     relaxation unit and the strict first-found target choice. It differs only in what a
-    layer retains: labels are grouped by the exact signature `(token, visited set,
-    Rel)`; inside a group a new label is discarded when an existing one has the **same
-    amount** (identical futures), or -- only in a non-final chunk whose continuation
-    region is certified upward safe -- a **strictly larger** amount (a strictly smaller
-    existing label is then removed). Every other same-signature label is retained
-    (`labels_retained_unknown`). Caps drop labels visibly (never silently).
+    layer retains: labels are grouped by the exact signature `(token, visited set)` of
+    their layer (lemma L2: with the committed token DAG fixed, the admissible
+    continuations of a prefix depend only on these); inside a group a new label is
+    discarded when an existing one has the **same amount** (identical futures, lemma L1),
+    or -- only in a non-final chunk whose continuation region is certified upward safe
+    (lemma L3) -- a **strictly larger** amount (a strictly smaller existing label is then
+    removed). Every other same-signature label is retained (`labels_retained_unknown`).
+    Caps drop labels visibly (never silently).
 
     `mutation` exists only to show that each rule is needed (tests): `"strict_everywhere"`
     is the unsafe amount-only rule (strict dominance on every edge and in the final chunk);
-    `"visited_only"` drops `Rel` from the signature."""
+    `"token_only"` drops the visited set from the signature (metis_inspired's grouping);
+    both together (`"token_only+strict_everywhere"`) are metis_inspired's own rule."""
     source, target = alloc.case.token_in, alloc.case.token_out
-    sig = SignatureContext(alloc.token_edges)
     region: dict[tuple[str, int], bool] = {}
     layer: list[HLabel] = [HLabel(amount, (), (), frozenset((source,)))]
     best: Choice | None = None
@@ -375,9 +315,8 @@ def choose_history(
                     key: Any = order
                     strict = False
                 else:
-                    rel = frozenset() if mutation == "visited_only" else sig.relation(new.tokens, p)
-                    key = (v, new.tokens, rel)
-                    strict = mutation == "strict_everywhere" or (
+                    key = v if "token_only" in (mutation or "") else (v, new.tokens)
+                    strict = "strict_everywhere" in (mutation or "") or (
                         not final
                         and region_certified(alloc.index, safe, v, hops - k, source, target, region)
                     )
@@ -690,7 +629,7 @@ def spec_sha256() -> str:
     import inspect
 
     parts: list[Any] = [
-        SelectorOptions, ChunkWork, HLabel, upward_safe_edges, closure, SignatureContext,
+        SelectorOptions, ChunkWork, HLabel, upward_safe_edges,
         region_certified, choose_history, ChunkRecord, Trajectory, trajectory, hand_cpmm,
         OracleChunk, _acyclic, oracle_chunk, classify, audit,
     ]  # fmt: skip
@@ -726,7 +665,7 @@ OFF = SelectorOptions(dominance="off")
 @cache
 def _fixture(name: str) -> tuple[SnapshotBundle, Case]:
     spec = FIX["fixtures"][name]
-    bundle = cp_bundle(spec["pools"], spec.get("fee_bps", 30), spec.get("source_key"))
+    bundle = cp_bundle(spec["pools"], int(spec.get("fee_bps", 30)), spec.get("source_key"))
     c = spec["case"]
     return bundle, Case(name, c["token_in"], c["token_out"], int(c["amount_in"]))
 
@@ -786,11 +725,11 @@ def test_x4_token_revisit_is_a_legal_prefix_loss_the_signature_recovers() -> Non
     assert audit(bundle, case, s4, 4) == {"agree": 1}
 
 
-def test_x4b_prefix_admission_is_a_legal_prefix_loss_the_relation_recovers() -> None:
-    """Chunk 2 of X4b: the dominant S-A-V label and the dominated S-B-V label share the
-    visited-set *size* and token but not the visited set; even with equal visited sets the
-    committed X->A edge makes `Rel` differ. The history selector keeps S-B-V and reaches
-    the enumeration's S-B-V-X-D; the evaluator accepts that union and rejects S-A-V-X-D's."""
+def test_x4b_prefix_admission_is_a_legal_prefix_loss_the_visited_set_recovers() -> None:
+    """Chunk 2 of X4b: the dominant S-A-V label and the dominated S-B-V label reach V with
+    different visited sets, so they are different signatures. The history selector keeps
+    S-B-V and reaches the enumeration's S-B-V-X-D; the evaluator accepts that union (the
+    S-A-V-X-D union is the evaluator-rejected cycle of R8)."""
     bundle, case = _recon("R8_X4b")
     diag = _diagnose(bundle, case, chunks=2)
     assert diag["classes"] == {"agree": 1, "prefix_admission": 1}
@@ -803,39 +742,69 @@ def test_x4b_prefix_admission_is_a_legal_prefix_loss_the_relation_recovers() -> 
     assert s4.gross > l4.gross
     assert audit(bundle, case, s4, 4) == {"agree": 2}
     assert audit(bundle, case, l4, 4) == {"agree": 1, "miss": 1}
+    # Mutation: one label per token with amount-only dominance is metis_inspired's rule and
+    # reproduces L4's trajectory and loss.
+    rule = "token_only+strict_everywhere"
+    token_only = trajectory(bundle, case, HISTORY, chunks=2, hops=4, mutation=rule)
+    assert _pools(token_only) == _pools(l4) and token_only.gross == l4.gross
 
 
-def test_relation_is_needed_beyond_the_visited_set() -> None:
-    """Minimal prefix-admission fixture (history-labels.json `admission_same_visited`): two
-    chunk-2 prefixes with the *same* visited set {S, A, B, V} and token V differ only in
-    order; one closes a committed cycle on the continuation V->X, the other does not. A
-    visited-set-only signature keeps the larger (blocked) one; `Rel` keeps both."""
-    bundle, case = _fixture("admission_same_visited")
-    spec = FIX["fixtures"]["admission_same_visited"]
-    s4 = trajectory(bundle, case, HISTORY, chunks=2, hops=5)
-    e5 = trajectory(bundle, case, "enumeration", chunks=2, hops=5)
-    assert _pools(s4) == _pools(e5) == spec["expected_chunk_paths"]
-    assert audit(bundle, case, s4, 5) == {"agree": 2}
-    rec = s4.records[1]
-    ctx = SignatureContext(rec.token_edges)
-    a, b = (tuple(bundle_edges(bundle, p)) for p in spec["same_visited_prefixes"])
-    assert frozenset(t for e in a for t in (e.token_in, e.token_out)) == frozenset(
-        t for e in b for t in (e.token_in, e.token_out)
-    )
-    tokens = frozenset(t for e in a for t in (e.token_in, e.token_out))
-    assert ctx.relation(tokens, a) != ctx.relation(tokens, b)
-    # Mutation: a visited-set-only signature loses the chunk (independent oracle value).
-    visited_only = trajectory(bundle, case, HISTORY, chunks=2, hops=5, mutation="visited_only")
-    assert audit(bundle, case, visited_only, 5).get("miss") == 1
+def _walks(
+    bundle: SnapshotBundle, start: str, stop: str, avoid: frozenset[str], max_len: int
+) -> Iterator[list[tuple[str, str, str]]]:
+    """Every token-simple walk from `start` of 1..`max_len` pools that never enters
+    `avoid` and never passes through `stop` (independent of the repository search)."""
+    adj: dict[str, list[tuple[str, str, str]]] = {}
+    for pool in bundle.pools.values():
+        adj.setdefault(pool.token0, []).append((pool.pool_id, pool.token0, pool.token1))
+        adj.setdefault(pool.token1, []).append((pool.pool_id, pool.token1, pool.token0))
+
+    def go(token: str, path: list[tuple[str, str, str]], seen: set[str]) -> Iterator[Any]:
+        if path:
+            yield path
+        if len(path) == max_len or token == stop:
+            return
+        for edge in adj.get(token, ()):
+            if edge[2] not in seen and edge[2] not in avoid:
+                yield from go(edge[2], [*path, edge], seen | {edge[2]})
+
+    yield from go(start, [], {start})
 
 
-def bundle_edges(bundle: SnapshotBundle, pool_ids: Sequence[str]) -> Iterator[Edge]:
-    token = "S"
-    for pid in pool_ids:
-        pool = bundle.pools[pid]
-        nxt = pool.other_token(token)
-        yield Edge(pid, token, nxt)
-        token = nxt
+def test_lemma_l2_admission_depends_only_on_the_visited_set() -> None:
+    """Lemma L2, checked exhaustively with an independent acyclicity test: on the committed
+    token DAG of every chunk of random multi-chunk trajectories, any two admissible
+    prefixes with the same end token and visited set -- in any token order, over any
+    pools -- admit exactly the same continuations to the target. This is why X4b-style
+    prefix-dependent admission needs no signature beyond the visited set."""
+    checked = reordered = 0
+    for seed in range(200):
+        bundle, cases = _random_bundle(100 + seed, dense=True)
+        run = trajectory(bundle, cases[-1], "enumeration", chunks=6, hops=5)
+        for record in run.records:
+            edges = record.token_edges
+            groups: dict[tuple[str, frozenset[str]], list[tuple[str, ...]]] = {}
+            for p in _walks(bundle, "A", "B", frozenset("A"), 3):
+                chain = {(u, v) for _, u, v in p}
+                if p[-1][2] == "B" or not _acyclic(edges | chain):
+                    continue  # a target relaxation or an inadmissible prefix: no label
+                order = ("A", *(v for _, _, v in p))
+                groups.setdefault((p[-1][2], frozenset(order)), []).append(order)
+            for (v, tokens), orders in groups.items():
+                if len(orders) < 2:
+                    continue
+                distinct = set(orders)
+                reordered += bool(edges) and len(distinct) > 1
+                for q in _walks(bundle, v, "B", tokens, 5 - (len(tokens) - 1)):
+                    if q[-1][2] != "B":
+                        continue
+                    cont = {(a, b) for _, a, b in q}
+                    verdicts = {
+                        _acyclic(edges | set(zip(o, o[1:], strict=False)) | cont) for o in distinct
+                    }
+                    assert len(verdicts) == 1, (seed, v, sorted(tokens), q)
+                    checked += 1
+    assert checked > 1000 and reordered > 20, (checked, reordered)
 
 
 # ================================================================ 3b. failure domains
@@ -875,41 +844,45 @@ def _forced_strict_run(bundle: SnapshotBundle, case: Case, *, chunks: int, hops:
 
 
 def test_sourced_cpmm_overflow_makes_a_larger_amount_fail() -> None:
-    """A Moe Classic v1 pair near the uint112 limit: the actual quote succeeds for the
-    smaller input and reverts for the larger one, so CPMM alone is not upward closed; the
-    static bound refuses to certify it (history-labels.json `overflow`)."""
+    """history-labels.json `overflow`: a Moe Classic v1 pair near the uint112 limit. The
+    actual quote succeeds for the smaller label's X amount and reverts for the larger one,
+    so even constant product is not upward closed; the static bound refuses to certify
+    that edge, the selector retains both labels and matches the oracle. The unsafe
+    amount-only rule and metis_inspired's L3 both fall back to the weak direct pool."""
     spec = FIX["fixtures"]["overflow"]
-    bundle = cp_bundle(spec["pools"], 30, "moe_classic_v1")
+    bundle, case = _fixture("overflow")
     pool = bundle.pools["xd"]
-    small, large = spec["small_input"], spec["large_input"]
+    assert isinstance(pool, ConstantProductPoolState)
+    small, large = spec["xd_inputs"]["small"], spec["xd_inputs"]["large"]
     assert quote_exact_in(pool, "X", small).status is QuoteStatus.OK
     assert quote_exact_in(pool, "X", large).status is QuoteStatus.REVERTED
-    assert hand_cpmm(pool, "X", small) is not None and hand_cpmm(pool, "X", large) is None  # type: ignore[arg-type]
+    assert hand_cpmm(pool, "X", small) is not None and hand_cpmm(pool, "X", large) is None
     assert ("xd", "X") not in upward_safe_edges(bundle)
-    unsourced = cp_bundle(spec["pools"], 30)
-    assert ("xd", "X") in upward_safe_edges(unsourced)
-    _, case = _fixture("overflow")
+    assert ("xd", "X") in upward_safe_edges(cp_bundle(spec["pools"]))  # no overflow rule
+    want = spec["expected"]
     s = trajectory(bundle, case, HISTORY, chunks=1, hops=3)
-    assert audit(bundle, case, s, 3) == {"agree": 1}
+    e = trajectory(bundle, case, "enumeration", chunks=1, hops=3)
+    l3 = trajectory(bundle, case, "labels", chunks=1, hops=3)
     forced = _forced_strict_run(bundle, case, chunks=1, hops=3)
-    assert audit(bundle, case, forced, 3) == {"miss": 1}
+    assert (s.gross, e.gross) == (want["history_gross"], want["enumeration_gross"])
+    assert (l3.gross, forced.gross) == (want["label_gross"], want["strict_everywhere_gross"])
+    assert audit(bundle, case, s, 3) == {"agree": 1}
+    assert audit(bundle, case, forced, 3) == audit(bundle, case, l3, 3) == {"miss": 1}
 
 
-def test_final_chunk_zero_marginal_needs_equal_amount_only_dominance() -> None:
-    """history-labels.json `zero_final`: in the final chunk the dominated label (marginal
-    0 at X, from the committed pool) continues with a zero, no-call step, while the larger
-    (1 unit) label's continuation floors to 0 on a fresh pool and fails. The reference
-    commits the zero-marginal path; strict dominance in the final chunk would abandon the
-    incremental plan. The selector's final-chunk rule keeps it."""
-    bundle, case = _fixture("zero_final")
-    spec = FIX["fixtures"]["zero_final"]
-    s = trajectory(bundle, case, HISTORY, chunks=spec["chunks"], hops=3)
-    e = trajectory(bundle, case, "enumeration", chunks=spec["chunks"], hops=3)
-    assert s.status == e.status == "ok" and _pools(s) == _pools(e) == spec["expected_chunk_paths"]
-    assert s.records[-1].choice is not None and s.records[-1].choice[0] == 0
-    assert audit(bundle, case, s, 3) == {"agree": len(s.records)}
-    forced = _forced_strict_run(bundle, case, chunks=spec["chunks"], hops=3)
-    assert forced.status.endswith("no_admissible_path")
+def test_final_chunk_uses_equal_amount_dominance_only() -> None:
+    """The final non-empty chunk never applies strict amount dominance (history-labels.md
+    §4.3 rule R5): lemma L3 covers continuation values >= 1 only, and in the final chunk a
+    zero-valued commit and an abandoned incremental plan differ. Earlier chunks of the same
+    all-CPMM request do use it."""
+    bundle, case = _recon("R1_prefix_merge_vs_cycle")
+    s = trajectory(bundle, case, HISTORY, chunks=3, hops=4)
+    works = [r.work for r in s.records]
+    assert all(w is not None for w in works)
+    assert [r.final for r in s.records] == [False, False, True]
+    assert works[0] is not None and works[0].certified_strict_insertions > 0
+    assert works[-1] is not None and works[-1].certified_strict_insertions == 0
+    assert audit(bundle, case, s, 4) == {"agree": 3}
 
 
 # ================================================================ 3c. ties, state and whole plans
@@ -921,16 +894,18 @@ def test_equal_chunk_value_different_state_changes_the_next_chunk() -> None:
     dominance keeps the larger-amount prefix; enumeration keeps the first path. Same
     chunk-1 value, different committed state, different chunk 2 and final gross."""
     bundle, case = _fixture("tie_state")
-    spec = FIX["fixtures"]["tie_state"]
+    want = FIX["fixtures"]["tie_state"]["expected"]
     s = trajectory(bundle, case, HISTORY, chunks=2, hops=2)
     e = trajectory(bundle, case, "enumeration", chunks=2, hops=2)
-    assert s.records[0].choice is not None and e.records[0].choice is not None
-    assert s.records[0].choice[0] == e.records[0].choice[0]
-    assert _pools(s)[0] != _pools(e)[0]
-    assert audit(bundle, case, s, 2)["tie"] >= 1
-    assert "miss" not in audit(bundle, case, s, 2)
-    assert (s.gross, e.gross) == (spec["history_gross"], spec["enumeration_gross"])
-    assert s.gross != e.gross
+    first_s, first_e = s.records[0].choice, e.records[0].choice
+    assert first_s is not None and first_e is not None and first_s[0] == first_e[0]
+    assert _pools(s) == want["history_chunk_paths"]
+    assert _pools(e) == want["enumeration_chunk_paths"]
+    assert audit(bundle, case, s, 2) == {"tie": 1, "agree": 1}
+    assert audit(bundle, case, e, 2) == {"agree": 2}
+    assert (s.gross, e.gross) == (want["history_gross"], want["enumeration_gross"])
+    for run in (s, e):  # both whole plans replay exactly; only their states differ
+        assert run.evaluation is not None and run.evaluation.status is EvalStatus.OK
 
 
 def test_per_chunk_exact_choice_is_not_whole_plan_optimal_or_better() -> None:
@@ -938,12 +913,20 @@ def test_per_chunk_exact_choice_is_not_whole_plan_optimal_or_better() -> None:
     per-chunk maximum, yet L4 (which misses chunk 1's maximum) ends with a higher
     evaluated gross. A per-chunk guarantee is not a whole-plan guarantee."""
     bundle, case = _fixture("greedy_trap")
-    spec = FIX["fixtures"]["greedy_trap"]
-    s = trajectory(bundle, case, HISTORY, chunks=spec["chunks"], hops=4)
-    l4 = trajectory(bundle, case, "labels", chunks=spec["chunks"], hops=4)
-    assert set(audit(bundle, case, s, 4)) <= {"agree", "tie"}
-    assert "miss" in audit(bundle, case, l4, 4)
-    assert (s.gross, l4.gross) == (spec["history_gross"], spec["label_gross"])
+    want = FIX["fixtures"]["greedy_trap"]["expected"]
+    s = trajectory(bundle, case, HISTORY, chunks=2, hops=4)
+    e = trajectory(bundle, case, "enumeration", chunks=2, hops=4)
+    l4 = trajectory(bundle, case, "labels", chunks=2, hops=4)
+    assert audit(bundle, case, s, 4) == audit(bundle, case, e, 4) == {"agree": 2}
+    assert audit(bundle, case, l4, 4) == {"miss": 1, "agree": 1}
+    assert _diagnose(bundle, case, chunks=2)["classes"] == {"agree": 1, "token_revisit": 1}
+    assert _pools(s) == _pools(e) == want["history_chunk_paths"]
+    assert _pools(l4) == want["label_chunk_paths"]
+    assert (s.gross, e.gross, l4.gross) == (
+        want["history_gross"],
+        want["enumeration_gross"],
+        want["label_gross"],
+    )
     assert s.gross is not None and l4.gross is not None and l4.gross > s.gross
 
 
@@ -995,11 +978,13 @@ def _top_k_gross(bundle: SnapshotBundle, case: Case, k: int) -> int | None:
 # ================================================================ 3d. independent exhaustive checks
 
 
-def _random_bundle(seed: int, *, sourced: bool = False) -> tuple[SnapshotBundle, list[Case]]:
+def _random_bundle(
+    seed: int, *, sourced: bool = False, dense: bool = False
+) -> tuple[SnapshotBundle, list[Case]]:
     rng = random.Random(seed)
     tokens = ["A", "B", "C", "D", "E", "F"][: rng.randint(4, 6)]
     pools: dict[str, list[Any]] = {}
-    for n in range(rng.randint(5, 11)):
+    for n in range(rng.randint(12, 18) if dense else rng.randint(5, 11)):
         t0, t1 = rng.sample(tokens, 2)
         r0, r1 = (10 ** rng.randint(4, 10) * rng.randint(1, 9) for _ in range(2))
         pools[f"p{n}"] = [t0, t1, r0, r1, rng.choice([0, 1, 5, 30, 100])]
