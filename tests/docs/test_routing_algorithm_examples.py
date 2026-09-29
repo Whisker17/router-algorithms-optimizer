@@ -18,9 +18,17 @@ from routing.algorithms import (
     incremental_graph,
     path_split,
     single_path,
+    uni_sor_fast,
     uni_sor_port,
+    uni_sor_strategies,
 )
-from routing.algorithms.base import AlgorithmConfig, Budget, SolveContext, SolveStatus
+from routing.algorithms.base import (
+    AlgorithmConfig,
+    Budget,
+    SolveContext,
+    SolveResult,
+    SolveStatus,
+)
 from snapshot.bundle import load_bundle
 from snapshot.models import BlockRef, Case, ConstantProductPoolState, SnapshotBundle
 
@@ -67,6 +75,68 @@ def make_teaching_bundle() -> SnapshotBundle:
 @pytest.fixture
 def teaching_bundle() -> SnapshotBundle:
     return make_teaching_bundle()
+
+
+def _synthetic_bundle(bundle_id: str, *pools: ConstantProductPoolState) -> SnapshotBundle:
+    block = BlockRef(chain_id=5000, number=1, hash="0x" + "00" * 32, timestamp=0)
+    return SnapshotBundle(
+        bundle_id=bundle_id,
+        kind="synthetic",
+        schema_version=1,
+        block=block,
+        pools={p.pool_id: p for p in pools},
+        cases=(),
+        bundle_hash=f"{bundle_id}_v1",
+        source_path="<teaching_examples>",
+    )
+
+
+def make_narrow_bundle() -> SnapshotBundle:
+    """The narrow-optimum pools of tests/routing/test_uni_sor_fast.py (§8.5 step 8)."""
+
+    def cp(pid: str, t0: str, t1: str, r0: int, r1: int) -> ConstantProductPoolState:
+        return ConstantProductPoolState(pid, t0, t1, r0, r1, fee_bps=30)
+
+    return _synthetic_bundle(
+        "narrow_optimum",
+        cp("d0", "A", "B", 10**6, 896533),
+        cp("d1", "A", "B", 10**7, 11182254),
+        cp("ax", "A", "X", 10**6, 10**9),
+        cp("xb", "X", "B", 10**6, 10**7),
+    )
+
+
+def make_wide_bundle() -> SnapshotBundle:
+    """Nine equal-price pools of increasing depth plus one thin, better-priced pool (§9.5 b)."""
+    pools = [
+        ConstantProductPoolState(f"D{k}", "A", "B", k * 10**6, k * 10**6, fee_bps=30)
+        for k in range(1, 10)
+    ]
+    pools.append(ConstantProductPoolState("T", "A", "B", 300_000, 600_000, fee_bps=30))
+    return _synthetic_bundle("wide_shortlist", *pools)
+
+
+def solve_strategy(
+    name: str,
+    bundle: SnapshotBundle,
+    case: Case,
+    search: dict[str, int],
+    budget: Budget | None = None,
+) -> SolveResult:
+    """Run a named optimized strategy with exactly its registered L08 recipe settings."""
+    strategy = uni_sor_strategies.STRATEGIES[name]
+    recipe = uni_sor_strategies.registered_settings(strategy.recipe)
+    params: dict[str, object] = {**search, **recipe["shortlist"], **recipe["sampling"]}
+    params["controls"] = recipe["controls"]
+    factory = (
+        uni_sor_strategies.ADAPTIVE_FACTORY
+        if name == uni_sor_strategies.ADAPTIVE
+        else uni_sor_strategies.OPTIMIZED_FACTORY
+    )
+    assert factory.prepare is not None
+    prepared = factory.prepare(bundle, AlgorithmConfig(name, params))
+    ctx = SolveContext(bundle=bundle, objective=gross_only(), prepared=prepared)
+    return factory.solve(case, ctx, budget or Budget())
 
 
 def test_hand_calculated_cpmm_formula(teaching_bundle: SnapshotBundle) -> None:
@@ -357,8 +427,192 @@ def test_uni_sor_port_selection_and_parity_behavior(
     assert res.evaluation.trace[3].amount_out == 2293
 
 
+TEACHING_SOR5 = {"max_hops": 2, "max_splits": 2, "percent_step": 5}
+
+
+def _rounds(res: SolveResult) -> list[tuple[str, list[int], int, list[str] | None, str | None]]:
+    return [
+        (r["kind"], r["added_percents"], r["table_quotes"], r["selection"], r["incumbent"])
+        for r in res.search_stats["sampling"]["rounds"]
+    ]
+
+
+def test_uni_sor_adaptive_coarse_to_fine_rounds(teaching_bundle: SnapshotBundle) -> None:
+    """Verify §8.5: probe table, coarse 75/25, refinement to 80/20, fixed point, 66 quotes."""
+    case = Case(case_id="ex_sor_adaptive", token_in="TKA", token_out="TKB", amount_in=10_000)
+
+    # Hand-checked legs of the coarse 75 % / 25 % selection
+    pools = teaching_bundle.pools
+    ac, cb, ad, db = pools["P_AC"], pools["P_CB"], pools["P_AD"], pools["P_DB"]
+    assert isinstance(ac, ConstantProductPoolState) and isinstance(cb, ConstantProductPoolState)
+    assert isinstance(ad, ConstantProductPoolState) and isinstance(db, ConstantProductPoolState)
+    assert cp_quote(ac, "TKA", 7500).amount_out == 13914
+    assert cp_quote(cb, "TKC", 13914).amount_out == 9729
+    assert cp_quote(ad, "TKA", 2500).amount_out == 3647
+    assert cp_quote(db, "TKD", 3647).amount_out == 2840
+
+    # Reference on the same 5 % grid: 120 quotes, 80/20 = 12581
+    prep = uni_sor_port.prepare(teaching_bundle, AlgorithmConfig("uni_sor_port", TEACHING_SOR5))
+    ctx = SolveContext(bundle=teaching_bundle, objective=gross_only(), prepared=prep)
+    ref = uni_sor_port.solve(case, ctx, Budget())
+    assert ref.evaluation is not None and ref.evaluation.gross_output == 12581
+    assert ref.search_stats["quotes_executed"] == 120
+
+    res = solve_strategy(uni_sor_strategies.ADAPTIVE, teaching_bundle, case, TEACHING_SOR5)
+    assert res.status == SolveStatus.OK and res.algorithm == "uni_sor_adaptive"
+    assert res.evaluation is not None and res.evaluation.gross_output == 12581
+    assert res.plan == ref.plan
+    s = res.search_stats
+    assert s["quotes_executed"] == 66 and s["quotes_memoized"] == 34
+    assert s["shortlist"]["quotes"] == {
+        "probe": 24, "shortlist_table": 42, "fallback_table": 0, "validation": 0
+    }
+    assert s["shortlist"]["probe_entries"] == 16
+    assert s["search_scope"] == "full_cohort"
+    sm = s["sampling"]
+    assert sm["coarse_percents"] == [25, 50, 75, 100]
+    assert sm["sampled_percents"] == [5, 15, 20, 25, 30, 50, 70, 75, 80, 85, 100]
+    assert (sm["sampled_entries"], sm["grid_entries"]) == (44, 80)
+    assert sm["seed"] == {"route_id": "V2:P_AC>P_CB", "outcome": "improved"}
+    assert sm["validations"] == 3 and sm["stop_reason"] == "converged"
+    assert _rounds(res) == [
+        ("coarse", [25, 50, 75, 100], 0, ["V2:P_AC>P_CB@75", "V2:P_AD>P_DB@25"], "improved"),
+        ("refine", [5, 20, 30, 70, 80], 30, ["V2:P_AC>P_CB@80", "V2:P_AD>P_DB@20"], "improved"),
+        ("refine", [15, 85], 12, ["V2:P_AC>P_CB@80", "V2:P_AD>P_DB@20"], "unchanged"),
+    ]
+    assert 9729 + 2840 == 12569 and 10288 + 2293 == 12581 and 10838 + 1737 == 12575
+    tr = res.evaluation.trace
+    assert [(t.pool_id, t.amount_in, t.amount_out) for t in tr] == [
+        ("P_AC", 8000, 14773),
+        ("P_CB", 14773, 10288),
+        ("P_AD", 2000, 2932),
+        ("P_DB", 2932, 2293),
+    ]
+    assert s["strategy"]["recipe"]["arm"] == "H3" and s["strategy"]["controls"] == []
+
+
+def test_uni_sor_adaptive_can_miss_a_narrow_optimum() -> None:
+    """Verify §8.5 step 8: the recipe's local fixed point loses 26.67 bps to the reference."""
+    bundle = make_narrow_bundle()
+    case = Case(case_id="ex_narrow", token_in="A", token_out="B", amount_in=10**8)
+    search = {"max_hops": 2, "max_splits": 4, "percent_step": 5}
+    prep = uni_sor_port.prepare(bundle, AlgorithmConfig("uni_sor_port", search))
+    ref = uni_sor_port.solve(case, SolveContext(bundle, gross_only(), prep), Budget())
+    assert ref.evaluation is not None and ref.evaluation.gross_output == 20_795_709
+    assert ref.search_stats["quotes_executed"] == 80
+    sel = [(r["pool_ids"], r["percent"]) for r in ref.search_stats["selection"]["routes"]]
+    assert sel == [(["d1"], 90), (["d0"], 5), (["ax", "xb"], 5)]
+
+    res = solve_strategy(uni_sor_strategies.ADAPTIVE, bundle, case, search)
+    assert res.status == SolveStatus.OK
+    assert res.evaluation is not None and res.evaluation.gross_output == 20_740_242
+    assert res.search_stats["quotes_executed"] == 56
+    sm = res.search_stats["sampling"]
+    assert sm["stop_reason"] == "converged" and 90 not in sm["sampled_percents"]
+    assert [r["selection"] for r in sm["rounds"]] == [
+        ["V2:d1@50", "V2:d0@25", "V2:ax>xb@25"],
+        ["V2:d1@75", "V2:ax>xb@20", "V2:d0@5"],
+        ["V2:d1@80", "V2:d0@10", "V2:ax>xb@10"],
+        ["V2:d1@80", "V2:d0@10", "V2:ax>xb@10"],
+    ]
+    loss = ref.evaluation.gross_output - res.evaluation.gross_output
+    assert loss == 55_467
+    assert round(loss * 10_000 / ref.evaluation.gross_output, 2) == 26.67
+
+
+def test_uni_sor_optimized_teaching_graph_and_idle_controls(
+    teaching_bundle: SnapshotBundle,
+) -> None:
+    """Verify §9.5 (a): vacuous shortlist, same rounds, different quote split, zero counters."""
+    case = Case(case_id="ex_sor_optimized", token_in="TKA", token_out="TKB", amount_in=10_000)
+    res = solve_strategy(uni_sor_strategies.OPTIMIZED, teaching_bundle, case, TEACHING_SOR5)
+    assert res.status == SolveStatus.OK and res.algorithm == "uni_sor_optimized"
+    assert res.evaluation is not None and res.evaluation.gross_output == 12581
+    s = res.search_stats
+    assert s["search_scope"] == "full_cohort"
+    assert s["shortlist"]["routes_by_probe"] == {"5": 4, "100": 4}
+    assert s["quotes_executed"] == 66 and s["quotes_memoized"] == 22
+    assert s["shortlist"]["quotes"] == {
+        "probe": 12, "shortlist_table": 54, "fallback_table": 0, "validation": 0
+    }
+    assert [r[2] for r in _rounds(res)] == [18, 24, 12]
+    assert s["sampling"]["sampled_percents"] == [5, 15, 20, 25, 30, 50, 70, 75, 80, 85, 100]
+    st = s["strategy"]
+    assert st["recipe"]["arm"] == "H4" and st["controls"] == ["L02", "L03", "L04"]
+    assert st["tick_math"]["misses"] == 0 and st["tick_math"]["hits"] == 0
+    assert st["bin_math"]["misses"] == 0 and st["prefix"]["queries"] == 0
+
+
+def test_uni_sor_optimized_wide_shortlist_and_small_probe() -> None:
+    """Verify §9.5 (b): the shortlist cuts D1, the 5 % probe keeps the thin pool T."""
+    bundle = make_wide_bundle()
+    case = Case(case_id="ex_wide", token_in="A", token_out="B", amount_in=10**6)
+    search = {"max_hops": 1, "max_splits": 2, "percent_step": 5}
+    pools = bundle.pools
+    t, d9, d1, d2 = pools["T"], pools["D9"], pools["D1"], pools["D2"]
+    assert isinstance(t, ConstantProductPoolState) and isinstance(d9, ConstantProductPoolState)
+    assert isinstance(d1, ConstantProductPoolState) and isinstance(d2, ConstantProductPoolState)
+    assert cp_quote(t, "A", 50_000).amount_out == 85493
+    assert cp_quote(t, "A", 10**6).amount_out == 461218
+    assert cp_quote(d9, "A", 50_000).amount_out == 49575
+    assert cp_quote(d1, "A", 10**6).amount_out == 499248
+    assert cp_quote(d2, "A", 10**6).amount_out == 665331
+
+    prep = uni_sor_port.prepare(bundle, AlgorithmConfig("uni_sor_port", search))
+    ref = uni_sor_port.solve(case, SolveContext(bundle, gross_only(), prep), Budget())
+    assert ref.evaluation is not None and ref.evaluation.gross_output == 974_119
+    assert ref.search_stats["quotes_executed"] == 200
+
+    ada = solve_strategy(uni_sor_strategies.ADAPTIVE, bundle, case, search)
+    assert ada.evaluation is not None and ada.evaluation.gross_output == 974_119
+    assert ada.search_stats["quotes_executed"] == 130
+    assert ada.search_stats["shortlist"]["quotes"]["probe"] == 40
+
+    res = solve_strategy(uni_sor_strategies.OPTIMIZED, bundle, case, search)
+    assert res.status == SolveStatus.OK
+    assert res.evaluation is not None and res.evaluation.gross_output == 974_119
+    s = res.search_stats
+    assert s["search_scope"] == "shortlist"
+    assert s["shortlist"]["searched_route_ids"] == [f"V2:D{k}" for k in range(2, 10)] + ["V2:T"]
+    assert s["shortlist"]["skipped_routes"] == {"V3": 0, "V2": 1, "MIXED": 0}
+    assert res.candidates_truncated == 1 and res.candidates_considered == 10
+    assert s["quotes_executed"] == 119
+    assert s["shortlist"]["quotes"]["probe"] == 20
+    assert s["shortlist"]["quotes"]["shortlist_table"] == 9 * 11
+    assert s["sampling"]["seed"] == {"route_id": "V2:D9", "outcome": "improved"}
+    assert [r["selection"] for r in s["sampling"]["rounds"]] == [
+        ["V2:D9@75", "V2:T@25"],
+        ["V2:D9@80", "V2:T@20"],
+        ["V2:D9@85", "V2:T@15"],
+        ["V2:D9@85", "V2:T@15"],
+    ]
+    assert 690_390 + 272_280 == 962_670 and 774_520 + 199_599 == 974_119
+    assert [(x.pool_id, x.amount_in, x.amount_out) for x in res.evaluation.trace] == [
+        ("D9", 850_000, 774_520),
+        ("T", 150_000, 199_599),
+    ]
+
+    # Counterfactual (not the recipe): probing only at 100 % drops T and loses output.
+    params: dict[str, object] = {
+        **search,
+        "probe_percents": [100],
+        "routes_per_probe": 8,
+        "direct_routes": 0,
+        "coarse_step": 25,
+        "refine_radius": 1,
+        "soft_max_quotes": None,
+    }
+    prep_f = uni_sor_fast.prepare(bundle, AlgorithmConfig("uni_sor_fast", params))
+    only100 = uni_sor_fast.solve(case, SolveContext(bundle, gross_only(), prep_f), Budget())
+    assert only100.evaluation is not None and only100.evaluation.gross_output == 941_683
+    assert only100.search_stats["quotes_executed"] == 74
+    assert "V2:T" not in only100.search_stats["shortlist"]["searched_route_ids"]
+    loss = 974_119 - 941_683
+    assert loss == 32_436 and round(loss * 10_000 / 974_119, 2) == 332.98
+
+
 def test_real_state_corpus_fixture_exact_evaluation() -> None:
-    """Verify all 6 algorithms on real-state fixed-block fixture without mutating bundle."""
+    """Verify all 8 strategies on real-state fixed-block fixture without mutating bundle."""
     bundle_dir = ROOT / "tests" / "fixtures" / "corpus" / "bundle"
     manifest_before = (bundle_dir / "manifest.json").read_bytes()
     pools_before = (bundle_dir / "pools.json").read_bytes()
@@ -444,6 +698,31 @@ def test_real_state_corpus_fixture_exact_evaluation() -> None:
     assert r_sor.status == SolveStatus.OK and r_sor.evaluation is not None
     assert r_sor.evaluation.gross_output == 10000660449
     assert r_sor.search_stats["quotes_executed"] == 40
+
+    # 7-8. The two optimized strategies (§10.3 items 3-4)
+    for name, probe, table in (
+        (uni_sor_strategies.ADAPTIVE, 8, 4),
+        (uni_sor_strategies.OPTIMIZED, 4, 8),
+    ):
+        r_opt = solve_strategy(name, bundle, case, dict(profile.search), real_budget)
+        assert r_opt.status == SolveStatus.OK and r_opt.evaluation is not None
+        assert r_opt.evaluation.gross_output == 10000660449
+        assert r_opt.plan == r_sor.plan
+        so = r_opt.search_stats
+        assert so["quotes_executed"] == 12
+        quotes = so["shortlist"]["quotes"]
+        assert (quotes["probe"], quotes["shortlist_table"]) == (probe, table)
+        sm = so["sampling"]
+        assert sm["sampled_percents"] == [5, 25, 50, 75, 95, 100]
+        assert sm["stop_reason"] == "converged" and sm["validations"] == 1
+        assert [r["incumbent"] for r in sm["rounds"]] == ["unchanged", "unchanged"]
+        assert sm["incumbent"]["source"] == "full_input_seed"
+    # Exact controls on the real Agni V3 pool (uni_sor_optimized, the last loop iteration)
+    assert r_opt.algorithm == uni_sor_strategies.OPTIMIZED
+    st = so["strategy"]
+    assert (st["tick_math"]["misses"], st["tick_math"]["hits"]) == (1, 5)
+    assert (st["prefix"]["queries"], st["prefix"]["keys"], st["prefix"]["resumed"]) == (6, 1, 0)
+    assert st["prefix"]["reused_steps"] == 0
 
     # Assert byte identity of original files
     assert (bundle_dir / "manifest.json").read_bytes() == manifest_before
