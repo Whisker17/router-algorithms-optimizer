@@ -68,6 +68,7 @@ from routing.algorithms.base import (
     SolveContext,
     SolveResult,
     SolveStatus,
+    refuse_options,
 )
 from routing.evaluator import EvalStatus, Evaluation, evaluate
 from routing.plan import RoutePlan
@@ -105,6 +106,7 @@ class PreparedSinglePath:
 
 
 def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedSinglePath:
+    refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     max_hops = config.params.get("max_hops")
     if not isinstance(max_hops, int) or isinstance(max_hops, bool) or max_hops < 1:
         raise SinglePathConfigError(

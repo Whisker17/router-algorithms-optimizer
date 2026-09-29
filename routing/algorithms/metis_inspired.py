@@ -95,6 +95,7 @@ from routing.algorithms.base import (
     SolveContext,
     SolveResult,
     SolveStatus,
+    refuse_options,
 )
 from routing.algorithms.incremental_graph import (
     PoolFlow,
@@ -204,6 +205,7 @@ class PreparedMetisInspired:
 
 
 def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedMetisInspired:
+    refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     params = config.params
     hops, pruning = params.get("label_hops"), params.get("label_pruning")
     if not isinstance(pruning, bool):

@@ -30,7 +30,7 @@ import signal
 from collections import Counter
 from collections.abc import Iterator
 from pathlib import Path
-from types import FrameType
+from types import FrameType, MappingProxyType
 from typing import Any
 
 import option_solvers  # sibling module: importable by spawned workers via sys.path
@@ -50,9 +50,13 @@ from routing.algorithms.base import (
     RESERVED_OPTION_KEYS,
     AlgorithmConfig,
     OptionsError,
+    option_int,
+    option_number,
+    settings_sha256,
     validated_options,
 )
 from routing.algorithms.registry import ALGORITHMS, BASE_STRATEGIES, OPTIMIZED_STRATEGIES
+from snapshot.bundle import load_bundle
 
 REPO = Path(__file__).resolve().parents[2]
 MIXED = REPO / "tests" / "fixtures" / "routing" / "mantle_mixed"
@@ -148,6 +152,12 @@ INVALID_A: list[tuple[dict[str, Any], str]] = [
     ({**PRESET, "ratio": -math.inf}, "finite number"),
     ({**PRESET, "ratio": False}, "ratio: expected a finite number"),
     ({**PRESET, "ratio": 1.5}, r"ratio: expected a finite number in \[0.0, 1.0\]"),
+    ({**PRESET, "ratio": 10**400}, "ratio: expected a finite number"),  # overflows a float
+    ({**PRESET, "ratio": -(10**400)}, "ratio: expected a finite number"),
+    (
+        {**PRESET, "width": 10**5000},
+        r"width: integer too large to serialize, got <int of \d+ bits>",
+    ),
     ({**PRESET, "label": "other"}, "label: expected one of"),
     ({**PRESET, "extra": 1}, r"unknown key\(s\) \['extra'\]"),
     ({"width": 3, "ratio": 0.5}, r"missing required key\(s\) \['label'\]"),
@@ -164,7 +174,9 @@ INVALID_A: list[tuple[dict[str, Any], str]] = [
 # ------------------------------------------------------------------ validation: both entrypoints
 
 
-@pytest.mark.parametrize(("options", "match"), INVALID_A)
+@pytest.mark.parametrize(
+    ("options", "match"), INVALID_A, ids=[f"case{i}" for i in range(len(INVALID_A))]
+)
 def test_invalid_options_are_refused_by_the_profile_and_by_public_prepare(
     fixtures: None, options: dict[str, Any], match: str
 ) -> None:
@@ -545,3 +557,62 @@ def test_quote_persists_options_one_solve_each_and_replays_them(
     assert compare_runs(run_dir, replayed) == []
     assert _records(replayed)[A]["search"]["options"] == override
     assert load_profile(quote_dir / "profile.yaml").algorithm_options == entries
+
+
+# ------------------------------------------------------------------ parent Stage A gate regressions
+
+
+def test_settings_hash_accepts_the_public_read_only_options_type(fixtures: None) -> None:
+    """`AlgorithmConfig.options` is a `MappingProxyType`: it hashes like the plain dict."""
+    assert settings_sha256(MappingProxyType({"limit": 3})) == _sha({"limit": 3})
+    nested = MappingProxyType({"a": MappingProxyType({"b": [1, 2]})})
+    assert settings_sha256(nested) == _sha({"a": {"b": [1, 2]}})
+    profile = parse_profile(_doc([A], {A: {**PRESET, "width": 4}}), "<test>")
+    public = profile.algorithm_config(ALGORITHMS[A]).options
+    assert isinstance(public, MappingProxyType)
+    assert settings_sha256(public) == profile.algorithm_options[A]["settings_sha256"]
+    with pytest.raises(OptionsError, match="integer too large to serialize"):
+        settings_sha256({"n": 10**5000})
+    with pytest.raises(OptionsError, match="expected a JSON value"):
+        settings_sha256({"n": {1, 2}})
+
+
+@pytest.mark.parametrize("value", [10**400, -(10**400), 10**5000], ids=["e400", "-e400", "e5000"])
+def test_non_representable_numbers_are_contextual_option_errors(value: int) -> None:
+    with pytest.raises(OptionsError, match="tolerance: expected a finite number >= 0"):
+        option_number(value, "tolerance", 0)
+    assert option_number(10**20, "tolerance", 0) == 1e20  # large but representable
+    with pytest.raises(OptionsError, match=r"n: expected an integer in \[0, 5\]"):
+        option_int(value, "n", 0, 5)
+
+
+def test_existing_prepares_refuse_explicit_options_and_keep_absent_parity() -> None:
+    """Every registered factory without a validator: its public `prepare` refuses any
+    explicit (unsupported, reserved or unknown) option instead of ignoring it; with options
+    absent or empty it prepares exactly as before."""
+    bundle = load_bundle(MIXED)
+    _, profile = _derive(read_profile_document(REPO / "config" / "daily_gross.yaml"), "all")
+    guarded = [f for f in ALGORITHMS.values() if f.options_validator is None]
+    assert {f.name for f in guarded} == set(ALGORITHMS)  # no registered options factory yet
+    for factory in guarded:
+        if factory.prepare is None:  # `direct`: no public prepare, nothing to bypass
+            assert factory.name == "direct"
+            continue
+        params = (
+            profile.algorithm_config(factory).params if factory.name in profile.algorithms else {}
+        )
+        for bad in ({"max_quotes": 1}, {"__unknown__": 1}, MappingProxyType({"width": 2})):
+            config = AlgorithmConfig(factory.name, params=params, options=bad)
+            with pytest.raises(
+                OptionsError, match=f"'{factory.name}' accepts no algorithm_options"
+            ):
+                factory.prepare(bundle, config)
+        if factory.name in profile.algorithms:  # absent / empty options: unchanged
+            factory.prepare(bundle, AlgorithmConfig(factory.name, params=params))
+            factory.prepare(bundle, profile.algorithm_config(factory))
+    # the parent's exact reproduction
+    with pytest.raises(OptionsError, match="accepts no algorithm_options"):
+        ALGORITHMS["single_path"].prepare(  # type: ignore[misc]
+            bundle,
+            AlgorithmConfig("single_path", params={"max_hops": 3}, options={"max_quotes": 1}),
+        )

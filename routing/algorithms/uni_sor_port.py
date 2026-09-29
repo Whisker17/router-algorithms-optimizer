@@ -100,6 +100,7 @@ from routing.algorithms.base import (
     SolveContext,
     SolveResult,
     SolveStatus,
+    refuse_options,
 )
 from routing.algorithms.path_split import split_path_plan
 from routing.evaluator import EvalStatus, evaluate
@@ -772,6 +773,7 @@ def _sor_by_source(catalog_path: Path) -> dict[str, str]:
 def prepare(
     bundle: SnapshotBundle, config: AlgorithmConfig, *, catalog: Path = DEFAULT_CATALOG
 ) -> PreparedUniSorPort:
+    refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     try:
         max_hops = single_path.prepare(bundle, config).max_hops
         grid = direct_split.prepare(bundle, config)

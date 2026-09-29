@@ -57,6 +57,7 @@ from routing.algorithms.base import (
     Budget,
     SolveContext,
     SolveResult,
+    refuse_options,
 )
 from snapshot.models import Case, SnapshotBundle
 
@@ -258,6 +259,7 @@ def _controls(strategy: Strategy, raw: Any) -> dict[str, dict[str, Any]]:
 
 
 def _prepare(strategy: Strategy, bundle: SnapshotBundle, config: AlgorithmConfig) -> Any:
+    refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     params = config.params
     needed = (*sor.SEARCH_PARAMS, *fast.SHORTLIST_PARAMS, *fast.SAMPLING_PARAMS, CONTROLS_PARAM)
     missing = [k for k in needed if k not in params]

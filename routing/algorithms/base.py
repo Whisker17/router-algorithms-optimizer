@@ -279,8 +279,19 @@ class OptionsError(ValueError):
 
 
 def settings_sha256(options: Mapping[str, Any]) -> str:
-    """The R021-C/1 §3.1 canonical hash (`json.dumps(sort_keys=True)`) of normalized options."""
-    return hashlib.sha256(json.dumps(options, sort_keys=True).encode()).hexdigest()
+    """The R021-C/1 §3.1 canonical hash (`json.dumps(sort_keys=True)`) of normalized options.
+    Any mapping (e.g. the read-only `AlgorithmConfig.options`) hashes as its plain JSON copy;
+    a non-JSON value is an `OptionsError`."""
+    plain = _json_copy(options, "options")
+    return hashlib.sha256(json.dumps(plain, sort_keys=True).encode()).hexdigest()
+
+
+def _shown(value: Any) -> str:
+    """`repr(value)` for an error message; an int too long to print is summarized."""
+    try:
+        return repr(value)
+    except ValueError:  # int exceeds sys.get_int_max_str_digits()
+        return f"<int of {value.bit_length()} bits>"
 
 
 def _json_copy(value: Any, where: str) -> Any:
@@ -297,6 +308,8 @@ def _json_copy(value: Any, where: str) -> Any:
         return out
     if isinstance(value, list):
         return [_json_copy(item, f"{where}[{index}]") for index, item in enumerate(value)]
+    if isinstance(value, int) and _shown(value).startswith("<int"):
+        raise OptionsError(f"{where}: integer too large to serialize, got {_shown(value)}")
     if value is None or isinstance(value, str | int | float):
         return value
     raise OptionsError(f"{where}: expected a JSON value, got {type(value).__name__}")
@@ -309,8 +322,7 @@ def validated_options(factory: AlgorithmFactory, options: Any) -> dict[str, Any]
     if not isinstance(options, Mapping):
         raise OptionsError(f"{where}: expected a mapping, got {type(options).__name__}")
     if factory.options_validator is None:
-        if options:
-            raise OptionsError(f"{where}: {factory.name!r} accepts no algorithm_options")
+        refuse_options(AlgorithmConfig(factory.name, options=options))
         return {}
     plain = _json_copy(options, where)
     reserved = sorted(set(plain) & RESERVED_OPTION_KEYS)
@@ -327,6 +339,16 @@ def validated_options(factory: AlgorithmFactory, options: Any) -> dict[str, Any]
         raise OptionsError(f"{where}: the validator must return a dict")
     copy: dict[str, Any] = _json_copy(out, where)
     return copy
+
+
+def refuse_options(config: AlgorithmConfig) -> None:
+    """The `prepare` guard of a factory without an `options_validator` (every pre-0.2.1
+    identity): explicit options are refused, never silently ignored. Empty options -- the
+    only ones the profile loader ever hands such a factory -- change nothing."""
+    if config.options:
+        raise OptionsError(
+            f"algorithm_options.{config.name}: {config.name!r} accepts no algorithm_options"
+        )
 
 
 def require_option_keys(
@@ -352,25 +374,31 @@ def option_int(value: Any, key: str, minimum: int, maximum: int | None = None) -
         or (maximum is not None and value > maximum)
     ):
         bound = f"in [{minimum}, {maximum}]" if maximum is not None else f">= {minimum}"
-        raise OptionsError(f"{key}: expected an integer {bound}, got {value!r}")
+        raise OptionsError(f"{key}: expected an integer {bound}, got {_shown(value)}")
     return value
 
 
 def option_number(value: Any, key: str, minimum: float, maximum: float | None = None) -> float:
-    """A finite number in `[minimum, maximum]` (an int is accepted, a bool is not)."""
+    """A finite number in `[minimum, maximum]` (an int is accepted, a bool is not; an int too
+    large for a float is not representable and refused like any other invalid value)."""
+    number: float | None = None
+    if isinstance(value, int | float) and not isinstance(value, bool):
+        try:
+            number = float(value)
+        except OverflowError:
+            number = None
     if (
-        isinstance(value, bool)
-        or not isinstance(value, int | float)
-        or not math.isfinite(value)
-        or value < minimum
-        or (maximum is not None and value > maximum)
+        number is None
+        or not math.isfinite(number)
+        or number < minimum
+        or (maximum is not None and number > maximum)
     ):
         bound = f"in [{minimum}, {maximum}]" if maximum is not None else f">= {minimum}"
-        raise OptionsError(f"{key}: expected a finite number {bound}, got {value!r}")
-    return float(value)
+        raise OptionsError(f"{key}: expected a finite number {bound}, got {_shown(value)}")
+    return number
 
 
 def option_choice(value: Any, key: str, choices: tuple[str, ...]) -> str:
     if not isinstance(value, str) or value not in choices:
-        raise OptionsError(f"{key}: expected one of {list(choices)}, got {value!r}")
+        raise OptionsError(f"{key}: expected one of {list(choices)}, got {_shown(value)}")
     return value
