@@ -203,6 +203,12 @@
             "algorithm": "direct_split_certified",
             "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
           },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
           "lower_raw": "58",
           "upper_raw": "58",
           "gap_raw": "0",
@@ -228,7 +234,19 @@
         "final_score": "58",
         "objective": "gross_only",
         "quotes_counted": 41,
-        "hard_killed": false
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "direct_split_certified",
+          "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
       }
     },
     {
@@ -279,6 +297,12 @@
             "algorithm": "direct_split_certified",
             "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
           },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
           "lower_raw": "57",
           "upper_raw": "59",
           "gap_raw": "2",
@@ -303,7 +327,19 @@
         "final_score": "57",
         "objective": "gross_only",
         "quotes_counted": 3,
-        "hard_killed": false
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "direct_split_certified",
+          "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
       }
     },
     {
@@ -354,6 +390,12 @@
             "algorithm": "direct_split_certified",
             "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
           },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
           "lower_raw": "59",
           "upper_raw": "59",
           "gap_raw": "0",
@@ -378,7 +420,19 @@
         "final_score": "59",
         "objective": "gross_only",
         "quotes_counted": 5,
-        "hard_killed": false
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "direct_split_certified",
+          "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
       }
     },
     {
@@ -429,6 +483,12 @@
             "algorithm": "cfmm_dual",
             "effective_settings_sha256": "5a719fb806d92f4b317f5a62117de383183b907efc08b41e3c56659fe9def971"
           },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
           "lower_raw": "59",
           "upper_raw": null,
           "gap_raw": null,
@@ -459,7 +519,19 @@
         "final_score": "59",
         "objective": "gross_only",
         "quotes_counted": 4,
-        "hard_killed": false
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "cfmm_dual",
+          "effective_settings_sha256": "5a719fb806d92f4b317f5a62117de383183b907efc08b41e3c56659fe9def971"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
       }
     },
     {
@@ -510,6 +582,12 @@
             "algorithm": "metis_history",
             "effective_settings_sha256": "51b94943f4c5beee709ba2987f83c2385aa59165867807a68de64ece8d8ddbf6"
           },
+          "request": {
+            "case_id": "r021-grid38",
+            "token_in": "S",
+            "token_out": "T",
+            "amount_in": "38"
+          },
           "lower_raw": "58",
           "upper_raw": null,
           "gap_raw": null,
@@ -535,7 +613,19 @@
         "final_score": "58",
         "objective": "gross_only",
         "quotes_counted": 9,
-        "hard_killed": false
+        "hard_killed": false,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "metis_history",
+          "effective_settings_sha256": "51b94943f4c5beee709ba2987f83c2385aa59165867807a68de64ece8d8ddbf6"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
       }
     },
     {
@@ -586,7 +676,19 @@
         "final_score": null,
         "objective": "gross_only",
         "quotes_counted": 0,
-        "hard_killed": true
+        "hard_killed": true,
+        "run": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "direct_split_certified",
+          "effective_settings_sha256": "e0bad618fe0235e53b52587aa5aadc2f684d0d4134ede6f1f4c8b7177995066d"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        }
       }
     },
     {
@@ -857,6 +959,131 @@
       "rehash": false,
       "violation": "C_IDENTITY",
       "note": "certificate identity needs source, bundle and settings"
+    },
+    {
+      "id": "N-SOURCE-ALGORITHM",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.source.algorithm": "direct_split"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_IDENTITY",
+      "note": "a nonempty but different algorithm is not this run's certificate"
+    },
+    {
+      "id": "N-SOURCE-REVISION",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.source.git_revision": "358bbe0c0a86965607c950d12ee0ce0e84915b2d"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_IDENTITY",
+      "note": "a certificate from another source revision"
+    },
+    {
+      "id": "N-SOURCE-BUNDLE",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.source.bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_IDENTITY",
+      "note": "a certificate from another bundle"
+    },
+    {
+      "id": "N-SOURCE-SETTINGS",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.source.effective_settings_sha256": "582d8d3229b133bbb88f9fbb077c116e25e590805d3ddc0da123abf572a4ce18"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_IDENTITY",
+      "note": "a certificate from other effective settings"
+    },
+    {
+      "id": "N-REQUEST-MISSING",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request": "@delete"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "a certificate names its exact request"
+    },
+    {
+      "id": "N-REQUEST-CASE",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request.case_id": "r021-other"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "another case id"
+    },
+    {
+      "id": "N-REQUEST-TOKEN-IN",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request.token_in": "T"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "another input token"
+    },
+    {
+      "id": "N-REQUEST-TOKEN-OUT",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request.token_out": "S"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "another output token"
+    },
+    {
+      "id": "N-REQUEST-AMOUNT",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {
+        "certificate.request.amount_in": "39"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "another raw input amount"
+    },
+    {
+      "id": "N-REQUEST-TRANSFER",
+      "kind": "negative",
+      "base": "P-DSC-GRID",
+      "patch": {},
+      "context_patch": {
+        "request": {
+          "case_id": "r021-grid135-rev",
+          "token_in": "T",
+          "token_out": "S",
+          "amount_in": "135"
+        }
+      },
+      "rehash": false,
+      "violation": "C_REQUEST",
+      "note": "the S->T 38 proof reused for the T->S 135 request, whose repository-grid optimum is also 58 (R6): a matching score does not transfer a proof"
     },
     {
       "id": "N-KILLED",

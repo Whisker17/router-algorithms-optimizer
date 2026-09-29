@@ -189,6 +189,8 @@ IDENTITIES: dict[str, dict[str, Any]] = {
 }
 NUMERIC_UNITS = {u for u, cat in CONTRACT["work_units"].items() if cat == "numeric"}
 CERTIFIED_SOURCES = {"exhaustive", "exact_rational", "outward_rounded"}
+RUN_IDENTITY_KEYS = ("git_revision", "bundle_hash", "algorithm", "effective_settings_sha256")
+REQUEST_KEYS = ("case_id", "token_in", "token_out", "amount_in")
 
 
 def check_domain(domain: dict[str, Any]) -> set[str]:
@@ -247,10 +249,24 @@ def check_diagnostics(rec: dict[str, Any], ctx: dict[str, Any]) -> set[str]:
         return found
     if ctx["hard_killed"]:
         found.add("C_KILLED")
-    source = cert["source"]
-    keys = ("git_revision", "bundle_hash", "algorithm", "effective_settings_sha256")
-    if any(not isinstance(source.get(k), str) or not source.get(k) for k in keys):
+    # The certificate is bound to the run and the exact request that the runner supplies
+    # independently (`ctx`); presence of nonempty fields alone proves nothing.
+    source, run = cert["source"], ctx["run"]
+    if (
+        any(
+            not isinstance(source.get(k), str) or not source[k] or source[k] != run[k]
+            for k in RUN_IDENTITY_KEYS
+        )
+        or source["algorithm"] != rec["algorithm"]
+    ):
         found.add("C_IDENTITY")
+    request = cert.get("request")
+    if (
+        not isinstance(request, dict)
+        or any(request.get(k) != ctx["request"][k] for k in REQUEST_KEYS)
+        or not _is_decimal(request.get("amount_in"))
+    ):
+        found.add("C_REQUEST")
     if cert["candidate_domain_hash"] != rec["candidate_domain_hash"]:
         found.add("C_DOMAIN")
     objectives = identity.get("objectives")
@@ -576,6 +592,21 @@ def test_r6_equal_parameters_with_another_pool_order_are_another_domain() -> Non
             Case("r6", "S", "T", a), SolveContext(bundle, gross_only(), prepared), Budget()
         )
         assert result.status is SolveStatus.OK and result.score == expected
+    # A different request (T -> S, 135) on the same pools and the same grid domain reaches
+    # the same score 58: a matching score cannot transfer a proof (N-REQUEST-TRANSFER).
+    rev = R6["reverse_request"]
+    flipped = {pid: [res[1], res[0]] for pid, res in R6_POOLS.items()}
+    rev_values = _grid_values(rev["amount_in"], flipped, ["p1", "p2"], fee)
+    assert max(rev_values.values()) == rev["grid_optimum_order_p1_p2"]
+    bundle = _bundle(pools, fee, ["p1", "p2"])
+    params = {"max_splits": R6["max_splits"], "percent_step": R6["percent_step"]}
+    prepared = direct_split.prepare(bundle, AlgorithmConfig(direct_split.NAME, params))
+    case = Case("rev", rev["token_in"], rev["token_out"], rev["amount_in"])
+    result = direct_split.solve(case, SolveContext(bundle, gross_only(), prepared), Budget())
+    assert result.score == rev["grid_optimum_order_p1_p2"]
+    transfer = next(n for n in EXAMPLES["negatives"] if n["id"] == "N-REQUEST-TRANSFER")
+    assert transfer["context_patch"]["request"]["amount_in"] == str(rev["amount_in"])
+    assert POSITIVES[transfer["base"]]["context"]["final_score"] == str(max(rev_values.values()))
 
 
 def test_r6_exact_rational_tangent_bound_dominates_every_raw_allocation() -> None:
@@ -612,6 +643,7 @@ def test_r6_example_certificates_contain_the_exhaustive_optimum_of_their_domain(
         else:
             continue  # chunk domains: no bound is claimed (bound_kind unknown)
         cert = rec["certificate"]
+        assert (cert["request"]["token_in"], cert["request"]["amount_in"]) == ("S", str(a))
         lower = int(cert["lower_raw"])
         assert lower in values.values()  # the incumbent is a feasible allocation
         if cert["bound_kind"] == "certified":

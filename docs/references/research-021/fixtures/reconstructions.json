@@ -93,7 +93,14 @@
     "single_pool_incumbent": 57,
     "tangent_point": 10,
     "tangent_upper_floor": 59,
-    "continuous_optimum_bounds": ["59.36", "59.37"]
+    "continuous_optimum_bounds": ["59.36", "59.37"],
+    "reverse_request": {
+      "note": "a different request on the same pools and domain whose repository-grid optimum is also 58 (example N-REQUEST-TRANSFER)",
+      "token_in": "T",
+      "token_out": "S",
+      "amount_in": 135,
+      "grid_optimum_order_p1_p2": 58
+    }
   },
   "R7_X4": {
     "source": "tests/routing/test_metis_inspired.py REVISIT fixture; docs/references/routing-algorithms.md §10.5 step 8",

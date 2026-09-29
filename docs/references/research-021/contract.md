@@ -163,7 +163,8 @@ objective.
 | `schema` | `"r021.certificate/1"` |
 | `candidate_domain_hash` | the domain the bound covers; equals the diagnostics' domain hash |
 | `objective` | objective mode (`gross_only`, …); equals the run's objective |
-| `source` | `git_revision`, `bundle_hash`, `algorithm`, `effective_settings_sha256` (all required) |
+| `source` | `git_revision`, `bundle_hash`, `algorithm`, `effective_settings_sha256`: all required and each **equal** to the identity the runner supplies independently for this record (its source revision, bundle, algorithm and effective-settings hash); `algorithm` also equals the diagnostics' `algorithm` |
+| `request` | `case_id`, `token_in`, `token_out`, `amount_in` (decimal string): the exact request the proof is about, equal to the runner's case. One bundle and domain cover many requests; a proof never transfers to another request, even when the scores match |
 | `lower_raw` | decimal string: objective score of the validated incumbent; equals the runner's independently evaluated score of the returned plan |
 | `upper_raw` | decimal string only when `bound_kind` is `certified`; otherwise null (never `"0"`) |
 | `gap_raw` | `upper_raw − lower_raw` when certified; otherwise null |
@@ -206,7 +207,8 @@ budget exhaustion is `timeout`/truncation with its available bounds, never `no_r
 | `C_DOMAIN` | the certificate's domain hash is the record's domain hash (no transfer across domains) |
 | `C_OBJECTIVE` | certificate objective = run objective, within the identity's objectives |
 | `C_LOWER_EVAL` | `lower_raw` = the independently evaluated score |
-| `C_IDENTITY` | source, bundle, algorithm and settings hash present |
+| `C_IDENTITY` | source revision, bundle, algorithm and settings hash present **and equal** to the run's independently supplied identity (a nonempty wrong value fails) |
+| `C_REQUEST` | the certificate names the exact request (case, input/output token, raw input) and it equals the runner's case (`N-REQUEST-TRANSFER`: the S→T 38 proof reused for the T→S 135 request whose grid optimum is also 58) |
 | `C_KILLED` | no certificate for a hard-killed solve |
 | `C_UNAVAILABLE_REASON` | an absent certificate states `hard_timeout`, `worker_error` or `not_produced` |
 | `D_MISSING_FIELD`, `D_ENUM`, `D_POOL_ORDER`, `D_HASH` | complete, registered domain; `repository_grid` names its pool order; hash reproducible |
@@ -230,9 +232,12 @@ certificate (58 = 58), a budget-truncated certified gap (incumbent 57, exact-rat
 tangent bound 59), a raw-integer proof (59 = 59), a CFMM-style estimate (≈59.3676, no gap),
 an unknown heuristic bound, a hard-timeout unavailable view, same-domain and
 expanded-domain comparisons, single-quote and batch timing, and dispositions. Every
-negative is a minimal mutation of a positive that must fail with exactly one code. The
-certificate numbers are checked against independent exhaustive enumeration of their domain
-(R6); they are illustrative records, not outputs of any 0.2.1 implementation.
+negative is a minimal mutation of a positive that must fail with exactly one code; each
+diagnostics example's context carries the runner-supplied `run` identity and `request`, and
+wrong nonempty values of every `source` field and of every `request` field are separate
+negatives (`C_IDENTITY`, `C_REQUEST`). The certificate numbers are checked against
+independent exhaustive enumeration of their domain (R6); they are illustrative records, not
+outputs of any 0.2.1 implementation.
 
 ## 5. Timing and work units
 
@@ -432,7 +437,7 @@ One JSON object in the existing `SolveResult.search_stats`, no parallel result f
 `work` (§5.2 units only, non-negative integers), and optional `fallback` (`used`, `source`,
 `reason`), `repair`, `scope` (`supported`, `reason`) and observational `stages` seconds.
 
-After the independent final evaluation the runner applies §4.4 (including `C_LOWER_EVAL`).
+After the independent final evaluation the runner applies §4.4, comparing the certificate against its own identities — never against the solver's claims: `C_LOWER_EVAL` against the evaluated score, `C_IDENTITY` against the run's source revision, bundle hash, algorithm and effective-settings hash, and `C_REQUEST` against the case being solved.
 A violating certificate is rendered `invalid certificate (<codes>)`, counted as unknown,
 and fails that strategy's own contract tests; it is never displayed as certified.
 
@@ -451,8 +456,9 @@ Invalid/unknown/reserved/boolean/non-finite options refused before workers and r
 sibling isolation; absent-section identity of legacy resolved profiles and replay hashes;
 unchanged nine-strategy selection and SOR recipe pins; batch and quote persist and replay
 exact options and one solve per quote; a test-only diagnostics fixture rendering all four
-bound states plus an invalid certificate; hard-timeout keeps only `last_valid_candidate`
-and shows `unavailable`; old records render unchanged. The ordinary roster stays nine
+bound states plus an invalid certificate, including wrong-run-identity and wrong-request
+certificates whose other fields and score are valid; hard-timeout keeps only
+`last_valid_candidate` and shows `unavailable`; old records render unchanged. The ordinary roster stays nine
 until an implementation lands.
 
 ## 10. Deterministic rules shared by all five
@@ -482,7 +488,7 @@ independent expectations. It records `go`, `narrow_go`, `blocked` or `no_go`.
 
 ```bash
 uv run pytest tests/docs/test_research_021_contract.py -q
-shasum -a 256 -c docs/references/research-021/sources/SHA256SUMS   # from that directory
+(cd docs/references/research-021/sources && shasum -a 256 -c SHA256SUMS)
 ```
 
 The test checks the archived report hash, prose/JSON vocabulary agreement, the registry
