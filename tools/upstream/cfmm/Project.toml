@@ -1,0 +1,3 @@
+[deps]
+CFMMRouter = "591468fd-1d79-403f-bb2b-3ef7f4d90130"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
