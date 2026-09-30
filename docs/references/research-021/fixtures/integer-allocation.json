@@ -1,0 +1,1237 @@
+{
+ "_comment": "WHI-1551 NEW records (integer-allocation.md). Inputs are the archived report's §2.3 reserves (R6 via reconstructions.json) or committed repository fixture bundles. `record`/`status`/`final_score` are regenerated exactly by `certify` (tests/routing/test_integer_allocation_contract.py, `examples` CLI) and checked by the unchanged R021-C/1 validator; `oracle_optimum` comes from the independent exhaustive oracle, never from the solver. Illustrative records, not outputs of any 0.2.1 implementation; `git_revision` is the lane base.",
+ "preset": {
+  "path_proposal": "config/strategy_options/direct_split_certified.yaml",
+  "version": 1,
+  "options": {
+   "domain": "repository_grid",
+   "max_bound_nodes": 100000,
+   "max_open_nodes": 100000
+  },
+  "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+ },
+ "stress_raw": {
+  "note": "stress profile only (R021-C/1 §7.2); explicit --strategies profile selection",
+  "options": {
+   "domain": "raw_integer",
+   "max_bound_nodes": 1000000,
+   "max_open_nodes": 250000,
+   "raw_max_amount_in": 100000
+  },
+  "settings_sha256": "7bf42a24601dfc68f62908b791d9c0127376d708cb70de5f89d4dfc9736f9961"
+ },
+ "examples": [
+  {
+   "id": "P-IA-R6-GRID-P1P2",
+   "note": "R6 pools in admitted order (p1, p2): repository_grid optimum 58, complete",
+   "bundle": {
+    "ref": "fixture:R021-FX-GRID38",
+    "pools": [
+     [
+      "p1",
+      134,
+      190
+     ],
+     [
+      "p2",
+      76,
+      172
+     ]
+    ]
+   },
+   "case_id": "r021-grid38",
+   "amount_in": 38,
+   "percent_step": 5,
+   "max_splits": 2,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 100000,
+    "max_open_nodes": 100000
+   },
+   "oracle_optimum": "58",
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "fixture:R021-FX-GRID38",
+      "cohort": "fixture",
+      "pools": [
+       "p1",
+       "p2"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "p1",
+      "p2"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 2,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+    "certificate": {
+     "schema": "r021.certificate/1",
+     "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+     "objective": "gross_only",
+     "source": {
+      "git_revision": "b9e7310ea73b2cfa4a3388b80644199e5188e1d9",
+      "bundle_hash": "fixture:R021-FX-GRID38",
+      "algorithm": "direct_split_certified",
+      "effective_settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+     },
+     "request": {
+      "case_id": "r021-grid38",
+      "token_in": "S",
+      "token_out": "T",
+      "amount_in": "38"
+     },
+     "lower_raw": "58",
+     "upper_raw": "58",
+     "gap_raw": "0",
+     "bound_kind": "certified",
+     "upper_source": "exact_rational",
+     "estimate": null,
+     "optimality_proven": true,
+     "termination": "complete"
+    },
+    "certificate_unavailable_reason": null,
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 9,
+     "quotes_memoized": 3,
+     "internal_evaluations": 2,
+     "bb_nodes_expanded": 15,
+     "bound_evaluations": 26,
+     "peak_open_nodes": 5
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "ok",
+   "final_score": "58"
+  },
+  {
+   "id": "P-IA-R6-GRID-P2P1",
+   "note": "same pools and parameters, admitted order (p2, p1): another domain, optimum 59",
+   "bundle": {
+    "ref": "fixture:R021-FX-GRID38",
+    "pools": [
+     [
+      "p2",
+      76,
+      172
+     ],
+     [
+      "p1",
+      134,
+      190
+     ]
+    ]
+   },
+   "case_id": "r021-grid38",
+   "amount_in": 38,
+   "percent_step": 5,
+   "max_splits": 2,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 100000,
+    "max_open_nodes": 100000
+   },
+   "oracle_optimum": "59",
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "fixture:R021-FX-GRID38",
+      "cohort": "fixture",
+      "pools": [
+       "p1",
+       "p2"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "p2",
+      "p1"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 2,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "f98ddef619154380151ea9b9d4835c9c067aba59a52d1fbe212033e979add84c",
+    "certificate": {
+     "schema": "r021.certificate/1",
+     "candidate_domain_hash": "f98ddef619154380151ea9b9d4835c9c067aba59a52d1fbe212033e979add84c",
+     "objective": "gross_only",
+     "source": {
+      "git_revision": "b9e7310ea73b2cfa4a3388b80644199e5188e1d9",
+      "bundle_hash": "fixture:R021-FX-GRID38",
+      "algorithm": "direct_split_certified",
+      "effective_settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+     },
+     "request": {
+      "case_id": "r021-grid38",
+      "token_in": "S",
+      "token_out": "T",
+      "amount_in": "38"
+     },
+     "lower_raw": "59",
+     "upper_raw": "59",
+     "gap_raw": "0",
+     "bound_kind": "certified",
+     "upper_source": "exact_rational",
+     "estimate": null,
+     "optimality_proven": true,
+     "termination": "complete"
+    },
+    "certificate_unavailable_reason": null,
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 10,
+     "quotes_memoized": 5,
+     "internal_evaluations": 3,
+     "bb_nodes_expanded": 17,
+     "bound_evaluations": 27,
+     "peak_open_nodes": 6
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "ok",
+   "final_score": "59"
+  },
+  {
+   "id": "P-IA-R6-RAW",
+   "note": "raw_integer stress configuration on the R6 pools: optimum 59 (x = 10 on p1)",
+   "bundle": {
+    "ref": "fixture:R021-FX-GRID38",
+    "pools": [
+     [
+      "p1",
+      134,
+      190
+     ],
+     [
+      "p2",
+      76,
+      172
+     ]
+    ]
+   },
+   "case_id": "r021-grid38",
+   "amount_in": 38,
+   "percent_step": 5,
+   "max_splits": 2,
+   "options": {
+    "domain": "raw_integer",
+    "max_bound_nodes": 1000000,
+    "max_open_nodes": 250000,
+    "raw_max_amount_in": 100000
+   },
+   "oracle_optimum": "59",
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "fixture:R021-FX-GRID38",
+      "cohort": "fixture",
+      "pools": [
+       "p1",
+       "p2"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "p1",
+      "p2"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 2,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "raw_integer",
+      "percent_step": null,
+      "remainder": "explicit_integer_legs"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "5925efb238b2aec6e0461905277c4cbb94722dfb31176b57deb334c26f8765c7",
+    "certificate": {
+     "schema": "r021.certificate/1",
+     "candidate_domain_hash": "5925efb238b2aec6e0461905277c4cbb94722dfb31176b57deb334c26f8765c7",
+     "objective": "gross_only",
+     "source": {
+      "git_revision": "b9e7310ea73b2cfa4a3388b80644199e5188e1d9",
+      "bundle_hash": "fixture:R021-FX-GRID38",
+      "algorithm": "direct_split_certified",
+      "effective_settings_sha256": "7bf42a24601dfc68f62908b791d9c0127376d708cb70de5f89d4dfc9736f9961"
+     },
+     "request": {
+      "case_id": "r021-grid38",
+      "token_in": "S",
+      "token_out": "T",
+      "amount_in": "38"
+     },
+     "lower_raw": "59",
+     "upper_raw": "59",
+     "gap_raw": "0",
+     "bound_kind": "certified",
+     "upper_source": "exact_rational",
+     "estimate": null,
+     "optimality_proven": true,
+     "termination": "complete"
+    },
+    "certificate_unavailable_reason": null,
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 4,
+     "quotes_memoized": 3,
+     "internal_evaluations": 2,
+     "bb_nodes_expanded": 0,
+     "bound_evaluations": 1,
+     "peak_open_nodes": 1
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "ok",
+   "final_score": "59"
+  },
+  {
+   "id": "P-IA-R6-NODE-CAP",
+   "note": "preset with max_bound_nodes 1: node_cap with a certified nonzero gap",
+   "bundle": {
+    "ref": "fixture:R021-FX-GRID38",
+    "pools": [
+     [
+      "p1",
+      134,
+      190
+     ],
+     [
+      "p2",
+      76,
+      172
+     ]
+    ]
+   },
+   "case_id": "r021-grid38",
+   "amount_in": 38,
+   "percent_step": 5,
+   "max_splits": 2,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 1,
+    "max_open_nodes": 100000
+   },
+   "oracle_optimum": "58",
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "fixture:R021-FX-GRID38",
+      "cohort": "fixture",
+      "pools": [
+       "p1",
+       "p2"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "p1",
+      "p2"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 2,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+    "certificate": {
+     "schema": "r021.certificate/1",
+     "candidate_domain_hash": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
+     "objective": "gross_only",
+     "source": {
+      "git_revision": "b9e7310ea73b2cfa4a3388b80644199e5188e1d9",
+      "bundle_hash": "fixture:R021-FX-GRID38",
+      "algorithm": "direct_split_certified",
+      "effective_settings_sha256": "63a0017ecb07f4c7a24d4d57ce128e8757a0e3c272d26ce97a1deec8b9fee10f"
+     },
+     "request": {
+      "case_id": "r021-grid38",
+      "token_in": "S",
+      "token_out": "T",
+      "amount_in": "38"
+     },
+     "lower_raw": "58",
+     "upper_raw": "59",
+     "gap_raw": "1",
+     "bound_kind": "certified",
+     "upper_source": "exact_rational",
+     "estimate": null,
+     "optimality_proven": false,
+     "termination": "node_cap"
+    },
+    "certificate_unavailable_reason": null,
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 4,
+     "quotes_memoized": 3,
+     "internal_evaluations": 2,
+     "bb_nodes_expanded": 1,
+     "bound_evaluations": 4,
+     "peak_open_nodes": 1
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "ok",
+   "final_score": "58"
+  },
+  {
+   "id": "P-IA-SYNTHETIC",
+   "note": "committed tests/fixtures/synthetic bundle, two CPMM pools, daily/full profile grid",
+   "bundle": {
+    "fixture": "synthetic"
+   },
+   "case_id": "direct_best_pool",
+   "percent_step": 5,
+   "max_splits": 4,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 100000,
+    "max_open_nodes": 100000
+   },
+   "oracle_optimum": "271983",
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "76347ddb9cd0e2acee17be68151b3c6e592b5d59278dcafe74089e5896fdcc4d",
+      "cohort": "fixture",
+      "pools": [
+       "pool_a",
+       "pool_b"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "pool_a",
+      "pool_b"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 4,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "a1030b6377489aa455f5282120ba8969f7520714c5ca58c763465bbf694042d7",
+    "certificate": {
+     "schema": "r021.certificate/1",
+     "candidate_domain_hash": "a1030b6377489aa455f5282120ba8969f7520714c5ca58c763465bbf694042d7",
+     "objective": "gross_only",
+     "source": {
+      "git_revision": "b9e7310ea73b2cfa4a3388b80644199e5188e1d9",
+      "bundle_hash": "76347ddb9cd0e2acee17be68151b3c6e592b5d59278dcafe74089e5896fdcc4d",
+      "algorithm": "direct_split_certified",
+      "effective_settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+     },
+     "request": {
+      "case_id": "direct_best_pool",
+      "token_in": "TKA",
+      "token_out": "TKB",
+      "amount_in": "100000"
+     },
+     "lower_raw": "271983",
+     "upper_raw": "271983",
+     "gap_raw": "0",
+     "bound_kind": "certified",
+     "upper_source": "exact_rational",
+     "estimate": null,
+     "optimality_proven": true,
+     "termination": "complete"
+    },
+    "certificate_unavailable_reason": null,
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 2,
+     "quotes_memoized": 1,
+     "internal_evaluations": 1,
+     "bb_nodes_expanded": 0,
+     "bound_evaluations": 1,
+     "peak_open_nodes": 1
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "ok",
+   "final_score": "271983"
+  },
+  {
+   "id": "P-IA-SYNTHETIC-QUOTES",
+   "note": "same request with Budget.max_quotes 1: quote_budget during the single-pool stage, certified gap from the root bound",
+   "bundle": {
+    "fixture": "synthetic"
+   },
+   "case_id": "direct_best_pool",
+   "percent_step": 5,
+   "max_splits": 4,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 100000,
+    "max_open_nodes": 100000
+   },
+   "budget": {
+    "max_quotes": 1
+   },
+   "oracle_optimum": "271983",
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "76347ddb9cd0e2acee17be68151b3c6e592b5d59278dcafe74089e5896fdcc4d",
+      "cohort": "fixture",
+      "pools": [
+       "pool_a",
+       "pool_b"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "pool_a",
+      "pool_b"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 4,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "a1030b6377489aa455f5282120ba8969f7520714c5ca58c763465bbf694042d7",
+    "certificate": {
+     "schema": "r021.certificate/1",
+     "candidate_domain_hash": "a1030b6377489aa455f5282120ba8969f7520714c5ca58c763465bbf694042d7",
+     "objective": "gross_only",
+     "source": {
+      "git_revision": "b9e7310ea73b2cfa4a3388b80644199e5188e1d9",
+      "bundle_hash": "76347ddb9cd0e2acee17be68151b3c6e592b5d59278dcafe74089e5896fdcc4d",
+      "algorithm": "direct_split_certified",
+      "effective_settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+     },
+     "request": {
+      "case_id": "direct_best_pool",
+      "token_in": "TKA",
+      "token_out": "TKB",
+      "amount_in": "100000"
+     },
+     "lower_raw": "271983",
+     "upper_raw": "271983",
+     "gap_raw": "0",
+     "bound_kind": "certified",
+     "upper_source": "exact_rational",
+     "estimate": null,
+     "optimality_proven": true,
+     "termination": "quote_budget"
+    },
+    "certificate_unavailable_reason": null,
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 1,
+     "quotes_memoized": 1,
+     "internal_evaluations": 1,
+     "bb_nodes_expanded": 0,
+     "bound_evaluations": 1,
+     "peak_open_nodes": 1
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "ok",
+   "final_score": "271983"
+  },
+  {
+   "id": "P-IA-DRY-POOL",
+   "note": "cpmm_graph a_b_large: ab_1 plus the zero-reserve ab_dry, closed without a quote",
+   "bundle": {
+    "fixture": "routing/cpmm_graph"
+   },
+   "case_id": "a_b_large",
+   "percent_step": 5,
+   "max_splits": 4,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 100000,
+    "max_open_nodes": 100000
+   },
+   "oracle_optimum": "85567157",
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "ae01173f437c64f4abefb2bd5a199d7dc934315a28b54b049cdab9bac5747d49",
+      "cohort": "fixture",
+      "pools": [
+       "ab_1",
+       "ab_dry"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "ab_1",
+      "ab_dry"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 4,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "41d258a1850721fc8c69bc6e50626a5192032a2e90783b4ffb8c8390f4400675",
+    "certificate": {
+     "schema": "r021.certificate/1",
+     "candidate_domain_hash": "41d258a1850721fc8c69bc6e50626a5192032a2e90783b4ffb8c8390f4400675",
+     "objective": "gross_only",
+     "source": {
+      "git_revision": "b9e7310ea73b2cfa4a3388b80644199e5188e1d9",
+      "bundle_hash": "ae01173f437c64f4abefb2bd5a199d7dc934315a28b54b049cdab9bac5747d49",
+      "algorithm": "direct_split_certified",
+      "effective_settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+     },
+     "request": {
+      "case_id": "a_b_large",
+      "token_in": "TKA",
+      "token_out": "TKB",
+      "amount_in": "150000000"
+     },
+     "lower_raw": "85567157",
+     "upper_raw": "85567157",
+     "gap_raw": "0",
+     "bound_kind": "certified",
+     "upper_source": "exact_rational",
+     "estimate": null,
+     "optimality_proven": true,
+     "termination": "complete"
+    },
+    "certificate_unavailable_reason": null,
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 1,
+     "quotes_memoized": 1,
+     "internal_evaluations": 1,
+     "bb_nodes_expanded": 0,
+     "bound_evaluations": 1,
+     "peak_open_nodes": 1
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "ok",
+   "final_score": "85567157"
+  },
+  {
+   "id": "P-IA-DUST",
+   "note": "cpmm_graph a_b_dust: 3 raw units, dust grid (non-final legs flooring to 0 are not members)",
+   "bundle": {
+    "fixture": "routing/cpmm_graph"
+   },
+   "case_id": "a_b_dust",
+   "percent_step": 5,
+   "max_splits": 4,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 100000,
+    "max_open_nodes": 100000
+   },
+   "oracle_optimum": "2",
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "ae01173f437c64f4abefb2bd5a199d7dc934315a28b54b049cdab9bac5747d49",
+      "cohort": "fixture",
+      "pools": [
+       "ab_1",
+       "ab_dry"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "ab_1",
+      "ab_dry"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 4,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "41d258a1850721fc8c69bc6e50626a5192032a2e90783b4ffb8c8390f4400675",
+    "certificate": {
+     "schema": "r021.certificate/1",
+     "candidate_domain_hash": "41d258a1850721fc8c69bc6e50626a5192032a2e90783b4ffb8c8390f4400675",
+     "objective": "gross_only",
+     "source": {
+      "git_revision": "b9e7310ea73b2cfa4a3388b80644199e5188e1d9",
+      "bundle_hash": "ae01173f437c64f4abefb2bd5a199d7dc934315a28b54b049cdab9bac5747d49",
+      "algorithm": "direct_split_certified",
+      "effective_settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+     },
+     "request": {
+      "case_id": "a_b_dust",
+      "token_in": "TKA",
+      "token_out": "TKB",
+      "amount_in": "3"
+     },
+     "lower_raw": "2",
+     "upper_raw": "2",
+     "gap_raw": "0",
+     "bound_kind": "certified",
+     "upper_source": "exact_rational",
+     "estimate": null,
+     "optimality_proven": true,
+     "termination": "complete"
+    },
+    "certificate_unavailable_reason": null,
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 1,
+     "quotes_memoized": 1,
+     "internal_evaluations": 1,
+     "bb_nodes_expanded": 0,
+     "bound_evaluations": 1,
+     "peak_open_nodes": 1
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "ok",
+   "final_score": "2"
+  },
+  {
+   "id": "P-IA-NO-DIRECT",
+   "note": "synthetic direct_no_route: no admitted direct pool, complete empty domain",
+   "bundle": {
+    "fixture": "synthetic"
+   },
+   "case_id": "direct_no_route",
+   "percent_step": 5,
+   "max_splits": 4,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 100000,
+    "max_open_nodes": 100000
+   },
+   "oracle_optimum": null,
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "76347ddb9cd0e2acee17be68151b3c6e592b5d59278dcafe74089e5896fdcc4d",
+      "cohort": "fixture",
+      "pools": []
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 4,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "e91de527383c3de00aef0382bae56afd8b67482c20ef0f39cfad8f2f90d09c01",
+    "certificate": null,
+    "certificate_unavailable_reason": "not_produced",
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 0,
+     "quotes_memoized": 0,
+     "internal_evaluations": 0,
+     "bb_nodes_expanded": 0,
+     "bound_evaluations": 0,
+     "peak_open_nodes": 0
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "no_route",
+   "final_score": null
+  },
+  {
+   "id": "P-IA-UNSUPPORTED-MIXED",
+   "note": "real mantle_mixed USDC/USDT: an LB and a Moe Classic direct pool, unsupported (no CPMM-subset certificate)",
+   "bundle": {
+    "fixture": "routing/mantle_mixed"
+   },
+   "case_id": "usdc_usdt_small",
+   "percent_step": 5,
+   "max_splits": 4,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 100000,
+    "max_open_nodes": 100000
+   },
+   "oracle_optimum": null,
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "e03e3c9b630af7f7955e6c3bdb49b10079ab7a6d9a9b9278ede254ffc66b8cff",
+      "cohort": "fixture",
+      "pools": [
+       "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+       "0x8e3a13418743ab1a98434551937ea687e451b589"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+      "0x8e3a13418743ab1a98434551937ea687e451b589"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 4,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "b4825886b56a36d0fdbabbed3c65fee5da52a7be39bcc51d157635a2808eee44",
+    "certificate": null,
+    "certificate_unavailable_reason": "not_produced",
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 0,
+     "quotes_memoized": 0,
+     "internal_evaluations": 0,
+     "bb_nodes_expanded": 0,
+     "bound_evaluations": 0,
+     "peak_open_nodes": 0
+    },
+    "scope": {
+     "supported": false,
+     "reason": "non_constant_product_direct_pool"
+    }
+   },
+   "status": "unsupported",
+   "final_score": null
+  },
+  {
+   "id": "P-IA-REAL-MOE",
+   "note": "real Merchant Moe Classic state (moe_classic_v1, fee 30, uint112): single admitted pool",
+   "bundle": {
+    "fixture": "moe_classic/bundle"
+   },
+   "case_id": "wmnt_usdt_large",
+   "percent_step": 5,
+   "max_splits": 4,
+   "options": {
+    "domain": "repository_grid",
+    "max_bound_nodes": 100000,
+    "max_open_nodes": 100000
+   },
+   "oracle_optimum": "73242137",
+   "record": {
+    "schema": "r021.diagnostics/1",
+    "contract": "R021-C/1",
+    "algorithm": "direct_split_certified",
+    "domain": {
+     "schema": "r021.domain/1",
+     "universe": {
+      "bundle": "a81b63a9179d725299228ecc232154444999b1c6b2f3e031a1283c2948e08341",
+      "cohort": "fixture",
+      "pools": [
+       "0x4e7685df06201521f35a182467feefe02c53d847"
+      ]
+     },
+     "protocols": [
+      "constant_product"
+     ],
+     "pool_order": [
+      "0x4e7685df06201521f35a182467feefe02c53d847"
+     ],
+     "hops": {
+      "max": 1,
+      "param": null
+     },
+     "splits": {
+      "max": 4,
+      "param": "search.max_splits",
+      "governs": "allocation"
+     },
+     "amount_grid": {
+      "kind": "repository_grid",
+      "percent_step": 5,
+      "remainder": "last_leg_all_remaining"
+     },
+     "zero_output_leg": "infeasible",
+     "token_reuse": "simple_path",
+     "pool_reuse": "disjoint",
+     "dag_admission": "plan_token_dag",
+     "full_fill": "v1_full_fill"
+    },
+    "candidate_domain_hash": "9375b4a97fcb471659fa2aded7ae2eb2a1961ae77dcd0f0f4205c4f9dab5f184",
+    "certificate": {
+     "schema": "r021.certificate/1",
+     "candidate_domain_hash": "9375b4a97fcb471659fa2aded7ae2eb2a1961ae77dcd0f0f4205c4f9dab5f184",
+     "objective": "gross_only",
+     "source": {
+      "git_revision": "b9e7310ea73b2cfa4a3388b80644199e5188e1d9",
+      "bundle_hash": "a81b63a9179d725299228ecc232154444999b1c6b2f3e031a1283c2948e08341",
+      "algorithm": "direct_split_certified",
+      "effective_settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+     },
+     "request": {
+      "case_id": "wmnt_usdt_large",
+      "token_in": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token_out": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "amount_in": "150000000000000000000"
+     },
+     "lower_raw": "73242137",
+     "upper_raw": "73242137",
+     "gap_raw": "0",
+     "bound_kind": "certified",
+     "upper_source": "exact_rational",
+     "estimate": null,
+     "optimality_proven": true,
+     "termination": "complete"
+    },
+    "certificate_unavailable_reason": null,
+    "max_candidates_unit": "finalist_plans_evaluated",
+    "work": {
+     "quotes_executed": 1,
+     "quotes_memoized": 1,
+     "internal_evaluations": 1,
+     "bb_nodes_expanded": 0,
+     "bound_evaluations": 1,
+     "peak_open_nodes": 1
+    },
+    "scope": {
+     "supported": true,
+     "reason": null
+    }
+   },
+   "status": "ok",
+   "final_score": "73242137"
+  }
+ ],
+ "grid_vs_raw": {
+  "note": "expanded_domain comparison, never a speedup (memo §9.3)",
+  "summary": {
+   "instances": 60,
+   "both_feasible": 60,
+   "raw_better": 6,
+   "equal": 54,
+   "max_raw_minus_grid": 1,
+   "grid_only_infeasible": 0
+  }
+ },
+ "probe": {
+  "note": "tuning splits only; scope classification of every case and the preset solve of every supported case (percent_step 5, max_splits 4). The report splits' pools.json are byte-identical to their tuning twins (bundle_* 05b2796f…633e, sor_cohort_* f0ccfd81…d49f), so the pool-pair structure holds there without reading any report case.",
+  "splits": [
+   {
+    "name": "bundle_tuning",
+    "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+    "cases": 96,
+    "scope": {
+     "no_direct_pool": 24,
+     "unsupported_non_cpmm": 72
+    },
+    "pair_structure": {
+     "all_cpmm_pairs": 0,
+     "cpmm_pools": 14,
+     "max_cpmm_pools_per_pair": 1,
+     "pairs": 21,
+     "pools": 143
+    },
+    "supported_results": {
+     "cases": 0,
+     "ok_zero_gap": 0
+    }
+   },
+   {
+    "name": "sor_cohort_tuning",
+    "bundle_hash": "b900b866d4a0ef6a3b33546f1d262ed3fc836847ef30da9e975c5bae75107ade",
+    "cases": 96,
+    "scope": {
+     "no_direct_pool": 24,
+     "supported_single_pool": 6,
+     "unsupported_non_cpmm": 66
+    },
+    "pair_structure": {
+     "all_cpmm_pairs": 1,
+     "cpmm_pools": 14,
+     "max_cpmm_pools_per_pair": 1,
+     "pairs": 19,
+     "pools": 98
+    },
+    "supported_results": {
+     "cases": 6,
+     "ok_zero_gap": 6
+    }
+   }
+  ]
+ },
+ "sweep": {
+  "note": "SYNTHETIC parallel Moe-Classic-sourced pools at real Mantle CPMM magnitudes (not corpus data); seed 20261004; 2-8 pools, max_splits 4, inputs 0.01%-50% of the base reserve; reproduced by the test",
+  "summary": {
+   "1": {
+    "all_complete_zero_gap": true,
+    "all_equal_direct_split": true,
+    "bb_nodes_expanded": {
+     "max": 10563,
+     "p50": 14
+    },
+    "bound_evaluations": {
+     "max": 21865,
+     "p50": 30
+    },
+    "direct_split_quotes": {
+     "max": 2478,
+     "p50": 961
+    },
+    "instances": 30,
+    "peak_open_nodes": {
+     "max": 6190,
+     "p50": 1
+    },
+    "quotes_executed": {
+     "max": 135,
+     "p50": 8
+    }
+   },
+   "5": {
+    "all_complete_zero_gap": true,
+    "all_equal_direct_split": true,
+    "bb_nodes_expanded": {
+     "max": 499,
+     "p50": 7
+    },
+    "bound_evaluations": {
+     "max": 1039,
+     "p50": 15
+    },
+    "direct_split_quotes": {
+     "max": 459,
+     "p50": 174
+    },
+    "instances": 30,
+    "peak_open_nodes": {
+     "max": 349,
+     "p50": 1
+    },
+    "quotes_executed": {
+     "max": 34,
+     "p50": 8
+    }
+   }
+  }
+ }
+}
