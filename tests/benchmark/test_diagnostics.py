@@ -232,6 +232,24 @@ def test_a_certificate_without_an_evaluated_incumbent_fails_c_lower_eval() -> No
         assert got == {"C_LOWER_EVAL"}, status
 
 
+def test_pool_order_is_a_permutation_of_the_universe() -> None:
+    rec, ctx = _grid()
+    for order in ([], ["p1"], ["p1", "p1"], ["p1", "p3"]):
+        rec["domain"]["pool_order"] = order
+        rec["candidate_domain_hash"] = rec["certificate"]["candidate_domain_hash"] = dx.domain_hash(
+            rec["domain"]
+        )
+        assert dx.check_diagnostics(rec, ctx) == {"D_POOL_ORDER"}, order
+    # no admitted pool at all: the empty order is the admitted order (WHI-1551's complete
+    # empty domain, `certificate: null`, `not_produced`, `no_route`)
+    rec["domain"]["universe"]["pools"] = rec["domain"]["pool_order"] = []
+    rec["candidate_domain_hash"] = dx.domain_hash(rec["domain"])
+    rec.update(certificate=None, certificate_unavailable_reason="not_produced", work={})
+    empty = CheckContext(**{**ctx.__dict__, "status": "no_route", "score": None})
+    assert dx.check_diagnostics(rec, empty) == set()
+    assert dx.diagnostics_view(rec, empty)["state"] == "unavailable"
+
+
 def test_a_returned_solve_cannot_claim_hard_timeout() -> None:
     rec = copy.deepcopy(POSITIVES["P-UNAVAILABLE"]["record"])
     ctx = _ctx({**POSITIVES["P-UNAVAILABLE"]["context"], "hard_killed": False, "status": "ok"})

@@ -342,7 +342,10 @@ def _check_domain(domain: Any, found: _Findings) -> None:
     ):
         found.add("D_POOL_ORDER", "domain.pool_order is not a list of pool ids")
     elif kind == "repository_grid" and "pool_order" in domain:
-        if not order or pools is None or sorted(order) != sorted(pools):
+        # The order must be a permutation of the universe's pools. An empty universe (no
+        # admitted pool: WHI-1551's complete empty domain) has the empty order; the test-only
+        # specification checker's `not order` term would also refuse that one record.
+        if pools is None or sorted(order or []) != sorted(pools):
             found.add("D_POOL_ORDER", "a repository_grid domain names its admitted pool order")
 
 
