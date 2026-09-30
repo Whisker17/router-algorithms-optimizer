@@ -267,6 +267,12 @@ class AlgorithmFactory:
     # file holding only these options, §7.1), read only when the algorithm is selected;
     # `None` = no preset.
     options_preset: Mapping[str, Any] | None = None
+    # WHI-1559: the pins (same shape as `options_preset`) of this identity's EARLIER preset
+    # versions, in registration order, so saved options equal to one of them keep that
+    # historical preset identity instead of resolving as an override. Never a default: the
+    # current `options_preset` alone is what `--strategies all` writes out. Empty for every
+    # factory that never replaced its preset.
+    historical_presets: tuple[Mapping[str, Any], ...] = ()
 
 
 # ------------------------------------------------------------------ WHI-1548 options

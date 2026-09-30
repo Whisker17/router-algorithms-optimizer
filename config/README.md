@@ -105,7 +105,13 @@ No loader code ships with the template — write it when the first config file l
   preset `cfmm_dual/1` of the experimental `cfmm_dual` CPMM stage (not a run profile;
   `--strategies all` writes it out), and one smoke-scale, unvalidated run profile `cpmm.yaml`
   running it next to its matched controls `path_split` and `incremental_graph` with
-  full_gross's values. The CL stage (WHI-1559) adds its own files; these stay as they are.
+  full_gross's values. These two stay byte-identical: since WHI-1559 `cfmm_dual/1` is a
+  historical pin, so `cpmm.yaml` (the CPMM-only ablation) still resolves as `{kind: preset}`
+  v1. WHI-1559 adds `preset_v2.yaml`, the current preset `cfmm_dual/2` (CL stage:
+  constant-product + admitted concentrated markets, tuned on `sor_cohort_tuning` only;
+  `--strategies all` writes it out), and the smoke-scale, unvalidated run profile `cl.yaml`
+  (the same controls and values with the CL stage; matched on the V2/V3 cohort, coverage on
+  the five-source bundles).
 - `cost_calibration.yaml` — the empirical execution-cost calibration definition (WHI-1445,
   `snapshot/cost_evidence.py`): the snapshot, the absolute Dune window (ending at the
   snapshot timestamp), the pool-family label map, sampling seed/modulus, the train/holdout

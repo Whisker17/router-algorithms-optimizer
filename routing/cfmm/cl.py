@@ -32,7 +32,7 @@ segment boundaries in sqrt-price space (`edges[0]` = current sqrt price), the pe
 liquidity and the sequential prefix sums of the fee-free input and of the output of
 traversing whole segments. The oracle then needs one binary search plus O(1) work per call
 (`ClSide.to_price`); building costs O(W * 256 + T log T) for W non-zero collected words
-and T initialized ticks and stores 4 * S + 2 floats per direction for S segments (never
+and T initialized ticks and stores 4 * S + 3 floats per direction for S segments (never
 proportional to the collected word *range*). This is the cost of one continuous market
 oracle call only: a numeric solve still makes evaluations x |M| oracle calls, and the
 exact per-step protocol swap (`pools.concentrated`, the only execution and money

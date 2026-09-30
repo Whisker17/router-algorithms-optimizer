@@ -1,18 +1,36 @@
-"""`cfmm_dual` (WHI-1558, R021-P12; contract R021-C/1 §2 row 5): the CFMM dual-decomposition
-router (Diamandis, Resnick, Chitra, Angeris, arXiv:2302.04938v1) on the admitted
-constant-product markets, turned into ONE exact, fully funded integer `RoutePlan`. Normative
-specification: `docs/references/research-021/cfmm-dual.md` §§4-9, 11 (WHI-1557, R021-P11,
-`narrow_go`). Experimental, `custom` group, CPMM stage only (`concentrated` is WHI-1559,
-Liquidity Book is excluded). Gross-only, single-source exact input, estimate-only: no
-certified bound, no global or integer optimality claim, no performance claim.
+"""`cfmm_dual` (WHI-1558 CPMM stage, WHI-1559 CL stage; R021-P12; contract R021-C/1 §2 row
+5): the CFMM dual-decomposition router (Diamandis, Resnick, Chitra, Angeris,
+arXiv:2302.04938v1) on the admitted markets of its stage, turned into ONE exact, fully funded
+integer `RoutePlan`. Normative specification: `docs/references/research-021/cfmm-dual.md`
+§§4-9, 11 (WHI-1557, R021-P11, `narrow_go`). Experimental, `custom` group, one identity with
+two stages selected by `algorithm_options.cfmm_dual.market_protocols`: `constant_product`
+(the WHI-1558 CPMM stage, preset `cfmm_dual/1`, now a historical pin and the CPMM-only
+ablation) or `constant_product+concentrated` (the WHI-1559 CL stage, current preset
+`cfmm_dual/2`: admitted `uniswap_v3` / `agni_v3` / `fusionx_v3` pools as the continuous V3
+aggregate of `routing.cfmm.cl`, §8). Liquidity Book is excluded from both. Gross-only,
+single-source exact input, estimate-only: no certified bound, no global or integer
+optimality claim, no performance claim.
 
 **Scope** (§6.1, before any numeric work). The market universe is `simple_path_union`
-(`routing.cfmm.model.market_universe`): every admitted CPMM pool on a simple
-`token_in -> token_out` path of at most `search.max_hops` admitted CPMM pools, in bundle
+(`routing.cfmm.model.market_universe`): every admitted pool of the stage's protocols on a
+simple `token_in -> token_out` path of at most `search.max_hops` such pools, in bundle
 order -- no shortlist. Objective not `gross_only` -> `unsupported` (scope `objective`); an
 empty universe while a <= `max_hops` path exists through pools outside the stage ->
-`unsupported` (scope `protocol_ceiling`; concentrated/LB pools are never CPMM substitutes);
-no such path at all -> `no_route` (the structural search is complete).
+`unsupported` (scope `protocol_ceiling`; LB pools, CL pools outside the admitted source
+semantics and, in the CPMM stage, every CL pool are never substitutes); no such path at all
+-> `no_route` (the structural search is complete). A case with an eligible path is solved over
+its eligible markets whatever other pools the bundle holds.
+
+**CL stage** (§8). Its `prepare` builds the `ClIndex` of every admitted CL pool of the bundle
+once (`prepare_cl_indexes`, inside the worker's measured preparation: its seconds and peak
+memory are the run's `prepare` cost; `r021.stages.prepare_cl_indexes` repeats the seconds
+observationally and `search.cfmm.cl_prepare` / `cl_markets` record the deterministic
+structure). Every case, objective evaluation and restricted re-solve reads the same immutable
+indexes (`dual_problem` refuses an index not bound to the exact snapshot state); nothing is
+rebuilt in a solve. The continuous oracle is only the model: recovery quotes and replays every
+leg with the exact per-step swap of `pools.concentrated` on the original state, so a leg the
+exact swap cannot execute (e.g. an input landing on an initialized tick without `TickInfo`,
+which the continuous closed range admits) is pruned like any failing leg.
 
 **Numeric solve** (§5; `routing.cfmm.optimizer`). ONE `SolveBudget` per attempt covers the
 initial full-network solve (spot start, x0 = 0) and the optional restricted re-solve
@@ -30,9 +48,11 @@ that replay. A recovery failure (`empty_support`, `support_exhausted`, `attempts
 exact single path over the SAME market universe (`single_path.solve` on the same per-solve
 `QuoteCache`, so the remaining quote budget and `Budget.max_candidates` =
 `fallback_paths_evaluated` apply; its status is kept, `termination: recovery_failed`,
-visible `fallback`); `none` = `model_error`. A recovery stopped by the cooperative quote
-budget is `timeout` (`quote_budget`); the runner's hard wall/quote kill keeps only its
-published candidates (no certificate survives).
+visible `fallback`) -- except that an `ok` best path with zero output (possible only on a CL
+fee-only dust input; a CPMM quote never returns it) is `no_route`, `fallback.zero_output`,
+since a zero-output leg is infeasible in this domain; `none` = `model_error`. A recovery
+stopped by the cooperative quote budget is `timeout` (`quote_budget`); the runner's hard
+wall/quote kill keeps only its published candidates (no certificate survives).
 
 **Certificate** (§7): on `ok`, `lower_raw` = evaluated score, `upper_raw`/`gap_raw` null,
 `optimality_proven` false; `bound_kind: estimate` with g of the INITIAL full-network solve,
@@ -84,6 +104,7 @@ from routing.algorithms.base import (
     validated_options,
 )
 from routing.algorithms.direct_split_certified import cohort_of
+from routing.cfmm.cl import CL, ClIndex, prepare_cl_indexes
 from routing.cfmm.model import CPMM, dual_problem, market_universe
 from routing.cfmm.optimizer import (
     NumericSolution,
@@ -109,12 +130,15 @@ from snapshot.models import Case, SnapshotBundle
 NAME = "cfmm_dual"
 CONTRACT = "docs/references/research-021/cfmm-dual.md"
 CAPABILITIES = Capabilities(
-    multi_hop=True, split=True, shared_pools=True, protocols=(CPMM,)
-)  # the CPMM stage: constant-product markets only
+    multi_hop=True, split=True, shared_pools=True, protocols=(CPMM, CL)
+)  # the ceiling over both stages; `market_protocols` selects the stage of a run
 SEARCH_PARAMS = ("max_hops",)
 MAX_CANDIDATES_UNIT = "fallback_paths_evaluated"
-STAGE_PROTOCOLS = (CPMM,)
-MARKET_PROTOCOLS = ("constant_product", "constant_product+concentrated")
+CL_STAGE = "constant_product+concentrated"
+MARKET_PROTOCOLS = (CPMM, CL_STAGE)
+# `market_protocols` -> the stage's market protocols (`routing.cfmm.model.market_universe`).
+STAGES: Mapping[str, tuple[str, ...]] = MappingProxyType({CPMM: (CPMM,), CL_STAGE: (CPMM, CL)})
+STAGE_PROTOCOLS = STAGES[CPMM]  # the WHI-1558 CPMM stage (kept name)
 FALLBACKS = ("none", "single_path")
 INT_OPTIONS: dict[str, tuple[int, int]] = {
     "max_iterations": (1, 1000),
@@ -132,9 +156,19 @@ FLOAT_OPTIONS: dict[str, tuple[float, float]] = {
 OPTION_KEYS = frozenset(
     {"market_protocols", "cycle_resolve", "fallback", *INT_OPTIONS, *FLOAT_OPTIONS}
 )
-# The bounded comparison preset `cfmm_dual/1` (cfmm-dual.md §9.3), frozen by its bytes. The
-# CL stage (WHI-1559) adds its own version; this file is never rewritten.
+# The current bounded comparison preset `cfmm_dual/2` (WHI-1559, CL stage; cfmm-dual.md §8,
+# §9.3, §11.2 G-L7, frozen on `sor_cohort_tuning` only), frozen by its bytes. It is what
+# `--strategies all` writes out.
 PRESET: dict[str, Any] = {
+    "path": "config/cfmm_dual/preset_v2.yaml",
+    "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+    "key": "R021-P12-cfmm_dual",
+    "version": 2,
+}
+# The WHI-1558 CPMM-stage preset `cfmm_dual/1` (cfmm-dual.md §9.3), never rewritten: a
+# historical pin only, so saved v1 options (e.g. config/cfmm_dual/cpmm.yaml, the CPMM-only
+# ablation) keep this source identity; never a default.
+PRESET_V1: dict[str, Any] = {
     "path": "config/cfmm_dual/preset_v1.yaml",
     "sha256": "1526133cd3bf61a5493ee68f2704875ecf225637c1c7858aa30d3be464dbf605",
     "key": "R021-P12-cfmm_dual",
@@ -166,17 +200,34 @@ PROVENANCE: Mapping[str, Any] = MappingProxyType(
     {
         "experimental": True,
         "opt_in": True,
-        "issue": "WHI-1558",
+        "issue": "WHI-1558 (CPMM stage), WHI-1559 (CL stage)",
         "identity": (
             "CFMM dual decomposition (L-BFGS-B on the normalized log-price dual) over the "
-            "simple_path_union of admitted constant-product markets, recovered into one exact "
-            "integer plan by cfmm_share_projection/1; estimate-only"
+            "simple_path_union of the stage's admitted markets (constant-product; with "
+            "market_protocols constant_product+concentrated also admitted concentrated-"
+            "liquidity pools), recovered into one exact integer plan by "
+            "cfmm_share_projection/1; estimate-only"
         ),
         "contract": (
             f"{CONTRACT} §4-§9, §11.1 (WHI-1557, R021-P11, narrow_go; merged "
             "91d7f4b056e04dbfe7de0a0b867618875c2efd27)"
         ),
-        "stage": "constant_product (CPMM); concentrated is WHI-1559; liquidity_book excluded",
+        "stage": (
+            "algorithm_options.market_protocols: constant_product (CPMM stage, WHI-1558) or "
+            "constant_product+concentrated (CL stage, WHI-1559: uniswap_v3, agni_v3, fusionx_v3 "
+            "as their exact semantics admit, cfmm-dual.md §8); liquidity_book excluded"
+        ),
+        "presets": {
+            "current": "cfmm_dual/2 (config/cfmm_dual/preset_v2.yaml; CL stage)",
+            "historical": ["cfmm_dual/1 (config/cfmm_dual/preset_v1.yaml; CPMM stage)"],
+        },
+        "cl_index": (
+            "routing.cfmm.cl prepare_cl_indexes: built once per worker in the charged prepare "
+            "(CL stage only; prepare seconds/peak memory are the worker's), bound to the exact "
+            "snapshot states and shared by every case, objective evaluation and re-solve; one "
+            "binary search per continuous oracle call. The exact per-step swap "
+            "(pools.concentrated) alone executes and scores plans"
+        ),
         "market_universe": "simple_path_union",
         "recovery": RECOVERY,
         "method": "arXiv:2302.04938v1 eqs. (5)-(9), App. A (Diamandis, Resnick, Chitra, Angeris)",
@@ -187,12 +238,19 @@ PROVENANCE: Mapping[str, Any] = MappingProxyType(
             "notice": "routing/cfmm/NOTICE.md (links the verbatim MIT licence)",
         },
         "optimizer": "scipy 1.18.1 minimize(method='L-BFGS-B'), numpy 2.5.3 (pinned)",
-        "model": "routing/cfmm (ported from tests/routing/cfmm_contract_model.py, WHI-1557)",
+        "model": (
+            "routing/cfmm model.py + cl.py (ported from tests/routing/cfmm_contract_model.py, "
+            "WHI-1557)"
+        ),
         "not_claimed": [
             "a certified bound or gap (the continuous value is a float estimate only)",
             "global or integer optimality of the recovered plan",
             "that `converged` implies an accurate optimum (a residual criterion only)",
-            "concentrated / liquidity-book coverage (unsupported rows) or net objectives",
+            "liquidity-book coverage (unsupported rows), CL sources or variants outside the "
+            "admitted domain (unsupported rows), or net objectives",
+            "that the prepared CL index makes an exact swap, a solve or a recovery logarithmic "
+            "(it serves one continuous oracle call)",
+            "a certified continuous-vs-exact bound (per-step rounding is numerical evidence only)",
             "any speedup or quality gain",
         ],
     }
@@ -206,18 +264,13 @@ class CfmmDualConfigError(ValueError):
 def validate_options(options: Mapping[str, Any]) -> dict[str, Any]:
     """The `options_validator` (cfmm-dual.md §9.3): exactly the twelve keys, all required;
     integers never bools or floats, floats finite (bools refused), every value in range;
-    `market_protocols` `constant_product+concentrated` is refused until the CL stage."""
+    `market_protocols` selects the CPMM stage or (WHI-1559) the CL stage."""
     require_option_keys(options, set(OPTION_KEYS))
     out: dict[str, Any] = {
         "market_protocols": option_choice(
             options["market_protocols"], "market_protocols", MARKET_PROTOCOLS
         )
     }
-    if out["market_protocols"] != CPMM:
-        raise OptionsError(
-            "market_protocols: 'constant_product+concentrated' is the CL stage (WHI-1559), "
-            "not implemented by this CPMM stage; only 'constant_product' is accepted"
-        )
     for key, (lo, hi) in INT_OPTIONS.items():
         out[key] = option_int(options[key], key, lo, hi)
     for key, (flo, fhi) in FLOAT_OPTIONS.items():
@@ -233,7 +286,10 @@ def validate_options(options: Mapping[str, Any]) -> dict[str, Any]:
 class PreparedCfmm:
     """Immutable per-worker preparation: the validated options, their settings hash, the
     numeric settings, the hop bound, the structural graph index of the whole bundle (scope
-    rule of §6.1) and the loaded backend's deterministic provenance."""
+    rule of §6.1) and the loaded backend's deterministic provenance; the stage's market
+    `protocols` and, in the CL stage only, the prepared `ClIndex` of every admitted CL pool
+    of the bundle (built once here, bound to its state, read-only, shared by every case),
+    their deterministic structural totals and their observational build seconds."""
 
     options: Mapping[str, Any]
     settings_sha256: str
@@ -242,6 +298,32 @@ class PreparedCfmm:
     index: GraphIndex
     backend: Mapping[str, Any]
     import_seconds: float
+    protocols: tuple[str, ...] = STAGE_PROTOCOLS
+    cl_indexes: Mapping[str, ClIndex] = dataclasses.field(
+        default_factory=lambda: MappingProxyType({})
+    )
+    cl_prepare: Mapping[str, Any] | None = None
+    cl_prepare_seconds: float = 0.0
+
+
+def _cl_totals(indexes: Mapping[str, ClIndex]) -> dict[str, Any]:
+    """Deterministic structural totals of the prepared CL indexes (the cold build's size;
+    its seconds and peak memory are the worker's measured `prepare`)."""
+    stats = [i.stats() for i in indexes.values()]
+    totals = {
+        k: sum(s[k] for s in stats)
+        for k in ("bitmap_words", "initialized_ticks", "segments_down", "segments_up")
+    }
+    boundaries: dict[str, int] = {}
+    for s in stats:
+        for side in ("down_boundary", "up_boundary"):
+            boundaries[s[side]] = boundaries.get(s[side], 0) + 1
+    return {
+        "pools": len(stats),
+        **totals,
+        "float_entries": sum(s["float_entries"] for s in stats),
+        "boundaries": dict(sorted(boundaries.items())),
+    }
 
 
 def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedCfmm:
@@ -253,6 +335,15 @@ def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedCfmm:
         )
     provenance = dict(numeric_backend().provenance)  # charged here: the one-off import
     seconds = float(provenance.pop("import_seconds"))
+    protocols = STAGES[options["market_protocols"]]
+    cl_indexes: Mapping[str, ClIndex] = MappingProxyType({})
+    cl_prepare: Mapping[str, Any] | None = None
+    cl_seconds = 0.0
+    if CL in protocols:  # charged here, once: never rebuilt in a solve
+        t0 = time.perf_counter()
+        cl_indexes = prepare_cl_indexes(bundle)
+        cl_seconds = time.perf_counter() - t0
+        cl_prepare = MappingProxyType(_cl_totals(cl_indexes))
     return PreparedCfmm(
         options=MappingProxyType(dict(options)),
         settings_sha256=settings_sha256(options),
@@ -261,6 +352,10 @@ def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedCfmm:
         index=build_graph_index(bundle),
         backend=MappingProxyType(json.loads(json.dumps(provenance))),
         import_seconds=seconds,
+        protocols=protocols,
+        cl_indexes=cl_indexes,
+        cl_prepare=cl_prepare,
+        cl_prepare_seconds=cl_seconds,
     )
 
 
@@ -277,9 +372,14 @@ def _decimal(value: float) -> str:
 
 
 def domain_record(
-    bundle: SnapshotBundle, markets: tuple[str, ...], max_hops: int, min_split_share: float
+    bundle: SnapshotBundle,
+    markets: tuple[str, ...],
+    max_hops: int,
+    min_split_share: float,
+    protocols: tuple[str, ...] = STAGE_PROTOCOLS,
 ) -> dict[str, Any]:
-    """`r021.domain/1` of cfmm-dual.md §9.1 over the case's market universe."""
+    """`r021.domain/1` of cfmm-dual.md §9.1 over the case's market universe; `protocols` =
+    the stage's market protocols."""
     return {
         "schema": "r021.domain/1",
         "universe": {
@@ -287,7 +387,7 @@ def domain_record(
             "cohort": cohort_of(bundle),
             "pools": sorted(markets),
         },  # fmt: skip
-        "protocols": list(STAGE_PROTOCOLS),
+        "protocols": list(protocols),
         "pool_order": list(markets),
         "hops": {"max": max_hops, "param": "search.max_hops"},
         "splits": {"max": None, "param": None, "governs": "none"},
@@ -390,10 +490,14 @@ def _solve(
     bundle, objective = context.bundle, context.objective
     opts, settings = prepared.options, prepared.settings
     max_hops = prepared.max_hops
-    markets = market_universe(bundle, case, max_hops)
-    domain = domain_record(bundle, markets, max_hops, opts["min_split_share"])
+    protocols = prepared.protocols
+    cl_stage = CL in protocols
+    markets = market_universe(bundle, case, max_hops, protocols)
+    domain = domain_record(bundle, markets, max_hops, opts["min_split_share"], protocols)
     work = dict.fromkeys(WORK_UNITS, 0)
     stages: dict[str, float] = {"prepare_numeric_import": prepared.import_seconds}
+    if cl_stage:  # observational, the worker's prepare measures the whole preparation
+        stages["prepare_cl_indexes"] = prepared.cl_prepare_seconds
     record: dict[str, Any] = {
         "schema": "r021.diagnostics/1",
         "contract": "R021-C/1",
@@ -411,7 +515,7 @@ def _solve(
         "stages": stages,
     }
     cfmm: dict[str, Any] = {
-        "stage": CPMM,
+        "stage": opts["market_protocols"],
         "market_protocols": opts["market_protocols"],
         "market_universe": "simple_path_union",
         "max_hops": max_hops,
@@ -429,6 +533,11 @@ def _solve(
         "inconsistency": None,
         "backend": dict(prepared.backend),
     }
+    if cl_stage:  # deterministic structure of the prepared indexes (the CPMM record is as-is)
+        cfmm["cl_prepare"] = dict(prepared.cl_prepare or {})
+        cfmm["cl_markets"] = {
+            pid: prepared.cl_indexes[pid].stats() for pid in markets if pid in prepared.cl_indexes
+        }
     stats: dict[str, Any] = {"cfmm": cfmm, "r021": record}
     cache = QuoteCache(bundle)
 
@@ -473,7 +582,12 @@ def _solve(
             return out_of_scope(
                 SolveStatus.UNSUPPORTED,
                 "protocol_ceiling",
-                f"no admitted constant_product market lies on a <= {max_hops}-pool path "
+                f"no admitted constant_product or concentrated market lies on a <= "
+                f"{max_hops}-pool path {pair}, but such paths exist through pools outside the "
+                "CL stage (liquidity_book is excluded; CL sources/variants outside "
+                "uniswap_v3/agni_v3/fusionx_v3 semantics are not markets)"
+                if cl_stage
+                else f"no admitted constant_product market lies on a <= {max_hops}-pool path "
                 f"{pair}, but such paths exist through pools outside the CPMM stage "
                 "(concentrated is WHI-1559, liquidity_book is excluded)",
             )
@@ -487,7 +601,7 @@ def _solve(
         return out_of_scope(SolveStatus.NO_ROUTE, None, f"complete structural search: {why}")
 
     # ---- numeric solve: ONE budget for the initial solve and the restricted re-solve
-    problem = dual_problem(bundle, case, markets)
+    problem = dual_problem(bundle, case, markets, prepared.cl_indexes if cl_stage else None)
     numeric = SolveBudget.for_settings(settings)
     initial = numeric_solve(problem, settings, numeric)
     stages["initial_solve"] = initial.seconds
@@ -637,12 +751,22 @@ def _solve(
                 if fb.status is SolveStatus.OK
                 else (
                     f"integer recovery failed ({failure}); single_path fallback over the "
-                    f"{len(markets)} CPMM market(s) of this stage (other protocols are "
-                    f"outside it): {fb.error}"
+                    f"{len(markets)} {'CPMM+CL' if cl_stage else 'CPMM'} market(s) of this "
+                    f"stage (other protocols are outside it): {fb.error}"
                 )
             )
             if fb.status is SolveStatus.OK:
-                result = fb
+                assert fb.evaluation is not None
+                if fb.evaluation.gross_output > 0:
+                    result = fb
+                else:  # a CL fee-only dust path: its zero-output leg is infeasible (§9.1)
+                    cfmm["fallback"]["zero_output"] = True
+                    status = SolveStatus.NO_ROUTE
+                    error = (
+                        f"integer recovery failed ({failure}); the best exact single path of "
+                        "the single_path fallback yields zero output, and a zero-output leg is "
+                        "infeasible in this domain (never a dust donation)"
+                    )
     cfmm["termination"] = termination
 
     if status is SolveStatus.OK and result is not None:
@@ -698,12 +822,14 @@ FACTORY = AlgorithmFactory(
     provenance=PROVENANCE,
     options_validator=validate_options,
     options_preset=MappingProxyType(PRESET),
+    historical_presets=(MappingProxyType(PRESET_V1),),
 )
 
 __all__ = [
     "FACTORY",
     "NAME",
     "PRESET",
+    "PRESET_V1",
     "CfmmDualConfigError",
     "PreparedCfmm",
     "domain_record",

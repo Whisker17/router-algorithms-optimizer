@@ -279,7 +279,7 @@ def test_registered_once_after_uni_sor_cycle_safe_and_appended_by_all() -> None:
         True,
         True,
         True,
-        ("constant_product",),
+        ("constant_product", "concentrated"),  # WHI-1559: the ceiling over both stages
     )
     prov = dict(FACTORY.provenance or {})
     assert prov["author_code"]["git_revision"] == "5932e42e5077ffc7d8e02c3b3ad2e9ed1d441267"
@@ -296,8 +296,10 @@ def test_registered_once_after_uni_sor_cycle_safe_and_appended_by_all() -> None:
         )
         assert list(profile.algorithms)[-2:] == [uni_sor_cycle_safe.NAME, NAME]
         assert len(profile.algorithms) == 14
-        assert document["algorithm_options"][NAME] == PRESET
+        # WHI-1559: `all` writes out the CURRENT preset, cfmm_dual/2 (the CL stage)
+        assert document["algorithm_options"][NAME] == preset_options(FACTORY) != PRESET
         assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
+        assert profile.algorithm_options[NAME]["source"]["version"] == 2
         hops = profile.search["max_hops"]  # the profile's own shared value
         assert profile.algorithm_config(FACTORY).params == {"max_hops": hops}
     for mode in ("base", "optimized"):
@@ -308,14 +310,16 @@ def test_registered_once_after_uni_sor_cycle_safe_and_appended_by_all() -> None:
 def test_preset_is_the_pinned_cfmm_dual_1_and_tampering_is_refused(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    pin = dict(FACTORY.options_preset or {})
+    # WHI-1559: cfmm_dual/1 is now the factory's historical pin (the current one is v2)
+    (historical,) = FACTORY.historical_presets
+    pin = dict(historical)
     assert pin == {
         "path": "config/cfmm_dual/preset_v1.yaml",
-        "sha256": cd.PRESET["sha256"],
+        "sha256": cd.PRESET_V1["sha256"],
         "key": "R021-P12-cfmm_dual",
         "version": 1,
     }
-    assert preset_options(FACTORY) == PRESET  # = the cfmm-dual.md `preset` block
+    assert preset_options(FACTORY, historical) == PRESET  # = the cfmm-dual.md `preset` block
     example = EXAMPLES["positives"]
     cfmm_example = next(p for p in example if p["id"] == "P-CFMM-EST")
     source = cfmm_example["record"]["certificate"]["source"]
@@ -326,14 +330,13 @@ def test_preset_is_the_pinned_cfmm_dual_1_and_tampering_is_refused(
     (tmp_path / pin["path"]).write_text(changed)
     monkeypatch.setattr(profile_module, "REPO_ROOT", tmp_path)
     with pytest.raises(ProfileError, match="differs from the pin"):
-        preset_options(FACTORY)
+        preset_options(FACTORY, historical)
 
 
 _BAD: list[dict[Any, Any]] = [
     {},
     {k: v for k, v in PRESET.items() if k != "fallback"},  # all required, no default
     {k: v for k, v in PRESET.items() if k != "min_split_share"},
-    {**PRESET, "market_protocols": "constant_product+concentrated"},  # WHI-1559 only
     {**PRESET, "market_protocols": "concentrated"},
     {**PRESET, "market_protocols": "liquidity_book"},
     {**PRESET, "fallback": "path_split"},

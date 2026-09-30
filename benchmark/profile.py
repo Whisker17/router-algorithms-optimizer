@@ -64,8 +64,12 @@ Each entry is handed only to its own algorithm (`AlgorithmConfig.options`), and 
 form records the complete normalized `options`, their `settings_sha256` and a `source` derived
 from content alone: `{kind: preset, ...pin}` only when the options equal the factory's
 sha256-pinned preset (`preset_options`), otherwise `{kind: override}` -- a document can never
-claim the preset identity for other settings. A profile without the section resolves exactly
-as before (the key is omitted).
+claim the preset identity for other settings. A factory that replaced its preset (WHI-1559
+`cfmm_dual`) also registers the earlier pins as `historical_presets`: options equal to one of
+them resolve to that same `{kind: preset, ...pin}` (verified like the current one; equal to
+several pins is refused as ambiguous), so a saved profile keeps its original source identity;
+only the current pin is ever written out as a default. A profile without the section resolves
+exactly as before (the key is omitted).
 """
 
 from __future__ import annotations
@@ -535,11 +539,15 @@ def _parse_strategies(
 # ------------------------------------------------------------------ WHI-1548 algorithm_options
 
 
-def preset_options(factory: AlgorithmFactory) -> dict[str, Any]:
+def preset_options(
+    factory: AlgorithmFactory, pin: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
     """The validated options of `factory`'s pinned bounded comparison preset (R021-C/1 §7.1):
     a YAML file `{key, version, algorithm, options}` read only after its bytes hash to the
-    pin; a changed, unreadable or mismatching file is refused, never reinterpreted."""
-    pin = factory.options_preset
+    pin; a changed, unreadable or mismatching file is refused, never reinterpreted. `pin`
+    (only ever one of the factory's own registered `historical_presets`) reads an earlier
+    version instead of the current `options_preset`."""
+    pin = factory.options_preset if pin is None else pin
     where = f"algorithm_options.{factory.name}: preset"
     if pin is None:
         raise ProfileError(f"{where}: {factory.name!r} has no registered preset")
@@ -566,14 +574,26 @@ def preset_options(factory: AlgorithmFactory) -> dict[str, Any]:
 
 def options_entry(factory: AlgorithmFactory, options: Any) -> dict[str, Any]:
     """The resolved `{options, source, settings_sha256}` of `factory`'s (declared) options.
-    `source` is the preset pin only when the normalized options equal the preset's."""
+    `source` is a preset pin only when the normalized options equal that pinned preset's:
+    the current `options_preset` or one of the factory's registered `historical_presets`
+    (WHI-1559; each verified like the current one). Options equal to more than one pin are
+    refused as ambiguous, never resolved by order."""
     try:
         normalized = validated_options(factory, options)
     except OptionsError as exc:
         raise ProfileError(str(exc)) from exc
+    pins = [factory.options_preset] if factory.options_preset is not None else []
+    pins += factory.historical_presets
+    matched = [pin for pin in pins if normalized == preset_options(factory, pin)]
+    if len(matched) > 1:
+        names = ", ".join(f"{pin['key']} v{pin['version']}" for pin in matched)
+        raise ProfileError(
+            f"algorithm_options.{factory.name}: the options equal {len(matched)} registered "
+            f"presets ({names}); a preset identity must be unambiguous"
+        )
     source: dict[str, Any] = {"kind": "override"}
-    if factory.options_preset is not None and normalized == preset_options(factory):
-        source = {"kind": "preset", **json.loads(json.dumps(dict(factory.options_preset)))}
+    if matched:
+        source = {"kind": "preset", **json.loads(json.dumps(dict(matched[0])))}
     return {
         "options": normalized,
         "source": source,

@@ -324,8 +324,21 @@ empty range, drain, both directions).
 fee only splits the fee between LPs and protocol, the Agni/FusionX LM hook is an amount-
 free no-op), but each source keeps its admission record and **exact** semantics
 (protocol-fee encoding, hook calls) in `pools.concentrated`, which alone executes plans.
-Checked per source: exact output ≤ continuous and within 1e-9 relative inside the known
-range; beyond it the exact swap is `incomplete_snapshot` and the model returns none.
+Checked per source on the registered synthetic fixture: exact output ≤ continuous and
+within 1e-9 relative (+2 raw units) inside the known range; beyond it the exact swap is
+`incomplete_snapshot` and the model returns none. That 1e-9 figure is a property of the
+fixture, not a universal bound: on real frozen states (WHI-1559) the exact swap's own
+per-step rounding (input and fee rounded up, output down, per tick step, hundreds of steps
+on wide swaps), fee rounding on dust inputs and float cancellation on very narrow segments
+put the exact output further below the continuous value (observed up to ~5e-4 relative on
+1,000-raw-unit dust, ~1e-7 over many-step swaps, ~1e-12 from cancellation). The real-state
+tests therefore check exact ≤ continuous (1e-12 relative + 1) and a lower envelope stated in
+the exact swap's own step count; these are numerical regression checks, NOT a certified
+bound, and they relax nothing in the exact protocol outputs or state. The pinned author
+`UniV3` comparison stays at 5e-14 (§8.3). The continuous range is closed at its end: an
+input whose exact swap would end exactly on an initialized tick without `TickInfo` is
+accepted by the model but is `incomplete_snapshot` in the exact swap (it must cross that
+tick), so recovery prunes that leg like any other failing one.
 CL mathematical interval efficiency never replaces the exact per-step rounding.
 
 ### 8.5 LB

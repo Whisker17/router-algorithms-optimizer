@@ -75,7 +75,7 @@ PRESET = {"width": 3, "ratio": 0.5, "label": "bounded"}  # the fixture preset fi
 NON_STRING_KEY: dict[Any, Any] = {1: 2, **PRESET}
 NINE = [*BASE_STRATEGIES, *OPTIMIZED_STRATEGIES, METIS]
 # The implemented 0.2.1 identities (R021-C/1 §2), in contract order, and the profiles they added.
-# WHI-1550, WHI-1552, WHI-1554, WHI-1556, WHI-1558
+# WHI-1550, WHI-1552, WHI-1554, WHI-1556, WHI-1558 (+ WHI-1559's CL profile of cfmm_dual)
 IMPLEMENTED = (
     "metis_history",
     "direct_split_certified",
@@ -91,7 +91,7 @@ NEW_PROFILES = (
     | {f"config/metis_history/{name}.yaml" for name in ("history_on", "history_off")}
     | {f"config/direct_split_certified/{name}.yaml" for name in ("grid", "raw_stress")}
     | {"config/uni_sor_cycle_safe/matched.yaml"}
-    | {"config/cfmm_dual/cpmm.yaml"}
+    | {"config/cfmm_dual/cpmm.yaml", "config/cfmm_dual/cl.yaml"}
 )
 TEST_ALARM_SECONDS = 240
 
