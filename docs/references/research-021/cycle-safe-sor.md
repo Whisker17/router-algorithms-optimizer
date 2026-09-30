@@ -4,9 +4,9 @@
 | --- | --- |
 | Contract | `R021-C/1` ([`contract.md`](contract.md)). This memo fills the `uni_sor_cycle_safe` row that §11 delegated to it. It changes no shared schema, vocabulary or work unit |
 | Publication key | `R021-P09`, WHI-1555, Release 0.2.1 (`ed16e106-fa3e-4b8a-b022-e7208eb8ef41`) |
-| Repository base | `origin/dev` `1ce50763b84b7daf4eec844665848b5b1c27fb6a`. `routing/`, `pools/`, `benchmark/`, `snapshot/` and `tests/fixtures/uni_sor/` are byte-identical to B `81559ab` (`git diff --stat 81559ab 1ce5076` over those paths is empty) |
+| Repository base | written on `origin/dev` `1ce50763b84b7daf4eec844665848b5b1c27fb6a`, then merged with `origin/dev` `6284a9d4c8c1c77d18f2fd9a8cfe836f410c2c3f` (WHI-1560 LB research, write-disjoint). `routing/`, `pools/`, `benchmark/`, `snapshot/` and `tests/fixtures/uni_sor/` are byte-identical to B `81559ab` at both bases |
 | Outcome | **`go`** (§12) |
-| Records | [`fixtures/cycle-safe-sor.json`](fixtures/cycle-safe-sor.json): hand-traced core fixtures K1–K6, adapter fixtures A1/A3/A4, option schema and preset, pinned bounded corpus diagnostic |
+| Records | [`fixtures/cycle-safe-sor.json`](fixtures/cycle-safe-sor.json): hand-traced core fixtures K1–K6; adapter fixtures A1, A3, A4, A6, A7; the phase-semantics rows A5; the option schema and preset; the bounded corpus diagnostic, as a historical view (`corpus_probe`) and an enriched view (`corpus_probe_enriched`) |
 | Executable check | `uv run pytest tests/routing/test_cycle_safe_sor_contract.py -q` |
 | Downstream | WHI-1556 (`uni_sor_cycle_safe` implementation). The amendment text is in §13 |
 
@@ -26,12 +26,18 @@ unchanged. Their historical records are unchanged too.
 **What is claimed (only this).**
 
 - **S (safety).** The variant never returns a plan whose token graph has a cycle.
-- **P (reference trajectory).** When admission rejects nothing in a solve, the variant's
-  entire search, selection and plan are identical to `uni_sor_port`'s. Admission rejects
-  something exactly when the reference formed a cyclic combination at some point.
+- **P (reference trajectory).** This is a statement about *completed* selector runs on the
+  identical complete quote table. When the adapted selector ran to its own termination and
+  rejected nothing, its entire search and selection are identical to `uni_sor_port`'s.
+  If, in addition, the replay was not interrupted, the plan, status and score are identical
+  too. Admission rejects something exactly when the reference formed a cyclic combination
+  at some point. A solve whose selector never ran (an enumeration status, the
+  `max_candidates` threshold, a quote cut while building the table, a hard kill) is
+  **not** evidence of identity. Neither is a replay interrupted by a quote cut, as far as the
+  end-to-end result goes (§4.7).
 - **L4.** With `search.max_hops ≤ 2`, admission can never reject anything.
 - **Budget and coverage.** The domain is the same (candidates, grid, V2/V3 coverage, quote
-  table), the budget meaning is the same, and admission costs no quotes.
+  table), the budget meaning is the same, and admission costs no quotes. It does cost CPU.
 
 **What is not claimed.**
 
@@ -42,6 +48,9 @@ unchanged. Their historical records are unchanged too.
   oracle gets 131.
 - Upstream parity for the variant. The goldens stay authoritative for `uni_sor_port` only.
 - Any speedup or timing effect.
+- End-to-end parity with `uni_sor_port` under wall-clock cuts. Admission costs CPU, so a
+  hard wall can end the two solves at different points. CS-2 publishes later, so a cut
+  during the replay leaves a different `last_valid_candidate` (A4, §4.7).
 
 The evidence classes of R021-C/1 §1 stay separate:
 
@@ -169,7 +178,11 @@ The plan is published through `SolveContext.report_candidate` **only after** the
 `evaluate` returned `ok`. It is published once, and the published plan equals the returned
 plan. This is a deliberate difference from `uni_sor_port`, which publishes before its
 replay (§10, CS-2). As a result, a hard timeout or a quote cut during the replay leaves no
-`last_valid_candidate` from this identity (A4).
+`last_valid_candidate` from this identity, where the reference would have one (A4). Every
+solve records this in `cycle_safe.publication`. Whenever a plan was built but not published
+(the replay was interrupted, or it did not return `ok`), `withheld_by_cs2` is true. Reports
+must show that difference and attribute it to CS-2. They must never treat it as a search
+difference.
 
 The admission check never replaces the evaluator. The variant's replay and the runner's
 independent evaluation still decide the status. If the replay returns `invalid_plan`,
@@ -183,12 +196,12 @@ published and nothing is retried.
 | --- | --- | --- |
 | cohort DFS empty, full-universe DFS non-empty | `unsupported` | the port's (D-4) |
 | both DFS empty | `no_route` | the port's |
-| routes `> max_candidates` | `timeout`, `truncated_by: max_candidates` | the port's; no selection runs, so both counters are 0 |
-| the quote table would exceed `max_quotes` | `timeout`, `truncated_by: max_quotes` | the port's; no selection |
+| routes `> max_candidates` | `timeout`, `truncated_by: max_candidates` | the port's. No selector runs, so both counters are 0 and `reference_trajectory` is `unavailable` (§4.7) |
+| the quote table would exceed `max_quotes` | `timeout`, `truncated_by: max_quotes` | the port's. No selector runs; `unavailable` |
 | no selection and some entry is `incomplete_snapshot` | `incomplete_snapshot` | the port's precedence |
 | no selection after rejections | `no_route` | error "no admissible complete selection over N valid quote entries: R combinations rejected by plan-token-DAG admission (B-S10 under admission)"; `cycle_safe.no_admissible_selection: true` |
 | no selection without rejections | `no_route` | the port's B-S10 text |
-| the replay needs one quote beyond `max_quotes` | `timeout` | the port's text; **nothing published** |
+| the replay needs one quote beyond `max_quotes` | `timeout` | the port's text; **nothing published**; `replay.phase: interrupted`, `withheld_by_cs2: true`, not comparable |
 | replay not `ok` | `invalid_plan` | the evaluator's error; nothing published |
 | replay `ok` | `ok` | published once |
 
@@ -207,6 +220,37 @@ hard wall/quote limits. No cooperative cap is added. The admission work per solv
 bounded by the scans of the queued nodes. Because a node has a child only if the port
 would also have one (the admission test is an extra filter), no node has more children
 than the port's rule allows. There is no randomness, and the solve ignores `seed`.
+
+### 4.7 Phase, availability and completion semantics
+
+Missing work is never read as evidence. Every solve that returns a result writes the
+following into `search_stats["cycle_safe"]`. All of these are derived from what actually
+ran; none is a new shared vocabulary.
+
+| Field | Values | Meaning |
+| --- | --- | --- |
+| `selector.phase` | `completed`, `not_started` | `completed` only when the adapted `getBestSwapRouteBy` ran to its own termination (B-S5 stop, split cap, empty queue) on the complete quote table. The selector has no cooperative stop, so it never ends part-way |
+| `selector.not_started_reason` | `enumeration_status`, `max_candidates`, `max_quotes_table`, null | why no selector ran: `unsupported`/`no_route` from enumeration, the §3.3 threshold, or a quote cut while building the table |
+| `selector.selection` | true, false, null | whether a completed selector returned a selection (null when it never ran) |
+| `replay.phase` | `not_reached`, `not_needed`, `completed`, `interrupted` | no selector run; no selection; the in-solve evaluator returned; a quote cut inside the replay |
+| `replay.interrupted_by`, `replay.status` | `max_quotes` / null; `ok`, `invalid_plan` / null | how the replay ended |
+| `reference_trajectory` | `identical`, `diverged`, `unavailable` | `identical` means the selector completed with zero rejections (Theorem P). `diverged` means at least one rejection. `unavailable` means the selector never ran: the zero counters prove nothing then |
+| `comparable_completed` | true, false | the selector completed and no replay was interrupted. This is the only cohort the identity gate applies to (§11) |
+| `publication` | `{rule, published, reference_publishes_before_replay: true, withheld_by_cs2}` | the CS-2 difference, kept visible |
+
+A **hard wall kill** returns no `SolveResult`, so no phase is written. The runner shows
+`unavailable (hard_timeout)`. Such a solve is never part of the identity cohort, in either
+arm. Because admission costs CPU and wall timing is nondeterministic, a hard wall can end
+a zero-rejection solve of the variant where the reference finished, or the other way round.
+Theorem P says nothing about that.
+
+Fixture `A5_phase_semantics` pins these fields on ten solves; §6 has the table:
+
+- the early cuts and the enumeration status are `unavailable`;
+- the replay cut has an `identical` selector but is not comparable, and CS-2 withholds its
+  candidate;
+- four completed cases are comparable: ok, replay `invalid_plan`, no selection, and
+  diverged.
 
 ## 5. Proofs
 
@@ -237,14 +281,19 @@ the first pool that involves `token_out` (B-R3).
   By L3, its plan passes the evaluator's token-cycle check. The variant can therefore never
   return `invalid_plan` "economic token cycle". This is checked on every fixture and on 60
   seeded random 3-hop bundles.
-- **Theorem P (reference trajectory).** Run the port and the variant on identical inputs.
-  Their executions differ only in the chooser.
+- **Theorem P (reference trajectory, completed selector runs only).** Run the port's
+  selector and the variant's selector on the identical complete quote table (identical
+  candidates, grid, entries and order), and let both run to their own termination. The two
+  executions differ only in the chooser. Neither selector has a cooperative stop, so each
+  run either completes or does not start.
 
-  *If.* Suppose the variant's run has `combinations_rejected_cycle = 0`. Then at every
-  chooser call, the first pool-disjoint entry was admitted, and that is exactly the port's
-  choice. By induction over the loop, the queue contents, `best_quote`/`best_swap` and the
-  pruning decisions are identical. So is the selection, and then B-F1, D-1, the plan, the
-  replay and the status.
+  *If.* Suppose the variant's completed run has `combinations_rejected_cycle = 0`. Then at
+  every chooser call, the first pool-disjoint entry was admitted, and that is exactly the
+  port's choice. By induction over the loop, the queue contents, `best_quote`/`best_swap`
+  and the pruning decisions are identical, and so is the selection. B-F1 and D-1 are
+  deterministic functions of the selection. The plan and the in-solve replay are therefore
+  identical as long as the replay runs to completion under the same quote budget. The replay
+  consumes the same metered quotes in both arms, because admission costs none.
 
   *Only if.* Let the first rejection happen at step `k`. Up to `k` the runs are identical.
   At `k` the port chose the rejected entry, which is a cyclic combination.
@@ -253,13 +302,26 @@ the first pool that involves `token_out` (B-R3).
   cyclic reference result implies at least one rejection. The converse does not hold: K4
   has a rejection and an acyclic reference result, and the variant's result differs.
 
-  "Unaffected noncycle cases" are therefore defined exactly as **zero-rejection cases**.
-  WHI-1556 records this as `cycle_safe.reference_trajectory = (rejections == 0)`, a derived
-  flag.
+  "Unaffected noncycle cases" are therefore defined exactly as **completed zero-rejection
+  cases** (`reference_trajectory: identical`). End-to-end identity (status, plan, score)
+  additionally needs `comparable_completed`.
+
+  *Scope.* P says nothing about a solve whose selector never ran. A `max_quotes` or
+  `max_candidates` cut before the table completes, and an enumeration status, all leave
+  zero counters without any selector work. That is `unavailable`, and the parent's repro
+  `Budget(max_quotes=0)` is now pinned as such
+  (`test_the_reported_vacuous_repro_is_now_unavailable`).
+
+  After a replay quote cut, the selector trajectory is still `identical`, but the result is
+  not comparable end-to-end: the reference has already published its plan and the variant
+  has not (CS-2, A4). P is not a wall-clock statement either (§4.7).
+
+  WHI-1556 derives `reference_trajectory` from `selector.phase` and the rejection counter.
+  It must never derive it from the counter alone.
 - **L4 (hops ≤ 2).** With `max_hops ≤ 2`, every edge is `token_in → m`, `m → token_out` or
   `token_in → token_out`. `token_in` has no incoming edge (B-R4 never revisits it) and
   `token_out` has no outgoing edge (B-R3 stops there). No cycle can exist, so admission
-  never rejects and, by P, the variant equals the reference. The 2-hop daily profiles are
+  never rejects. By P, every completed variant run then equals the reference. The 2-hop daily profiles are
   an example: `v1-acceptance.md` §5 records 0 SOR `invalid_plan` there.
   With `max_hops = 3`, a route has at most one intermediate→intermediate edge, so a cycle
   among intermediates of length L needs at least L routes (K1: L = 3).
@@ -309,6 +371,35 @@ Budgets (`test_budgets_are_the_references_and_admission_never_resets_them`) on A
   exactly `table − 1` quotes metered.
 - The variant publishes nothing in either case, and its certificate is unavailable
   (`not_produced`).
+
+Two more adapter fixtures:
+
+- `A6_all_entries_null`: one Moe pool 10 below `uint112`. Every entry reverts, so a
+  completed selector returns no selection.
+- `A7_replay_invalid`: 101 split 50/50 over a shallow pool and a Moe pool 50 below
+  `uint112`. By the hand values, 49 + 33 beats 50. B-F1 puts the Moe pool last, so D-1
+  gives it 51, which reverts during the replay. This is a completed zero-rejection selector
+  whose replay completes as `invalid_plan`, the same status as the reference's.
+
+**Phase semantics** (`A5_phase_semantics`, `test_phase_availability_and_completion_semantics`,
+§4.7). The reference and the variant run under the same budget. "pub" is published plans,
+variant / reference.
+
+| Row | Fixture, budget | Status var / ref | Selector | Replay | Trajectory | Comparable | pub | withheld (CS-2) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `quote_cut_zero` | A1, `max_quotes 0` (the parent's repro) | timeout / timeout | not_started (`max_quotes_table`) | not_reached | unavailable | no | 0 / 0 | no |
+| `quote_cut_table_minus_one` | A1, table − 1 | timeout / timeout | not_started (`max_quotes_table`) | not_reached | unavailable | no | 0 / 0 | no |
+| `candidate_cut` | A1, `max_candidates 5` | timeout / timeout | not_started (`max_candidates`) | not_reached | unavailable | no | 0 / 0 | no |
+| `enumeration_no_route` | A1, token_out `w` | no_route / no_route | not_started (`enumeration_status`) | not_reached | unavailable | no | 0 / 0 | no |
+| `replay_cut` | A4, `max_quotes 4` | timeout / timeout | completed, 2 checks / 0 rejected | interrupted (`max_quotes`) | identical | **no** | **0 / 1** | **yes** |
+| `completed_zero_rejection_ok` | A4, `max_quotes 5` | ok / ok | completed | completed ok | identical | yes | 1 / 1 | no |
+| `completed_zero_rejection_replay_invalid` | A7 | invalid_plan / invalid_plan | completed | completed invalid_plan | identical | yes | 0 / 1 | yes |
+| `completed_zero_rejection_no_selection` | A6 | no_route / no_route | completed, no selection | not_needed | identical | yes | 0 / 0 | no |
+| `completed_rejections_ok` | A1 | ok / invalid_plan | completed, 2 / 2 | completed ok | diverged | yes | 1 / 1 | no |
+| `completed_rejections_no_selection` | A3 | no_route / invalid_plan | completed, 2 / 2 | not_needed | diverged | yes | 0 / 1 | no |
+
+On every comparable identical row, the variant equals the reference in status, selection,
+allocation, plan, error and score.
 
 ## 7. Domain, §3.3 row, options and preset
 
@@ -391,8 +482,10 @@ not identity options. They are labeled like any profile change.
   - `scope: {supported: true}`.
 
   An additional `search_stats["cycle_safe"]` block holds the two counters,
-  `no_admissible_selection`, `reference_trajectory`, `fallback` and
-  `published_before_replay: false`. All the port's existing `search_stats` keys are kept,
+  `no_admissible_selection` and `fallback`. It also holds the §4.7 phase view: `selector`,
+  `replay`, `reference_trajectory` (`identical`/`diverged`/`unavailable`),
+  `comparable_completed` and `publication` (CS-2, `withheld_by_cs2`).
+  These are identity extras; no shared schema changes. All the port's existing `search_stats` keys are kept,
   including the upstream-shaped `selection`, `allocation`, `d1_residual`, `cached_quote`
   and `requote_delta`.
 - **Bound kind.** The only kind is `unknown`. On `ok` the record carries a certificate with
@@ -411,8 +504,10 @@ not identity options. They are labeled like any profile change.
 
 All 35 goldens were run through the specification on their frozen inputs, including the
 gas scores and `min_splits` variants. The reference core still reproduces every golden
-selection. Admission rejects nothing on any golden, and every golden selection is
-acyclic. By Theorem P, the variant's selection therefore equals each golden result exactly.
+selection. The selector completes on every golden, admission rejects nothing, and every
+golden selection is acyclic. By Theorem P, the variant's selection therefore equals each
+golden result exactly. These are selector-level runs on complete frozen tables, so no
+budget cut applies.
 
 The goldens are not an expectation of the variant. They are a zero-rejection check. A future
 golden that exercises admission would fail this check loudly
@@ -424,21 +519,29 @@ These run on seeded random CPMM bundles: 5 tokens, 6–11 pools, grid 20, 3 spli
 
 - **3 hops, 60 bundles.**
   - The variant never produces a token cycle (Theorem S).
-  - Every zero-rejection case equals the reference in status, selection and plan
-    (Theorem P).
+  - Every comparable identical case (the selector completed, zero rejections, the replay
+    not interrupted) equals the reference in status, selection, allocation, plan, error and
+    score (Theorem P).
+  - Solves with no route are `unavailable`, with no selector work. They are counted apart
+    and are never taken as identity evidence.
   - Every reference token-cycle case has at least one rejection.
   - The table sizes match, and `quotes_executed` equals the worker meter.
-  - The run is required to contain identical, rejecting and reference-cycle cases.
-- **2 hops, 40 bundles.** Zero rejections, and identical results everywhere (L4).
+  - The run is required to contain identical, diverged, unavailable and reference-cycle
+    cases.
+- **2 hops, 40 bundles.** Zero rejections (L4). At least 20 of the bundles are comparable
+  completed identities, and those are identical end to end.
 - **`tests/fixtures/corpus/bundle`** (a 19-pool real-state excerpt with 96 cases, run at
-  3/4/5). All 96 cases have zero rejections and equal the reference in status, selection
-  and plan.
+  3/4/5). All 96 cases have a completed selector, a completed `ok` replay and zero
+  rejections. All 96 are therefore comparable identities, and each equals the reference
+  end to end.
 
 ### 9.3 What the fixtures show
 
 The union cycle (A1, K1, K2, K6) is distinct from pool overlap and from revisits (A1). A
 valid alternative wins after a rejection (A1, K2, K4). There is a no-valid case (A3, K6).
-Ties are covered (K2), and budgets are covered (A1, A4). Admission can change the result
+Ties are covered (K2), and budgets are covered (A1, A4). Early cuts are `unavailable`,
+and the replay cut is identical at selector level but not comparable, with CS-2 withholding
+its candidate (A5). Admission can change the result
 even when the reference result is acyclic (K4), and it can lose to the reference (K5).
 
 ### 9.4 Bounded corpus diagnostic (separate pass, not a measured solve)
@@ -474,9 +577,33 @@ The work figures:
   Admission adds no quote.
 
 The report-split cases were run only to confirm that the defect is repaired. No quality
-figure from them is reported or used. The raw outputs are recorded by sha256 in
-[`fixtures/cycle-safe-sor.json`](fixtures/cycle-safe-sor.json) (`corpus_probe`) and are
-stored under the artifacts directory of this issue's final SHA.
+figure from them is reported or used.
+
+**Historical view and enriched view.** Two records are kept, and neither overwrites the
+other.
+
+- **`corpus_probe` (historical).** The original pass, produced at `c9c6ca4`, is kept
+  byte-for-byte in [`fixtures/cycle-safe-sor.json`](fixtures/cycle-safe-sor.json), and its
+  raw outputs are pinned by sha256. That view predates §4.7: its "zero rejections ⇒
+  identical" claims rest on `variant_status: ok`. In this adapter, `ok` is emitted only
+  after a completed selector and a completed `ok` replay, so those claims hold for
+  completed trajectories only. The test checks this (every historical case is `ok`).
+- **`corpus_probe_enriched` (current view).** The same cases were re-run with the current
+  code, adding the §4.7 phase fields. The re-run used the same settings and the phase-aware `spec_solve`; the selector, table,
+candidate and order behaviour are unchanged. On all 108 cases, every historical numeric and
+selection field is identical, and the test checks this per case via
+`historical_fields_sha256`. The added fields show:
+
+- the selector completed on every case, and so did the reference selector on the same
+  table;
+- every replay completed, so every case is `comparable_completed`;
+- `reference_trajectory` is `identical` on 85 tuning cases and `diverged` on 23 (11 tuning
+  cases and all 12 report defects).
+
+The historical zero-rejection identities are therefore verified identities over completed
+trajectories. None of them is a no-data case. Raw outputs: `enriched-tuning.json` sha256
+`7f70dfe8…a7af` and `enriched-report-defects.json` sha256 `bd159c73…da8a`. Both are stored
+beside the historical raw files in the artifacts directory of this issue's final SHA.
 
 ## 10. Source-deviation record
 
@@ -512,16 +639,28 @@ It must also carry the GPL-3.0-only notice of the translated core it reuses, cit
   - these cases are listed apart from the quality comparison and are never tuning data.
 - **What to report.**
   - Unconditional statuses per arm.
-  - The zero-rejection cohort, where identity with the reference is a gate (Theorem P) and
-    not a result.
+  - The **comparable identical cohort**: the variant's selector completed with zero
+    rejections, no replay was interrupted, and the reference arm also completed without a
+    budget or hard-wall cut. Identity with the reference is a gate there (Theorem P), not a
+    result.
+  - Everything else, reported apart and never as identity evidence:
+    - `unavailable` solves (an enumeration status, a candidate or quote cut before the
+      table completes), given by status per arm;
+    - replay-interrupted solves;
+    - hard-wall kills in either arm.
+  - CS-2 publication differences (`withheld_by_cs2`, `last_valid_candidate` present for the
+    reference but absent for the variant), attributed to CS-2.
+  - Timing differences on zero-rejection solves (admission CPU) as timing, never as search
+    quality.
   - The rejection cohort, with paired quality over common `ok` cases and counts of higher /
     equal / lower. Losses are expected to be possible (K5).
   - `admission_checks` and `combinations_rejected_cycle` distributions next to
     `quotes_executed`.
   - Timing per R021-C/1 §5.1 only, with host-load rule.
 - **Gates for `keep_experimental`.** Theorem S holds on every case (no token cycle). There
-  is exact identity on every zero-rejection case. The ledger equals the worker meter. The
-  publication rule holds. There is no loss tolerance and no required win (R021-C/1 §8).
+  is exact identity on every comparable identical case (defined above). No `unavailable`
+  or interrupted solve is ever counted as passing or failing this gate. The ledger equals the
+  worker meter. The publication rule holds, and `withheld_by_cs2` is reported. There is no loss tolerance and no required win (R021-C/1 §8).
 
 ## 12. Outcome: `go`
 
@@ -543,8 +682,9 @@ It is not `narrow_go`, because no part of the declared domain had to be excluded
 > **Contract of record:** `docs/references/research-021/cycle-safe-sor.md` (R021-P09,
 > outcome `go`). Executable specification and checks:
 > `tests/routing/test_cycle_safe_sor_contract.py`. WHI-1556 must port or re-run the fixture
-> checks against its module (K1, K2, K4, K5, K6, A1, A3, A4, the 35-golden zero-rejection
-> sweep, and the seeded 3-hop Theorem P/S and 2-hop L4 property checks).
+> checks against its module: K1, K2, K4, K5, K6, A1, A3, A4, A6, A7, the ten
+> `A5_phase_semantics` rows, the 35-golden zero-rejection sweep, and the seeded 3-hop
+> Theorem P/S and 2-hop L4 property checks.
 >
 > **Algorithm.** `routing/algorithms/uni_sor_cycle_safe.py`, registered as
 > `uni_sor_cycle_safe` (group `custom`, R021-C/1 order 4, appended after `metis_inspired`
@@ -562,6 +702,13 @@ It is not `narrow_go`, because no part of the declared domain had to be excluded
 > - The plan is published once, only after the in-solve replay is `ok`.
 > - Statuses are memo §4.5: `no_route` with `no_admissible_selection: true` after
 >   rejections.
+> - **Phase semantics** are memo §4.7. `reference_trajectory` is `identical` only for a
+>   completed selector with zero rejections, `diverged` after any rejection, and
+>   `unavailable` when no selector ran (an enumeration status, a `max_candidates` cut, or a
+>   quote cut before the table completes). It must never be derived from the rejection
+>   counter alone. `comparable_completed` additionally excludes interrupted replays.
+>   Selector, table, candidate and order behaviour stay exactly as specified above; the
+>   phase view is reporting only.
 >
 > **Domain / row / options.** The `r021.domain/1` record is memo §7, identical to
 > `uni_sor_port`'s (`same_domain`).
@@ -575,8 +722,11 @@ It is not `narrow_go`, because no part of the declared domain had to be excluded
 > `internal_evaluations`, `admission_checks` and `combinations_rejected_cycle`. The
 > certificate is `unknown` on `ok` and null (`not_produced`) otherwise.
 > `search_stats["cycle_safe"]` holds both counters, `no_admissible_selection`,
-> `reference_trajectory` (= zero rejections), `fallback.used = false` and
-> `published_before_replay = false`. Keep every `uni_sor_port` `search_stats` key.
+> `fallback.used = false` and the §4.7 phase view: `selector {phase, not_started_reason,
+> selection}`, `replay {phase, interrupted_by, status}`, `reference_trajectory`,
+> `comparable_completed` and `publication {rule, published,
+> reference_publishes_before_replay, withheld_by_cs2}`. Keep every `uni_sor_port`
+> `search_stats` key.
 >
 > **Provenance and notices.** Keep the GPL-3.0-only header naming the pin and
 > `uni_sor_port.py`, and state that the file was modified. Record A-1…A-8, D-1…D-4 and
@@ -588,9 +738,14 @@ It is not `narrow_go`, because no part of the declared domain had to be excluded
 >   returns `ok` at 2,231,431. A3 and K6 give `no_route` with `no_admissible_selection`.
 > - All 35 original goldens pass unchanged in `test_uni_sor_parity.py`, and each golden
 >   has zero rejections in the variant, with a selection equal to the golden.
-> - On every zero-rejection case the variant equals `uni_sor_port`'s status, selection and
->   plan.
-> - The replay-budget case publishes nothing.
+> - On every **comparable completed** zero-rejection case (both arms completed, no replay
+>   interrupted, no hard-wall cut) the variant equals `uni_sor_port`'s status, selection,
+>   allocation, plan, error and score.
+> - Early quote cuts, candidate cuts and enumeration statuses report
+>   `reference_trajectory: unavailable` and are never counted as identity evidence.
+> - The replay-budget case publishes nothing and reports `withheld_by_cs2: true`. The
+>   reference's pre-replay `last_valid_candidate` difference is shown and attributed to
+>   CS-2.
 > - The work ledger equals the worker meter.
 > - Both CLI modes (`main.py run`, `main.py quote --details`) run the identity once per
 >   solve.
@@ -599,7 +754,8 @@ It is not `narrow_go`, because no part of the declared domain had to be excluded
 > tuning-split known `invalid_plan` cases are defect regressions only.
 >
 > **Not claimed.** No dominance over `uni_sor_port` (K5), no optimality (K1), no timing
-> effect, no upstream parity for the variant.
+> effect, no end-to-end parity under wall-clock cuts (admission costs CPU; CS-2 publishes
+> later), no upstream parity for the variant.
 
 ## 14. Limitations
 
@@ -614,6 +770,11 @@ It is not `narrow_go`, because no part of the declared domain had to be excluded
   by import. Research added no seam to runtime code.
 - `termination: complete` on an `unknown` certificate follows the shared `P-HEUR-UNKNOWN`
   example. It means the search ended by its own rules, not that the domain was resolved.
+- Theorem P and the identity gate cover completed, comparable selector runs only. Timeouts,
+  hard-wall kills and replay cuts are reported apart, and their end-to-end results can
+  legitimately differ from the reference's (admission CPU, CS-2).
+- The corpus diagnostic has two views: the historical view kept verbatim, and an enriched
+  re-run. Neither is a measured solve.
 - No shared file changed. `DEFERRED_ISSUES.md` keeps the `uni_sor_port` entry; closing or
   rewording it after WHI-1556 lands is the parent's decision.
 
@@ -623,9 +784,9 @@ It is not `narrow_go`, because no part of the declared domain had to be excluded
 uv run pytest tests/routing/test_cycle_safe_sor_contract.py -q
 uv run pytest tests/routing/test_uni_sor_parity.py tests/routing/test_uni_sor_port.py tests/docs/test_research_021_contract.py -q
 PYTHONPATH=. uv run python tests/routing/test_cycle_safe_sor_contract.py probe \
-  <primary clone>/data/corpus/mantle-5src-101082044/sor_cohort_tuning probe-tuning.json
+  <primary clone>/data/corpus/mantle-5src-101082044/sor_cohort_tuning enriched-tuning.json
 PYTHONPATH=. uv run python tests/routing/test_cycle_safe_sor_contract.py probe \
-  <primary clone>/data/corpus/mantle-5src-101082044/sor_cohort_report probe-report-defects.json \
+  <primary clone>/data/corpus/mantle-5src-101082044/sor_cohort_report enriched-report-defects.json \
   emp-09bc4e-201eba-low-1 emp-09bc4e-201eba-low-3 emp-09bc4e-201eba-medium-1 \
   emp-09bc4e-201eba-medium-3 emp-201eba-cda86a-low-1 emp-201eba-cda86a-low-3 \
   emp-78c1b0-09bc4e-low-3 emp-78c1b0-deadde-low-1 emp-78c1b0-deadde-low-3 \

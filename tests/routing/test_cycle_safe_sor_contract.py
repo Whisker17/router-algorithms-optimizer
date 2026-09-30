@@ -266,22 +266,103 @@ def cycle_safe_selection(
         )
 
 
-def spec_solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
-    """The adapter contract (memo §4.3-§4.6): the unchanged `uni_sor_port` pipeline with
+REFERENCE_SELECTOR = sor.get_best_swap_route_by  # captured before any patching
+Observer = Callable[[Mapping[int, Sequence[sor.RouteQuote]], Sequence[int], dict[str, Any]], None]
+
+
+def phase_view(
+    res: SolveResult, counters: Counters, selector_ran: bool, published: bool
+) -> dict[str, Any]:
+    """The phase / availability / completion semantics of memo §4.7. Everything is
+    derived from what actually ran in this solve; missing work is never read as evidence.
+
+    - `selector.phase`: `completed` only when the adapted `getBestSwapRouteBy` ran to its
+      own termination on the complete quote table; otherwise `not_started` with the reason
+      (enumeration status, `max_candidates` threshold, `max_quotes` table cut). A hard
+      wall kill returns no result at all, so no phase is ever written for it.
+    - `replay.phase`: `not_reached` (no selector run), `not_needed` (no selection),
+      `completed` (the in-solve evaluator returned) or `interrupted` (quote cut in replay).
+    - `reference_trajectory`: `identical` (selector completed, zero rejections: Theorem P),
+      `diverged` (at least one rejection) or `unavailable` (the selector never ran).
+    - `comparable_completed`: the selector completed and no replay was interrupted -- the
+      only cases the zero-rejection identity gate applies to (memo §11).
+    - `publication`: CS-2 is kept visible: wherever a plan was built but not published
+      (replay interrupted or not `ok`), `withheld_by_cs2` is set: the reference would
+      already have published that plan before its replay."""
+    stats = res.search_stats
+    truncated = stats.get("truncated_by")
+    plan_built = stats.get("allocation") is not None
+    if selector_ran:
+        selector: dict[str, Any] = {
+            "phase": "completed",
+            "not_started_reason": None,
+            "selection": stats.get("selection") is not None,
+        }
+    else:
+        reason = {"max_candidates": "max_candidates", "max_quotes": "max_quotes_table"}.get(
+            str(truncated), "enumeration_status"
+        )
+        selector = {"phase": "not_started", "not_started_reason": reason, "selection": None}
+    if not selector_ran:
+        replay: dict[str, Any] = {"phase": "not_reached", "interrupted_by": None, "status": None}
+    elif not plan_built:
+        replay = {"phase": "not_needed", "interrupted_by": None, "status": None}
+    elif stats.get("cached_quote") is None:
+        replay = {"phase": "interrupted", "interrupted_by": truncated, "status": None}
+    else:
+        status = "ok" if res.status is SolveStatus.OK else res.status.value
+        replay = {"phase": "completed", "interrupted_by": None, "status": status}
+    rejected = counters["combinations_rejected_cycle"]
+    if not selector_ran:
+        trajectory = "unavailable"
+    else:
+        trajectory = "identical" if rejected == 0 else "diverged"
+    return {
+        "selector": selector,
+        "replay": replay,
+        "reference_trajectory": trajectory,
+        "comparable_completed": selector_ran and replay["phase"] != "interrupted",
+        "publication": {
+            "rule": "after a completed ok replay (CS-2)",
+            "published": published,
+            "reference_publishes_before_replay": True,
+            "withheld_by_cs2": plan_built and not published,
+        },
+    }
+
+
+def spec_solve(
+    case: Case, context: SolveContext, budget: Budget, *, observer: Observer | None = None
+) -> SolveResult:
+    """The adapter contract (memo §4.3-§4.7): the unchanged `uni_sor_port` pipeline with
     the cycle-safe selector; a candidate is published only after the in-solve replay
     returned `ok`; `no_route` after rejections names the admission; `search_stats`
-    carries the `cycle_safe` block and the R021-C/1 diagnostics."""
+    carries the `cycle_safe` block (with its phase view) and the R021-C/1 diagnostics.
+    `observer` (probe only) sees the selector's exact inputs; it cannot change them."""
     counters = new_counters()
+    ran = {"started": False, "completed": False}
     buffered: list[RoutePlan] = []
     inner = dataclasses.replace(context, candidate_sink=buffered.append)
-    selector = functools.partial(select_cycle_safe, counters=counters)
+
+    def selector(groups: Any, percents: Any, **kw: Any) -> sor.BestSwap | None:
+        ran["started"] = True
+        if observer is not None:
+            observer(groups, percents, dict(kw))
+        out = select_cycle_safe(groups, percents, counters=counters, **kw)
+        ran["completed"] = True
+        return out
+
     with mock.patch.object(sor, "get_best_swap_route_by", selector):
         res = sor.solve(case, inner, budget)
-    if res.status is SolveStatus.OK and res.plan is not None:
+    assert ran["started"] == ran["completed"], "the selector never stops part-way"
+    published = res.status is SolveStatus.OK and res.plan is not None
+    if published:
+        assert res.plan is not None
         context.report_candidate(res.plan)
     error = res.error
     no_admissible = (
-        res.status is SolveStatus.NO_ROUTE
+        ran["completed"]
+        and res.status is SolveStatus.NO_ROUTE
         and res.search_stats.get("route_quotes", 0) > 0
         and counters["combinations_rejected_cycle"] > 0
     )
@@ -297,9 +378,8 @@ def spec_solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult
         "admission_checks": counters["admission_checks"],
         "combinations_rejected_cycle": counters["combinations_rejected_cycle"],
         "no_admissible_selection": no_admissible,
-        "reference_trajectory": counters["combinations_rejected_cycle"] == 0,
         "fallback": {"used": False},
-        "published_before_replay": False,
+        **phase_view(res, counters, ran["completed"], published),
     }
     out = dataclasses.replace(res, algorithm=NAME, error=error, search_stats=stats)
     stats["r021"] = diagnostics(case, context, out, counters)
@@ -794,6 +874,7 @@ def selected(res: SolveResult) -> list[list[Any]]:
 A1 = FIX["adapter"]["A1_union_cycle"]
 A3 = FIX["adapter"]["A3_no_admissible_overflow"]
 A4 = FIX["adapter"]["A4_replay_budget"]
+A7 = FIX["adapter"]["A7_replay_invalid"]
 
 
 def hand_chain(spec: Mapping[str, Any], pools: Sequence[str], token: str, amount: int) -> int:
@@ -843,7 +924,8 @@ def test_a1_variant_rejects_the_union_and_returns_the_admissible_baseline() -> N
         exp["admission_checks"],
         exp["combinations_rejected_cycle"],
     )
-    assert block["reference_trajectory"] is False
+    assert block["reference_trajectory"] == "diverged"
+    assert block["selector"]["phase"] == "completed" and block["comparable_completed"] is True
     # independent final replay by the unchanged evaluator
     assert var.result.plan is not None
     ev = evaluate(bundle, case, var.result.plan, gross_only())
@@ -990,6 +1072,92 @@ def test_a4_replay_budget_counts_in_the_same_ledger_and_publication_follows_repl
     assert full.published == [full.result.plan]
 
 
+A5 = FIX["adapter"]["A5_phase_semantics"]
+PHASE_FIXTURES = {k: v for k, v in FIX["adapter"].items() if "pools" in v}
+
+
+def _phase_budget(spec: Mapping[str, Any], raw: Mapping[str, Any]) -> Budget:
+    values = dict(raw)
+    if values.get("max_quotes") == "table-1":
+        bundle, case = fixture_bundle(spec), fixture_case(spec)
+        values["max_quotes"] = run(sor.solve, bundle, case, spec["params"]).metered - 1
+    return Budget(**values)
+
+
+@pytest.mark.parametrize("row", A5["cases"], ids=[r["id"] for r in A5["cases"]])
+def test_phase_availability_and_completion_semantics(row: Mapping[str, Any]) -> None:
+    spec = PHASE_FIXTURES[row["fixture"]]
+    bundle, case = fixture_bundle(spec), fixture_case(spec)
+    if "token_out" in row:
+        case = dataclasses.replace(case, token_out=row["token_out"])
+    budget = _phase_budget(spec, row["budget"])
+    ref = run(sor.solve, bundle, case, spec["params"], budget)
+    var = run(spec_solve, bundle, case, spec["params"], budget)
+    block = var.result.search_stats["cycle_safe"]
+    assert var.result.status.value == row["status"]
+    assert ref.result.status.value == row["reference_status"]
+    assert block["selector"]["phase"] == row["selector_phase"]
+    assert block["selector"]["not_started_reason"] == row["not_started_reason"]
+    assert block["replay"]["phase"] == row["replay_phase"]
+    assert block["replay"]["interrupted_by"] == row["interrupted_by"]
+    assert block["replay"]["status"] == row["replay_status"]
+    assert block["reference_trajectory"] == row["reference_trajectory"]
+    assert block["comparable_completed"] is row["comparable_completed"]
+    assert len(var.published) == row["published"] == int(block["publication"]["published"])
+    assert len(ref.published) == row["reference_published"]
+    assert block["publication"]["withheld_by_cs2"] is row["withheld_by_cs2"]
+    assert (block["admission_checks"], block["combinations_rejected_cycle"]) == (
+        row["admission_checks"],
+        row["combinations_rejected_cycle"],
+    )
+    if row["selector_phase"] == "not_started":
+        # missing work: zero counters here are not evidence of reference identity
+        assert block["reference_trajectory"] == "unavailable"
+        assert not comparable_identical(block)
+    if comparable_identical(block):
+        assert_end_to_end_identical(ref, var)
+    if row["id"] == "replay_cut":
+        # the selector trajectory is identical (same selection, same table) ...
+        assert var.result.search_stats["selection"] == ref.result.search_stats["selection"]
+        # ... yet the last valid candidate differs visibly: CS-2 withholds it
+        assert ref.published and not var.published and var.result.plan is None
+
+
+def test_a7_replay_invalid_is_the_hand_split_and_a_d1_remainder_revert() -> None:
+    hand = A7["hand"]
+    assert cp_out(50, 100, 100) == hand["p1_50"]
+    assert cp_out(101, 100, 100) == hand["p1_100"]
+    assert cp_out(50, M112 - 50, M112 - 50) == hand["p2_50"]
+    assert hand["p2_50"] + hand["p1_50"] > hand["p1_100"]
+    bundle, case = fixture_bundle(A7), fixture_case(A7)
+    var = run(spec_solve, bundle, case, A7["params"])
+    routes = var.result.search_stats["selection"]["routes"]
+    assert [(r["pool_ids"], r["percent"]) for r in routes] == [(["p1"], 50), (["p2"], 50)]
+    assert var.result.search_stats["allocation"] == ["50", "51"]
+    assert var.result.status is SolveStatus.INVALID_PLAN
+    assert var.result.evaluation is not None
+    assert (
+        "revert" in (var.result.error or "").lower()
+        or "overflow" in (var.result.error or "").lower()
+    )
+
+
+def test_the_reported_vacuous_repro_is_now_unavailable() -> None:
+    """Parent repro (comment d7a727eb): `max_quotes=0` used to report
+    `reference_trajectory=True` although the selector never ran."""
+    bundle, case = fixture_bundle(A1), fixture_case(A1)
+    r = run(spec_solve, bundle, case, A1["params"], Budget(max_quotes=0))
+    block = r.result.search_stats["cycle_safe"]
+    assert r.result.status is SolveStatus.TIMEOUT
+    assert block["reference_trajectory"] == "unavailable"
+    assert block["selector"] == {
+        "phase": "not_started",
+        "not_started_reason": "max_quotes_table",
+        "selection": None,
+    }
+    assert block["comparable_completed"] is False
+
+
 # ================================================================ 6. Theorem P, lemmas
 
 
@@ -1020,48 +1188,72 @@ def _is_cycle_error(res: SolveResult) -> bool:
     return res.status is SolveStatus.INVALID_PLAN and "economic token cycle" in (res.error or "")
 
 
+def comparable_identical(block: Mapping[str, Any]) -> bool:
+    """The only cohort the zero-rejection identity gate applies to (memo §4.7, §11)."""
+    return bool(block["reference_trajectory"] == "identical" and block["comparable_completed"])
+
+
+def assert_end_to_end_identical(ref: Run, var: Run) -> None:
+    assert var.result.status is ref.result.status
+    assert var.result.search_stats["selection"] == ref.result.search_stats["selection"]
+    assert var.result.plan == ref.result.plan
+    assert var.result.error == ref.result.error
+    assert var.result.search_stats["allocation"] == ref.result.search_stats["allocation"]
+    assert var.result.score == ref.result.score
+
+
 def test_theorem_p_and_invariants_on_seeded_three_hop_bundles() -> None:
-    seen_rejection = seen_identical = seen_cycle = 0
+    seen = {"identical": 0, "diverged": 0, "unavailable": 0, "reference_cycle": 0}
     for ref, var in random_runs(20261005, 60, 3):
         block = var.result.search_stats["cycle_safe"]
         assert not _is_cycle_error(var.result), "the variant produced a token cycle"
         assert var.metered == var.result.search_stats["quotes_executed"]
-        if ref.result.search_stats.get("route_quotes") is not None:
-            assert (
-                var.result.search_stats["route_quotes"] == ref.result.search_stats["route_quotes"]
-            )
-        if block["combinations_rejected_cycle"] == 0:
-            seen_identical += 1
+        seen[block["reference_trajectory"]] += 1
+        if block["reference_trajectory"] == "unavailable":
+            # no selector ran (enumeration status): not evidence of identity either way
+            assert block["selector"]["not_started_reason"] == "enumeration_status"
+            assert block["combinations_rejected_cycle"] == block["admission_checks"] == 0
             assert var.result.status is ref.result.status
-            assert var.result.search_stats["selection"] == ref.result.search_stats["selection"]
-            assert var.result.plan == ref.result.plan
-        else:
-            seen_rejection += 1
+            continue
+        assert block["selector"]["phase"] == "completed" and block["comparable_completed"]
+        assert var.result.search_stats["route_quotes"] == ref.result.search_stats["route_quotes"]
+        if comparable_identical(block):
+            assert_end_to_end_identical(ref, var)
         if _is_cycle_error(ref.result):
-            seen_cycle += 1
-            assert block["combinations_rejected_cycle"] > 0
-    assert seen_identical and seen_rejection and seen_cycle
+            seen["reference_cycle"] += 1
+            assert block["reference_trajectory"] == "diverged"
+    assert all(seen.values()), seen
 
 
 def test_lemma_two_hops_never_reject_so_the_variant_is_the_reference() -> None:
+    completed = 0
     for ref, var in random_runs(20261006, 40, 2):
-        assert var.result.search_stats["cycle_safe"]["combinations_rejected_cycle"] == 0
-        assert var.result.search_stats["selection"] == ref.result.search_stats["selection"]
+        block = var.result.search_stats["cycle_safe"]
+        assert block["combinations_rejected_cycle"] == 0
+        assert block["reference_trajectory"] != "diverged"
         assert var.result.status is ref.result.status
+        if comparable_identical(block):
+            completed += 1
+            assert_end_to_end_identical(ref, var)
+    assert completed >= 20
 
 
-def test_corpus_fixture_cases_are_unaffected_noncycle_cases() -> None:
+def test_corpus_fixture_cases_are_completed_zero_rejection_identities() -> None:
     bundle = load_bundle(CORPUS_FIXTURE)
     params = {"max_hops": 3, "max_splits": 4, "percent_step": 5}
+    checked = 0
     for case in bundle.cases:
         ref = run(sor.solve, bundle, case, params)
         var = run(spec_solve, bundle, case, params)
-        # observed on all 96 cases of this 19-pool excerpt: no cyclic combination forms
-        assert var.result.search_stats["cycle_safe"]["combinations_rejected_cycle"] == 0
-        assert var.result.search_stats["selection"] == ref.result.search_stats["selection"]
-        assert var.result.plan == ref.result.plan
-        assert var.result.status is ref.result.status
-    assert len(bundle.cases) == 96
+        block = var.result.search_stats["cycle_safe"]
+        # observed on all 96 cases of this 19-pool excerpt: every selector run completes
+        # and no cyclic combination forms, so every case is a verified identity
+        assert block["selector"]["phase"] == "completed"
+        assert block["replay"] == {"phase": "completed", "interrupted_by": None, "status": "ok"}
+        assert comparable_identical(block)
+        assert_end_to_end_identical(ref, var)
+        checked += 1
+    assert checked == len(bundle.cases) == 96
 
 
 # ================================================================ 7. records and options
@@ -1164,7 +1356,16 @@ def test_memo_names_every_fixture_the_outcome_and_the_amendment() -> None:
         assert fid in MEMO, fid
     assert "Outcome: `go`" in MEMO
     assert "Amendment text for WHI-1556" in MEMO
-    for token in ("admission_checks", "combinations_rejected_cycle", "enumerated_routes_threshold"):
+    for token in (
+        "admission_checks",
+        "combinations_rejected_cycle",
+        "enumerated_routes_threshold",
+        "### 4.7 Phase, availability and completion semantics",
+        "comparable_completed",
+        "withheld_by_cs2",
+        "`unavailable`",
+        "corpus_probe_enriched",
+    ):
         assert token in MEMO
 
 
@@ -1205,30 +1406,75 @@ def test_pinned_corpus_probe_summary_is_internally_consistent() -> None:
         )
 
 
+def historical_fields_sha256(case: Mapping[str, Any]) -> str:
+    return canonical_hash({k: case[k] for k in HISTORICAL_PROBE_FIELDS})
+
+
+def test_historical_probe_view_rests_on_completed_trajectories() -> None:
+    """The c9c6ca4 view (kept verbatim) predates the phase fields; its zero-rejection
+    identity claims hold for completed trajectories because every case is `ok`, which
+    this adapter emits only after a completed selector and a completed ok replay."""
+    for part in FIX["corpus_probe"]["parts"]:
+        for c in part["cases"]:
+            assert set(c) == set(HISTORICAL_PROBE_FIELDS)
+            assert c["variant_status"] == "ok"
+
+
+def test_enriched_probe_view_keeps_every_number_and_selection_and_adds_phases() -> None:
+    historical = {p["name"]: p for p in FIX["corpus_probe"]["parts"]}
+    enriched = FIX["corpus_probe_enriched"]
+    assert enriched is not None
+    counts = {"identical": 0, "diverged": 0}
+    for part in enriched["parts"]:
+        old = {c["case_id"]: c for c in historical[part["name"]]["cases"]}
+        assert part["bundle_hash"] == historical[part["name"]]["bundle_hash"]
+        assert {c["case_id"] for c in part["cases"]} == set(old)
+        for c in part["cases"]:
+            h = old[c["case_id"]]
+            # numeric and selection fields are unchanged from the historical view
+            assert c["historical_fields_sha256"] == historical_fields_sha256(h)
+            assert c["selector_phase"] == "completed" and c["reference_selector_ran"] is True
+            assert c["replay_phase"] == "completed" and c["comparable_completed"] is True
+            expected = "identical" if h["rejected"] == 0 else "diverged"
+            assert c["reference_trajectory"] == expected
+            counts[expected] += 1
+            if expected == "identical":
+                assert h["identical_selection"] is True
+                assert h["variant_status"] == h["port_status"]
+    assert counts == enriched["trajectory_counts"]
+
+
 # ================================================================ 8. bounded diagnostic (CLI)
+
+
+HISTORICAL_PROBE_FIELDS = (
+    "case_id", "port_status", "port_cycle", "variant_status", "variant_cycle",
+    "admission_checks", "rejected", "identical_selection", "port_gross", "variant_gross",
+    "quotes_executed",
+)  # fmt: skip
+PHASE_PROBE_FIELDS = (
+    "selector_phase", "reference_selector_ran", "replay_phase", "reference_trajectory",
+    "comparable_completed",
+)  # fmt: skip
 
 
 def probe_case(
     bundle: SnapshotBundle, prepared: sor.PreparedUniSorPort, case: Case
 ) -> dict[str, Any]:
-    """One solve of the spec; inside it the reference selector runs on the identical
-    quote table, so both selections share one table. The reference plan is then replayed
-    by the evaluator separately. Diagnostic only: in-process, not a measured solve."""
+    """One `spec_solve`; its observer runs the reference selector on the identical quote
+    table, so both selections share one table, and the reference plan is then replayed by
+    the evaluator separately. The historical fields (c9c6ca4 view) are computed exactly as
+    before; the phase fields are the enriched memo §4.7 view. Diagnostic only: in-process,
+    not a measured solve."""
     captured: dict[str, Any] = {}
-    original = sor.get_best_swap_route_by
 
-    def both(groups: Any, percents: Any, **kw: Any) -> sor.BestSwap | None:
-        by = kw.pop("by", lambda r: r.quote_adjusted_for_gas)
-        captured["ref"] = original(groups, percents, by=by, **kw)
-        return select_cycle_safe(groups, percents, by=by, counters=captured["counters"], **kw)
+    def observe(groups: Any, percents: Any, kw: dict[str, Any]) -> None:
+        captured["ref"] = REFERENCE_SELECTOR(groups, percents, **kw)
+        captured["ref_ran"] = True
 
-    captured["counters"] = new_counters()
-    published: list[RoutePlan] = []
-    context = SolveContext(bundle, gross_only(), prepared, candidate_sink=published.append)
-    budget = Budget(max_quotes=300_000)
-    with mock.patch.object(sor, "get_best_swap_route_by", both):
-        res = sor.solve(case, context, budget)
-    counters = captured["counters"]
+    context = SolveContext(bundle, gross_only(), prepared)
+    res = spec_solve(case, context, Budget(max_quotes=300_000), observer=observe)
+    block = res.search_stats["cycle_safe"]
     ref_swap: sor.BestSwap | None = captured.get("ref")
     ref_status: str | None = None
     ref_cycle = False
@@ -1249,21 +1495,25 @@ def probe_case(
         if ref_swap is None
         else [(list(r.pool_identifiers), r.percent) for r in ref_swap.routes]
     )
-    var_cycle = _is_cycle_error(res)
     return {
         "case_id": case.case_id,
         "port_status": ref_status or res.status.value,
         "port_cycle": ref_cycle,
         "variant_status": res.status.value,
-        "variant_cycle": var_cycle,
-        "admission_checks": counters["admission_checks"],
-        "rejected": counters["combinations_rejected_cycle"],
+        "variant_cycle": _is_cycle_error(res),
+        "admission_checks": block["admission_checks"],
+        "rejected": block["combinations_rejected_cycle"],
         "identical_selection": var_routes == ref_routes,
         "variant_gross": None
         if res.evaluation is None or res.status is not SolveStatus.OK
         else str(res.evaluation.gross_output),
         "port_gross": None if ref_gross is None else str(ref_gross),
         "quotes_executed": res.search_stats.get("quotes_executed"),
+        "selector_phase": block["selector"]["phase"],
+        "reference_selector_ran": bool(captured.get("ref_ran")),
+        "replay_phase": block["replay"]["phase"],
+        "reference_trajectory": block["reference_trajectory"],
+        "comparable_completed": block["comparable_completed"],
     }
 
 
