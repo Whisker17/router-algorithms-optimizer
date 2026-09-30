@@ -469,6 +469,68 @@ def test_arbitrary_or_unbounded_repair_objects_are_refused(repair: Any) -> None:
     assert any(d.startswith("S_SHAPE: repair") for d in view["details"])
 
 
+def _whi1553_harness() -> Any:
+    """WHI-1553's merged executable specification (dev 9adaa47), loaded by path under a
+    private name so none of its tests is collected twice."""
+    import importlib.util
+    import sys
+
+    path = REPO / "tests" / "routing" / "test_suffix_repair_contract.py"
+    spec = importlib.util.spec_from_file_location("_whi1553_suffix_repair", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_whi1553_repair_records_validate_and_render_at_runtime() -> None:
+    """The consumer shape WHI-1553 publishes (suffix-repair.md §8: `repair` without its path
+    counters, with `accepted_log`) is a valid runtime view, checked against the harness's own
+    bundle and its pools, and its accepted_log is rendered exactly."""
+    from pools.quote import metered_quotes
+    from routing.algorithms.base import Budget
+
+    h = _whi1553_harness()
+    seen_logs = 0
+    for name in ("structural_trap", "twin_pools"):
+        bundle, case, spec = h.fixture_case(name)
+        for options in (h.PRESET, h.REPAIR_OFF):
+            with metered_quotes(None) as meter:
+                got = h.repair_solve(case, h.context(bundle, spec["settings"]), Budget(), options)
+            rec = h.diagnostics_record(got, bundle, spec["settings"])
+            ctx = CheckContext(
+                run={
+                    "git_revision": "r",
+                    "bundle_hash": bundle.bundle_hash,
+                    "algorithm": rec["algorithm"],
+                    "effective_settings_sha256": "s",
+                },
+                request={"case_id": case.case_id, "token_in": case.token_in,
+                         "token_out": case.token_out, "amount_in": str(case.amount_in)},
+                status=got.result.status.value,
+                score=None if got.result.score is None else str(got.result.score),
+                objective="gross_only",
+                quotes_counted=meter.counted,
+                pools={pid: dx.pool_protocol(p) for pid, p in bundle.pools.items()},
+            )  # fmt: skip
+            view = dx.diagnostics_view(rec, ctx)
+            assert (view["state"], view["codes"]) == ("unavailable", []), (name, view)
+            assert view["repair"] == rec["repair"]
+            text = dx.fallback_text(view) or ""
+            log = rec["repair"]["accepted_log"]
+            for entry in log[:8]:
+                assert (
+                    f"checkpoint {entry['checkpoint']} alternative {entry['alternative']} "
+                    f"score {entry['score']}" in text
+                )
+            seen_logs += bool(log)
+            # the same record for another bundle's run is not this run's domain
+            other = CheckContext(**{**ctx.__dict__, "run": {**ctx.run, "bundle_hash": "e" * 64}})
+            assert dx.check_diagnostics(rec, other) == {"D_UNIVERSE"}
+    assert seen_logs >= 1  # at least one real acceptance log was exercised
+
+
 # ------------------------------------------------------------------ canonical r021 (DEFECT-1)
 
 
