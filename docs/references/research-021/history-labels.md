@@ -343,8 +343,12 @@ capped. It is exact wherever strict pruning is certified.
   `incremental_status: truncated`). A final chunk without an admissible path abandons the
   incremental plan; the retained `path_split` plan stands.
 - `truncated_by` precedence: `max_quotes`, then `max_candidates`, then `state_cap`.
-  `state_cap` never makes a result `timeout`; a complete valid plan stays `ok` and is
-  labeled capped.
+  A complete valid plan found after a state/frontier cap stays `ok` and is labeled capped
+  (`truncated_by: state_cap`). When no valid plan remains after such a cap truncated the
+  search, the result is `timeout` (a declared limit), never `no_route`: a capped search is
+  not proof that no route exists (R021-C/1 §10). *(WHI-1550 erratum: the earlier sentence
+  "`state_cap` never makes a result `timeout`" was overbroad; it held only for plan-bearing
+  results.)*
 - Statuses are `metis_inspired`'s: `ok`, `timeout` (a declared budget cut with no valid
   plan; never `no_route`), `incomplete_snapshot`, `no_route` (complete search only).
 - Diagnostics (`search_stats["r021"]`): `certificate: null`,
