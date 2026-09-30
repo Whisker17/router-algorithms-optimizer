@@ -29,6 +29,12 @@ plus `graph.label_hops` and `graph.label_pruning`, carries its source/inference 
 and is in neither the base nor the optimized group (a `custom` experimental comparator): a
 profile that names it runs it, and `main.py run|quote --strategies all` adds it to the
 default comparison (WHI-1540, `benchmark.strategies`), never as a reference or a default.
+
+`incremental_graph_repair` (WHI-1554, R021-C/1 §2 row 3) is the first implemented 0.2.1
+experimental identity: `incremental_graph`'s complete incumbent plus a bounded
+checkpoint-and-suffix repair (docs/references/research-021/suffix-repair.md), configured by
+validated `algorithm_options` (sha256-pinned preset). It is `custom`; `--strategies all`
+appends it after `metis_inspired` (`benchmark.strategies.R021_ADDITIONS`).
 """
 
 from __future__ import annotations
@@ -37,6 +43,7 @@ from routing.algorithms import (
     direct,
     direct_split,
     incremental_graph,
+    incremental_graph_repair,
     metis_inspired,
     path_split,
     single_path,
@@ -60,6 +67,8 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     # Named optimized strategies (WHI-1528): registered recipes, not references or defaults.
     uni_sor_strategies.ADAPTIVE: uni_sor_strategies.ADAPTIVE_FACTORY,
     uni_sor_strategies.OPTIMIZED: uni_sor_strategies.OPTIMIZED_FACTORY,
+    # 0.2.1 experimental identities (R021-C/1 §2), each once implemented (`custom` group).
+    incremental_graph_repair.NAME: incremental_graph_repair.FACTORY,  # WHI-1554
 }
 
 # The comparison groups, in their deterministic run order (base first, then optimized).

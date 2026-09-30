@@ -39,8 +39,8 @@ saves the effective document and replays it with `--strategies profile`, so a re
 re-expands against later defaults.
 
 `algorithm_options` (WHI-1548, R021-C/1 §2, §9.3): under `all`, every implemented 0.2.1
-identity of `R021_ADDITIONS` (contract order; empty until an implementation ticket registers
-one) is appended once after `metis_inspired` unless the source lists it. A derived document
+identity of `R021_ADDITIONS` (contract order; so far `incremental_graph_repair`, WHI-1554)
+is appended once after `metis_inspired` unless the source lists it. A derived document
 keeps the source's declared entry of every selected algorithm (a declared entry wins; a source
 that lists an options algorithm must itself declare its entry, like any other required
 setting), writes out the sha256-pinned preset (`benchmark.profile.preset_options`) of an added
@@ -67,7 +67,7 @@ from benchmark.profile import (
     strategy_entry,
     strategy_group,
 )
-from routing.algorithms import metis_inspired
+from routing.algorithms import incremental_graph_repair, metis_inspired
 from routing.algorithms.registry import ALGORITHMS, OPTIMIZED_STRATEGIES
 
 MODES = ("all", "base", "optimized", "profile")
@@ -91,7 +91,7 @@ METIS_GRAPH_KEYS = ("label_hops", "label_pruning", "chunks")
 # WHI-1548: the implemented R021-C/1 §2 identities `all` appends after `metis_inspired`, in
 # contract order. Each implementation ticket adds its own ID here with its registry entry,
 # validator and preset; no placeholder is ever listed.
-R021_ADDITIONS: tuple[str, ...] = ()
+R021_ADDITIONS: tuple[str, ...] = (incremental_graph_repair.NAME,)  # WHI-1554
 DERIVATION_NOTE = (
     "`algorithms`, `strategies` and `selection` are derived from the source; under `all`, a "
     f"graph.label_hops / label_pruning / chunks the source does not declare is copied for {METIS} "

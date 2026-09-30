@@ -79,6 +79,12 @@ No loader code ships with the template — write it when the first config file l
   algorithms including `uni_sor_port` (WHI-1444; it needs all three `search.*` keys). It
   is used once over the matched V2/V3 cohort cut (`main.py corpus cohort`) and once over
   the full five-source corpus.
+- `incremental_graph_repair/` (WHI-1554) — `preset_v1.yaml`, the sha256-pinned bounded
+  `algorithm_options` preset of the experimental `incremental_graph_repair` (not a run
+  profile; `--strategies all` writes it out), and three smoke-scale, unvalidated run
+  profiles running it next to `incremental_graph` with daily_gross's shared values:
+  `repair_on.yaml` (the preset), `repair_off.yaml` (the repair-off control) and `stress.yaml`
+  (larger repair caps; explicit `--strategies profile` only).
 - `cost_calibration.yaml` — the empirical execution-cost calibration definition (WHI-1445,
   `snapshot/cost_evidence.py`): the snapshot, the absolute Dune window (ending at the
   snapshot timestamp), the pool-family label map, sampling seed/modulus, the train/holdout

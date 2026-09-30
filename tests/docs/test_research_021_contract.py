@@ -28,6 +28,7 @@ from typing import Any
 import pytest
 
 from benchmark.objective import gross_only
+from benchmark.strategies import R021_ADDITIONS
 from routing.algorithms import direct_split
 from routing.algorithms.base import AlgorithmConfig, Budget, SolveContext, SolveStatus
 from routing.algorithms.registry import ALGORITHMS, BASE_STRATEGIES, OPTIMIZED_STRATEGIES
@@ -448,8 +449,11 @@ def test_identities_match_the_registry_without_placeholders() -> None:
         "cfmm_dual",
     ]
     assert set(roster) <= set(ALGORITHMS)
-    # Frozen names only: no 0.2.1 factory is registered by the contract issue.
-    assert not set(new) & set(ALGORITHMS)
+    # Frozen names; a 0.2.1 factory is registered only by its implementation issue, and no
+    # unimplemented identity has a placeholder (the contract issue registered none).
+    implemented = ["incremental_graph_repair"]  # WHI-1554
+    assert [name for name in new if name in ALGORITHMS] == implemented
+    assert R021_ADDITIONS == tuple(implemented)  # `--strategies all` appends exactly these
     assert len(roster) + len(new) == 14
 
 

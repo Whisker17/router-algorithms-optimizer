@@ -1,0 +1,42 @@
+# incremental_graph_repair REPAIR-OFF control profile (the repair_off_on arm: the preset's
+# values with repair: false; WHI-1554, R021-P08;
+# docs/references/research-021/suffix-repair.md §7). Runs the reference incremental_graph
+# and the repair identity side by side under ONE shared objective, search, graph and budget.
+# Replay it literally with `main.py run|quote --strategies profile`.
+#
+# search/graph/budget repeat config/daily_gross.yaml (2 hops, 200 chunks, 50000 quotes) --
+# the "2 hops, 200 chunks" setting of the suffix-repair.md §10 tuning probe. SMOKE-SCALE and
+# UNVALIDATED here (one measured attempt, no warmup): these profiles exist for the on/off/
+# stress CLI checks, not as a performance campaign (that is WHI-1562's); no speed claim.
+schema_version: 2
+algorithms:
+  - incremental_graph
+  - incremental_graph_repair
+objective:
+  mode: gross_only
+search:
+  max_hops: 2
+  max_splits: 4
+  percent_step: 5
+graph:
+  chunks: 200
+budget:
+  time_limit_seconds: 120
+  max_quotes: 50000
+  max_candidates: null      # explicitly no candidate cap: quotes/time bound every search
+algorithm_options:
+  incremental_graph_repair:          # the preset's values with repair: false ({kind: override});
+    repair: false                    # must reproduce incremental_graph exactly
+    max_checkpoints: 4
+    alternatives_per_checkpoint: 2
+    max_repair_attempts: 8
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1554
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

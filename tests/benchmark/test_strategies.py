@@ -5,7 +5,8 @@ End to end through the ordinary CLI, spawned workers and saved records (offline,
 fixtures), plus the profile-derivation and validation rules behind it:
 
 - the default `all` runs the source profile's base strategies, then the two named
-  optimized strategies, then the experimental `metis_inspired` (WHI-1540), sequentially;
+  optimized strategies, then the experimental `metis_inspired` (WHI-1540) and the implemented
+  0.2.1 identity `incremental_graph_repair` (WHI-1554, its pinned preset), sequentially;
   `base` / `optimized` / `profile` select as documented, intentional subsets and custom
   algorithms are kept, nothing is duplicated; a listed `metis_inspired` keeps its place and
   every declared graph setting, undeclared ones come from the pinned M4 profile, and an
@@ -55,7 +56,10 @@ MIXED = REPO / "tests" / "fixtures" / "routing" / "mantle_mixed"
 LB = REPO / "tests" / "fixtures" / "moe_lb" / "bundle"
 SIX = list(BASE_STRATEGIES)
 EIGHT = [*SIX, *OPTIMIZED_STRATEGIES]
-NINE = [*EIGHT, METIS]
+# The implemented 0.2.1 identities `all` appends after metis_inspired (R021-C/1 §2; WHI-1554).
+REPAIR = "incremental_graph_repair"
+ADDED = [METIS, REPAIR]
+ALL = [*EIGHT, *ADDED]
 M4_GRAPH = {"label_hops": 4, "label_pruning": True}  # config/metis_challenge/m4.yaml's
 STANDARD = ("daily_gross.yaml", "daily.yaml", "full_gross.yaml", "full.yaml")
 TEST_ALARM_SECONDS = 240
@@ -132,9 +136,9 @@ def test_standard_profiles_default_to_six_base_two_optimized_then_metis(name: st
     source = REPO / "config" / name
     before = source.read_bytes()
     document, profile = _derive(_doc(name), "all")
-    assert list(profile.algorithms) == NINE == document["algorithms"]
+    assert list(profile.algorithms) == ALL == document["algorithms"]
     assert document["selection"]["groups"] == {
-        "base": SIX, "optimized": list(OPTIMIZED_STRATEGIES), "custom": [METIS]
+        "base": SIX, "optimized": list(OPTIMIZED_STRATEGIES), "custom": ADDED
     }  # fmt: skip
     raw = _doc(name)
     # everything but the selection is the source's own (objective, search, budget, ...)
@@ -147,10 +151,14 @@ def test_standard_profiles_default_to_six_base_two_optimized_then_metis(name: st
     # the base strategies receive exactly what they did before
     assert profile.algorithm_config(ALGORITHMS["incremental_graph"]).params == {
         **raw["search"], **raw["graph"]}  # fmt: skip
-    # deriving `all` from the saved nine (twice) changes nothing but the source record
+    # the added repair identity: the shared search/graph values and its pinned preset
+    assert profile.algorithm_config(ALGORITHMS[REPAIR]).params == {
+        **raw["search"], **raw["graph"]}  # fmt: skip
+    assert profile.algorithm_options[REPAIR]["source"]["kind"] == "preset"
+    # deriving `all` from the saved roster (twice) changes nothing but the source record
     again, repeated = _derive(document, "all")
     third = _derive(again, "all")[0]
-    assert again["algorithms"] == third["algorithms"] == NINE
+    assert again["algorithms"] == third["algorithms"] == ALL
     assert again["graph"] == third["graph"] == document["graph"]
     assert again["strategies"] == third["strategies"] == document["strategies"]
     assert repeated.resolved()["algorithm_config"] == profile.resolved()["algorithm_config"]
@@ -179,11 +187,11 @@ def test_custom_subsets_are_kept_and_nothing_is_duplicated() -> None:
     doc["strategies"] = {"uni_sor_optimized": profile_module.strategy_entry("uni_sor_optimized")}
     all_doc, profile = _derive(doc, "all")
     assert list(profile.algorithms) == [
-        "direct", "uni_sor_fast", "path_split", "uni_sor_adaptive", "uni_sor_optimized", METIS
+        "direct", "uni_sor_fast", "path_split", "uni_sor_adaptive", "uni_sor_optimized", *ADDED
     ]  # fmt: skip
     assert all_doc["selection"]["groups"] == {
         "base": ["direct", "path_split"], "optimized": list(OPTIMIZED_STRATEGIES),
-        "custom": ["uni_sor_fast", METIS],
+        "custom": ["uni_sor_fast", *ADDED],
     }  # fmt: skip
     # the raw configurable variant keeps its own global settings, never a preset's
     assert profile.algorithm_config(ALGORITHMS["uni_sor_fast"]).params[
@@ -203,20 +211,21 @@ def test_custom_subsets_are_kept_and_nothing_is_duplicated() -> None:
         # listed between others: keeps its place and every declared setting
         (["direct", METIS, "path_split"],
          {"chunks": 20, "label_hops": 3, "label_pruning": False},
-         ["direct", METIS, "path_split", *OPTIMIZED_STRATEGIES],
+         ["direct", METIS, "path_split", *OPTIMIZED_STRATEGIES, REPAIR],
          {"chunks": 20, "label_hops": 3, "label_pruning": False}),
         # listed last among base/custom, no optimized entries: optimized appended AFTER it
         (["direct", METIS], {"chunks": 11, "label_hops": 3, "label_pruning": False},
-         ["direct", METIS, *OPTIMIZED_STRATEGIES],
+         ["direct", METIS, *OPTIMIZED_STRATEGIES, REPAIR],
          {"chunks": 11, "label_hops": 3, "label_pruning": False}),
         ([*SIX, METIS], {"chunks": 200, "label_hops": 5, "label_pruning": True},
-         [*SIX, METIS, *OPTIMIZED_STRATEGIES],
+         [*SIX, METIS, *OPTIMIZED_STRATEGIES, REPAIR],
          {"chunks": 200, "label_hops": 5, "label_pruning": True}),
         # not listed, no graph at all: every key from M4 (chunks 50 only because it is absent)
-        (["direct", "path_split"], None, ["direct", "path_split", *OPTIMIZED_STRATEGIES, METIS],
+        (["direct", "path_split"], None,
+         ["direct", "path_split", *OPTIMIZED_STRATEGIES, *ADDED],
          {"chunks": 50, **M4_GRAPH}),
         # not listed, one label key declared: the declared one wins
-        (["direct"], {"label_pruning": False}, ["direct", *OPTIMIZED_STRATEGIES, METIS],
+        (["direct"], {"label_pruning": False}, ["direct", *OPTIMIZED_STRATEGIES, *ADDED],
          {"label_pruning": False, "label_hops": 4, "chunks": 50}),
     ],
 )  # fmt: skip
@@ -263,7 +272,7 @@ def test_metis_settings_come_only_from_the_pinned_m4_file(
         _derive(_doc(), "all")
     # a source declaring every Metis graph key needs nothing from the file
     declared = {**_doc(), "graph": {"chunks": 200, "label_hops": 3, "label_pruning": True}}
-    assert list(_derive(declared, "all")[1].algorithms) == NINE
+    assert list(_derive(declared, "all")[1].algorithms) == ALL
     assert list(_derive(_doc(), "base")[1].algorithms) == SIX  # other modes never read it
 
 
@@ -442,7 +451,7 @@ def _replay(command: str) -> list[str]:
     return parts[4:]
 
 
-def test_quote_defaults_to_nine_strategies_once_each_and_replays_exactly(
+def test_quote_defaults_to_the_all_roster_once_each_and_replays_exactly(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     source = REPO / "config" / "daily_gross.yaml"
@@ -454,23 +463,23 @@ def test_quote_defaults_to_nine_strategies_once_each_and_replays_exactly(
     out = capsys.readouterr().out
     run_dir = _saved_run(out)
     manifest = load_manifest(run_dir)
-    assert list(manifest.algorithms) == NINE
-    assert [e["algorithm"] for e in manifest.prepare_events] == NINE  # one worker each, in order
+    assert list(manifest.algorithms) == ALL
+    assert [e["algorithm"] for e in manifest.prepare_events] == ALL  # one worker each, in order
     assert {k: manifest.measurement[k] for k in ("warmup", "repeats", "memory_pass")} == {
         "warmup": 0, "repeats": 1, "memory_pass": False}  # fmt: skip
     records = load_case_records(run_dir)
-    assert [r["algorithm"] for r in records] == NINE  # each exactly once, --details included
+    assert [r["algorithm"] for r in records] == ALL  # each exactly once, --details included
     for record in records:
         assert record["measurement"]["attempts_completed"] == 1
         assert len(record["measurement"]["solve_seconds"]) == 1
-    metis = records[-1]["search"]  # the settings the solve actually used
+    metis = records[ALL.index(METIS)]["search"]  # the settings the solve actually used
     assert (metis["label_hops"], metis["label_pruning"], metis["chunks"]) == (4, True, 200)
     assert source.read_bytes() == before
     saved = (run_dir.parent.parent / "profile.yaml").read_text()
     assert f"{METIS_SETTINGS['path']} (sha256 {METIS_SETTINGS['sha256'][:12]})" in saved
     quote = json.loads((run_dir.parent.parent / "quote.json").read_text())
     assert quote["strategies"] == {"mode": "all", "groups": {
-        "base": SIX, "optimized": list(OPTIMIZED_STRATEGIES), "custom": [METIS]}}  # fmt: skip
+        "base": SIX, "optimized": list(OPTIMIZED_STRATEGIES), "custom": ADDED}}  # fmt: skip
     # compact rows and details are grouped; failures would sit in their group's rows
     table = out.split("Base strategies:", 1)[1]
     base_rows, optimized_rows = table.split("Optimized strategies:", 1)
@@ -480,8 +489,9 @@ def test_quote_defaults_to_nine_strategies_once_each_and_replays_exactly(
     for name in OPTIMIZED_STRATEGIES:
         assert re.search(rf"^{name}\s+ok\s", optimized_rows, re.M), name
         assert f"{name}: experimental optimized strategy, recipe L08" in out
-    assert re.search(rf"^{METIS}\s+ok\s+\S+\s+\d+\s+\S+.*\d s\s+\d+$",
-                     metis_rows.split("\n\n")[0], re.M)  # fmt: skip
+    for name in ADDED:
+        assert re.search(rf"^{name}\s+ok\s+\S+\s+\d+\s+\S+.*\d s\s+\d+$",
+                         metis_rows.split("\n\n")[0], re.M), name  # fmt: skip
     # its identity and recorded (different) hop domain; no claim of one shared search
     assert (
         f"{METIS}: experimental Metis-inspired Python variant, NOT Jupiter Metis (no "
@@ -518,6 +528,7 @@ def test_saved_eight_algorithm_profiles_and_programmatic_runs_stay_literal(
     document["algorithms"] = EIGHT
     document["graph"] = {"chunks": 20}
     document["selection"]["groups"]["custom"] = []
+    document.pop("algorithm_options")  # a pre-WHI-1548 saved profile has no options section
     old = _write(tmp_path, document, "old-effective.yaml")
     before = old.read_bytes()
     results = tmp_path / "results"
@@ -527,7 +538,7 @@ def test_saved_eight_algorithm_profiles_and_programmatic_runs_stay_literal(
         assert main.main([*argv, *(["--strategies", mode] if mode else [])]) == 0
         (run_dir,) = (results / str(mode)).iterdir()
         algorithms = list(load_manifest(run_dir).algorithms)
-        assert algorithms == (EIGHT if mode else NINE), mode  # only `all` adds Metis
+        assert algorithms == (EIGHT if mode else ALL), mode  # only `all` adds Metis + repair
     assert old.read_bytes() == before
     capsys.readouterr()
     for path, expected in ((old, EIGHT), (_write(tmp_path, _small(_doc()), "six.yaml"), SIX)):
@@ -552,7 +563,7 @@ def test_run_keeps_measurement_saves_the_selection_and_replays_it(
     out = capsys.readouterr().out
     assert "strategies: all -- Base strategies (6): direct" in out
     assert "Optimized strategies (2): uni_sor_adaptive, uni_sor_optimized; " in out
-    assert f"Experimental and other strategies (1): {METIS}" in out
+    assert f"Experimental and other strategies (2): {METIS}, {REPAIR}" in out
     (run_dir,) = results.iterdir()  # the effective profile lives inside the run directory
     manifest = load_manifest(run_dir)
     assert manifest.profile_path == str(run_dir / "profile.yaml")
@@ -561,18 +572,18 @@ def test_run_keeps_measurement_saves_the_selection_and_replays_it(
         f"copied for {METIS} from {METIS_SETTINGS['path']}"
         in (run_dir / "profile.yaml").read_text()
     )
-    assert list(manifest.algorithms) == NINE
+    assert list(manifest.algorithms) == ALL
     m = manifest.measurement
     assert (m["warmup"], m["repeats"], m["seed"], m["order"], m["memory_pass"]) == (
         1, 2, 11, "reverse", True)  # fmt: skip
-    assert manifest.memory_record_count == 9 * 4
+    assert manifest.memory_record_count == len(ALL) * 4
     assert manifest.resolved_profile["budget"] == _doc()["budget"]
     assert manifest.resolved_profile["algorithm_config"][METIS]["params"] == {
         **_doc()["search"], "chunks": 20, **M4_GRAPH}  # fmt: skip
     selection = manifest.resolved_profile["selection"]
     assert selection["source_profile"] == {"path": str(source), "sha256": _sha(source)}
     records = load_case_records(run_dir)
-    assert [r["algorithm"] for r in records[::4]] == NINE  # base, optimized, then Metis
+    assert [r["algorithm"] for r in records[::4]] == ALL  # base, optimized, then the added
     for record in records:
         assert record["measurement"]["attempts_completed"] == 3
         if record["algorithm"] in OPTIMIZED_STRATEGIES:
@@ -611,7 +622,7 @@ def test_reports_group_strategies_with_failures_and_escape_text(
     assert "<h2>Strategy groups</h2>" in grouped_html and "Strategy groups" not in legacy_html
     assert "<h3>Base strategies (6)</h3>" in grouped_html
     assert "<h3>Optimized strategies (2)</h3>" in grouped_html
-    assert "<h3>Experimental and other strategies (1)</h3>" in grouped_html
+    assert "<h3>Experimental and other strategies (2)</h3>" in grouped_html
     assert "Optimized strategy — experimental heuristic" in grouped_html
     assert "Metis-inspired experimental Python variant — NOT Jupiter Metis" in grouped_html
     assert (
@@ -621,11 +632,12 @@ def test_reports_group_strategies_with_failures_and_escape_text(
     assert "same objective, budget and search settings" not in html
     assert "src&lt;b&gt;&amp;&#x27;x&#x27;.yaml" in grouped_html and "src<b>" not in html
     rows = list(csv.DictReader((out / "strategy_groups.csv").open()))
-    assert [r["run_id"] for r in rows] == [grouped.name] * 9  # only the grouped run
+    assert [r["run_id"] for r in rows] == [grouped.name] * len(ALL)  # only the grouped run
     assert [(r["group"], r["algorithm"]) for r in rows] == [
         *(("base", a) for a in SIX),
         *(("optimized", a) for a in OPTIMIZED_STRATEGIES),
         ("custom", METIS),
+        ("custom", REPAIR),
     ]
     by_name = {r["algorithm"]: r for r in rows}
     lb_cases = len(load_manifest(grouped).measurement["case_order"])
@@ -654,7 +666,7 @@ def test_custom_profile_reports_the_recorded_execution_order_not_the_group_order
               "shortlist": {"probe_percents": [10, 100], "routes_per_probe": 3,
                             "direct_routes": 1}}  # fmt: skip
     source = _write(tmp_path, custom)
-    order = ["direct", "uni_sor_fast", "path_split", *OPTIMIZED_STRATEGIES, METIS]
+    order = ["direct", "uni_sor_fast", "path_split", *OPTIMIZED_STRATEGIES, *ADDED]
     assert main.main(["quote", "--bundle", str(CORPUS), "--profile", str(source),
                       "--token-in", "USDC", "--token-out", "USDT0", "--amount", "1500.25",
                       "--quotes-dir", str(tmp_path / "q"), "--details"]) == 0  # fmt: skip
@@ -684,4 +696,4 @@ def test_custom_profile_reports_the_recorded_execution_order_not_the_group_order
     html = (tmp_path / "report" / "report.html").read_text()
     assert f"the recorded order <code>{', '.join(order)}</code>" in html
     assert "base strategies first" not in html
-    assert "<h3>Experimental and other strategies (2)</h3>" in html
+    assert "<h3>Experimental and other strategies (3)</h3>" in html
