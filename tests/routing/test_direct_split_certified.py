@@ -270,7 +270,7 @@ def test_registered_once_as_a_custom_identity_between_history_and_repair() -> No
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES
     assert profile_module.strategy_group(NAME) == "custom"
     assert R021_ADDITIONS == (
-        metis_history.NAME, NAME, incremental_graph_repair.NAME, "uni_sor_cycle_safe"
+        metis_history.NAME, NAME, incremental_graph_repair.NAME, "uni_sor_cycle_safe", "cfmm_dual"
     )  # fmt: skip
     assert FACTORY.options_validator is dsc.validate_options  # module-level (picklable)
     assert FACTORY.capabilities == direct_split.CAPABILITIES
@@ -287,11 +287,11 @@ def test_registered_once_as_a_custom_identity_between_history_and_repair() -> No
             source_path=f"config/{name}",
             source_sha256="x",
         )
-        assert list(profile.algorithms)[-5:] == [
+        assert list(profile.algorithms)[-6:] == [
             "metis_inspired", metis_history.NAME, NAME, incremental_graph_repair.NAME,
-            "uni_sor_cycle_safe",
+            "uni_sor_cycle_safe", "cfmm_dual",
         ]  # fmt: skip
-        assert len(profile.algorithms) == 13
+        assert len(profile.algorithms) == 14
         assert document["algorithm_options"][NAME] == PRESET  # repository_grid only in `all`
         assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
         assert dict(profile.algorithm_config(FACTORY).options) == PRESET
@@ -1211,12 +1211,12 @@ def test_saved_pre_whi_1552_profiles_replay_literally() -> None:
     `--strategies profile`, and `base` / `optimized` never select it."""
     source = yaml.safe_load((REPO / "config" / "daily_gross.yaml").read_text())
     document, _ = derive(source, "all", source_path="s", source_sha256="x")
-    cyc = "uni_sor_cycle_safe"  # WHI-1556, added after this identity
+    cyc = ["uni_sor_cycle_safe", "cfmm_dual"]  # WHI-1556, WHI-1558, added after this identity
     for drop in (
-        [NAME, cyc],
-        [NAME, metis_history.NAME, cyc],
-        [NAME, metis_history.NAME, incremental_graph_repair.NAME, cyc],
-        [NAME, metis_history.NAME, incremental_graph_repair.NAME, cyc, "metis_inspired"],
+        [NAME, *cyc],
+        [NAME, metis_history.NAME, *cyc],
+        [NAME, metis_history.NAME, incremental_graph_repair.NAME, *cyc],
+        [NAME, metis_history.NAME, incremental_graph_repair.NAME, *cyc, "metis_inspired"],
     ):
         saved = json.loads(json.dumps(document))  # fmt: skip
         saved["algorithms"] = [a for a in saved["algorithms"] if a not in drop]
@@ -1229,6 +1229,6 @@ def test_saved_pre_whi_1552_profiles_replay_literally() -> None:
             saved["algorithm_options"] = options
         literal, profile = derive(saved, "profile", source_path="s", source_sha256="x")
         assert literal == saved and NAME not in profile.algorithms
-        assert len(profile.algorithms) == 13 - len(drop)
+        assert len(profile.algorithms) == 14 - len(drop)
     for mode in ("base", "optimized"):
         assert NAME not in derive(source, mode, source_path="s", source_sha256="x")[1].algorithms

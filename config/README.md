@@ -101,6 +101,11 @@ No loader code ships with the template — write it when the first config file l
   experimental `uni_sor_cycle_safe` (`options: {}`: the identity has no algorithm_options; not
   a run profile, `--strategies all` writes it out), and one smoke-scale, unvalidated run
   profile `matched.yaml` running it next to `uni_sor_port` with full_gross's 3-hop SOR values.
+- `cfmm_dual/` (WHI-1558) — `preset_v1.yaml`, the sha256-pinned bounded `algorithm_options`
+  preset `cfmm_dual/1` of the experimental `cfmm_dual` CPMM stage (not a run profile;
+  `--strategies all` writes it out), and one smoke-scale, unvalidated run profile `cpmm.yaml`
+  running it next to its matched controls `path_split` and `incremental_graph` with
+  full_gross's values. The CL stage (WHI-1559) adds its own files; these stay as they are.
 - `cost_calibration.yaml` — the empirical execution-cost calibration definition (WHI-1445,
   `snapshot/cost_evidence.py`): the snapshot, the absolute Dune window (ending at the
   snapshot timestamp), the pool-family label map, sampling seed/modulus, the train/holdout
