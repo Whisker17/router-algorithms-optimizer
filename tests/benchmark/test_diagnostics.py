@@ -257,6 +257,16 @@ class _Hostile(Mapping[str, Any]):
         return 1
 
 
+class _HostileDict(dict[str, Any]):
+    """Serializes as ordinary JSON, but every keyed access raises."""
+
+    def get(self, key: str, default: Any = None) -> Any:
+        raise RuntimeError("hostile")
+
+    def __getitem__(self, key: str) -> Any:
+        raise RuntimeError("hostile")
+
+
 def _deep(levels: int) -> dict[str, Any]:
     node: dict[str, Any] = {}
     root = node
@@ -266,7 +276,18 @@ def _deep(levels: int) -> dict[str, Any]:
     return root
 
 
-MALFORMED_TOP: list[Any] = [None, [], "r021", 58, 1.5, True, {"schema"}, _Hostile(), _deep(100_000)]
+MALFORMED_TOP: list[Any] = [
+    None,
+    [],
+    "r021",
+    58,
+    1.5,
+    True,
+    {"schema"},
+    _Hostile(),
+    _HostileDict(schema="r021.diagnostics/1"),
+    _deep(100_000),
+]
 
 
 @pytest.mark.parametrize("raw", MALFORMED_TOP, ids=lambda r: type(r).__name__)
