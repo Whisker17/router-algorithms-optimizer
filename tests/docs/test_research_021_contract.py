@@ -451,7 +451,7 @@ def test_identities_match_the_registry_without_placeholders() -> None:
     assert set(roster) <= set(ALGORITHMS)
     # Frozen names; a 0.2.1 factory is registered only by its implementation issue, and no
     # unimplemented identity has a placeholder (the contract issue registered none).
-    implemented = ["incremental_graph_repair"]  # WHI-1554
+    implemented = ["metis_history", "incremental_graph_repair"]  # WHI-1550, WHI-1554
     assert [name for name in new if name in ALGORITHMS] == implemented
     assert R021_ADDITIONS == tuple(implemented)  # `--strategies all` appends exactly these
     assert len(roster) + len(new) == 14

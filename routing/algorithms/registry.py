@@ -35,6 +35,12 @@ experimental identity: `incremental_graph`'s complete incumbent plus a bounded
 checkpoint-and-suffix repair (docs/references/research-021/suffix-repair.md), configured by
 validated `algorithm_options` (sha256-pinned preset). It is `custom`; `--strategies all`
 appends it after `metis_inspired` (`benchmark.strategies.R021_ADDITIONS`).
+
+`metis_history` (WHI-1550, R021-C/1 §2 row 1) is `metis_inspired`'s chunk allocation with a
+history/admission-aware label search (docs/references/research-021/history-labels.md; NOT
+Jupiter Metis), configured by validated `algorithm_options` (sha256-pinned preset). It is
+`custom`; `--strategies all` appends it right after `metis_inspired`, before
+`incremental_graph_repair` (contract order).
 """
 
 from __future__ import annotations
@@ -44,6 +50,7 @@ from routing.algorithms import (
     direct_split,
     incremental_graph,
     incremental_graph_repair,
+    metis_history,
     metis_inspired,
     path_split,
     single_path,
@@ -68,6 +75,7 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     uni_sor_strategies.ADAPTIVE: uni_sor_strategies.ADAPTIVE_FACTORY,
     uni_sor_strategies.OPTIMIZED: uni_sor_strategies.OPTIMIZED_FACTORY,
     # 0.2.1 experimental identities (R021-C/1 §2), each once implemented (`custom` group).
+    metis_history.NAME: metis_history.FACTORY,  # WHI-1550
     incremental_graph_repair.NAME: incremental_graph_repair.FACTORY,  # WHI-1554
 }
 
