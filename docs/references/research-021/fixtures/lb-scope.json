@@ -39,6 +39,26 @@
         "473671744857115036"
       ]
     },
+    "K1b": {
+      "note": "rounding regression: R concave on the K1 state, exact integer output not concave (outputs/marginals from the independent floor/ceil formula)",
+      "amounts": [
+        "19999",
+        "20000",
+        "20001",
+        "20002"
+      ],
+      "outputs": [
+        "19998",
+        "19999",
+        "19999",
+        "20000"
+      ],
+      "marginals": [
+        1,
+        0,
+        1
+      ]
+    },
     "K3": {
       "static": {
         "base_factor": 5000,
@@ -275,8 +295,12 @@
     "| **B1. Fixed-fee model transfer** | apply WHI-1551's CPMM tangent / WHI-1557's CPMM market oracle (or any fixed-fee concave/convex CFMM premise) to LB | a fixed fee, a state-only trading function, concavity | `no_go` \u2014 counterexamples K1, K3, K4, K5 and fork facts (\u00a74) |",
     "| **B2. LB-native certified relaxation** | a rational piecewise-linear upper function per LB swap, usable for certified bounds | lemma L1 (\u00a74.6), concave envelopes, complete bin range, a consumer and a contract ceiling | `blocked` (\u00a77) |",
     "| **C. Economic cost calibration** | net-output ranking of LB plans | cost cohorts for LB shapes | `blocked` beyond cost-model v1's supported cohorts (\u00a78) |",
-    "| `direct_split_certified` | LB `unsupported` | ceiling `constant_product` only; B1 `no_go`, B2 `blocked` |",
-    "**`narrow_go`**, scoped to A."
+    "**`narrow_go`**, scoped to A.",
+    "**Concavity domain `D_conc` (a property of `R`, not of `q`).** `R` is concave exactly when its",
+    "| LB exact integer output `q` is linear within a bin / concave in input | **counterexample**, including on `D_conc` (fee ceiling and output floor) | K1b (marginals 1, 0, 1); K3 |",
+    "| LB rational relaxation `R` is concave in input | **counterexample** in general; **supported** on `D_conc` (exact per-state slope check); a property of `R` only | K3; \u00a74.6, \u00a76 census |",
+    "| `direct_split_certified` | LB never a candidate. `unsupported (non_constant_product_direct_pool)` iff **any direct pool** of the pair is not CPMM, whether CL or LB (WHI-1551 \u00a72.1, no subset fallback). LB pools reachable only through multi-hop routes do not matter | ceiling `constant_product` only; B1 `no_go`, B2 `blocked` |",
+    "> - Preserve every restricted identity's **actual** status. A case is not `unsupported` merely"
   ],
   "fork_facts": {
     "swaps_with_events": 127,
@@ -411,6 +435,72 @@
         "MIXED": 2,
         "LB": 1,
         "MIXED_LB": 4
+      }
+    }
+  },
+  "mixed_universe_scope": {
+    "note": "Hand-derived from the pool lists (max_hops 2). mantle_mixed: every pair has a Moe Classic direct pool (CPMM markets and SOR cohort routes exist) and reaches LB; direct pools also include CL and/or LB, so direct_split_certified is refused by its direct-pool rule. Removing the CL USDC/WMNT pool leaves Classic as the only direct pool: supported although LB routes remain. moe_lb is LB-only: all three unsupported. uni_sor_cycle_safe shares uni_sor_port's candidates and cohort rule; its real runtime identity is absent, so uni_sor_port's actual solve status is the checked proxy (no placeholder identity).",
+    "removed_pool": "0x086f766b336dfb0f705dc030db01993b22d81266",
+    "mantle_mixed": {
+      "usdt_wmnt_evidence_split": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      },
+      "wmnt_usdt_evidence_split": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      },
+      "usdc_wmnt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      },
+      "usdc_usdt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      }
+    },
+    "mantle_mixed_without_cl_usdc_wmnt": {
+      "usdc_wmnt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "ok",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      }
+    },
+    "moe_lb": {
+      "usdc_usdt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "unsupported:protocol_ceiling",
+        "cfmm_dual_cpmm_cl": "unsupported:protocol_ceiling",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "unsupported"
+      },
+      "usdc_usdt_dust": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "unsupported:protocol_ceiling",
+        "cfmm_dual_cpmm_cl": "unsupported:protocol_ceiling",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "unsupported"
+      },
+      "usdc_wmnt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "unsupported:protocol_ceiling",
+        "cfmm_dual_cpmm_cl": "unsupported:protocol_ceiling",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "unsupported"
       }
     }
   }

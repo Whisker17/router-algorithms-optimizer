@@ -18,9 +18,10 @@ Research evidence, not a strategy. Four kinds of evidence are kept apart:
    profiled or timed.
 
 `PYTHONPATH=. uv run python tests/routing/test_lb_scope_contract.py probe <bundle> <out.json>`
-is the bounded tuning-split census of memo §6 (enumeration and per-pool checks only, no
-solve, no timing). `... examples [probe.json]` rewrites the fixture from the hand model and
-the fork evidence.
+is the bounded tuning-split census of memo §6: route enumeration, per-pool checks and a
+seeded census of exact pool quotes (lemma L1); no solver, plan selection or timed
+benchmark. `... examples [probe.json]` rewrites the fixture from the hand model and the
+fork evidence.
 """
 
 from __future__ import annotations
@@ -49,7 +50,7 @@ from routing.algorithms.path_split import split_path_plan
 from routing.algorithms.registry import ALGORITHMS
 from routing.evaluator import EvalStatus, Evaluation, evaluate
 from routing.plan import RoutePlan
-from routing.search import QuoteCache
+from routing.search import QuoteCache, build_graph_index, enumerate_paths
 from snapshot.bundle import load_bundle
 from snapshot.config import load_catalog
 from snapshot.models import (
@@ -325,9 +326,21 @@ def test_counterexample_static_parameters_are_protocol_valid() -> None:
     assert not static_params_valid(replace(bad, filter_period=601), 1)
 
 
-def test_k1_lb_bin_is_linear_not_the_cpmm_curve() -> None:
-    """K1: inside one bin the exact LB output is `a - ceil(a*f/1e18)` at price 1 (linear),
-    not the fixed-fee CPMM hyperbola on any reserves: an exact LB quote is not a CPMM."""
+def _k1_state() -> LiquidityBookPoolState:
+    k = FIX["counterexamples"]["K1"]
+    return lb_state(
+        active=R,
+        bins={R: (int(k["bin_x"]), 0)},
+        static=static_from(k["static"]),
+        variable=LBVariableFeeParameters(0, 0, R, T - 3600),
+    )
+
+
+def test_k1_lb_bin_relaxation_is_linear_not_the_cpmm_curve() -> None:
+    """K1: inside one bin at price 1 the exact LB output is `a - ceil(a*f/1e18)`, whose
+    rational relaxation R is the line (1 - f)*a; it is not the fixed-fee CPMM hyperbola on
+    any reserves: an exact LB quote is not a CPMM. (The integer output itself is neither
+    linear nor concave: K1b.)"""
     k = FIX["counterexamples"]["K1"]
     static = static_from(k["static"])
     state = lb_state(
@@ -343,9 +356,30 @@ def test_k1_lb_bin_is_linear_not_the_cpmm_curve() -> None:
         a = int(a_s)
         assert a - ceil_div(a * fee, ONE) == int(out_s) == hand_quote(book, a, T)
         assert sim_quote(state, a)[0] == int(out_s)
+        assert relaxation(state, False, a) == Fraction(a * (ONE - fee), ONE)  # linear R
         # Moe Classic / UniswapV2 getAmountOut on (X=bin_x, Y=bin_x) at the same fee:
         cpmm = (a * (ONE - fee) * int(k["bin_x"])) // (int(k["bin_x"]) * ONE + a * (ONE - fee))
         assert cpmm == int(cpmm_s) < int(out_s)
+
+
+def test_k1b_concave_relaxation_does_not_make_the_exact_output_concave() -> None:
+    """K1b (rounding regression): on the K1 state R is concave (one bin, one slope), yet
+    the exact integer output at 19,999..20,002 has marginals 1, 0, 1. `D_conc` is a
+    property of R only; no discrete concavity of q is claimed anywhere."""
+    k = FIX["counterexamples"]["K1b"]
+    state = _k1_state()
+    assert is_concave(state, False)
+    fee = int(FIX["counterexamples"]["K1"]["fee"])
+    amounts = [int(a) for a in k["amounts"]]
+    hand = [a - ceil_div(a * fee, ONE) for a in amounts]  # independent floor/ceil formula
+    assert [str(q) for q in hand] == k["outputs"]
+    assert [sim_quote(state, a)[0] for a in amounts] == hand
+    marginals = [b - a for a, b in zip(hand, hand[1:], strict=False)]
+    assert marginals == k["marginals"]
+    assert any(b > a for a, b in zip(marginals, marginals[1:], strict=False))  # not concave
+    for a, q in zip(amounts, hand, strict=True):
+        bound = relaxation(state, False, a)
+        assert bound is not None and q <= bound  # L1 still holds
 
 
 def test_k3_reachable_state_has_the_recorded_fee_tuple() -> None:
@@ -393,10 +427,12 @@ def test_k3_nonconcave_output_breaks_the_tangent_bound() -> None:
     assert qs[2] - tangent > Fraction(int(k["tangent_violation_min"]))
 
 
-def test_k5_same_book_other_timestamp_is_concave_and_differs() -> None:
+def test_k5_same_book_other_timestamp_has_concave_relaxation_and_differs() -> None:
     """K5: the same bins and fee tuple quoted at T + 700 (dt >= decayPeriod) reset
-    idReference to the active bin: fees rise across bins, secants fall, and every output
-    differs from the T quote -- the quote is a function of the frozen timestamp too."""
+    idReference to the active bin: fees rise across bins, so R is concave (exact slope
+    check); the three sampled exact secants fall (consistent with R, not a proof of
+    discrete concavity, K1b), and every output differs from the T quote -- the quote is a
+    function of the frozen timestamp too."""
     k = FIX["counterexamples"]["K5"]
     s1 = k3_state()
     later = replace(s1, block_timestamp=T + int(k["dt"]))
@@ -405,6 +441,7 @@ def test_k5_same_book_other_timestamp_is_concave_and_differs() -> None:
     qs = [hand_quote(book, a, T + int(k["dt"])) for a in (z, m, u)]
     assert [str(q) for q in qs] == k["outputs"]
     assert [sim_quote(later, a)[0] for a in (z, m, u)] == qs
+    assert is_concave(later, False) and not is_concave(s1, False)
     assert Fraction(qs[2] - qs[1], u - m) < Fraction(qs[1] - qs[0], m - z)
     assert all(
         str(q) != o for q, o in zip(qs, FIX["counterexamples"]["K3"]["outputs"], strict=True)
@@ -1000,6 +1037,82 @@ def test_no_unproved_lb_capability_for_the_five_identities() -> None:
         assert line in MEMO, line
 
 
+@cache
+def _certify() -> Any:
+    """The committed WHI-1551 executable specification `certify` (read-only reuse)."""
+    spec = importlib.util.spec_from_file_location(
+        "_ia_contract", REPO / "tests" / "routing" / "test_integer_allocation_contract.py"
+    )
+    assert spec is not None and spec.loader is not None
+    mod: Any = importlib.util.module_from_spec(spec)
+    sys.modules["_ia_contract"] = mod
+    spec.loader.exec_module(mod)
+    return mod.certify
+
+
+def restricted_scopes(bundle: SnapshotBundle, case: Case, hops: int) -> dict[str, Any]:
+    """Scope of the three LB-excluding identities, each by its own committed rule:
+    `direct_split_certified` by WHI-1551's `certify` (direct pools only), `cfmm_dual` by
+    WHI-1557's `market_universe` per stage (§6.1: unsupported iff M is empty while a
+    <= max_hops simple path exists through non-stage pools), `uni_sor_cycle_safe` by
+    `uni_sor_port`'s cohort rule (same candidates; D-4), read from its real `solve`."""
+    import cfmm_contract_model as cfmm
+
+    preset = json.loads(
+        (R021 / "fixtures" / "integer-allocation.json").read_text(encoding="utf-8")
+    )["preset"]["options"]
+    dsc = _certify()(bundle, case, gross_only(), max_splits=4, percent_step=5, options=preset)
+    dsc_scope = dsc.record["scope"]
+    paths = list(enumerate_paths(build_graph_index(bundle), case.token_in, case.token_out, hops))
+
+    def cfmm_scope(protocols: list[str]) -> str:
+        if cfmm.market_universe(bundle, case, hops, protocols):
+            return "in_scope"
+        return "unsupported:protocol_ceiling" if paths else "no_route"
+
+    port = _port(bundle, case, {"max_hops": hops, "max_splits": 4, "percent_step": 5})
+    return {
+        "lb_touching": any(
+            isinstance(bundle.pools[e.pool_id], LiquidityBookPoolState)
+            for path in paths
+            for e in path
+        ),
+        "direct_split_certified": dsc.status.value
+        if dsc_scope["supported"]
+        else f"unsupported:{dsc_scope['reason']}",
+        "cfmm_dual_cpmm": cfmm_scope([cfmm.CPMM]),
+        "cfmm_dual_cpmm_cl": cfmm_scope([cfmm.CPMM, cfmm.CL]),
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": port.status.value,
+    }
+
+
+def test_restricted_identities_keep_actual_status_on_mixed_universes() -> None:
+    """Memo §11: an LB-touching case is not thereby `unsupported`. On the real mixed
+    V3/LB/Classic states every case touches LB, yet `cfmm_dual` has CPMM markets and SOR
+    routes; `direct_split_certified` is refused only by its non-CPMM *direct* pools
+    (CL or LB alike), and with the CL direct pool removed a USDC->WMNT case that still
+    reaches LB is supported. On the LB-only bundle all three are `unsupported`. Expected
+    rows are derived by hand from the pool lists (fixture `mixed_universe_scope`)."""
+    want = FIX["mixed_universe_scope"]
+    mixed = load_bundle(MANTLE_MIXED)
+    no_cl_direct = replace(
+        mixed,
+        pools={k: v for k, v in mixed.pools.items() if k != want["removed_pool"]},
+    )
+    moe = load_bundle(MOE_LB)
+    got = {
+        "mantle_mixed": {c.case_id: restricted_scopes(mixed, c, 2) for c in mixed.cases},
+        "mantle_mixed_without_cl_usdc_wmnt": {
+            "usdc_wmnt_small": restricted_scopes(
+                no_cl_direct, no_cl_direct.case("usdc_wmnt_small"), 2
+            )
+        },
+        "moe_lb": {cid: restricted_scopes(moe, moe.case(cid), 2) for cid in want["moe_lb"]},
+    }
+    assert got == {k: want[k] for k in got}
+    assert all(row["lb_touching"] for row in got["mantle_mixed"].values())
+
+
 def test_memo_numbers_match_the_fixture() -> None:
     cx = FIX["counterexamples"]
     numbers = [
@@ -1146,6 +1259,10 @@ def build_fixture(probe_json: str | None) -> dict[str, Any]:
     k1["cpmm_same_reserves"] = [
         str((int(a) * (ONE - fee) * bx) // (bx * ONE + int(a) * (ONE - fee))) for a in k1["amounts"]
     ]
+    k1b = cx["K1b"]
+    outs = [int(a) - ceil_div(int(a) * fee, ONE) for a in k1b["amounts"]]
+    k1b["outputs"] = [str(q) for q in outs]
+    k1b["marginals"] = [b - a for a, b in zip(outs, outs[1:], strict=False)]
     # K3 (post state from the admitted transition = input; outputs from the hand model)
     s1 = k3_state()
     cx["K3"]["post_bins"] = [list(map(str, s1.bins[R])), list(map(str, s1.bins[R + 1]))]

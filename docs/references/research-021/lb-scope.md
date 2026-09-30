@@ -6,7 +6,7 @@
 | Publication key | `R021-P15`, WHI-1560, Release 0.2.1 (`ed16e106-fa3e-4b8a-b022-e7208eb8ef41`) |
 | Repository base | `origin/dev` `1ce50763b84b7daf4eec844665848b5b1c27fb6a` (B `81559ab` + WHI-1547/1549/1557/1551 research). `pools/`, `routing/`, `snapshot/` unchanged since B |
 | Outcome | **`narrow_go`** for scope A only: a future, separately named, exact-quote identity `uni_sor_lb` (§5), outside the 0.2.1 roster. Scope B1 (fixed-fee CPMM/CFMM model transfer to LB) **`no_go`**. Scope B2 (an LB-native certified relaxation) **`blocked`**. Scope C (LB economic cost calibration) **`blocked`** |
-| Records | [`fixtures/lb-scope.json`](fixtures/lb-scope.json): counterexamples K1–K5, fork facts, L1 random-suite parameters, the `uni_sor_lb` spec records, the tuning census |
+| Records | [`fixtures/lb-scope.json`](fixtures/lb-scope.json): counterexamples K1, K1b, K3–K5, fork facts, the mixed-universe scope rows, L1 random-suite parameters, the `uni_sor_lb` spec records, the tuning census |
 | Executable check | `uv run pytest tests/routing/test_lb_scope_contract.py -q` |
 | Downstream | WHI-1562 (LB disposition in the roster report); amendment text in §11. No new issue is created by this memo |
 
@@ -31,8 +31,9 @@ Evidence classes stay apart (R021-C/1 §1):
   shares no code with `pools/liquidity_book.py`.
 - *Simulator replays* use the admitted `pools.liquidity_book` and the unchanged evaluator.
 - The *executable specification* is `lb_sor_select`. It is never registered or timed.
-- The *tuning census* is enumeration and per-pool checks on `bundle_tuning` only. There is no
-  solve, no timing and no report-split read.
+- The *tuning census* runs on `bundle_tuning` only: route enumeration, per-pool checks and a
+  bounded, seeded census of 1,303 exact pool quotes (lemma L1). There is no solver, no plan
+  selection, no timing and no report-split read.
 
 No number here is a measured solve, a benchmark result or a gain.
 
@@ -125,10 +126,18 @@ pristine fork state.
 ### 4.2 K1 — an exact LB quote is not a CPMM
 
 The pool has one bin at price 1, X reserve 10¹⁸ and a fixed fee of 5·10¹³ (0.005 %). The exact
-output is the linear `a − ⌈a·f/10¹⁸⌉`: 99,995,000,000,000,000 for `a = 10¹⁷`. The fixed-fee
-CPMM formula on the same reserves (10¹⁸, 10¹⁸) and fee gives 90,904,958,658,902,995. The LB
-curve is piecewise linear with a kink at each bin edge. It is not the CPMM hyperbola for any
-reserve choice, so a CPMM derivative or closed-form oracle is not an LB model.
+output is `a − ⌈a·f/10¹⁸⌉`: 99,995,000,000,000,000 for `a = 10¹⁷`. The fixed-fee CPMM formula
+on the same reserves (10¹⁸, 10¹⁸) and fee gives 90,904,958,658,902,995. The LB output's
+rational relaxation `R` (§4.6) is piecewise linear, with a kink at each bin edge; here it is the
+line `(1 − f)·a`. It is not the CPMM hyperbola for any reserve choice, so a CPMM derivative or
+closed-form oracle is not an LB model.
+
+**K1b — the exact output is not linear or concave, even here.** On the same state `R` is
+concave (one bin, one slope). The exact outputs at `a` = 19,999, 20,000, 20,001, 20,002 are
+19,998, 19,999, 19,999, 20,000. The integer marginals are 1, 0, 1, so they rise, because of the
+fee ceiling and the output floor. Every "linear" or "concave" statement in this memo is about
+`R`, never about the integer quote `q`. `q` is bounded by `R` (L1), and nothing stronger is
+claimed.
 
 ### 4.3 K3 — reachable nonconcavity breaks every local tangent bound
 
@@ -149,8 +158,9 @@ A Y→X swap now moves back toward `idReference`:
 At the points z = 10¹⁷, m = 4·10¹⁷ and u = 1.6·10¹⁸ the outputs are 99,895,000,000,000,000,
 399,580,000,000,000,000 and 1,598,409,845,525,776,571. The secant from m to u exceeds the
 secant from z to m. The in-bin tangent at z, `q(z) + (1 − f₀)(u − z) = 1,598,320,000,000,000,000`,
-lies **8.98·10¹³ below** `q(u)`, which is far beyond rounding. The exact output is not
-concave, and the hypograph of the swap is not convex. So:
+lies **8.98·10¹³ below** `q(u)`, which is far beyond rounding. Here the relaxation `R` is
+itself nonconcave (exact slope check), so the continuous trading set of this swap is not
+convex. The exact output's secants also rise at a scale far above rounding. So:
 
 - a tangent/secant upper bound in the style of WHI-1551's Rule T is invalid on LB without a
   concavity proof;
@@ -160,7 +170,9 @@ concave, and the hypograph of the swap is not convex. So:
 ### 4.4 K5 — the quote depends on the frozen timestamp
 
 The same bins and fee tuple quoted at `T + 700` (`dt ≥ decayPeriod`) reset `idReference` to
-the active bin. The fees rise across bins and the secants fall (concave). The outputs are
+the active bin. The fees rise across bins, so `R` is concave (exact slope check). The three
+sampled exact secants fall. That is consistent with `R`, but it is not discrete concavity of
+`q` (K1b). The outputs are
 99,995,000,000,000,000, 399,980,000,000,000,000 and 1,599,810,255,451,734,923, and all three
 differ from K3. An LB model is therefore a function of `(bins, fee state, block_timestamp)`,
 not of reserves. Any certificate domain would have to bind all three.
@@ -216,7 +228,9 @@ lemma.
 
 L1 needs **no** concavity: it holds on K3.
 
-**Concavity domain `D_conc`.** `R` is concave exactly when its slopes do not increase. This is
+**Concavity domain `D_conc` (a property of `R`, not of `q`).** `R` is concave exactly when its
+slopes do not increase. `q` itself is never claimed concave on `D_conc`: K1b is in `D_conc` and
+has rising integer marginals. This is
 decidable per (state, direction) with exact rationals over the collected bins, because it
 uses the protocol's own integer prices. Two sufficient reasons:
 
@@ -241,7 +255,8 @@ This is a snapshot- and parameter-specific fact, not a protocol guarantee (K3).
 | --- | --- | --- |
 | LB fee is fixed per pool | **counterexample** | fork 48/127 swaps, K3, K5 |
 | LB output is a CPMM-like curve | **counterexample** | K1 |
-| LB exact output is concave in input | **counterexample** in general; **supported** on `D_conc` (exact per-state check) | K3; §4.6, §6 census |
+| LB exact integer output `q` is linear within a bin / concave in input | **counterexample**, including on `D_conc` (fee ceiling and output floor) | K1b (marginals 1, 0, 1); K3 |
+| LB rational relaxation `R` is concave in input | **counterexample** in general; **supported** on `D_conc` (exact per-state slope check); a property of `R` only | K3; §4.6, §6 census |
 | a local tangent/secant bounds LB output | **counterexample** | K3 (8.98·10¹³ violation) |
 | LB pool = fixed trading function of reserves (CFMM) | **counterexample** | K4 (filter 0), K5 |
 | sequential swaps = merged swap on one LB pool | **counterexample** for filter 0; **supported up to rounding** for filter > 0 | K4; §4.5 fork pairs |
@@ -376,7 +391,9 @@ status coverage. Report-split exposure is `previously_exposed`.
 ## 6. Tuning-split census (bounded, `bundle_tuning` only)
 
 `PYTHONPATH=. uv run python tests/routing/test_lb_scope_contract.py probe <bundle_tuning> probe.json`
-does enumeration and per-pool checks only. There are no quotes or solves.
+does route enumeration and per-pool checks, plus a bounded, seeded census of 1,303 exact
+pool quotes through the admitted `quote_exact_in` (the L1 check). It runs no solver, no plan
+selection and no timed benchmark.
 
 | Item | 2 hops | 3 hops |
 | --- | ---: | ---: |
@@ -407,8 +424,9 @@ fee, a state-only trading function or concavity:
 - K5: timestamp dependence;
 - fork: 48 swaps with varying fees.
 
-`direct_split_certified` and `cfmm_dual` keep LB outside their R021-C/1 ceilings. Their LB cases
-stay `unsupported`.
+`direct_split_certified` and `cfmm_dual` keep LB outside their R021-C/1 ceilings: LB pools never
+enter their candidate or market sets. When a case is `unsupported` for them is governed by
+their own committed scope rules (§9), not by whether LB appears somewhere in the case.
 
 **B2 `blocked`.** A sound LB-native route exists on paper. Take the L1 relaxation `R_i` of each
 pool. For a direct split, the concave upper envelope of each `R_i`, merged by slope (an exact
@@ -453,10 +471,29 @@ is not a WHI-1560 or 0.2.1 deliverable, and needs its own issue with Dune scope.
 | Identity | LB after this memo | Why |
 | --- | --- | --- |
 | `metis_history` | routes LB by exact quotes only, as `metis_inspired` does; no LB dominance certificate beyond WHI-1549's own rules | ceiling unchanged; B1/B2 |
-| `direct_split_certified` | LB `unsupported` | ceiling `constant_product` only; B1 `no_go`, B2 `blocked` |
+| `direct_split_certified` | LB never a candidate. `unsupported (non_constant_product_direct_pool)` iff **any direct pool** of the pair is not CPMM, whether CL or LB (WHI-1551 §2.1, no subset fallback). LB pools reachable only through multi-hop routes do not matter | ceiling `constant_product` only; B1 `no_go`, B2 `blocked` |
 | `incremental_graph_repair` | routes LB by exact quotes only, as `incremental_graph` does; `bound_kind` `unknown` | ceiling unchanged |
-| `uni_sor_cycle_safe` | no LB (V2/V3 parity boundary) | ceiling V2/V3; LB would be a different identity (`uni_sor_lb` is not it) |
-| `cfmm_dual` | LB never a market (WHI-1557 G-L5) | B1 `no_go` |
+| `uni_sor_cycle_safe` | LB never a candidate (V2/V3 parity boundary). `unsupported` iff the V2/V3 cohort DFS finds no route while the all-admitted DFS does (`uni_sor_port` D-4 / §6 rule, same candidates) | ceiling V2/V3; LB would be a different identity (`uni_sor_lb` is not it) |
+| `cfmm_dual` | LB never a market (WHI-1557 G-L5). Per stage, `unsupported (protocol_ceiling)` iff the stage's market universe M is empty while a ≤ `max_hops` simple path exists through non-stage pools (LB, or CL in the CPMM stage; WHI-1557 §6.1). Otherwise its actual solver status is reported | B1 `no_go` |
+
+**Mixed-universe check** (`test_restricted_identities_keep_actual_status_on_mixed_universes`,
+fixture `mixed_universe_scope`, rows derived by hand). Each identity is checked with its own
+committed executable rule, at `max_hops` 2:
+
+- `direct_split_certified`: WHI-1551's `certify`;
+- `cfmm_dual`: WHI-1557's `market_universe`, both stages;
+- `uni_sor_cycle_safe`: `uni_sor_port`'s real `solve`, as the proxy for its shared cohort rule.
+  The runtime identities do not exist yet, and no placeholder is added.
+
+The rows:
+
+- **`mantle_mixed`** (real V3/LB/Classic states). All four cases touch LB. Every pair has a Moe
+  Classic direct pool, so `cfmm_dual` has markets in both stages and `uni_sor_port` returns
+  `ok`: none of them is `unsupported`. `direct_split_certified` is `unsupported` on all four,
+  and for its own reason: every pair's direct set also contains a CL and/or LB pool.
+- **`mantle_mixed` without its CL USDC/WMNT pool.** `usdc_wmnt_small` still reaches LB (USDC–LB–
+  USDT–LB–WMNT), but its only direct pool is Classic, so `direct_split_certified` returns `ok`.
+- **`moe_lb`** (LB-only). All three identities are `unsupported`.
 
 The test asserts that the contract ceilings are unchanged, that `uni_sor_port`'s capability is
 `(V2, V3)`, that LB is excluded by `sor_protocol_of`, and that `uni_sor_lb` is registered
@@ -479,8 +516,24 @@ nowhere.
 > - Report the research outcome per scope: A `narrow_go` for a *future* identity `uni_sor_lb`
 >   outside R021-C/1 (not implemented, not in the 14-strategy roster, not a
 >   `not_implemented` row of the five); B1 `no_go`; B2 `blocked`; C `blocked`.
-> - `direct_split_certified`, `cfmm_dual` and `uni_sor_cycle_safe` rows on LB-touching cases
->   stay visible as `unsupported` (protocol ceiling).
+> - Preserve every restricted identity's **actual** status. A case is not `unsupported` merely
+>   because LB pools exist in it or because an LB-capable strategy used them. The per-identity
+>   rules (memo §9) are:
+>   - `direct_split_certified`: `unsupported (non_constant_product_direct_pool)` iff any
+>     direct pool of the pair is non-CPMM (CL or LB). Multi-hop LB routes are irrelevant.
+>   - `cfmm_dual`: per stage, `unsupported (protocol_ceiling)` iff the stage's market universe
+>     is empty while a ≤ `max_hops` simple path exists through non-stage pools. Otherwise
+>     report its solver status (`ok`, `no_route`, `timeout`, `model_error`, …).
+>   - `uni_sor_cycle_safe`: `unsupported` iff the V2/V3 cohort has no route while the
+>     all-admitted universe has one (the `uni_sor_port` D-4 rule). Otherwise report its solver
+>     status.
+> - Label coverage separately from status. When a restricted identity succeeds on a
+>   full-source case and an LB-capable strategy also runs, their comparison is
+>   `expanded_protocol` (different protocol sets) and is shown as a coverage/capability
+>   difference, not as the restricted row's failure. Add a mixed-universe check to the
+>   roster tests: `mantle_mixed` → `cfmm_dual` and `uni_sor_cycle_safe` are not
+>   `unsupported`, `direct_split_certified` is (direct CL/LB pools); LB-only `moe_lb` → all
+>   three are `unsupported`.
 > - `metis_history` and `incremental_graph_repair` route LB only through exact quotes, and any
 >   LB-involving bound is `unknown`.
 > - Any comparison of an LB-capable strategy with an SOR-family strategy on a full-source
@@ -511,6 +564,10 @@ publication; WHI-1555's `amount_grid` record for the SOR family.
   evidence for the same tag.
 - The spec is a test-only executable form. Its recorded outputs are regression records; the
   independent checks are reduction parity, pool-disjointness and cached = evaluated.
+- The mixed-universe scope check classifies scope with the committed executable rules of
+  WHI-1551, WHI-1557 and `uni_sor_port`, because the three runtime identities do not exist yet.
+  Their eventual solver statuses (for example `ok` versus `no_route`) are for WHI-1562 to
+  record. The check fixes only when `unsupported` is correct.
 - No LB-expanded solve was run on any corpus split, no timing was taken, and nothing is claimed
   about quality on the report split.
 
