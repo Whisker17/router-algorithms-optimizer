@@ -1,9 +1,14 @@
-"""Runtime helpers of the `cfmm_dual` CPMM stage (WHI-1558; contract
-`docs/references/research-021/cfmm-dual.md` §§4-5).
+"""Runtime helpers of `cfmm_dual` (WHI-1558 CPMM stage; WHI-1559 component A CL model;
+contract `docs/references/research-021/cfmm-dual.md` §§4-5, 8).
 
-- `routing.cfmm.model` -- admitted CPMM market universe (`simple_path_union`), immutable
-  dual-problem inputs, the per-market optimal-arbitrage oracle, the dual function, the
-  fee-free maximum-depth normalization and the log-price objective. Standard library only.
+- `routing.cfmm.model` -- admitted market universe (`simple_path_union`; CPMM stage by
+  default, CPMM + CL on request), immutable dual-problem inputs, the per-market
+  optimal-arbitrage oracles (CPMM closed form, CL aggregate on a prepared index), the dual
+  function, the fee-free maximum-depth normalization and the log-price objective.
+  Standard library only.
+- `routing.cfmm.cl` -- CL source admission and the immutable prepared known-range index of
+  one CL pool (`build_cl_index`, `prepare_cl_indexes`): collected-state boundaries, empty
+  ranges, prefix sums for one-binary-search oracle calls. Standard library only.
 - `routing.cfmm.optimizer` -- the hard per-attempt `SolveBudget`, the `GuardedObjective`,
   SciPy L-BFGS-B `solve` / `resolve_restricted` with our own projected-residual
   termination, and the recorded numerical-backend provenance. NumPy/SciPy are imported
