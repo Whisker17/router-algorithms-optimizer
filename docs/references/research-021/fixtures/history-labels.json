@@ -1,0 +1,388 @@
+{
+ "_comment": "WHI-1549 NEW counterexample and evidence records for docs/references/research-021/history-labels.md. Pools are [token0, token1, reserve0, reserve1] constant-product states in insertion (= adjacency) order; every expected value was derived with the independent hand CPMM formula / exhaustive oracle of tests/routing/test_history_labels_contract.py and is re-derived there, then checked against the actual metis_inspired allocator and the unchanged evaluator. Not outputs of any metis_history implementation (none exists).",
+ "fixtures": {
+  "overflow": {
+   "purpose": "a larger amount is not always more quotable even on constant product: a sourced Moe Classic v1 pair reverts on uint112 overflow for the larger label amount",
+   "source_key": "moe_classic_v1",
+   "fee_bps": 30,
+   "pools": {
+    "big": [
+     "S",
+     "X",
+     1000000000000,
+     1000000000000000
+    ],
+    "small": [
+     "S",
+     "X",
+     1000000000,
+     1000000000
+    ],
+    "xd": [
+     "X",
+     "D",
+     5192296858534827628530491329220096,
+     2596148429267413814265248164610048
+    ],
+    "weak": [
+     "S",
+     "D",
+     1000000000,
+     1000000
+    ]
+   },
+   "case": {
+    "token_in": "S",
+    "token_out": "D",
+    "amount_in": 10000000
+   },
+   "chunks": 1,
+   "label_hops": 3,
+   "xd_inputs": {
+    "small": 9871580,
+    "large": 9969900600
+   },
+   "expected": {
+    "history_gross": 4920982,
+    "enumeration_gross": 4920982,
+    "label_gross": 9871,
+    "strict_everywhere_gross": 9871
+   },
+   "classification": "quote_failure (non-upward-closed success domain); xd is not certified, the smaller label is retained"
+  },
+  "tie_state": {
+   "purpose": "equal chunk value, different committed state: certified strict dominance keeps p3's larger X amount, enumeration keeps the first maximal path via p1; the thin q rounds both to the same chunk-1 output, and the different committed pool changes the final gross",
+   "pools": {
+    "p1": [
+     "S",
+     "X",
+     1000000000,
+     100000000
+    ],
+    "p3": [
+     "S",
+     "X",
+     1000000000,
+     101000000
+    ],
+    "q": [
+     "X",
+     "D",
+     1000000,
+     4500
+    ]
+   },
+   "case": {
+    "token_in": "S",
+    "token_out": "D",
+    "amount_in": 20000
+   },
+   "chunks": 2,
+   "label_hops": 2,
+   "expected": {
+    "history_chunk_paths": [
+     [
+      "p3",
+      "q"
+     ],
+     [
+      "p3",
+      "q"
+     ]
+    ],
+    "enumeration_chunk_paths": [
+     [
+      "p1",
+      "q"
+     ],
+     [
+      "p1",
+      "q"
+     ]
+    ],
+    "history_gross": 9,
+    "enumeration_gross": 8
+   },
+   "classification": "chunk 1 tie (same marginal, different path); chunk 2 agree on each trajectory's own state; whole plans differ"
+  },
+  "greedy_trap": {
+   "purpose": "per-chunk exactness is not whole-plan optimality: S4 and E4 take chunk 1's exhaustive maximum S-E-B-A-D, whose committed B->A edge blocks chunk 2's S-E-A-B-D; L4 misses chunk 1's maximum (token_revisit) and ends 28% higher",
+   "pools": {
+    "p1": [
+     "S",
+     "A",
+     90000000,
+     80000000
+    ],
+    "p2": [
+     "B",
+     "A",
+     7000000000,
+     40000000
+    ],
+    "p3": [
+     "E",
+     "A",
+     1000000,
+     700000000
+    ],
+    "p5": [
+     "B",
+     "D",
+     200000000,
+     3000000
+    ],
+    "p6": [
+     "A",
+     "B",
+     6000000000,
+     5000000
+    ],
+    "p7": [
+     "E",
+     "B",
+     30000000,
+     6000000
+    ],
+    "p8": [
+     "D",
+     "A",
+     10000000,
+     6000000
+    ],
+    "p11": [
+     "S",
+     "E",
+     1000000,
+     60000000
+    ]
+   },
+   "case": {
+    "token_in": "S",
+    "token_out": "D",
+    "amount_in": 100000
+   },
+   "chunks": 2,
+   "label_hops": 4,
+   "expected": {
+    "history_chunk_paths": [
+     [
+      "p11",
+      "p7",
+      "p6",
+      "p8"
+     ],
+     [
+      "p11",
+      "p3",
+      "p8"
+     ]
+    ],
+    "label_chunk_paths": [
+     [
+      "p11",
+      "p3",
+      "p8"
+     ],
+     [
+      "p11",
+      "p3",
+      "p2",
+      "p5"
+     ]
+    ],
+    "history_gross": 9943929,
+    "enumeration_gross": 9943929,
+    "label_gross": 12757712
+   },
+   "classification": "S4 chunks agree 2/2; L4 chunk 1 token_revisit miss; L4 whole plan higher"
+  }
+ },
+ "h4_real_corpus": {
+  "source": "metis-challenge ROOT/campaign-h4diag-446674e-20260928T185905Z/h4-diagnostic.json",
+  "sha256": "a0306f02ce2ee5ee0abaf05b662d4ec102293cf9517285e5f542ee1576596d9a",
+  "producer": "WHI-1449 diagnose_case at 446674e (M4 = L4 settings: label_hops 4, chunks 50, max_hops 3), tuning split, on L4's own trajectory; separate correctness pass",
+  "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+  "class_totals": {
+   "agree": 398,
+   "prefix_admission": 6,
+   "tie": 174,
+   "token_revisit": 22
+  },
+  "unexplained_chunks": 0,
+  "cases": [
+   {
+    "case_id": "emp-09bc4e-78c1b0-low-1",
+    "classes": {
+     "agree": 45,
+     "tie": 3,
+     "token_revisit": 2
+    },
+    "l4_minus_e4_gross": "97234747446109"
+   },
+   {
+    "case_id": "emp-09bc4e-78c1b0-medium-3",
+    "classes": {
+     "agree": 48,
+     "token_revisit": 2
+    },
+    "l4_minus_e4_gross": "1472592160599"
+   },
+   {
+    "case_id": "emp-201eba-09bc4e-large-3",
+    "classes": {
+     "agree": 33,
+     "token_revisit": 17
+    },
+    "l4_minus_e4_gross": "-13"
+   },
+   {
+    "case_id": "emp-201eba-09bc4e-low-4",
+    "classes": {
+     "agree": 49,
+     "token_revisit": 1
+    },
+    "l4_minus_e4_gross": "-1704"
+   },
+   {
+    "case_id": "emp-201eba-779ded-medium-4",
+    "classes": {
+     "agree": 44,
+     "prefix_admission": 6
+    },
+    "l4_minus_e4_gross": "-280"
+   },
+   {
+    "case_id": "emp-cda86a-201eba-low-3",
+    "classes": {
+     "agree": 46,
+     "tie": 4
+    },
+    "l4_minus_e4_gross": "3"
+   },
+   {
+    "case_id": "nod-09bc4e-c96de2-large-1",
+    "classes": {
+     "agree": 4,
+     "tie": 46
+    },
+    "l4_minus_e4_gross": "-2"
+   },
+   {
+    "case_id": "nod-09bc4e-c96de2-low-2",
+    "classes": {
+     "agree": 6,
+     "tie": 44
+    },
+    "l4_minus_e4_gross": "2"
+   },
+   {
+    "case_id": "nod-09bc4e-c96de2-medium-2",
+    "classes": {
+     "agree": 6,
+     "tie": 44
+    },
+    "l4_minus_e4_gross": "1"
+   },
+   {
+    "case_id": "nod-deadde-c96de2-large-1",
+    "classes": {
+     "agree": 48,
+     "tie": 2
+    },
+    "l4_minus_e4_gross": "1"
+   },
+   {
+    "case_id": "nod-deadde-c96de2-low-2",
+    "classes": {
+     "agree": 21,
+     "tie": 29
+    },
+    "l4_minus_e4_gross": "2"
+   },
+   {
+    "case_id": "nod-09bc4e-1bdd88-low-2",
+    "classes": {
+     "agree": 48,
+     "tie": 2
+    },
+    "l4_minus_e4_gross": "-71759872223944"
+   }
+  ]
+ },
+ "probe": {
+  "pass": "WHI-1549 bounded tuning probe: selector trajectory only, separate diagnostic pass, not a measured solve; loaded shared host, no timing claim",
+  "source_commit": "91702da3e79bad69bbbb2f5c5cae3ef3e264ddfb",
+  "artifacts": "router-algorithms-optimizer-artifacts/research-021/whi-1549/probe-91702da3e79bad69bbbb2f5c5cae3ef3e264ddfb/",
+  "summary_sha256": "0142102253d01a7c1109938eb954b599f0dff8ecd03864cca1f6c14187cf6da2",
+  "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+  "settings": {
+   "chunks": 50,
+   "label_hops": 4
+  },
+  "spec_sha256": "4f2b5df51d2862aadcd9946d749e8b75b74debecd659a7ef84b0e6001d1ddee4",
+  "cases": 96,
+  "statuses": [
+   "ok"
+  ],
+  "chunk_classes": {
+   "agree": 4595,
+   "tie_capped": 205
+  },
+  "chunks_capped": 4650,
+  "label_relaxations": {
+   "max": 41000,
+   "p50": 19490.5
+  },
+  "quotes_executed": {
+   "max": 14997,
+   "p50": 3120.5
+  },
+  "peak_frontier_labels_max": 27,
+  "labels_dropped_frontier_cap": 0,
+  "labels_dropped_signature_cap": 649628,
+  "certified_strict_insertions": 0,
+  "gross_vs_frozen_incremental": {
+   "E4": {
+    "equal": 89,
+    "higher": 7,
+    "lower": 0
+   },
+   "L4": {
+    "equal": 87,
+    "higher": 6,
+    "lower": 3
+   }
+  },
+  "frozen_records_sha256": {
+   "m4": "ce8395de607db1b6f315feb9a61ba8ce7781e95cc357d65d99bcb242ac664a2c",
+   "m4_off": "1c3d1d23237b1ae2b5968aa1ccf75fb8a7dc3d96e8471aa8c67d3adf2c3db5e7"
+  },
+  "uncapped_h4": {
+   "cases": 12,
+   "file_sha256": "feef6ba026aa6034650790855b674734270d25745e56db57499f1d20588f57f4",
+   "label_relaxations": {
+    "max": 1379299,
+    "p50": 815108.0
+   },
+   "peak_frontier_labels": {
+    "max": 12165,
+    "p50": 7254.0
+   },
+   "peak_signature_labels": {
+    "max": 1666,
+    "p50": 1539.0
+   },
+   "quotes_executed": {
+    "max": 236781,
+    "p50": 169518.0
+   },
+   "spec_sha256": "4f2b5df51d2862aadcd9946d749e8b75b74debecd659a7ef84b0e6001d1ddee4"
+  },
+  "options": {
+   "dominance": "history",
+   "max_labels_per_signature": 1,
+   "max_frontier_labels": null
+  }
+ }
+}
