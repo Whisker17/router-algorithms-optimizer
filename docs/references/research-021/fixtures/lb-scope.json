@@ -1,0 +1,507 @@
+{
+  "_comment": "WHI-1560 (R021-P15) LB scope records. Inputs are hand-chosen; outputs of counterexamples K1/K3/K4/K5 come from the independent hand model in tests/routing/test_lb_scope_contract.py (rewritten by its `examples` command) and are asserted equal to the admitted simulator. K3.post_bins is the state produced by the admitted transition (an input of the hand replay, recorded as a regression). fork_facts come from the deployed-contract fork evidence. spec_* are recorded outputs of the never-registered executable specification of the proposed uni_sor_lb (regression records; their independent checks are the reduction-to-uni_sor_port, pool-disjointness and cached-equals-evaluated assertions). tuning_probe is the bounded census of memo section 6 (tuning split only).",
+  "issue": "WHI-1560",
+  "publication_key": "R021-P15",
+  "contract": "R021-C/1",
+  "outcomes": {
+    "overall": "narrow_go",
+    "A_protocol_expansion": "narrow_go",
+    "B1_fixed_fee_model_transfer": "no_go",
+    "B2_lb_native_certified_relaxation": "blocked",
+    "C_economic_cost_calibration": "blocked"
+  },
+  "counterexamples": {
+    "K1": {
+      "static": {
+        "base_factor": 5000,
+        "filter_period": 30,
+        "decay_period": 600,
+        "reduction_factor": 5000,
+        "variable_fee_control": 0,
+        "protocol_share": 0,
+        "max_volatility_accumulator": 0
+      },
+      "bin_x": "1000000000000000000",
+      "amounts": [
+        "100000000000000000",
+        "500000000000000000",
+        "900000000000000000"
+      ],
+      "fee": "50000000000000",
+      "outputs": [
+        "99995000000000000",
+        "499975000000000000",
+        "899955000000000000"
+      ],
+      "cpmm_same_reserves": [
+        "90904958658902995",
+        "333322222037033950",
+        "473671744857115036"
+      ]
+    },
+    "K1b": {
+      "note": "rounding regression: R concave on the K1 state, exact integer output not concave (outputs/marginals from the independent floor/ceil formula)",
+      "amounts": [
+        "19999",
+        "20000",
+        "20001",
+        "20002"
+      ],
+      "outputs": [
+        "19998",
+        "19999",
+        "19999",
+        "20000"
+      ],
+      "marginals": [
+        1,
+        0,
+        1
+      ]
+    },
+    "K3": {
+      "static": {
+        "base_factor": 5000,
+        "filter_period": 30,
+        "decay_period": 600,
+        "reduction_factor": 5000,
+        "variable_fee_control": 10000000,
+        "protocol_share": 0,
+        "max_volatility_accumulator": 100000
+      },
+      "prior_book_y_per_bin": "1000000000000000000",
+      "prior_swap_x_in": "10600000000000000000",
+      "points": [
+        "100000000000000000",
+        "400000000000000000",
+        "1600000000000000000"
+      ],
+      "tangent_violation_min": "10000000000000",
+      "post_bins": [
+        [
+          "602147056286495562",
+          "398485198122605259"
+        ],
+        [
+          "1000760664170186461",
+          "0"
+        ]
+      ],
+      "outputs": [
+        "99895000000000000",
+        "399580000000000000",
+        "1598409845525776571"
+      ],
+      "fee_bin_r": "1050000000000000",
+      "fee_bin_r1": "860000000000000"
+    },
+    "K5": {
+      "dt": 700,
+      "outputs": [
+        "99995000000000000",
+        "399980000000000000",
+        "1599810255451734923"
+      ]
+    },
+    "K4": {
+      "static": {
+        "base_factor": 5000,
+        "filter_period": 0,
+        "decay_period": 600,
+        "reduction_factor": 5000,
+        "variable_fee_control": 10000000,
+        "protocol_share": 0,
+        "max_volatility_accumulator": 100000
+      },
+      "bin_x": "1000000000000000000",
+      "a": "1500000000000000000",
+      "b": "300000000000000000",
+      "min_gain": "100000000000",
+      "merged": "1799822018298195180",
+      "sequential": "1799824268073217677"
+    },
+    "K4_filter30": {
+      "static": {
+        "base_factor": 5000,
+        "filter_period": 30,
+        "decay_period": 600,
+        "reduction_factor": 5000,
+        "variable_fee_control": 10000000,
+        "protocol_share": 0,
+        "max_volatility_accumulator": 100000
+      },
+      "bin_x": "1000000000000000000",
+      "a": "1500000000000000000",
+      "b": "300000000000000000",
+      "merged": "1799822018298195180",
+      "sequential": "1799822018298195179"
+    }
+  },
+  "l1_random": {
+    "seed": 1560,
+    "states": 300,
+    "min_checks": 3000
+  },
+  "tuning_probe": {
+    "path_hint": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/corpus/mantle-5src-101082044/bundle_tuning",
+    "result": {
+      "bundle_id": "mantle-5src-101082044-091b0759-tuning-split",
+      "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+      "cases": 96,
+      "lb_pools": 45,
+      "lb_pools_with_bins": 17,
+      "pool_directions": 33,
+      "directions_reset_at_first_swap": 33,
+      "directions_concave_relaxation": 33,
+      "distinct_static_sets": 11,
+      "static_screen_pass": 11,
+      "l1_checks": 1303,
+      "l1_violations": 0,
+      "l1_max_rounding_gap_ratio": "0.551",
+      "route_census": {
+        "2": {
+          "routes_cohort": 9816,
+          "routes_with_all_lb": 19986,
+          "routes_with_liquid_lb_only": 13374,
+          "lb_only_cases": 0
+        },
+        "3": {
+          "routes_cohort": 181398,
+          "routes_with_all_lb": 519624,
+          "routes_with_liquid_lb_only": 286296,
+          "lb_only_cases": 0
+        }
+      }
+    }
+  },
+  "proposed_identity": {
+    "id": "uni_sor_lb"
+  },
+  "spec_moe_lb": {
+    "usdc_usdt_small": {
+      "status": "ok",
+      "evaluated_gross": "1000300",
+      "routes": [
+        [
+          "LB",
+          [
+            "0x48c1a89af1102cad358549e9bb16ae5f96cddfec"
+          ],
+          100
+        ]
+      ]
+    },
+    "weth_usdt_small": {
+      "status": "ok",
+      "evaluated_gross": "265023",
+      "routes": [
+        [
+          "LB",
+          [
+            "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+            "0x365722f12ceb2063286a268b03c654df81b7c00f"
+          ],
+          100
+        ]
+      ]
+    },
+    "weth_usdt_exhaust": {
+      "status": "ok",
+      "evaluated_gross": "130804859",
+      "routes": [
+        [
+          "LB",
+          [
+            "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+            "0xf6c9020c9e915808481757779edb53daceae2415"
+          ],
+          75
+        ],
+        [
+          "LB",
+          [
+            "0xa15c851afc33aab6e478d538a4a8c66cacc19686"
+          ],
+          15
+        ],
+        [
+          "LB",
+          [
+            "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+            "0x3f0047606dcad6177c13742f1854fc8c999cd2b6"
+          ],
+          10
+        ]
+      ]
+    },
+    "usdc_usdt_dust": {
+      "status": "no_route",
+      "evaluated_gross": null,
+      "routes": null
+    },
+    "usdc_wmnt_small": {
+      "status": "ok",
+      "evaluated_gross": "1511506675341388743",
+      "routes": [
+        [
+          "LB",
+          [
+            "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+            "0xf6c9020c9e915808481757779edb53daceae2415"
+          ],
+          100
+        ]
+      ]
+    },
+    "wmnt_usdt_large": {
+      "status": "ok",
+      "evaluated_gross": "634360736",
+      "routes": [
+        [
+          "LB",
+          [
+            "0xf6c9020c9e915808481757779edb53daceae2415"
+          ],
+          55
+        ],
+        [
+          "LB",
+          [
+            "0xf59c79b91877c2b5909e703117beab9b4b5df0d6",
+            "0x3f0047606dcad6177c13742f1854fc8c999cd2b6"
+          ],
+          25
+        ],
+        [
+          "LB",
+          [
+            "0x365722f12ceb2063286a268b03c654df81b7c00f"
+          ],
+          15
+        ],
+        [
+          "LB",
+          [
+            "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+            "0xa15c851afc33aab6e478d538a4a8c66cacc19686"
+          ],
+          5
+        ]
+      ]
+    }
+  },
+  "memo_required_lines": [
+    "| **A. Protocol expansion (exact LB quote entries)** | add LB pools to an SOR-derived candidate set, quote table and selection | exact quotes on the snapshot state, physical-pool disjointness, complete-plan replay; **no** curve assumption | `narrow_go` \u2014 future identity `uni_sor_lb` (\u00a75); not in 0.2.1 |",
+    "| **B1. Fixed-fee model transfer** | apply WHI-1551's CPMM tangent / WHI-1557's CPMM market oracle (or any fixed-fee concave/convex CFMM premise) to LB | a fixed fee, a state-only trading function, concavity | `no_go` \u2014 counterexamples K1, K3, K4, K5 and fork facts (\u00a74) |",
+    "| **B2. LB-native certified relaxation** | a rational piecewise-linear upper function per LB swap, usable for certified bounds | lemma L1 (\u00a74.6), concave envelopes, complete bin range, a consumer and a contract ceiling | `blocked` (\u00a77) |",
+    "| **C. Economic cost calibration** | net-output ranking of LB plans | cost cohorts for LB shapes | `blocked` beyond cost-model v1's supported cohorts (\u00a78) |",
+    "**`narrow_go`**, scoped to A.",
+    "**Concavity domain `D_conc` (a property of `R`, not of `q`).** `R` is concave exactly when its",
+    "| LB exact integer output `q` is linear within a bin / concave in input | **counterexample**, including on `D_conc` (fee ceiling and output floor) | K1b (marginals 1, 0, 1); K3 |",
+    "| LB rational relaxation `R` is concave in input | **counterexample** in general; **supported** on `D_conc` (exact per-state slope check); a property of `R` only | K3; \u00a74.6, \u00a76 census |",
+    "| `direct_split_certified` | LB never a candidate. `unsupported (non_constant_product_direct_pool)` iff **any direct pool** of the pair is not CPMM, whether CL or LB (WHI-1551 \u00a72.1, no subset fallback). LB pools reachable only through multi-hop routes do not matter | ceiling `constant_product` only; B1 `no_go`, B2 `blocked` |",
+    "> - Preserve every restricted identity's **actual** status. A case is not `unsupported` merely"
+  ],
+  "fork_facts": {
+    "swaps_with_events": 127,
+    "swaps_with_several_fee_levels": 48,
+    "swaps_with_falling_accumulator": 7,
+    "drained_bin_pairs": 3399,
+    "realized_rate_increases": 0,
+    "repeat_wmnt_usdt_15_first_bin_accumulator": {
+      "0": 0,
+      "1": 160000
+    },
+    "repeat_wmnt_usdt_15_step0_last_bin_accumulator": 160000
+  },
+  "fork_schedule_bins_checked": 2470,
+  "spec_mantle_mixed": {
+    "usdt_wmnt_evidence_split": {
+      "routes": [
+        [
+          "LB",
+          [
+            "0xf6c9020c9e915808481757779edb53daceae2415"
+          ],
+          70
+        ],
+        [
+          "LB",
+          [
+            "0x365722f12ceb2063286a268b03c654df81b7c00f"
+          ],
+          25
+        ],
+        [
+          "V2",
+          [
+            "0x4e7685df06201521f35a182467feefe02c53d847"
+          ],
+          5
+        ]
+      ],
+      "evaluated_gross": "210283328662133272293",
+      "cached_quote": "210283325813382807397",
+      "residual": 2,
+      "blocks": {
+        "V3": 1,
+        "V2": 2,
+        "MIXED": 1,
+        "LB": 2,
+        "MIXED_LB": 2
+      }
+    },
+    "wmnt_usdt_evidence_split": {
+      "routes": [
+        [
+          "LB",
+          [
+            "0xf6c9020c9e915808481757779edb53daceae2415"
+          ],
+          75
+        ],
+        [
+          "LB",
+          [
+            "0x365722f12ceb2063286a268b03c654df81b7c00f"
+          ],
+          20
+        ],
+        [
+          "V2",
+          [
+            "0x4e7685df06201521f35a182467feefe02c53d847"
+          ],
+          5
+        ]
+      ],
+      "evaluated_gross": "316884033",
+      "cached_quote": "316884033",
+      "residual": 2,
+      "blocks": {
+        "V3": 1,
+        "V2": 2,
+        "MIXED": 1,
+        "LB": 2,
+        "MIXED_LB": 2
+      }
+    },
+    "usdc_wmnt_small": {
+      "routes": [
+        [
+          "LB",
+          [
+            "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+            "0xf6c9020c9e915808481757779edb53daceae2415"
+          ],
+          100
+        ]
+      ],
+      "evaluated_gross": "1511506675341388743",
+      "cached_quote": "1511506675341388743",
+      "residual": 0,
+      "blocks": {
+        "V3": 1,
+        "V2": 2,
+        "MIXED": 1,
+        "LB": 2,
+        "MIXED_LB": 4
+      }
+    },
+    "usdc_usdt_small": {
+      "routes": [
+        [
+          "LB",
+          [
+            "0x48c1a89af1102cad358549e9bb16ae5f96cddfec"
+          ],
+          90
+        ],
+        [
+          "MIXED",
+          [
+            "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+            "0x4cdfc22bf05209de87ee564746dc7e5174631d2b"
+          ],
+          10
+        ]
+      ],
+      "evaluated_gross": "1000489",
+      "cached_quote": "1000489",
+      "residual": 0,
+      "blocks": {
+        "V3": 1,
+        "V2": 2,
+        "MIXED": 2,
+        "LB": 1,
+        "MIXED_LB": 4
+      }
+    }
+  },
+  "mixed_universe_scope": {
+    "note": "Hand-derived from the pool lists (max_hops 2). mantle_mixed: every pair has a Moe Classic direct pool (CPMM markets and SOR cohort routes exist) and reaches LB; direct pools also include CL and/or LB, so direct_split_certified is refused by its direct-pool rule. Removing the CL USDC/WMNT pool leaves Classic as the only direct pool: supported although LB routes remain. moe_lb is LB-only: all three unsupported. uni_sor_cycle_safe shares uni_sor_port's candidates and cohort rule; its real runtime identity is absent, so uni_sor_port's actual solve status is the checked proxy (no placeholder identity).",
+    "removed_pool": "0x086f766b336dfb0f705dc030db01993b22d81266",
+    "mantle_mixed": {
+      "usdt_wmnt_evidence_split": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      },
+      "wmnt_usdt_evidence_split": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      },
+      "usdc_wmnt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      },
+      "usdc_usdt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      }
+    },
+    "mantle_mixed_without_cl_usdc_wmnt": {
+      "usdc_wmnt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "ok",
+        "cfmm_dual_cpmm": "in_scope",
+        "cfmm_dual_cpmm_cl": "in_scope",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "ok"
+      }
+    },
+    "moe_lb": {
+      "usdc_usdt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "unsupported:protocol_ceiling",
+        "cfmm_dual_cpmm_cl": "unsupported:protocol_ceiling",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "unsupported"
+      },
+      "usdc_usdt_dust": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "unsupported:protocol_ceiling",
+        "cfmm_dual_cpmm_cl": "unsupported:protocol_ceiling",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "unsupported"
+      },
+      "usdc_wmnt_small": {
+        "lb_touching": true,
+        "direct_split_certified": "unsupported:non_constant_product_direct_pool",
+        "cfmm_dual_cpmm": "unsupported:protocol_ceiling",
+        "cfmm_dual_cpmm_cl": "unsupported:protocol_ceiling",
+        "uni_sor_cycle_safe_scope_via_uni_sor_port": "unsupported"
+      }
+    }
+  }
+}
