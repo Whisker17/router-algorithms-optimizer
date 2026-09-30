@@ -174,13 +174,18 @@
       "reference_controls": ["path_split", "incremental_graph"],
       "protocols_ceiling": ["constant_product", "concentrated"],
       "objectives": ["gross_only"],
-      "max_candidates_unit": "declared_by_research",
+      "max_candidates_unit": "fallback_paths_evaluated",
       "governing": {
-        "search.max_hops": "declared_by_research",
-        "search.max_splits": "declared_by_research",
-        "search.percent_step": "declared_by_research"
+        "search.max_hops": "market universe: pools on some simple token_in -> token_out path of <= max_hops admitted pools (simple_path_union)",
+        "search.max_splits": "unused (splits.governs none; one merged step per market)",
+        "search.percent_step": "unused"
       },
-      "separate_caps": "iteration/oracle/recovery caps as algorithm_options (WHI-1557)"
+      "separate_caps": "max_iterations and max_function_evaluations (one numeric budget per solve attempt, shared by the restricted re-solve, evaluation cap guarded) and max_recovery_attempts as algorithm_options (cfmm-dual.md section 9)",
+      "row_fill": {
+        "issue": "WHI-1557",
+        "spec": "cfmm-dual.md section 9.2",
+        "replaces": "WHI-1547 placeholder declared_by_research in max_candidates_unit and all three governing entries"
+      }
     }
   ],
   "domain_fields": ["schema", "universe", "protocols", "pool_order", "hops", "splits", "amount_grid", "zero_output_leg", "token_reuse", "pool_reuse", "dag_admission", "full_fill"],
