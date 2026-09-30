@@ -1,0 +1,461 @@
+# WHI-1562 research-021 paired campaign manifest (R021-P14; contract R021-C/1).
+#
+# The single machine-readable schedule of the 0.2.1 strategy campaign: inputs and their
+# hashes, every profile (checked-in, pinned or generated from the canonical base), every
+# invocation of every stage with its exact expected algorithm order and row inventory, the
+# registered comparisons, and the pre-registered rules. Validated, expanded, executed and
+# analysed ONLY by `tools/research_021/campaign.py` (`check`, `profiles`, `schedule`,
+# `execute`, `analyze`); explained in docs/references/research-021/preregistration.md.
+#
+# Stages: T = tuning-only registered exploration (component A, WHI-1562; executed before any
+# report-split solve); L, R, M, I = the frozen report campaign (component B; executed only
+# after the parent accepts the freeze). Nothing here is an adoption, default change, loss
+# tolerance or runtime ceiling; heuristic_default_loss_tolerance stays null.
+schema: r021.campaign/1
+issue: WHI-1562
+publication_key: R021-P14
+contract: R021-C/1
+release: {version: 0.2.1, id: ed16e106-fa3e-4b8a-b022-e7208eb8ef41}
+release_baseline_b: 81559ab16376cf46416a69727c3ca0b45e72771a
+base_commit: 26c0cd0c2008fe22b8ac3273c1360003bbd0c791
+heuristic_default_loss_tolerance: null
+holdout_exposure:
+  tuning: exploration_data
+  report: previously_exposed        # WHI-1447, WHI-1503..1510, WHI-1449 (R021-C/1 §6.1)
+host:
+  logical_cpus: 10                  # reference Apple M2 Pro; checked at execution time
+  load_sample_seconds: 30
+  contaminated_if: load1 > 0.5 * logical_cpus
+
+# ----------------------------------------------------------------------------- inputs
+# `source` is relative to the primary clone; `execute` copies each into the durable inputs
+# root (outside every worktree) and refuses a copy whose manifest.json sha256 differs.
+inputs:
+  full:
+    source: data/corpus/mantle-5src-101082044/bundle
+    bundle_hash: 717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143
+    cases_sha256: 75420a1d64faeabecde0c3cacb4f3e33e14963a8360736291e58ee446622a450
+    cases: 398
+    split: all
+    cohort: full_source
+  tuning_full:
+    source: data/corpus/mantle-5src-101082044/bundle_tuning
+    bundle_hash: ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b
+    cases_sha256: 8d2dc084f321ff2387c88fb568b545137530e0da1ee1b89e70579df6647c39b0
+    cases: 96
+    split: tuning
+    cohort: full_source
+  tuning_sor:
+    source: data/corpus/mantle-5src-101082044/sor_cohort_tuning
+    bundle_hash: b900b866d4a0ef6a3b33546f1d262ed3fc836847ef30da9e975c5bae75107ade
+    cases_sha256: 8d2dc084f321ff2387c88fb568b545137530e0da1ee1b89e70579df6647c39b0
+    cases: 96
+    split: tuning
+    cohort: sor_compatible
+  report_full:
+    source: data/corpus/mantle-5src-101082044/bundle_report
+    bundle_hash: 85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0
+    cases_sha256: c687241a2980c97880b2c948fd12b63b23f1956f89a61e1f2bbda8bd55413aa7
+    cases: 302
+    split: report
+    cohort: full_source
+  report_sor:
+    source: data/corpus/mantle-5src-101082044/sor_cohort_report
+    bundle_hash: 8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640
+    cases_sha256: c687241a2980c97880b2c948fd12b63b23f1956f89a61e1f2bbda8bd55413aa7
+    cases: 302
+    split: report
+    cohort: sor_compatible
+# Saved pre-0.2.1 effective quote profiles and their original runs (literal replay only).
+saved_quotes:
+  saved8:
+    source: data/quotes/20260928T100325521997Z-b0874bc2
+    profile_sha256: c32ecfc5dc01a45ace6f3b3cbb91845579e963d08478f7b5bfa751f2c441b298
+    quote_sha256: f55378577ccd4c6a55b9de01711d8572d2004301e480f80c492d5596ab8f89f1
+    bundle_hash: f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693
+    run: 20260928T100325800511Z-8b91e13a
+    algorithms: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port,
+                 uni_sor_adaptive, uni_sor_optimized]
+  saved9:
+    source: data/quotes/20260929T063939909235Z-51b2da31
+    profile_sha256: c49ee1135e2d7d19dc48c3468f008895cc97549a3d9ae6c9dd47fea33043d08d
+    quote_sha256: d0c92748a7838ba4665d48135f0b2eb5d8d82f5e4243b927898c2eb762cfe856
+    bundle_hash: f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693
+    run: 20260929T063940186552Z-aa2fce21
+    algorithms: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port,
+                 uni_sor_adaptive, uni_sor_optimized, metis_inspired]
+requests:
+  sentinel: {token_in: USDC, token_out: USDT, amount: "1000"}          # the L01 sentinel
+  tuning_smoke: {token_in: USDC, token_out: USDT, amount: "4.322399"}  # = emp-09bc4e-201eba-low-2 (tuning)
+# The 12 WHI-1447 uni_sor_port token-cycle invalid_plan cases of sor_cohort_report
+# (cycle-safe-sor.md §9.4, fixtures/cycle-safe-sor.json sha256 c9e3590f…): defect
+# regressions, listed apart, never tuning or quality data.
+known_report_defects:
+  fixture_sha256: c9e3590fd2ee05b7545514475c0464552167f2f7eb77a48546a687f1d5c8d1c6
+  cases: [emp-09bc4e-201eba-low-1, emp-09bc4e-201eba-low-3, emp-09bc4e-201eba-medium-1,
+          emp-09bc4e-201eba-medium-3, emp-201eba-cda86a-low-1, emp-201eba-cda86a-low-3,
+          emp-78c1b0-09bc4e-low-3, emp-78c1b0-deadde-low-1, emp-78c1b0-deadde-low-3,
+          emp-78c1b0-deadde-low-4, bnd-09bc4e-201eba-liq_at, bnd-09bc4e-201eba-liq_above]
+
+# ----------------------------------------------------------------------------- profiles
+# `path`+`sha256`: an existing checked-in file used as is (never edited). `generate`: a file
+# under config/research_021/profiles/ rendered from its `base` by `campaign.py profiles`;
+# `check` refuses a checked-in file whose bytes differ from the rendering (no drift).
+profiles:
+  canonical_gross: {path: config/full_gross.yaml,
+                    sha256: 51a8a65184ae765867fd9d7763776852b2b4576e3cf7116a8dc15ccd87028177}
+  canonical_net: {path: config/full.yaml,
+                  sha256: a99f33f8547a03ec6ff16f354b409a742d61db56921c45f88cbc26eb0887fab6}
+  l3: {path: config/metis_challenge/m3.yaml,            # WHI-1449 M3 = R021 L3
+       sha256: 0cbff3c7483be2aaafd29e30fe47d15a07b34b5297fd3783a72f73d091e3df96}
+  e4: {path: config/metis_challenge/m4_off.yaml,        # WHI-1449 M4-off = R021 E4
+       sha256: bcf8bf15aa2bb48d6f47e645ae23cd0654843e1cc7291c8d713093476c20a7f2}
+  s3:
+    generate: {base: canonical_gross, algorithms: [metis_history], graph: {label_hops: 3},
+               options: {metis_history: {preset: current}}}
+    purpose: "S3: metis_history bounded preset v1 at graph.label_hops 3 (R021-C/1 §6.2)"
+  s3_off:
+    generate: {base: canonical_gross, algorithms: [metis_history], graph: {label_hops: 3},
+               options: {metis_history: {preset: current, set: {dominance: "off"}}}}
+    purpose: "S3 control: dominance off (must equal E3 unless a side truncates; history-labels.md §9.1)"
+  s4_off:
+    generate: {base: canonical_gross, algorithms: [metis_history], graph: {label_hops: 4},
+               options: {metis_history: {preset: current, set: {dominance: "off"}}}}
+    purpose: "S4 control: dominance off (must equal E4 unless a side truncates; history-labels.md §9.1)"
+  repair_off:
+    generate: {base: canonical_gross, algorithms: [incremental_graph_repair],
+               options: {incremental_graph_repair: {preset: current, set: {repair: false}}}}
+    purpose: "repair_off_on control: preset v1 values with repair false (suffix-repair.md §7)"
+  cfmm_cpmm:
+    generate: {base: canonical_gross, algorithms: [cfmm_dual],
+               options: {cfmm_dual: {preset: historical_v1}}}
+    purpose: "cfmm_cpmm_vs_cl CPMM-only stage: the historical cfmm_dual/1 pin (cfmm-dual.md §9.3, §10)"
+  alloc_ms1:
+    generate: &alloc {base: canonical_gross, search: {max_splits: 1},
+                      algorithms: [direct_split, path_split, direct_split_certified],
+                      options: {direct_split_certified: {preset: current}}}
+    purpose: "max_splits_scan (allocation-governed direct/path split + certified), value 1"
+  alloc_ms2:
+    generate: {<<: *alloc, search: {max_splits: 2}}
+    purpose: "max_splits_scan (allocation-governed direct/path split + certified), value 2"
+  alloc_ms8:
+    generate: {<<: *alloc, search: {max_splits: 8}}
+    purpose: "max_splits_scan (allocation-governed direct/path split + certified), value 8"
+  sor_ms1:
+    generate: &sor {base: canonical_gross, search: {max_splits: 1},
+                    algorithms: [uni_sor_port, uni_sor_adaptive, uni_sor_optimized,
+                                 uni_sor_cycle_safe],
+                    named_strategies: [uni_sor_adaptive, uni_sor_optimized],
+                    options: {uni_sor_cycle_safe: {preset: current}}}
+    purpose: "max_splits_scan (allocation-governed SOR family incl. cycle-safe), value 1"
+  sor_ms2:
+    generate: {<<: *sor, search: {max_splits: 2}}
+    purpose: "max_splits_scan (allocation-governed SOR family incl. cycle-safe), value 2"
+  sor_ms8:
+    generate: {<<: *sor, search: {max_splits: 8}}
+    purpose: "max_splits_scan (allocation-governed SOR family incl. cycle-safe), value 8"
+  net_empirical:
+    generate: {base: canonical_net, algorithms: [direct_split_certified, cfmm_dual],
+               options: {direct_split_certified: {preset: current}, cfmm_dual: {preset: current}}}
+    purpose: "gross-only identities under the empirical-cost net objective: every row visible unsupported"
+  memory_gross:
+    generate: {base: canonical_gross, measurement: {memory_pass: true}}
+    purpose: "stage M: canonical_gross plus the separate tracemalloc memory pass (run with --strategies all)"
+
+# The ordinary 14-strategy roster `--strategies all` derives from canonical_gross.
+rosters:
+  all14: &all14 [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port,
+                 uni_sor_adaptive, uni_sor_optimized, metis_inspired, metis_history,
+                 direct_split_certified, incremental_graph_repair, uni_sor_cycle_safe, cfmm_dual]
+  base6: &base6 [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port]
+  optimized2: &optimized2 [uni_sor_adaptive, uni_sor_optimized]
+  alloc3: &alloc3 [direct_split, path_split, direct_split_certified]
+  sor4: &sor4 [uni_sor_port, uni_sor_adaptive, uni_sor_optimized, uni_sor_cycle_safe]
+
+# ----------------------------------------------------------------------------- stages
+stages:
+  T:
+    split: tuning
+    owner: component A (before any report-split solve)
+    lanes: 5                        # concurrent invocations; timing is descriptive/contaminated
+    order: registered               # launch order below; longest first
+  L:
+    split: mixed (L01 matrix tuning + held-out twins, sentinel)
+    owner: component B, first, alone on the host (no other stage runs concurrently)
+    lanes: 1
+    launch_gate: {samples: 5, interval_seconds: 30, headroom_load1: 3.0, rule: "headroom only, never a validity rule; host busy -> not launched, blocker reported; no waiting loop, no retry"}
+  R:
+    split: report
+    owner: component B, after L
+    lanes: 3
+    order: registered
+  M:
+    split: mixed (L01 full-source matrix)
+    owner: component B, after R
+    lanes: 1
+  I:
+    split: sentinel / saved quote requests (no corpus split)
+    owner: component B, last, alone on the host
+    lanes: 1
+
+# kind: run | quote | report | replay | order_check | replay_saved | latency_run |
+#       latency_sufficient | latency_compare. `derive` adds report / replay / order_check
+#       children (ids <id>.report, <id>.replay, <id>.order) that depend on it.
+invocations:
+  # ---- T: tuning-only registered exploration (component A)
+  - {id: T-roster-full, stage: T, kind: run, bundle: tuning_full, profile: canonical_gross, strategies: all, algorithms: *all14}
+  - {id: T-roster-sor, stage: T, kind: run, bundle: tuning_sor, profile: canonical_gross, strategies: all, algorithms: *all14}
+  - {id: T-e4, stage: T, kind: run, bundle: tuning_full, profile: e4, strategies: profile, algorithms: [metis_inspired]}
+  - {id: T-s4off, stage: T, kind: run, bundle: tuning_full, profile: s4_off, strategies: profile, algorithms: [metis_history]}
+  - {id: T-sor-ms8, stage: T, kind: run, bundle: tuning_sor, profile: sor_ms8, strategies: profile, algorithms: *sor4}
+  - {id: T-sor-ms2, stage: T, kind: run, bundle: tuning_sor, profile: sor_ms2, strategies: profile, algorithms: *sor4}
+  - {id: T-sor-ms1, stage: T, kind: run, bundle: tuning_sor, profile: sor_ms1, strategies: profile, algorithms: *sor4}
+  - {id: T-l3, stage: T, kind: run, bundle: tuning_full, profile: l3, strategies: profile, algorithms: [metis_inspired]}
+  - {id: T-s3, stage: T, kind: run, bundle: tuning_full, profile: s3, strategies: profile, algorithms: [metis_history]}
+  - {id: T-s3off, stage: T, kind: run, bundle: tuning_full, profile: s3_off, strategies: profile, algorithms: [metis_history]}
+  - {id: T-repair-off-full, stage: T, kind: run, bundle: tuning_full, profile: repair_off, strategies: profile, algorithms: [incremental_graph_repair]}
+  - {id: T-repair-off-sor, stage: T, kind: run, bundle: tuning_sor, profile: repair_off, strategies: profile, algorithms: [incremental_graph_repair]}
+  - {id: T-cfmm-cpmm-full, stage: T, kind: run, bundle: tuning_full, profile: cfmm_cpmm, strategies: profile, algorithms: [cfmm_dual]}
+  - {id: T-cfmm-cpmm-sor, stage: T, kind: run, bundle: tuning_sor, profile: cfmm_cpmm, strategies: profile, algorithms: [cfmm_dual]}
+  - {id: T-alloc-ms8-full, stage: T, kind: run, bundle: tuning_full, profile: alloc_ms8, strategies: profile, algorithms: *alloc3}
+  - {id: T-alloc-ms8-sor, stage: T, kind: run, bundle: tuning_sor, profile: alloc_ms8, strategies: profile, algorithms: *alloc3}
+  - {id: T-alloc-ms2-full, stage: T, kind: run, bundle: tuning_full, profile: alloc_ms2, strategies: profile, algorithms: *alloc3}
+  - {id: T-alloc-ms2-sor, stage: T, kind: run, bundle: tuning_sor, profile: alloc_ms2, strategies: profile, algorithms: *alloc3}
+  - {id: T-alloc-ms1-full, stage: T, kind: run, bundle: tuning_full, profile: alloc_ms1, strategies: profile, algorithms: *alloc3}
+  - {id: T-alloc-ms1-sor, stage: T, kind: run, bundle: tuning_sor, profile: alloc_ms1, strategies: profile, algorithms: *alloc3}
+  - {id: T-net-full, stage: T, kind: run, bundle: tuning_full, profile: net_empirical, strategies: profile, algorithms: [direct_split_certified, cfmm_dual]}
+  - {id: T-net-sor, stage: T, kind: run, bundle: tuning_sor, profile: net_empirical, strategies: profile, algorithms: [direct_split_certified, cfmm_dual]}
+  - {id: T-quote-smoke, stage: T, kind: quote, bundle: tuning_full, profile: canonical_gross, strategies: all, details: true, request: tuning_smoke, algorithms: *all14, derive: [report, replay, order_check]}
+
+  # ---- L: L02-L05 reassessment through the real L08 arm commands (component B, alone)
+  - {id: L-R, stage: L, kind: latency_run, arm: R, bundle: full}
+  - {id: L-R-sb, stage: L, kind: latency_sufficient, arm: R, bundle: full, after: [L-R]}
+  - {id: L-E1, stage: L, kind: latency_run, arm: E1, bundle: full, after: [L-R-sb]}
+  - {id: L-E1-sb, stage: L, kind: latency_sufficient, arm: E1, bundle: full, after: [L-E1]}
+  - {id: L-E2, stage: L, kind: latency_run, arm: E2, bundle: full, after: [L-E1-sb]}
+  - {id: L-E2-sb, stage: L, kind: latency_sufficient, arm: E2, bundle: full, after: [L-E2]}
+  - {id: L-E3, stage: L, kind: latency_run, arm: E3, bundle: full, after: [L-E2-sb]}
+  - {id: L-E3-sb, stage: L, kind: latency_sufficient, arm: E3, bundle: full, after: [L-E3]}
+  - {id: L-E4, stage: L, kind: latency_run, arm: E4, bundle: full, after: [L-E3-sb]}
+  - {id: L-E4-sb, stage: L, kind: latency_sufficient, arm: E4, bundle: full, after: [L-E4]}
+  - {id: L-cmp-L02, stage: L, kind: latency_compare, baseline: L-R, candidate: L-E1, lane: exact}
+  - {id: L-cmp-L03, stage: L, kind: latency_compare, baseline: L-E1, candidate: L-E2, lane: exact}
+  - {id: L-cmp-L04, stage: L, kind: latency_compare, baseline: L-E2, candidate: L-E3, lane: exact}
+  - {id: L-cmp-L05, stage: L, kind: latency_compare, baseline: L-E3, candidate: L-E4, lane: exact}
+  - {id: L-cmp-R-E3, stage: L, kind: latency_compare, baseline: L-R, candidate: L-E3, lane: exact}
+  - {id: L-cmp-R-E4, stage: L, kind: latency_compare, baseline: L-R, candidate: L-E4, lane: exact}
+
+  # ---- R: frozen report-split comparison (component B, after freeze acceptance)
+  - {id: R-roster-full, stage: R, kind: run, bundle: report_full, profile: canonical_gross, strategies: all, algorithms: *all14, derive: [report]}
+  - {id: R-roster-sor, stage: R, kind: run, bundle: report_sor, profile: canonical_gross, strategies: all, algorithms: *all14, derive: [report]}
+  - {id: R-e4, stage: R, kind: run, bundle: report_full, profile: e4, strategies: profile, algorithms: [metis_inspired], derive: [report]}
+  - {id: R-s4off, stage: R, kind: run, bundle: report_full, profile: s4_off, strategies: profile, algorithms: [metis_history], derive: [report]}
+  - {id: R-l3, stage: R, kind: run, bundle: report_full, profile: l3, strategies: profile, algorithms: [metis_inspired], derive: [report]}
+  - {id: R-s3, stage: R, kind: run, bundle: report_full, profile: s3, strategies: profile, algorithms: [metis_history], derive: [report]}
+  - {id: R-s3off, stage: R, kind: run, bundle: report_full, profile: s3_off, strategies: profile, algorithms: [metis_history], derive: [report]}
+  - {id: R-repair-off-full, stage: R, kind: run, bundle: report_full, profile: repair_off, strategies: profile, algorithms: [incremental_graph_repair], derive: [report]}
+  - {id: R-repair-off-sor, stage: R, kind: run, bundle: report_sor, profile: repair_off, strategies: profile, algorithms: [incremental_graph_repair], derive: [report]}
+  - {id: R-cfmm-cpmm-full, stage: R, kind: run, bundle: report_full, profile: cfmm_cpmm, strategies: profile, algorithms: [cfmm_dual], derive: [report]}
+  - {id: R-cfmm-cpmm-sor, stage: R, kind: run, bundle: report_sor, profile: cfmm_cpmm, strategies: profile, algorithms: [cfmm_dual], derive: [report]}
+  - {id: R-net-full, stage: R, kind: run, bundle: report_full, profile: net_empirical, strategies: profile, algorithms: [direct_split_certified, cfmm_dual], derive: [report, replay, order_check]}
+  - {id: R-net-sor, stage: R, kind: run, bundle: report_sor, profile: net_empirical, strategies: profile, algorithms: [direct_split_certified, cfmm_dual], derive: [report, replay, order_check]}
+  # nominee arms: resolved from the stage-T nominees (see `nominees` below); none when a
+  # nominee equals the canonical value 4 (the roster rows are then the nominee rows).
+
+  # ---- M: memory (separate tracemalloc pass) on the L01 full-source matrix (24 cases)
+  - {id: M-roster, stage: M, kind: run, bundle: "{dir:L-R}/bundles/full_source-matrix", cases: 24, bundle_hash: 72f4f4e4c08d4c34e8480ee56ca8eebab005bb15eb3865349d7df12ba59cfb04, profile: memory_gross, strategies: all, algorithms: *all14, derive: [report]}
+
+  # ---- I: the shared CLI invocation matrix (component B, alone): quotes of the sentinel
+  - {id: I-all-details, stage: I, kind: quote, bundle: full, profile: canonical_gross, strategies: all, details: true, request: sentinel, algorithms: *all14, derive: [report, replay, order_check]}
+  - {id: I-all-compact, stage: I, kind: quote, bundle: full, profile: canonical_gross, strategies: all, details: false, request: sentinel, algorithms: *all14, derive: [report, replay, order_check]}
+  - {id: I-base, stage: I, kind: quote, bundle: full, profile: canonical_gross, strategies: base, details: true, request: sentinel, algorithms: *base6, derive: [report, replay, order_check]}
+  - {id: I-optimized, stage: I, kind: quote, bundle: full, profile: canonical_gross, strategies: optimized, details: true, request: sentinel, algorithms: *optimized2, derive: [report, replay, order_check]}
+  - {id: I-profile, stage: I, kind: quote, bundle: full, profile: canonical_gross, strategies: profile, details: true, request: sentinel, algorithms: *base6, derive: [report, replay, order_check]}
+  - {id: I-l3, stage: I, kind: quote, bundle: full, profile: l3, strategies: profile, details: true, request: sentinel, algorithms: [metis_inspired], derive: [report, replay, order_check]}
+  - {id: I-e4, stage: I, kind: quote, bundle: full, profile: e4, strategies: profile, details: true, request: sentinel, algorithms: [metis_inspired], derive: [report, replay, order_check]}
+  - {id: I-s3, stage: I, kind: quote, bundle: full, profile: s3, strategies: profile, details: true, request: sentinel, algorithms: [metis_history], derive: [report, replay, order_check]}
+  - {id: I-s3off, stage: I, kind: quote, bundle: full, profile: s3_off, strategies: profile, details: true, request: sentinel, algorithms: [metis_history], derive: [report, replay, order_check]}
+  - {id: I-s4off, stage: I, kind: quote, bundle: full, profile: s4_off, strategies: profile, details: true, request: sentinel, algorithms: [metis_history], derive: [report, replay, order_check]}
+  - {id: I-repair-off, stage: I, kind: quote, bundle: full, profile: repair_off, strategies: profile, details: true, request: sentinel, algorithms: [incremental_graph_repair], derive: [report, replay, order_check]}
+  - {id: I-cfmm-cpmm, stage: I, kind: quote, bundle: full, profile: cfmm_cpmm, strategies: profile, details: true, request: sentinel, algorithms: [cfmm_dual], derive: [report, replay, order_check]}
+  - {id: I-alloc-ms1, stage: I, kind: quote, bundle: full, profile: alloc_ms1, strategies: profile, details: true, request: sentinel, algorithms: *alloc3, derive: [report, replay, order_check]}
+  - {id: I-alloc-ms2, stage: I, kind: quote, bundle: full, profile: alloc_ms2, strategies: profile, details: true, request: sentinel, algorithms: *alloc3, derive: [report, replay, order_check]}
+  - {id: I-alloc-ms8, stage: I, kind: quote, bundle: full, profile: alloc_ms8, strategies: profile, details: true, request: sentinel, algorithms: *alloc3, derive: [report, replay, order_check]}
+  - {id: I-sor-ms1, stage: I, kind: quote, bundle: full, profile: sor_ms1, strategies: profile, details: true, request: sentinel, algorithms: *sor4, derive: [report, replay, order_check]}
+  - {id: I-sor-ms2, stage: I, kind: quote, bundle: full, profile: sor_ms2, strategies: profile, details: true, request: sentinel, algorithms: *sor4, derive: [report, replay, order_check]}
+  - {id: I-sor-ms8, stage: I, kind: quote, bundle: full, profile: sor_ms8, strategies: profile, details: true, request: sentinel, algorithms: *sor4, derive: [report, replay, order_check]}
+  - {id: I-memory-gross, stage: I, kind: quote, bundle: full, profile: memory_gross, strategies: all, details: true, request: sentinel, algorithms: *all14, derive: [report, replay, order_check]}
+  # quote refuses empirical_cost by design (WHI-1498): a registered refusal (exit 1, nothing written)
+  - {id: I-net-refused, stage: I, kind: quote, bundle: full, profile: net_empirical, strategies: profile, details: true, request: sentinel, algorithms: [], expect_exit: 1, expect_stderr: "objective empirical_cost is not supported by quote"}
+  # the saved pre-0.2.1 eight- and nine-strategy profiles: literal quote with --strategies
+  # profile, and their recorded replay command twice (same-HEAD identity) vs the original run
+  - {id: I-saved8-quote, stage: I, kind: quote, bundle: full, profile: "saved:saved8", strategies: profile, details: true, request: sentinel, algorithms: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port, uni_sor_adaptive, uni_sor_optimized], derive: [report]}
+  - {id: I-saved9-quote, stage: I, kind: quote, bundle: full, profile: "saved:saved9", strategies: profile, details: true, request: sentinel, algorithms: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port, uni_sor_adaptive, uni_sor_optimized, metis_inspired], derive: [report]}
+  - {id: I-saved8-replay-a, stage: I, kind: replay_saved, saved: saved8}
+  - {id: I-saved8-replay-b, stage: I, kind: replay_saved, saved: saved8, after: [I-saved8-replay-a]}
+  - {id: I-saved8-order, stage: I, kind: order_check, of: [I-saved8-replay-a, I-saved8-replay-b]}
+  - {id: I-saved9-replay-a, stage: I, kind: replay_saved, saved: saved9}
+  - {id: I-saved9-replay-b, stage: I, kind: replay_saved, saved: saved9, after: [I-saved9-replay-a]}
+  - {id: I-saved9-order, stage: I, kind: order_check, of: [I-saved9-replay-a, I-saved9-replay-b]}
+
+# ----------------------------------------------------------------------------- comparisons
+# Arm reference: "<invocation>/<algorithm>". Every run arm also gets, automatically: status
+# counts (full schedule), work units, timing (descriptive + host window), certificate view.
+comparisons:
+  # same_grid_allocation (R021-C/1 §6.2; integer-allocation.md §11): equal value where supported
+  - {id: same_grid.full, stage: T, registered: same_grid_allocation, kind: equal_value, class: same_domain, baseline: T-roster-full/direct_split, candidate: T-roster-full/direct_split_certified}
+  - {id: same_grid.sor, stage: T, registered: same_grid_allocation, kind: equal_value, class: same_domain, baseline: T-roster-sor/direct_split, candidate: T-roster-sor/direct_split_certified}
+  # repair_off_on (suffix-repair.md §12): off == incremental_graph; on never below off
+  - {id: repair.off_identity.full, stage: T, registered: repair_off_on, kind: identity, keys: [status, score, evaluation, quotes_counted], baseline: T-roster-full/incremental_graph, candidate: T-repair-off-full/incremental_graph_repair}
+  - {id: repair.off_identity.sor, stage: T, registered: repair_off_on, kind: identity, keys: [status, score, evaluation, quotes_counted], baseline: T-roster-sor/incremental_graph, candidate: T-repair-off-sor/incremental_graph_repair}
+  - {id: repair.p1.full, stage: T, registered: repair_off_on, kind: not_below, baseline: T-repair-off-full/incremental_graph_repair, candidate: T-roster-full/incremental_graph_repair}
+  - {id: repair.p1.sor, stage: T, registered: repair_off_on, kind: not_below, baseline: T-repair-off-sor/incremental_graph_repair, candidate: T-roster-sor/incremental_graph_repair}
+  - {id: repair.paired.full, stage: T, registered: repair_off_on, kind: paired, class: same_domain, baseline: T-repair-off-full/incremental_graph_repair, candidate: T-roster-full/incremental_graph_repair, units: [quotes_counted, paths_scored]}
+  - {id: repair.paired.sor, stage: T, registered: repair_off_on, kind: paired, class: same_domain, baseline: T-repair-off-sor/incremental_graph_repair, candidate: T-roster-sor/incremental_graph_repair, units: [quotes_counted, paths_scored]}
+  # matched_sor_cycle_safe (cycle-safe-sor.md §11)
+  - {id: cycle.sor, stage: T, registered: matched_sor_cycle_safe, kind: cycle_safe, class: same_domain, baseline: T-roster-sor/uni_sor_port, candidate: T-roster-sor/uni_sor_cycle_safe, units: [quotes_counted, admission_checks]}
+  - {id: cycle.full, stage: T, registered: matched_sor_cycle_safe, kind: cycle_safe, class: same_domain, baseline: T-roster-full/uni_sor_port, candidate: T-roster-full/uni_sor_cycle_safe, units: [quotes_counted, admission_checks]}
+  # cfmm_cpmm_vs_cl (cfmm-dual.md §10; current v2 CL stage vs historical v1 CPMM-only)
+  - {id: cfmm.stage.full, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: expanded_protocol, baseline: T-cfmm-cpmm-full/cfmm_dual, candidate: T-roster-full/cfmm_dual}
+  - {id: cfmm.stage.sor, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: expanded_protocol, baseline: T-cfmm-cpmm-sor/cfmm_dual, candidate: T-roster-sor/cfmm_dual}
+  - {id: cfmm.vs_path_split.sor, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: incomparable_domain, baseline: T-roster-sor/path_split, candidate: T-roster-sor/cfmm_dual}
+  - {id: cfmm.vs_incremental_graph.sor, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: incomparable_domain, baseline: T-roster-sor/incremental_graph, candidate: T-roster-sor/cfmm_dual}
+  - {id: cfmm.vs_path_split.full, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: expanded_protocol, baseline: T-roster-full/path_split, candidate: T-roster-full/cfmm_dual}
+  - {id: cfmm.vs_incremental_graph.full, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: expanded_protocol, baseline: T-roster-full/incremental_graph, candidate: T-roster-full/cfmm_dual}
+  # E3/E4, L3/L4, S3/S4 same-depth (R021-C/1 §6.2; history-labels.md §9.1), tuning_full
+  - id: depth.tuning
+    stage: T
+    registered: E3_E4_L3_L4_S3_S4
+    kind: decomposition
+    arms: {E3: T-roster-full/incremental_graph, E4: T-e4/metis_inspired, L3: T-l3/metis_inspired,
+           L4: T-roster-full/metis_inspired, S3: T-s3/metis_history, S4: T-roster-full/metis_history}
+    base: E3
+    chains: [[L3], [S3], [E4], [E4, L4], [E4, S4], [L3, L4], [S3, S4]]
+    contrasts:   # same-depth pairs (same per-chunk domain), candidate vs baseline
+      - {baseline: L3, candidate: S3}
+      - {baseline: E3, candidate: S3}
+      - {baseline: E3, candidate: L3}
+      - {baseline: L4, candidate: S4}
+      - {baseline: E4, candidate: S4}
+      - {baseline: E4, candidate: L4}
+  - {id: depth.s3off_identity, stage: T, registered: E3_E4_L3_L4_S3_S4, kind: identity, keys: [status, score, evaluation], baseline: T-roster-full/incremental_graph, candidate: T-s3off/metis_history}
+  - {id: depth.s4off_identity, stage: T, registered: E3_E4_L3_L4_S3_S4, kind: identity, keys: [status, score, evaluation], baseline: T-e4/metis_inspired, candidate: T-s4off/metis_history}
+  # max_splits_scan (R021-C/1 §6.2): allocation-governed IDs only; graph solvers (fallback
+  # only) and cfmm_dual (governs: none) are NOT scanned. `apply: true` = a nominee rule
+  # whose result sets the registered comparison's report value.
+  - id: max_splits.same_grid_allocation
+    stage: T
+    registered: max_splits_scan
+    kind: nominee
+    apply: true
+    canonical: 4
+    algorithms: [direct_split, direct_split_certified]
+    scan:
+      1: [T-alloc-ms1-full, T-alloc-ms1-sor]
+      2: [T-alloc-ms2-full, T-alloc-ms2-sor]
+      4: [T-roster-full, T-roster-sor]
+      8: [T-alloc-ms8-full, T-alloc-ms8-sor]
+  - id: max_splits.matched_sor_cycle_safe
+    stage: T
+    registered: max_splits_scan
+    kind: nominee
+    apply: true
+    canonical: 4
+    algorithms: [uni_sor_port, uni_sor_cycle_safe]
+    scan: {1: [T-sor-ms1], 2: [T-sor-ms2], 4: [T-roster-sor], 8: [T-sor-ms8]}
+  - id: max_splits.path_split
+    stage: T
+    registered: max_splits_scan
+    kind: nominee
+    apply: false                    # informational: no registered 0.2.1 comparison consumes it
+    canonical: 4
+    algorithms: [path_split]
+    scan:
+      1: [T-alloc-ms1-full, T-alloc-ms1-sor]
+      2: [T-alloc-ms2-full, T-alloc-ms2-sor]
+      4: [T-roster-full, T-roster-sor]
+      8: [T-alloc-ms8-full, T-alloc-ms8-sor]
+  - id: max_splits.optimized_recipes
+    stage: T
+    registered: max_splits_scan
+    kind: nominee
+    apply: false                    # informational: the L08 recipes are pinned identities
+    canonical: 4
+    algorithms: [uni_sor_adaptive, uni_sor_optimized]
+    scan: {1: [T-sor-ms1], 2: [T-sor-ms2], 4: [T-roster-sor], 8: [T-sor-ms8]}
+  # gross-only identities under a net objective: every row unsupported
+  - {id: net.full, stage: T, registered: unsupported_scope, kind: all_unsupported, arms: [T-net-full/direct_split_certified, T-net-full/cfmm_dual]}
+  - {id: net.sor, stage: T, registered: unsupported_scope, kind: all_unsupported, arms: [T-net-sor/direct_split_certified, T-net-sor/cfmm_dual]}
+
+# Report-stage comparisons mirror stage T with R-* invocations (`mirror: {T: R}` replaces the
+# T- prefix and tuning bundles by R- and report bundles); defect cases are listed apart.
+report_mirror:
+  from_stage: T
+  to_stage: R
+  invocation_map:
+    T-roster-full: R-roster-full
+    T-roster-sor: R-roster-sor
+    T-e4: R-e4
+    T-l3: R-l3
+    T-s3: R-s3
+    T-s3off: R-s3off
+    T-s4off: R-s4off
+    T-repair-off-full: R-repair-off-full
+    T-repair-off-sor: R-repair-off-sor
+    T-cfmm-cpmm-full: R-cfmm-cpmm-full
+    T-cfmm-cpmm-sor: R-cfmm-cpmm-sor
+    T-net-full: R-net-full
+    T-net-sor: R-net-sor
+  exclude_kinds: [nominee]          # no tuning on the report split
+  known_defects_apart: [cycle.sor, cycle.full]
+
+# Filled by component A from the stage-T nominee comparisons (`apply: true`) BEFORE any
+# report-split solve; each non-canonical nominee adds one R-stage invocation pair.
+nominees: null
+
+# ----------------------------------------------------------------------------- rules
+rules:
+  nominee: >-
+    For each `kind: nominee` comparison, over every scheduled (case, algorithm) of its
+    algorithms on its tuning bundles: failures(v) = cells with status timeout, invalid_plan,
+    algorithm_error, model_error, incomplete_snapshot, cancelled or missing; shortfall(v) =
+    cells ok at some scanned value but at v not ok, or ok with gross below that cell's best
+    gross over all scanned values. Nominee = the smallest v with shortfall(v) = 0 and
+    failures(v) = min over the scan; if none qualifies, the canonical value 4. No loss
+    tolerance, no timing criterion; `apply: false` results are informational only.
+    Registered before any tuning observation (tools/research_021/analysis.py `nominee`).
+  statuses: >-
+    Every scheduled cell keeps its status (ok, no_route, unsupported, timeout, invalid_plan,
+    incomplete_snapshot, model_error, algorithm_error, cancelled, missing); unconditional
+    counts use the full schedule. Paired quality uses common-OK cells only; a missing score
+    is N/A, never 0; a zero baseline gross is N/A, counted apart.
+  ties: >-
+    Exact integer gross comparison: equal gross is a tie (neither higher nor lower); no money
+    tolerance. Solver-internal tie rules are each identity's research contract's.
+  numerical_tolerances: >-
+    None added. Protocol math and evaluation are exact integers. cfmm_dual's residual
+    tolerance is its pinned preset value (a numerical residual criterion, never a bound);
+    float ratios (recovered/estimate, geometric means) are reported, never thresholded.
+  stops_fallback_failure: >-
+    As each identity's research contract (history-labels.md §7, integer-allocation.md §5.4-5.6,
+    suffix-repair.md §5.7, cycle-safe-sor.md §4.5-4.7, cfmm-dual.md §5.4, §6-6.1). A fallback
+    plan is labelled from the record (`search_stats.r021.fallback`, `search.cfmm.fallback`),
+    never counted as the mechanism's result; a budget-bound cell proves no identity.
+  timing: >-
+    L01 labels (latency-baseline.md §4). A batch window whose sampled 1-minute load exceeds
+    0.5 x logical CPUs, or has no sample, is `inconclusive`; one sample per case gives no A/A
+    noise floor, so batch timing is descriptive only. Speed verdicts exist only in stage L via
+    `report.latency compare` (L01 rules verbatim). No single-request percentile, no SLA, no
+    total-campaign runtime ceiling.
+  infrastructure_deviation: >-
+    An invocation whose process ends without a complete manifest because of infrastructure
+    (host restart, OOM kill, disk full, tool/auth failure; evidence recorded) may be re-executed
+    ONCE into a fresh slot `<id>.retry1`; the failed attempt stays in the ledger and is reported
+    as a deviation. A completed run is never re-executed, whatever its statuses or timings;
+    solver timeouts/failures are outcomes, never retry reasons; host load is never a retry reason.
+  disposition: >-
+    Per identity (R021-C/1 §8): reject if a registered gate fails (correctness, determinism,
+    accounting, identity/P1, certificate validity, unsupported-scope rule) or a pre-registered
+    hypothesis is refuted; inconclusive if every gate passes but a primary question cannot be
+    evaluated (zero eligible cells, missing/incomplete records, coverage); keep_experimental
+    otherwise. A functional implementation needs no win; no adoption, no loss tolerance.
