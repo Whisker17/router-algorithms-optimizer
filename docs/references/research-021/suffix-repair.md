@@ -4,7 +4,7 @@
 | --- | --- |
 | Contract | `R021-C/1` ([`contract.md`](contract.md)); this memo fills the `incremental_graph_repair` row (§11 obligations) and changes no shared schema, vocabulary, example or check |
 | Publication key | `R021-P07`, WHI-1553, Release 0.2.1 (`ed16e106-fa3e-4b8a-b022-e7208eb8ef41`) |
-| Repository base | `origin/dev` `1ce50763b84b7daf4eec844665848b5b1c27fb6a` (B `81559ab` + WHI-1547/1549/1557/1551 research), then merged with `origin/dev` `6284a9d4c8c1c77d18f2fd9a8cfe836f410c2c3f` (WHI-1560; no file overlap). `routing/`, `pools/`, `snapshot/`, `benchmark/` unchanged since B |
+| Repository base | `origin/dev` `1ce50763b84b7daf4eec844665848b5b1c27fb6a` (B `81559ab` + WHI-1547/1549/1557/1551 research), then merged with `origin/dev` `6284a9d4c8c1c77d18f2fd9a8cfe836f410c2c3f` (WHI-1560) and `7f127e2876d541fd2c5794abcc7774ea981e11f0` (WHI-1555); no file overlap. `routing/`, `pools/`, `snapshot/`, `benchmark/` unchanged since B |
 | Revision | r2 (parent verification comment `7e509bdf`): stage-2 replay/accounting guard with fail-closed retention (§3.5, §5.1, §5.7) and the true all-stage `internal_evaluations` total with a narrow optional counting seam (§8, §8.1); probe provenance in §10.1 |
 | Outcome | **`go`** (§11): implementable, bounded, proven conserving and exactly replayable on every admitted protocol; no quality, optimality or latency claim; the measured effect on the tuning split is small (§10) |
 | Records | [`fixtures/suffix-repair.json`](fixtures/suffix-repair.json): trap, no-improvement, checkpoint-completeness and order fixtures, WHI-1549 cross-references, the pinned probe summary |
