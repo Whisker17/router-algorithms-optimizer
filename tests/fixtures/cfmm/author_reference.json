@@ -1,0 +1,613 @@
+{
+    "_comment": "Author-reference outputs of the pinned CFMMRouter.jl (WHI-1557). Generated OFFLINE by tools/upstream/cfmm/regen.sh; not a timed solver. Floats are the author's Float64 values.",
+    "provenance": {
+        "generator": "tools/upstream/cfmm/generate.jl",
+        "inputs": "tests/fixtures/cfmm/author_inputs.json",
+        "julia": "1.10.10",
+        "threads": 1,
+        "cfmmrouter": {
+            "version": "0.3.1",
+            "git_revision": "5932e42e5077ffc7d8e02c3b3ad2e9ed1d441267",
+            "repo": "https://github.com/bcc-research/CFMMRouter.jl"
+        },
+        "lbfgsb": "0.4.1",
+        "l_bfgs_b_jll": "3.0.1+0",
+        "route_defaults": "route!(r; v=nothing, verbose=false, m=5, factr=1e1, pgtol=1e-5, maxfun=15_000, maxiter=15_000)"
+    },
+    "cpmm_oracle": [
+        {
+            "id": "o-grid38-p1-sell-t0",
+            "delta": [
+                61.313204461073354,
+                0.0
+            ],
+            "lambda": [
+                0,
+                59.522390606693335
+            ]
+        },
+        {
+            "id": "o-grid38-p1-sell-t0-near",
+            "delta": [
+                0.6539471325814221,
+                0.0
+            ],
+            "lambda": [
+                0,
+                0.9199805339447096
+            ]
+        },
+        {
+            "id": "o-grid38-p1-band",
+            "delta": [
+                0,
+                0
+            ],
+            "lambda": [
+                0,
+                0
+            ]
+        },
+        {
+            "id": "o-grid38-p1-sell-t1",
+            "delta": [
+                0,
+                35.42213357389704
+            ],
+            "lambda": [
+                21.00307564033332,
+                0.0
+            ]
+        },
+        {
+            "id": "o-fee5-sell-t1",
+            "delta": [
+                0,
+                9.95599179203249e7
+            ],
+            "lambda": [
+                171714.23145663587,
+                0.0
+            ]
+        },
+        {
+            "id": "o-moe-usdt-wmnt-sell-t1",
+            "delta": [
+                0,
+                1.2707106594586591e19
+            ],
+            "lambda": [
+                8.183509670701981e6,
+                0.0
+            ]
+        },
+        {
+            "id": "o-moe-usdt-wmnt-sell-t0",
+            "delta": [
+                9.558582180755487e6,
+                0.0
+            ],
+            "lambda": [
+                0,
+                1.384202841077973e19
+            ]
+        }
+    ],
+    "univ3_oracle": [
+        {
+            "id": "cl-synthetic-band",
+            "current_tick": 2,
+            "delta": [
+                0,
+                0
+            ],
+            "lambda": [
+                0,
+                0
+            ]
+        },
+        {
+            "id": "cl-synthetic-sell_t0_near",
+            "current_tick": 2,
+            "delta": [
+                3.522091732410632e13,
+                0.0
+            ],
+            "lambda": [
+                0,
+                35343419627758
+            ]
+        },
+        {
+            "id": "cl-synthetic-sell_t0_across_empty",
+            "current_tick": 2,
+            "delta": [
+                4.444753703952187e14,
+                0.0
+            ],
+            "lambda": [
+                0,
+                422747279971177
+            ]
+        },
+        {
+            "id": "cl-synthetic-sell_t0_drain",
+            "current_tick": 2,
+            "delta": [
+                4.8520220711753006e14,
+                0.0
+            ],
+            "lambda": [
+                0,
+                456981049010256
+            ]
+        },
+        {
+            "id": "cl-synthetic-sell_t1_near",
+            "current_tick": 2,
+            "delta": [
+                0,
+                8.502212469309528e13
+            ],
+            "lambda": [
+                83221726115650,
+                0
+            ]
+        },
+        {
+            "id": "cl-synthetic-sell_t1_drain",
+            "current_tick": 2,
+            "delta": [
+                0,
+                5.699206783329769e14
+            ],
+            "lambda": [
+                532453692355028,
+                0
+            ]
+        },
+        {
+            "id": "cl-synthetic_missing_tick-sell_t0_across_empty",
+            "current_tick": 2,
+            "delta": [
+                4.444753703952187e14,
+                0.0
+            ],
+            "lambda": [
+                0,
+                422747279971177
+            ]
+        },
+        {
+            "id": "cl-synthetic_missing_tick-sell_t0_drain",
+            "current_tick": 2,
+            "delta": [
+                4.8520220711753006e14,
+                0.0
+            ],
+            "lambda": [
+                0,
+                456981049010256
+            ]
+        },
+        {
+            "id": "cl-real_uniswap_v3_usdt_wmnt-band",
+            "current_tick": 3,
+            "delta": [
+                0,
+                0
+            ],
+            "lambda": [
+                0,
+                0
+            ]
+        },
+        {
+            "id": "cl-real_uniswap_v3_usdt_wmnt-sell_t0",
+            "current_tick": 3,
+            "delta": [
+                1.869018912029794e6,
+                0.0
+            ],
+            "lambda": [
+                0,
+                2755370898009849856
+            ]
+        },
+        {
+            "id": "cl-real_uniswap_v3_usdt_wmnt-sell_t1",
+            "current_tick": 3,
+            "delta": [
+                0,
+                462898390115056192
+            ],
+            "lambda": [
+                308224.62855883536,
+                0.0
+            ]
+        },
+        {
+            "id": "cl-real_uniswap_v3_usdt_wmnt-sell_t0_drain",
+            "current_tick": 3,
+            "delta": [
+                1.3337278146757912e7,
+                0.0
+            ],
+            "lambda": [
+                0,
+                1.7938851001167512e19
+            ]
+        },
+        {
+            "id": "cl-real_uniswap_v3_usdt_wmnt-sell_t1_drain",
+            "current_tick": 3,
+            "delta": [
+                0,
+                2375287203776619008
+            ],
+            "lambda": [
+                434079.7701579767,
+                0.0
+            ]
+        }
+    ],
+    "router": [
+        {
+            "id": "r-grid38",
+            "route_returned": "nothing",
+            "v": [
+                1.2171905551388105,
+                1.0000000149011612
+            ],
+            "netflows": [
+                -38.00000000116326,
+                59.36760937160929
+            ],
+            "trades": [
+                {
+                    "pool_id": "p1",
+                    "delta": [
+                        10.441399740322744,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        13.696512140154539
+                    ]
+                },
+                {
+                    "pool_id": "p2",
+                    "delta": [
+                        27.558600260840517,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        45.67109723145475
+                    ]
+                }
+            ],
+            "conjugate": 46.253241095274795,
+            "dual_value": 59.36761025483969
+        },
+        {
+            "id": "r-triangle",
+            "route_returned": "nothing",
+            "v": [
+                0.8448187409199166,
+                0.4561283924711264,
+                1.0000000149011612
+            ],
+            "netflows": [
+                -150.00000001730086,
+                -1.192154996942918e-8,
+                139.35069890169237
+            ],
+            "trades": [
+                {
+                    "pool_id": "st",
+                    "delta": [
+                        86.59990414362196,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        79.47796834436019
+                    ]
+                },
+                {
+                    "pool_id": "sm",
+                    "delta": [
+                        63.40009587367892,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        124.84908321658622
+                    ]
+                },
+                {
+                    "pool_id": "mt",
+                    "delta": [
+                        91.1047783832788,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        43.44274783021831
+                    ]
+                },
+                {
+                    "pool_id": "mt2",
+                    "delta": [
+                        33.744304845228974,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        16.429982727113867
+                    ]
+                }
+            ],
+            "conjugate": 126.72281113798749,
+            "dual_value": 139.35070095812574
+        },
+        {
+            "id": "r-cycle",
+            "route_returned": "nothing",
+            "v": [
+                0.8388006929636965,
+                0.9272954464383623,
+                0.9436742121231487,
+                1.0000000149011612
+            ],
+            "netflows": [
+                -499.99999687826204,
+                -5.191077832478186e-6,
+                -8.32834945185823e-6,
+                627.0112019811368
+            ],
+            "trades": [
+                {
+                    "pool_id": "sa",
+                    "delta": [
+                        499.99999687826204,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        474.82973475773906
+                    ]
+                },
+                {
+                    "pool_id": "ab1",
+                    "delta": [
+                        1037.2948802483065,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        1124.7045614732815
+                    ]
+                },
+                {
+                    "pool_id": "ab2",
+                    "delta": [
+                        0,
+                        845.2051677142814
+                    ],
+                    "lambda": [
+                        932.6148489392563,
+                        0.0
+                    ]
+                },
+                {
+                    "pool_id": "bt",
+                    "delta": [
+                        279.49940208734955,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        271.1062330851564
+                    ]
+                },
+                {
+                    "pool_id": "at",
+                    "delta": [
+                        370.14970863976663,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        355.90496889598035
+                    ]
+                }
+            ],
+            "conjugate": 419.40034648184826,
+            "dual_value": 627.0112012699362
+        },
+        {
+            "id": "r-deadend",
+            "route_returned": "nothing",
+            "v": [
+                0.9583980383777,
+                1.0000000149011612,
+                0.9571538051314068,
+                0.9596632486409128
+            ],
+            "netflows": [
+                -100.00000050781806,
+                97.75084857579532,
+                0.0,
+                0.0
+            ],
+            "trades": [
+                {
+                    "pool_id": "st",
+                    "delta": [
+                        100.00000050781806,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        97.75084857579532
+                    ]
+                },
+                {
+                    "pool_id": "sx",
+                    "delta": [
+                        0,
+                        0
+                    ],
+                    "lambda": [
+                        0,
+                        0
+                    ]
+                },
+                {
+                    "pool_id": "xy",
+                    "delta": [
+                        0,
+                        0
+                    ],
+                    "lambda": [
+                        0,
+                        0
+                    ]
+                }
+            ],
+            "conjugate": 95.83980383777,
+            "dual_value": 97.75084954570465
+        },
+        {
+            "id": "r-tiny",
+            "route_returned": "nothing",
+            "v": [
+                366.1052761829678,
+                383.8734627428387,
+                3.850276519320727
+            ],
+            "netflows": [
+                -22.509408626208945,
+                21.94929690433196,
+                0.0
+            ],
+            "trades": [
+                {
+                    "pool_id": "h1",
+                    "delta": [
+                        22.509408626208945,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        21.94929690433196
+                    ]
+                },
+                {
+                    "pool_id": "h2",
+                    "delta": [
+                        0,
+                        0
+                    ],
+                    "lambda": [
+                        0,
+                        0
+                    ]
+                }
+            ],
+            "conjugate": 732.2105523659357,
+            "dual_value": 917.1498979890093
+        },
+        {
+            "id": "r-moe-usdc-usdt",
+            "route_returned": "nothing",
+            "v": [
+                1.8746024899963331e6,
+                1.9779132107815498e6,
+                1.284016026806699e-6
+            ],
+            "netflows": [
+                -4.18739611236012e6,
+                4.070515802230045e6,
+                -2.03597273088e11
+            ],
+            "trades": [
+                {
+                    "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+                    "delta": [
+                        0,
+                        4615036899488421888
+                    ],
+                    "lambda": [
+                        3.0290727407537103e6,
+                        0.0
+                    ]
+                },
+                {
+                    "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+                    "delta": [
+                        3.115285689752911e6,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        4615036695891148800
+                    ]
+                },
+                {
+                    "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+                    "delta": [
+                        1.0721104226072086e6,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        1.0414430614763349e6
+                    ]
+                }
+            ],
+            "conjugate": 3.7492049799926664e13,
+            "dual_value": 3.769347333959912e13
+        },
+        {
+            "id": "r-grid38-maxiter1",
+            "route_returned": "nothing",
+            "v": [
+                1.3223891567931474,
+                1.0000000149011612
+            ],
+            "netflows": [
+                -27.90550824085576,
+                46.56072825654695
+            ],
+            "trades": [
+                {
+                    "pool_id": "p1",
+                    "delta": [
+                        4.560687164186062,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        6.235652433420768
+                    ]
+                },
+                {
+                    "pool_id": "p2",
+                    "delta": [
+                        23.344821076669696,
+                        0.0
+                    ],
+                    "lambda": [
+                        0,
+                        40.325075823126184
+                    ]
+                }
+            ],
+            "conjugate": 50.250787958139604,
+            "dual_value": 59.909575395985996
+        }
+    ]
+}

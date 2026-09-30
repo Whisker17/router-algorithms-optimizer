@@ -1,0 +1,722 @@
+{
+ "_comment": "Inputs of the pinned CFMMRouter.jl reference run (WHI-1557). Written by tools/upstream/cfmm/author_inputs.py; consumed by tools/upstream/cfmm/generate.jl.",
+ "cpmm_oracle": [
+  {
+   "R": [
+    134,
+    190
+   ],
+   "fee_bps": 30,
+   "id": "o-grid38-p1-sell-t0",
+   "v": [
+    1.0,
+    1.5
+   ]
+  },
+  {
+   "R": [
+    134,
+    190
+   ],
+   "fee_bps": 30,
+   "id": "o-grid38-p1-sell-t0-near",
+   "v": [
+    1.4,
+    1.0
+   ]
+  },
+  {
+   "R": [
+    134,
+    190
+   ],
+   "fee_bps": 30,
+   "id": "o-grid38-p1-band",
+   "v": [
+    1.418,
+    1.0
+   ]
+  },
+  {
+   "R": [
+    134,
+    190
+   ],
+   "fee_bps": 30,
+   "id": "o-grid38-p1-sell-t1",
+   "v": [
+    2.0,
+    1.0
+   ]
+  },
+  {
+   "R": [
+    1000000,
+    480000000
+   ],
+   "fee_bps": 5,
+   "id": "o-fee5-sell-t1",
+   "v": [
+    700.0,
+    1.0
+   ]
+  },
+  {
+   "R": [
+    277229670,
+    416513449682493328611
+   ],
+   "fee_bps": 30,
+   "id": "o-moe-usdt-wmnt-sell-t1",
+   "v": [
+    1600000000000.0,
+    1.0
+   ]
+  },
+  {
+   "R": [
+    277229670,
+    416513449682493328611
+   ],
+   "fee_bps": 30,
+   "id": "o-moe-usdt-wmnt-sell-t0",
+   "v": [
+    1400000000000.0,
+    1.0
+   ]
+  }
+ ],
+ "router": [
+  {
+   "amount_in": 38,
+   "id": "r-grid38",
+   "note": "R021 R6 pools; continuous optimum in (59.36, 59.37)",
+   "pools": [
+    {
+     "fee_bps": 30,
+     "pool_id": "p1",
+     "reserve0": 134,
+     "reserve1": 190,
+     "token0": "S",
+     "token1": "T"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "p2",
+     "reserve0": 76,
+     "reserve1": 172,
+     "token0": "S",
+     "token1": "T"
+    }
+   ],
+   "route_kwargs": {},
+   "token_in": "S",
+   "token_out": "T",
+   "tokens": [
+    "S",
+    "T"
+   ]
+  },
+  {
+   "amount_in": 150,
+   "id": "r-triangle",
+   "note": "three tokens: direct, two-hop and a parallel pool",
+   "pools": [
+    {
+     "fee_bps": 30,
+     "pool_id": "st",
+     "reserve0": 1000,
+     "reserve1": 1000,
+     "token0": "S",
+     "token1": "T"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "sm",
+     "reserve0": 1000,
+     "reserve1": 2100,
+     "token0": "S",
+     "token1": "M"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "mt",
+     "reserve0": 2000,
+     "reserve1": 1000,
+     "token0": "M",
+     "token1": "T"
+    },
+    {
+     "fee_bps": 5,
+     "pool_id": "mt2",
+     "reserve0": 500,
+     "reserve1": 260,
+     "token0": "M",
+     "token1": "T"
+    }
+   ],
+   "route_kwargs": {},
+   "token_in": "S",
+   "token_out": "T",
+   "tokens": [
+    "S",
+    "M",
+    "T"
+   ]
+  },
+  {
+   "amount_in": 500,
+   "id": "r-cycle",
+   "note": "A/B pools priced apart: the continuous optimum trades a loop",
+   "pools": [
+    {
+     "fee_bps": 30,
+     "pool_id": "sa",
+     "reserve0": 10000,
+     "reserve1": 10000,
+     "token0": "S",
+     "token1": "A"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "ab1",
+     "reserve0": 10000,
+     "reserve1": 12000,
+     "token0": "A",
+     "token1": "B"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "ab2",
+     "reserve0": 12000,
+     "reserve1": 10000,
+     "token0": "A",
+     "token1": "B"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "bt",
+     "reserve0": 10000,
+     "reserve1": 10000,
+     "token0": "B",
+     "token1": "T"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "at",
+     "reserve0": 10000,
+     "reserve1": 10000,
+     "token0": "A",
+     "token1": "T"
+    }
+   ],
+   "route_kwargs": {},
+   "token_in": "S",
+   "token_out": "T",
+   "tokens": [
+    "S",
+    "A",
+    "B",
+    "T"
+   ]
+  },
+  {
+   "amount_in": 100,
+   "id": "r-deadend",
+   "note": "S-X and X-Y never reach T",
+   "pools": [
+    {
+     "fee_bps": 30,
+     "pool_id": "st",
+     "reserve0": 5000,
+     "reserve1": 5000,
+     "token0": "S",
+     "token1": "T"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "sx",
+     "reserve0": 5000,
+     "reserve1": 5000,
+     "token0": "S",
+     "token1": "X"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "xy",
+     "reserve0": 5000,
+     "reserve1": 5000,
+     "token0": "X",
+     "token1": "Y"
+    }
+   ],
+   "route_kwargs": {},
+   "token_in": "S",
+   "token_out": "T",
+   "tokens": [
+    "S",
+    "T",
+    "X",
+    "Y"
+   ]
+  },
+  {
+   "amount_in": 2,
+   "id": "r-tiny",
+   "note": "R021 R5: continuous ~198.40, stepwise integer 99",
+   "pools": [
+    {
+     "fee_bps": 30,
+     "pool_id": "h1",
+     "reserve0": 1000,
+     "reserve1": 1000,
+     "token0": "S",
+     "token1": "M"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "h2",
+     "reserve0": 1000000000,
+     "reserve1": 100000000000,
+     "token0": "M",
+     "token1": "T"
+    }
+   ],
+   "route_kwargs": {},
+   "token_in": "S",
+   "token_out": "T",
+   "tokens": [
+    "S",
+    "M",
+    "T"
+   ]
+  },
+  {
+   "amount_in": 20000000,
+   "id": "r-moe-usdc-usdt",
+   "note": "real Moe Classic triangle, 6/6/18 decimals, raw units",
+   "pools": [
+    {
+     "fee_bps": 30,
+     "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+     "reserve0": 277229670,
+     "reserve1": 416513449682493328611,
+     "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+     "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+     "reserve0": 211259108,
+     "reserve1": 318519551362175256878,
+     "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+     "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+     "reserve0": 42876428,
+     "reserve1": 42816731,
+     "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+     "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+    }
+   ],
+   "route_kwargs": {},
+   "token_in": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+   "token_out": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+   "tokens": [
+    "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+    "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+    "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+   ]
+  },
+  {
+   "amount_in": 38,
+   "id": "r-grid38-maxiter1",
+   "note": "author route! with maxiter=1: no status is returned",
+   "pools": [
+    {
+     "fee_bps": 30,
+     "pool_id": "p1",
+     "reserve0": 134,
+     "reserve1": 190,
+     "token0": "S",
+     "token1": "T"
+    },
+    {
+     "fee_bps": 30,
+     "pool_id": "p2",
+     "reserve0": 76,
+     "reserve1": 172,
+     "token0": "S",
+     "token1": "T"
+    }
+   ],
+   "route_kwargs": {
+    "maxiter": 1
+   },
+   "token_in": "S",
+   "token_out": "T",
+   "tokens": [
+    "S",
+    "T"
+   ]
+  }
+ ],
+ "univ3_oracle": [
+  {
+   "current_price": 1.0100496620928767,
+   "gamma": 0.997,
+   "id": "cl-synthetic-band",
+   "liquidity": [
+    0.0,
+    1e+32,
+    0.0,
+    1.6e+31,
+    0.0,
+    0.0
+   ],
+   "lower_ticks": [
+    4.617823568835026,
+    1.1274900870695233,
+    0.9417673586937481,
+    0.8869257579009987,
+    0.8352777283758743,
+    0.21525687316162642
+   ],
+   "state": "synthetic",
+   "v": [
+    1.0100496620928767,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1.0100496620928767,
+   "gamma": 0.997,
+   "id": "cl-synthetic-sell_t0_near",
+   "liquidity": [
+    0.0,
+    1e+32,
+    0.0,
+    1.6e+31,
+    0.0,
+    0.0
+   ],
+   "lower_ticks": [
+    4.617823568835026,
+    1.1274900870695233,
+    0.9417673586937481,
+    0.8869257579009987,
+    0.8352777283758743,
+    0.21525687316162642
+   ],
+   "state": "synthetic",
+   "v": [
+    0.9999491654719479,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1.0100496620928767,
+   "gamma": 0.997,
+   "id": "cl-synthetic-sell_t0_across_empty",
+   "liquidity": [
+    0.0,
+    1e+32,
+    0.0,
+    1.6e+31,
+    0.0,
+    0.0
+   ],
+   "lower_ticks": [
+    4.617823568835026,
+    1.1274900870695233,
+    0.9417673586937481,
+    0.8869257579009987,
+    0.8352777283758743,
+    0.21525687316162642
+   ],
+   "state": "synthetic",
+   "v": [
+    0.8484417161580164,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1.0100496620928767,
+   "gamma": 0.997,
+   "id": "cl-synthetic-sell_t0_drain",
+   "liquidity": [
+    0.0,
+    1e+32,
+    0.0,
+    1.6e+31,
+    0.0,
+    0.0
+   ],
+   "lower_ticks": [
+    4.617823568835026,
+    1.1274900870695233,
+    0.9417673586937481,
+    0.8869257579009987,
+    0.8352777283758743,
+    0.21525687316162642
+   ],
+   "state": "synthetic",
+   "v": [
+    0.5050248310464384,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1.0100496620928767,
+   "gamma": 0.997,
+   "id": "cl-synthetic-sell_t1_near",
+   "liquidity": [
+    0.0,
+    1e+32,
+    0.0,
+    1.6e+31,
+    0.0,
+    0.0
+   ],
+   "lower_ticks": [
+    4.617823568835026,
+    1.1274900870695233,
+    0.9417673586937481,
+    0.8869257579009987,
+    0.8352777283758743,
+    0.21525687316162642
+   ],
+   "state": "synthetic",
+   "v": [
+    1.0302506553347344,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1.0100496620928767,
+   "gamma": 0.997,
+   "id": "cl-synthetic-sell_t1_drain",
+   "liquidity": [
+    0.0,
+    1e+32,
+    0.0,
+    1.6e+31,
+    0.0,
+    0.0
+   ],
+   "lower_ticks": [
+    4.617823568835026,
+    1.1274900870695233,
+    0.9417673586937481,
+    0.8869257579009987,
+    0.8352777283758743,
+    0.21525687316162642
+   ],
+   "state": "synthetic",
+   "v": [
+    1.3130645607207398,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1.0100496620928767,
+   "gamma": 0.997,
+   "id": "cl-synthetic_missing_tick-sell_t0_across_empty",
+   "liquidity": [
+    0.0,
+    1e+32,
+    0.0,
+    1.6e+31,
+    0.0
+   ],
+   "lower_ticks": [
+    4.617823568835026,
+    1.1274900870695233,
+    0.9417673586937481,
+    0.8869257579009987,
+    0.8352777283758743
+   ],
+   "state": "synthetic_missing_tick",
+   "v": [
+    0.8484417161580164,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1.0100496620928767,
+   "gamma": 0.997,
+   "id": "cl-synthetic_missing_tick-sell_t0_drain",
+   "liquidity": [
+    0.0,
+    1e+32,
+    0.0,
+    1.6e+31,
+    0.0
+   ],
+   "lower_ticks": [
+    4.617823568835026,
+    1.1274900870695233,
+    0.9417673586937481,
+    0.8869257579009987,
+    0.8352777283758743
+   ],
+   "state": "synthetic_missing_tick",
+   "v": [
+    0.5050248310464384,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1497232014621.0974,
+   "gamma": 0.9995,
+   "id": "cl-real_uniswap_v3_usdt_wmnt-band",
+   "liquidity": [
+    3.0241173703255092e+22,
+    3.0607017060112106e+22,
+    2.2938838078718377e+28,
+    2.293876767333933e+28,
+    3.0525744791831265e+22,
+    3.0241173703255092e+22,
+    7.444219553008728e+19,
+    0.0
+   ],
+   "lower_ticks": [
+    4.7446534981413357e+17,
+    1544307558400.7034,
+    1504674999243.6511,
+    1297688139439.684,
+    1222120331488.3157,
+    1088274186629.6516,
+    739790992806.1671,
+    1007828.7739552816
+   ],
+   "state": "real_uniswap_v3_usdt_wmnt",
+   "v": [
+    1497232014621.0974,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1497232014621.0974,
+   "gamma": 0.9995,
+   "id": "cl-real_uniswap_v3_usdt_wmnt-sell_t0",
+   "liquidity": [
+    3.0241173703255092e+22,
+    3.0607017060112106e+22,
+    2.2938838078718377e+28,
+    2.293876767333933e+28,
+    3.0525744791831265e+22,
+    3.0241173703255092e+22,
+    7.444219553008728e+19,
+    0.0
+   ],
+   "lower_ticks": [
+    4.7446534981413357e+17,
+    1544307558400.7034,
+    1504674999243.6511,
+    1297688139439.684,
+    1222120331488.3157,
+    1088274186629.6516,
+    739790992806.1671,
+    1007828.7739552816
+   ],
+   "state": "real_uniswap_v3_usdt_wmnt",
+   "v": [
+    1452315054182.4644,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1497232014621.0974,
+   "gamma": 0.9995,
+   "id": "cl-real_uniswap_v3_usdt_wmnt-sell_t1",
+   "liquidity": [
+    3.0241173703255092e+22,
+    3.0607017060112106e+22,
+    2.2938838078718377e+28,
+    2.293876767333933e+28,
+    3.0525744791831265e+22,
+    3.0241173703255092e+22,
+    7.444219553008728e+19,
+    0.0
+   ],
+   "lower_ticks": [
+    4.7446534981413357e+17,
+    1544307558400.7034,
+    1504674999243.6511,
+    1297688139439.684,
+    1222120331488.3157,
+    1088274186629.6516,
+    739790992806.1671,
+    1007828.7739552816
+   ],
+   "state": "real_uniswap_v3_usdt_wmnt",
+   "v": [
+    1542148975059.7305,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1497232014621.0974,
+   "gamma": 0.9995,
+   "id": "cl-real_uniswap_v3_usdt_wmnt-sell_t0_drain",
+   "liquidity": [
+    3.0241173703255092e+22,
+    3.0607017060112106e+22,
+    2.2938838078718377e+28,
+    2.293876767333933e+28,
+    3.0525744791831265e+22,
+    3.0241173703255092e+22,
+    7.444219553008728e+19,
+    0.0
+   ],
+   "lower_ticks": [
+    4.7446534981413357e+17,
+    1544307558400.7034,
+    1504674999243.6511,
+    1297688139439.684,
+    1222120331488.3157,
+    1088274186629.6516,
+    739790992806.1671,
+    1007828.7739552816
+   ],
+   "state": "real_uniswap_v3_usdt_wmnt",
+   "v": [
+    14972320146.210974,
+    1.0
+   ]
+  },
+  {
+   "current_price": 1497232014621.0974,
+   "gamma": 0.9995,
+   "id": "cl-real_uniswap_v3_usdt_wmnt-sell_t1_drain",
+   "liquidity": [
+    3.0241173703255092e+22,
+    3.0607017060112106e+22,
+    2.2938838078718377e+28,
+    2.293876767333933e+28,
+    3.0525744791831265e+22,
+    3.0241173703255092e+22,
+    7.444219553008728e+19,
+    0.0
+   ],
+   "lower_ticks": [
+    4.7446534981413357e+17,
+    1544307558400.7034,
+    1504674999243.6511,
+    1297688139439.684,
+    1222120331488.3157,
+    1088274186629.6516,
+    739790992806.1671,
+    1007828.7739552816
+   ],
+   "state": "real_uniswap_v3_usdt_wmnt",
+   "v": [
+    149723201462109.75,
+    1.0
+   ]
+  }
+ ]
+}
