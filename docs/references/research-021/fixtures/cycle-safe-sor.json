@@ -1,0 +1,3533 @@
+{
+  "_comment": "WHI-1555 (R021-P09) cycle-safe SOR selection records, checked by tests/routing/test_cycle_safe_sor_contract.py. Core fixtures are hand-built (route, percent) quote tables whose expected selections were traced by hand through the B-S rules (cycle-safe-sor.md section 6); adapter fixtures are synthetic constant-product bundles whose expected outputs come from the hand integer getAmountOut formula in the test, never from the selector under test. corpus_probe is a pinned summary of the bounded diagnostic pass of section 9 (tuning split plus the known report-split defect cases as regressions only).",
+  "issue": "WHI-1555",
+  "publication_key": "R021-P09",
+  "contract": "R021-C/1",
+  "algorithm": "uni_sor_cycle_safe",
+  "reference": "uni_sor_port",
+  "core": {
+    "K1_three_route_cycle": {
+      "note": "pairwise-acyclic routes whose three-route union a->b->c->a is a cycle; admission must test the whole union",
+      "percent_step": 25,
+      "max_splits": 3,
+      "routes": [
+        {
+          "id": "r1",
+          "pools": [
+            "p1",
+            "p2",
+            "p3"
+          ],
+          "tokens": [
+            "s",
+            "a",
+            "b",
+            "t"
+          ],
+          "quotes": {
+            "25": 40,
+            "50": 60,
+            "75": 65,
+            "100": 70
+          }
+        },
+        {
+          "id": "r2",
+          "pools": [
+            "q1",
+            "q2",
+            "q3"
+          ],
+          "tokens": [
+            "s",
+            "b",
+            "c",
+            "t"
+          ],
+          "quotes": {
+            "25": 40,
+            "50": 60,
+            "75": 65,
+            "100": 70
+          }
+        },
+        {
+          "id": "r3",
+          "pools": [
+            "w1",
+            "w2",
+            "w3"
+          ],
+          "tokens": [
+            "s",
+            "c",
+            "a",
+            "t"
+          ],
+          "quotes": {
+            "25": 40,
+            "50": 60,
+            "75": 65,
+            "100": 70
+          }
+        },
+        {
+          "id": "z",
+          "pools": [
+            "z"
+          ],
+          "tokens": [
+            "s",
+            "t"
+          ],
+          "quotes": {
+            "25": 26,
+            "50": 51,
+            "75": 76,
+            "100": 100
+          }
+        }
+      ],
+      "expected_port": {
+        "routes": [
+          [
+            "r1",
+            50
+          ],
+          [
+            "r3",
+            25
+          ],
+          [
+            "r2",
+            25
+          ]
+        ],
+        "value": 140,
+        "union_cyclic": true
+      },
+      "expected_variant": {
+        "routes": [
+          [
+            "r1",
+            50
+          ],
+          [
+            "z",
+            25
+          ],
+          [
+            "r2",
+            25
+          ]
+        ],
+        "value": 126,
+        "admission_checks": 16,
+        "combinations_rejected_cycle": 4
+      },
+      "expected_oracle": {
+        "best_admissible": 131,
+        "best_any": 140
+      },
+      "expected_pairwise_mutation": {
+        "routes": [
+          [
+            "r1",
+            50
+          ],
+          [
+            "r3",
+            25
+          ],
+          [
+            "r2",
+            25
+          ]
+        ],
+        "value": 140,
+        "union_cyclic": true
+      }
+    },
+    "K2_tie_continue_scan": {
+      "note": "r2 and r3 tie at 50; r2 precedes r3 in B-Q1 order but closes x->y->x with r1, so the scan continues to r3; equal final amounts reverse under B-F1",
+      "percent_step": 50,
+      "max_splits": 2,
+      "routes": [
+        {
+          "id": "r1",
+          "pools": [
+            "a",
+            "b",
+            "c"
+          ],
+          "tokens": [
+            "s",
+            "x",
+            "y",
+            "t"
+          ],
+          "quotes": {
+            "50": 60,
+            "100": 100
+          }
+        },
+        {
+          "id": "r2",
+          "pools": [
+            "d",
+            "e",
+            "f"
+          ],
+          "tokens": [
+            "s",
+            "y",
+            "x",
+            "t"
+          ],
+          "quotes": {
+            "50": 55,
+            "100": 90
+          }
+        },
+        {
+          "id": "r3",
+          "pools": [
+            "g",
+            "k"
+          ],
+          "tokens": [
+            "s",
+            "x",
+            "t"
+          ],
+          "quotes": {
+            "50": 55,
+            "100": 90
+          }
+        }
+      ],
+      "expected_port": {
+        "routes": [
+          [
+            "r2",
+            50
+          ],
+          [
+            "r1",
+            50
+          ]
+        ],
+        "value": 115,
+        "union_cyclic": true
+      },
+      "expected_variant": {
+        "routes": [
+          [
+            "r3",
+            50
+          ],
+          [
+            "r1",
+            50
+          ]
+        ],
+        "value": 115,
+        "admission_checks": 4,
+        "combinations_rejected_cycle": 2
+      },
+      "expected_oracle": {
+        "best_admissible": 115,
+        "best_any": 115
+      },
+      "expected_skip_percent_mutation": {
+        "routes": [
+          [
+            "r1",
+            100
+          ]
+        ],
+        "value": 100
+      }
+    },
+    "K4_acyclic_reference_but_different_result": {
+      "note": "the reference's final selection is acyclic, yet its cyclic partial node r1+r2 displaced r1+r3, which the variant keeps and completes; zero rejections is the exact condition for trajectory equality, not an acyclic reference result",
+      "percent_step": 25,
+      "max_splits": 3,
+      "routes": [
+        {
+          "id": "z",
+          "pools": [
+            "z"
+          ],
+          "tokens": [
+            "s",
+            "t"
+          ],
+          "quotes": {
+            "100": 100
+          }
+        },
+        {
+          "id": "r1",
+          "pools": [
+            "a",
+            "b",
+            "c"
+          ],
+          "tokens": [
+            "s",
+            "x",
+            "y",
+            "t"
+          ],
+          "quotes": {
+            "50": 62
+          }
+        },
+        {
+          "id": "h1",
+          "pools": [
+            "h1"
+          ],
+          "tokens": [
+            "s",
+            "t"
+          ],
+          "quotes": {
+            "50": 51
+          }
+        },
+        {
+          "id": "h2",
+          "pools": [
+            "h2"
+          ],
+          "tokens": [
+            "s",
+            "t"
+          ],
+          "quotes": {
+            "50": 50
+          }
+        },
+        {
+          "id": "r2",
+          "pools": [
+            "d",
+            "e",
+            "f"
+          ],
+          "tokens": [
+            "s",
+            "y",
+            "x",
+            "t"
+          ],
+          "quotes": {
+            "25": 30
+          }
+        },
+        {
+          "id": "r3",
+          "pools": [
+            "d",
+            "n"
+          ],
+          "tokens": [
+            "s",
+            "y",
+            "t"
+          ],
+          "quotes": {
+            "25": 28
+          }
+        },
+        {
+          "id": "u",
+          "pools": [
+            "m",
+            "f"
+          ],
+          "tokens": [
+            "s",
+            "x",
+            "t"
+          ],
+          "quotes": {
+            "25": 27
+          }
+        }
+      ],
+      "expected_port": {
+        "routes": [
+          [
+            "h1",
+            50
+          ],
+          [
+            "r1",
+            50
+          ]
+        ],
+        "value": 113,
+        "union_cyclic": false
+      },
+      "expected_variant": {
+        "routes": [
+          [
+            "r1",
+            50
+          ],
+          [
+            "u",
+            25
+          ],
+          [
+            "r3",
+            25
+          ]
+        ],
+        "value": 117,
+        "admission_checks": 7,
+        "combinations_rejected_cycle": 1
+      },
+      "expected_oracle": {
+        "best_admissible": 117,
+        "best_any": 117
+      }
+    },
+    "K5_pruning_regression": {
+      "note": "the reference's cyclic two-route best keeps the B-S5 pruning rule open and it reaches a valid three-route selection; the variant's best stays the one-route baseline, so pruning stops it at splits = 3: no dominance over the reference",
+      "percent_step": 25,
+      "max_splits": 3,
+      "routes": [
+        {
+          "id": "z",
+          "pools": [
+            "z"
+          ],
+          "tokens": [
+            "s",
+            "t"
+          ],
+          "quotes": {
+            "100": 100
+          }
+        },
+        {
+          "id": "p",
+          "pools": [
+            "p1",
+            "p2",
+            "p3"
+          ],
+          "tokens": [
+            "s",
+            "x",
+            "y",
+            "t"
+          ],
+          "quotes": {
+            "50": 60
+          }
+        },
+        {
+          "id": "q",
+          "pools": [
+            "q1",
+            "q2",
+            "q3"
+          ],
+          "tokens": [
+            "s",
+            "y",
+            "x",
+            "t"
+          ],
+          "quotes": {
+            "50": 59
+          }
+        },
+        {
+          "id": "u",
+          "pools": [
+            "u"
+          ],
+          "tokens": [
+            "s",
+            "t"
+          ],
+          "quotes": {
+            "25": 36
+          }
+        },
+        {
+          "id": "v",
+          "pools": [
+            "v"
+          ],
+          "tokens": [
+            "s",
+            "t"
+          ],
+          "quotes": {
+            "25": 35
+          }
+        }
+      ],
+      "expected_port": {
+        "routes": [
+          [
+            "p",
+            50
+          ],
+          [
+            "v",
+            25
+          ],
+          [
+            "u",
+            25
+          ]
+        ],
+        "value": 131,
+        "union_cyclic": false
+      },
+      "expected_variant": {
+        "routes": [
+          [
+            "z",
+            100
+          ]
+        ],
+        "value": 100,
+        "admission_checks": 6,
+        "combinations_rejected_cycle": 2
+      },
+      "expected_oracle": {
+        "best_admissible": 131,
+        "best_any": 131
+      }
+    },
+    "K6_no_admissible_selection": {
+      "note": "no 100 % entry; the only complete selection is the cyclic pair",
+      "percent_step": 50,
+      "max_splits": 2,
+      "routes": [
+        {
+          "id": "p",
+          "pools": [
+            "p1",
+            "p2",
+            "p3"
+          ],
+          "tokens": [
+            "s",
+            "x",
+            "y",
+            "t"
+          ],
+          "quotes": {
+            "50": 60
+          }
+        },
+        {
+          "id": "q",
+          "pools": [
+            "q1",
+            "q2",
+            "q3"
+          ],
+          "tokens": [
+            "s",
+            "y",
+            "x",
+            "t"
+          ],
+          "quotes": {
+            "50": 59
+          }
+        }
+      ],
+      "expected_port": {
+        "routes": [
+          [
+            "q",
+            50
+          ],
+          [
+            "p",
+            50
+          ]
+        ],
+        "value": 119,
+        "union_cyclic": true
+      },
+      "expected_variant": {
+        "routes": null,
+        "value": null,
+        "admission_checks": 2,
+        "combinations_rejected_cycle": 2
+      },
+      "expected_oracle": {
+        "best_admissible": null,
+        "best_any": 119
+      }
+    }
+  },
+  "adapter": {
+    "A1_union_cycle": {
+      "note": "individually simple, physical-pool-disjoint routes s-x-y-t (a,b,c) and s-y-x-t (d,e,f) whose union closes x->y->x; b and e price x/y in opposite directions (a cyclic-arbitrage loop the v1 set forbids)",
+      "fee_bps": 30,
+      "pools": {
+        "a": [
+          "s",
+          "x",
+          11000000,
+          11000000
+        ],
+        "b": [
+          "x",
+          "y",
+          10000000,
+          20000000
+        ],
+        "c": [
+          "t",
+          "y",
+          10000000,
+          10000000
+        ],
+        "d": [
+          "s",
+          "y",
+          10000000,
+          10000000
+        ],
+        "e": [
+          "x",
+          "y",
+          20000000,
+          10000000
+        ],
+        "f": [
+          "t",
+          "x",
+          10000000,
+          10000000
+        ]
+      },
+      "case": {
+        "case_id": "a1",
+        "token_in": "s",
+        "token_out": "t",
+        "amount_in": 2000000
+      },
+      "params": {
+        "max_hops": 3,
+        "max_splits": 2,
+        "percent_step": 50
+      },
+      "routes_enumerated": 6,
+      "expected_port": {
+        "status": "invalid_plan",
+        "error": "economic token cycle: x -> y -> x",
+        "routes": [
+          [
+            [
+              "d",
+              "e",
+              "f"
+            ],
+            50,
+            1418480
+          ],
+          [
+            [
+              "a",
+              "b",
+              "c"
+            ],
+            50,
+            1427742
+          ]
+        ]
+      },
+      "expected_variant": {
+        "status": "ok",
+        "routes": [
+          [
+            [
+              "a",
+              "b",
+              "c"
+            ],
+            100,
+            2231431
+          ]
+        ],
+        "gross": 2231431,
+        "admission_checks": 2,
+        "combinations_rejected_cycle": 2
+      },
+      "hand_quotes": {
+        "abc": [
+          1427742,
+          2231431
+        ],
+        "def": [
+          1418480,
+          2208892
+        ],
+        "af": [
+          835275,
+          1440514
+        ],
+        "dc": [
+          828961,
+          1421838
+        ],
+        "aec": [
+          416436,
+          718250
+        ],
+        "dbf": [
+          413287,
+          708936
+        ]
+      },
+      "expected_oracle_step50": {
+        "best_admissible": 2231431,
+        "best_any": 2846222
+      }
+    },
+    "A3_no_admissible_overflow": {
+      "note": "Merchant Moe Classic sourced pools near uint112: the first hops a/d revert at 100 %, and the second-hop pools c/f revert on every 50 % entry except the two 3-hop routes, whose union is cyclic",
+      "source_key": "moe_classic_v1",
+      "fee_bps": 30,
+      "pools": {
+        "a": [
+          "s",
+          "x",
+          "M-1500000",
+          "M-1500000"
+        ],
+        "b": [
+          "x",
+          "y",
+          2000000000000,
+          1000000000000
+        ],
+        "c": [
+          "t",
+          "y",
+          "M-700000",
+          "M-700000"
+        ],
+        "d": [
+          "s",
+          "y",
+          "M-1500000",
+          "M-1500000"
+        ],
+        "e": [
+          "x",
+          "y",
+          1000000000000,
+          2000000000000
+        ],
+        "f": [
+          "t",
+          "x",
+          "M-700000",
+          "M-700000"
+        ]
+      },
+      "M": "2**112 - 1",
+      "case": {
+        "case_id": "a3",
+        "token_in": "s",
+        "token_out": "t",
+        "amount_in": 2000000
+      },
+      "params": {
+        "max_hops": 3,
+        "max_splits": 2,
+        "percent_step": 50
+      },
+      "expected_port": {
+        "status": "invalid_plan",
+        "error": "economic token cycle: x -> y -> x"
+      },
+      "expected_variant": {
+        "status": "no_route",
+        "admission_checks": 2,
+        "combinations_rejected_cycle": 2,
+        "published": 0
+      }
+    },
+    "A4_replay_budget": {
+      "note": "two equal direct pools, 100001 at 50/50: the 4-entry table fits max_quotes 4, the D-1 ALL_REMAINING leg (50001) needs a fifth quote during replay",
+      "fee_bps": 30,
+      "pools": {
+        "p1": [
+          "s",
+          "t",
+          1000000,
+          1000000
+        ],
+        "p2": [
+          "s",
+          "t",
+          1000000,
+          1000000
+        ]
+      },
+      "case": {
+        "case_id": "a4",
+        "token_in": "s",
+        "token_out": "t",
+        "amount_in": 100001
+      },
+      "params": {
+        "max_hops": 3,
+        "max_splits": 2,
+        "percent_step": 50
+      },
+      "table_quotes": 4,
+      "replay_extra_quotes": 1,
+      "expected_capped": {
+        "max_quotes": 4,
+        "status": "timeout",
+        "port_published": 1,
+        "variant_published": 0
+      },
+      "expected_uncapped": {
+        "max_quotes": 5,
+        "status": "ok",
+        "gross_hand": "out(50000) + out(50001)"
+      }
+    },
+    "A6_all_entries_null": {
+      "note": "one Moe Classic pool whose s reserve is 10 below uint112: every grid entry reverts, the selector runs on an empty table and returns no selection (a completed zero-rejection trajectory with nothing to replay)",
+      "source_key": "moe_classic_v1",
+      "fee_bps": 30,
+      "pools": {
+        "p": [
+          "s",
+          "t",
+          "M-10",
+          "M-10"
+        ]
+      },
+      "case": {
+        "case_id": "a6",
+        "token_in": "s",
+        "token_out": "t",
+        "amount_in": 1000
+      },
+      "params": {
+        "max_hops": 3,
+        "max_splits": 2,
+        "percent_step": 50
+      }
+    },
+    "A7_replay_invalid": {
+      "note": "101 at 50/50 over a shallow pool p1 and a Moe pool p2 50 below uint112: p2@50 (50) fits, p2@100 reverts; the split p2@50 + p1@50 = 49 + 33 beats p1@100 = 50; B-F1 reverses the equal amounts so p2 is last and D-1 gives it 51, which reverts in the replay: a completed selector (zero rejections) with a completed invalid_plan replay",
+      "source_key": "moe_classic_v1",
+      "fee_bps": 30,
+      "pools": {
+        "p1": [
+          "s",
+          "t",
+          100,
+          100
+        ],
+        "p2": [
+          "s",
+          "t",
+          "M-50",
+          "M-50"
+        ]
+      },
+      "case": {
+        "case_id": "a7",
+        "token_in": "s",
+        "token_out": "t",
+        "amount_in": 101
+      },
+      "params": {
+        "max_hops": 3,
+        "max_splits": 2,
+        "percent_step": 50
+      },
+      "hand": {
+        "p1_50": 33,
+        "p1_100": 50,
+        "p2_50": 49
+      }
+    },
+    "A5_phase_semantics": {
+      "note": "memo section 4.7: which solves are completed, comparable selector trajectories; early cuts and enumeration statuses never count as reference identity; a replay cut keeps a completed identical selector but is not end-to-end comparable; CS-2 publication differences stay visible. Expected values follow from the phase rules and the hand fixtures, not from the code under test",
+      "cases": [
+        {
+          "id": "quote_cut_zero",
+          "fixture": "A1_union_cycle",
+          "budget": {
+            "max_quotes": 0
+          },
+          "status": "timeout",
+          "reference_status": "timeout",
+          "selector_phase": "not_started",
+          "not_started_reason": "max_quotes_table",
+          "replay_phase": "not_reached",
+          "interrupted_by": null,
+          "replay_status": null,
+          "reference_trajectory": "unavailable",
+          "comparable_completed": false,
+          "published": 0,
+          "reference_published": 0,
+          "withheld_by_cs2": false,
+          "admission_checks": 0,
+          "combinations_rejected_cycle": 0
+        },
+        {
+          "id": "quote_cut_table_minus_one",
+          "fixture": "A1_union_cycle",
+          "budget": {
+            "max_quotes": "table-1"
+          },
+          "status": "timeout",
+          "reference_status": "timeout",
+          "selector_phase": "not_started",
+          "not_started_reason": "max_quotes_table",
+          "replay_phase": "not_reached",
+          "interrupted_by": null,
+          "replay_status": null,
+          "reference_trajectory": "unavailable",
+          "comparable_completed": false,
+          "published": 0,
+          "reference_published": 0,
+          "withheld_by_cs2": false,
+          "admission_checks": 0,
+          "combinations_rejected_cycle": 0
+        },
+        {
+          "id": "candidate_cut",
+          "fixture": "A1_union_cycle",
+          "budget": {
+            "max_candidates": 5
+          },
+          "status": "timeout",
+          "reference_status": "timeout",
+          "selector_phase": "not_started",
+          "not_started_reason": "max_candidates",
+          "replay_phase": "not_reached",
+          "interrupted_by": null,
+          "replay_status": null,
+          "reference_trajectory": "unavailable",
+          "comparable_completed": false,
+          "published": 0,
+          "reference_published": 0,
+          "withheld_by_cs2": false,
+          "admission_checks": 0,
+          "combinations_rejected_cycle": 0
+        },
+        {
+          "id": "enumeration_no_route",
+          "fixture": "A1_union_cycle",
+          "budget": {},
+          "status": "no_route",
+          "reference_status": "no_route",
+          "selector_phase": "not_started",
+          "not_started_reason": "enumeration_status",
+          "replay_phase": "not_reached",
+          "interrupted_by": null,
+          "replay_status": null,
+          "reference_trajectory": "unavailable",
+          "comparable_completed": false,
+          "published": 0,
+          "reference_published": 0,
+          "withheld_by_cs2": false,
+          "admission_checks": 0,
+          "combinations_rejected_cycle": 0,
+          "token_out": "w"
+        },
+        {
+          "id": "replay_cut",
+          "fixture": "A4_replay_budget",
+          "budget": {
+            "max_quotes": 4
+          },
+          "status": "timeout",
+          "reference_status": "timeout",
+          "selector_phase": "completed",
+          "not_started_reason": null,
+          "replay_phase": "interrupted",
+          "interrupted_by": "max_quotes",
+          "replay_status": null,
+          "reference_trajectory": "identical",
+          "comparable_completed": false,
+          "published": 0,
+          "reference_published": 1,
+          "withheld_by_cs2": true,
+          "admission_checks": 2,
+          "combinations_rejected_cycle": 0
+        },
+        {
+          "id": "completed_zero_rejection_ok",
+          "fixture": "A4_replay_budget",
+          "budget": {
+            "max_quotes": 5
+          },
+          "status": "ok",
+          "reference_status": "ok",
+          "selector_phase": "completed",
+          "not_started_reason": null,
+          "replay_phase": "completed",
+          "interrupted_by": null,
+          "replay_status": "ok",
+          "reference_trajectory": "identical",
+          "comparable_completed": true,
+          "published": 1,
+          "reference_published": 1,
+          "withheld_by_cs2": false,
+          "admission_checks": 2,
+          "combinations_rejected_cycle": 0
+        },
+        {
+          "id": "completed_zero_rejection_replay_invalid",
+          "fixture": "A7_replay_invalid",
+          "budget": {},
+          "status": "invalid_plan",
+          "reference_status": "invalid_plan",
+          "selector_phase": "completed",
+          "not_started_reason": null,
+          "replay_phase": "completed",
+          "interrupted_by": null,
+          "replay_status": "invalid_plan",
+          "reference_trajectory": "identical",
+          "comparable_completed": true,
+          "published": 0,
+          "reference_published": 1,
+          "withheld_by_cs2": true,
+          "admission_checks": 2,
+          "combinations_rejected_cycle": 0
+        },
+        {
+          "id": "completed_zero_rejection_no_selection",
+          "fixture": "A6_all_entries_null",
+          "budget": {},
+          "status": "no_route",
+          "reference_status": "no_route",
+          "selector_phase": "completed",
+          "not_started_reason": null,
+          "replay_phase": "not_needed",
+          "interrupted_by": null,
+          "replay_status": null,
+          "reference_trajectory": "identical",
+          "comparable_completed": true,
+          "published": 0,
+          "reference_published": 0,
+          "withheld_by_cs2": false,
+          "admission_checks": 0,
+          "combinations_rejected_cycle": 0
+        },
+        {
+          "id": "completed_rejections_ok",
+          "fixture": "A1_union_cycle",
+          "budget": {},
+          "status": "ok",
+          "reference_status": "invalid_plan",
+          "selector_phase": "completed",
+          "not_started_reason": null,
+          "replay_phase": "completed",
+          "interrupted_by": null,
+          "replay_status": "ok",
+          "reference_trajectory": "diverged",
+          "comparable_completed": true,
+          "published": 1,
+          "reference_published": 1,
+          "withheld_by_cs2": false,
+          "admission_checks": 2,
+          "combinations_rejected_cycle": 2
+        },
+        {
+          "id": "completed_rejections_no_selection",
+          "fixture": "A3_no_admissible_overflow",
+          "budget": {},
+          "status": "no_route",
+          "reference_status": "invalid_plan",
+          "selector_phase": "completed",
+          "not_started_reason": null,
+          "replay_phase": "not_needed",
+          "interrupted_by": null,
+          "replay_status": null,
+          "reference_trajectory": "diverged",
+          "comparable_completed": true,
+          "published": 0,
+          "reference_published": 1,
+          "withheld_by_cs2": false,
+          "admission_checks": 2,
+          "combinations_rejected_cycle": 2
+        }
+      ]
+    }
+  },
+  "options": {
+    "validator": "accepts exactly the empty mapping; every key, reserved or not, is refused",
+    "preset": {
+      "key": "uni_sor_cycle_safe",
+      "version": 1,
+      "algorithm": "uni_sor_cycle_safe",
+      "options": {}
+    },
+    "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "corpus_probe": {
+    "pass": "bounded diagnostic of cycle-safe-sor.md section 9.4: one in-process solve per case in which the reference selector runs on the identical quote table; process pool of 6 on a shared host; not a measured solve, no timing recorded",
+    "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "max_quotes": 300000,
+      "objective": "gross_only"
+    },
+    "command": "PYTHONPATH=. uv run python tests/routing/test_cycle_safe_sor_contract.py probe <bundle> <out.json> [case ids...]",
+    "parts": [
+      {
+        "name": "tuning",
+        "bundle": "sor_cohort_tuning",
+        "bundle_hash": "b900b866d4a0ef6a3b33546f1d262ed3fc836847ef30da9e975c5bae75107ade",
+        "use": "registered exploration matched_sor_cycle_safe on the tuning split (all 96 cases); nothing tuned",
+        "raw_sha256": "8b624c9b943d7e7d6d04abfe8546ab251237c6c273cff769a41a2675008272e4",
+        "n": 96,
+        "with_rejections": 11,
+        "cases": [
+          {
+            "case_id": "emp-09bc4e-201eba-large-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "16726380",
+            "variant_gross": "16726380",
+            "quotes_executed": 59928
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-low-2",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 2361,
+            "rejected": 969,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "4335482",
+            "quotes_executed": 59953
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-medium-2",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 2626,
+            "rejected": 1234,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "5840826",
+            "quotes_executed": 59963
+          },
+          {
+            "case_id": "emp-09bc4e-779ded-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "83142224",
+            "variant_gross": "83142224",
+            "quotes_executed": 21469
+          },
+          {
+            "case_id": "emp-09bc4e-779ded-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "4834700",
+            "variant_gross": "4834700",
+            "quotes_executed": 24276
+          },
+          {
+            "case_id": "emp-09bc4e-779ded-medium-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "10045907",
+            "variant_gross": "10045907",
+            "quotes_executed": 23448
+          },
+          {
+            "case_id": "emp-09bc4e-78c1b0-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "24652264876228086197",
+            "variant_gross": "24652264876228086197",
+            "quotes_executed": 44492
+          },
+          {
+            "case_id": "emp-09bc4e-78c1b0-low-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 2072,
+            "rejected": 680,
+            "identical_selection": true,
+            "port_gross": "3141843797418126628",
+            "variant_gross": "3141843797418126628",
+            "quotes_executed": 53628
+          },
+          {
+            "case_id": "emp-09bc4e-78c1b0-medium-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "7374036548073954575",
+            "variant_gross": "7374036548073954575",
+            "quotes_executed": 50199
+          },
+          {
+            "case_id": "emp-1bdd88-78c1b0-large-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "78042212211934723365",
+            "variant_gross": "78042212211934723365",
+            "quotes_executed": 20
+          },
+          {
+            "case_id": "emp-1bdd88-78c1b0-low-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "40810708922396815195",
+            "variant_gross": "40810708922396815195",
+            "quotes_executed": 20
+          },
+          {
+            "case_id": "emp-1bdd88-78c1b0-medium-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "45047208755319128799",
+            "variant_gross": "45047208755319128799",
+            "quotes_executed": 20
+          },
+          {
+            "case_id": "emp-201eba-09bc4e-large-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "20118897",
+            "variant_gross": "20118897",
+            "quotes_executed": 59127
+          },
+          {
+            "case_id": "emp-201eba-09bc4e-low-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "4559394",
+            "variant_gross": "4559394",
+            "quotes_executed": 61398
+          },
+          {
+            "case_id": "emp-201eba-09bc4e-medium-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "6655695",
+            "variant_gross": "6655695",
+            "quotes_executed": 61099
+          },
+          {
+            "case_id": "emp-201eba-779ded-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "1607084628",
+            "variant_gross": "1607084628",
+            "quotes_executed": 21064
+          },
+          {
+            "case_id": "emp-201eba-779ded-low-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "6283206",
+            "variant_gross": "6283206",
+            "quotes_executed": 27308
+          },
+          {
+            "case_id": "emp-201eba-779ded-medium-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "15300452",
+            "variant_gross": "15300452",
+            "quotes_executed": 25881
+          },
+          {
+            "case_id": "emp-201eba-78c1b0-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "44109739793756321982",
+            "variant_gross": "44109739793756321982",
+            "quotes_executed": 42721
+          },
+          {
+            "case_id": "emp-201eba-78c1b0-low-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "1092769705500936765",
+            "variant_gross": "1092769705500936765",
+            "quotes_executed": 59926
+          },
+          {
+            "case_id": "emp-201eba-78c1b0-medium-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "5997217223217836546",
+            "variant_gross": "5997217223217836546",
+            "quotes_executed": 51508
+          },
+          {
+            "case_id": "emp-201eba-cda86a-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "20296745993163492",
+            "variant_gross": "20296745993163492",
+            "quotes_executed": 65075
+          },
+          {
+            "case_id": "emp-201eba-cda86a-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 5868,
+            "rejected": 4476,
+            "identical_selection": false,
+            "port_gross": "229258259341007",
+            "variant_gross": "229268011368923",
+            "quotes_executed": 82724
+          },
+          {
+            "case_id": "emp-201eba-cda86a-medium-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "1696097483598415",
+            "variant_gross": "1696097483598415",
+            "quotes_executed": 74058
+          },
+          {
+            "case_id": "emp-779ded-09bc4e-large-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 870,
+            "rejected": 196,
+            "identical_selection": true,
+            "port_gross": "110880309",
+            "variant_gross": "110880309",
+            "quotes_executed": 13625
+          },
+          {
+            "case_id": "emp-779ded-09bc4e-low-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1524,
+            "rejected": 132,
+            "identical_selection": true,
+            "port_gross": "2014423",
+            "variant_gross": "2014423",
+            "quotes_executed": 14493
+          },
+          {
+            "case_id": "emp-779ded-09bc4e-medium-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1453,
+            "rejected": 61,
+            "identical_selection": true,
+            "port_gross": "9410607",
+            "variant_gross": "9410607",
+            "quotes_executed": 14204
+          },
+          {
+            "case_id": "emp-779ded-201eba-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "1193658766",
+            "variant_gross": "1193658766",
+            "quotes_executed": 13300
+          },
+          {
+            "case_id": "emp-779ded-201eba-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "3759093",
+            "variant_gross": "3759093",
+            "quotes_executed": 18602
+          },
+          {
+            "case_id": "emp-779ded-201eba-medium-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "45052657",
+            "variant_gross": "45052657",
+            "quotes_executed": 17161
+          },
+          {
+            "case_id": "emp-779ded-78c1b0-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "1792301205468231572180",
+            "variant_gross": "1792301205468231572180",
+            "quotes_executed": 10560
+          },
+          {
+            "case_id": "emp-779ded-78c1b0-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1249,
+            "rejected": 575,
+            "identical_selection": true,
+            "port_gross": "131393791924502281061",
+            "variant_gross": "131393791924502281061",
+            "quotes_executed": 13634
+          },
+          {
+            "case_id": "emp-779ded-78c1b0-medium-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "1754752434861447156867",
+            "variant_gross": "1754752434861447156867",
+            "quotes_executed": 10570
+          },
+          {
+            "case_id": "emp-779ded-c96de2-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "948624",
+            "variant_gross": "948624",
+            "quotes_executed": 4017
+          },
+          {
+            "case_id": "emp-779ded-c96de2-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "350943",
+            "variant_gross": "350943",
+            "quotes_executed": 4346
+          },
+          {
+            "case_id": "emp-779ded-c96de2-medium-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "619515",
+            "variant_gross": "619515",
+            "quotes_executed": 4124
+          },
+          {
+            "case_id": "emp-779ded-cda86a-large-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "183411628727747446",
+            "variant_gross": "183411628727747446",
+            "quotes_executed": 13665
+          },
+          {
+            "case_id": "emp-779ded-cda86a-low-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "53771875181123473",
+            "variant_gross": "53771875181123473",
+            "quotes_executed": 14846
+          },
+          {
+            "case_id": "emp-779ded-cda86a-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "69901650262410496",
+            "variant_gross": "69901650262410496",
+            "quotes_executed": 14528
+          },
+          {
+            "case_id": "emp-78c1b0-09bc4e-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "9274785",
+            "variant_gross": "9274785",
+            "quotes_executed": 59725
+          },
+          {
+            "case_id": "emp-78c1b0-09bc4e-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "769399",
+            "variant_gross": "769399",
+            "quotes_executed": 65761
+          },
+          {
+            "case_id": "emp-78c1b0-09bc4e-medium-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "3411930",
+            "variant_gross": "3411930",
+            "quotes_executed": 62608
+          },
+          {
+            "case_id": "emp-78c1b0-1bdd88-large-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "891740625813650781796",
+            "variant_gross": "891740625813650781796",
+            "quotes_executed": 20
+          },
+          {
+            "case_id": "emp-78c1b0-1bdd88-low-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "548160844889946793695",
+            "variant_gross": "548160844889946793695",
+            "quotes_executed": 20
+          },
+          {
+            "case_id": "emp-78c1b0-1bdd88-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "578401629871575054937",
+            "variant_gross": "578401629871575054937",
+            "quotes_executed": 20
+          },
+          {
+            "case_id": "emp-78c1b0-201eba-large-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "11998798",
+            "variant_gross": "11998798",
+            "quotes_executed": 55580
+          },
+          {
+            "case_id": "emp-78c1b0-201eba-low-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "3289244",
+            "variant_gross": "3289244",
+            "quotes_executed": 57943
+          },
+          {
+            "case_id": "emp-78c1b0-201eba-medium-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "6673286",
+            "variant_gross": "6673286",
+            "quotes_executed": 56641
+          },
+          {
+            "case_id": "emp-78c1b0-779ded-large-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 686,
+            "rejected": 12,
+            "identical_selection": true,
+            "port_gross": "1473227419",
+            "variant_gross": "1473227419",
+            "quotes_executed": 22203
+          },
+          {
+            "case_id": "emp-78c1b0-779ded-low-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1408,
+            "rejected": 16,
+            "identical_selection": true,
+            "port_gross": "3201573",
+            "variant_gross": "3201573",
+            "quotes_executed": 27919
+          },
+          {
+            "case_id": "emp-78c1b0-779ded-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1562,
+            "rejected": 170,
+            "identical_selection": true,
+            "port_gross": "677346369",
+            "variant_gross": "677346369",
+            "quotes_executed": 22801
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-large-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "26238178025580674",
+            "variant_gross": "26238178025580674",
+            "quotes_executed": 47987
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "2273967661588984",
+            "variant_gross": "2273967661588984",
+            "quotes_executed": 54215
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-medium-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "11633083788446910",
+            "variant_gross": "11633083788446910",
+            "quotes_executed": 49818
+          },
+          {
+            "case_id": "emp-c96de2-779ded-large-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "839656488",
+            "variant_gross": "839656488",
+            "quotes_executed": 2288
+          },
+          {
+            "case_id": "emp-c96de2-779ded-low-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "291911635",
+            "variant_gross": "291911635",
+            "quotes_executed": 2320
+          },
+          {
+            "case_id": "emp-c96de2-779ded-medium-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "544060545",
+            "variant_gross": "544060545",
+            "quotes_executed": 2300
+          },
+          {
+            "case_id": "emp-cda86a-201eba-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "14752222",
+            "variant_gross": "14752222",
+            "quotes_executed": 65957
+          },
+          {
+            "case_id": "emp-cda86a-201eba-low-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "2032418",
+            "variant_gross": "2032418",
+            "quotes_executed": 69993
+          },
+          {
+            "case_id": "emp-cda86a-201eba-medium-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "3934272",
+            "variant_gross": "3934272",
+            "quotes_executed": 68161
+          },
+          {
+            "case_id": "emp-cda86a-779ded-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "609014120",
+            "variant_gross": "609014120",
+            "quotes_executed": 18716
+          },
+          {
+            "case_id": "emp-cda86a-779ded-low-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "15362988",
+            "variant_gross": "15362988",
+            "quotes_executed": 24325
+          },
+          {
+            "case_id": "emp-cda86a-779ded-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "267813865",
+            "variant_gross": "267813865",
+            "quotes_executed": 20177
+          },
+          {
+            "case_id": "emp-cda86a-deadde-large-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "875742690067653583",
+            "variant_gross": "875742690067653583",
+            "quotes_executed": 36468
+          },
+          {
+            "case_id": "emp-cda86a-deadde-low-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "50350123711145831",
+            "variant_gross": "50350123711145831",
+            "quotes_executed": 50957
+          },
+          {
+            "case_id": "emp-cda86a-deadde-medium-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "120433437089877984",
+            "variant_gross": "120433437089877984",
+            "quotes_executed": 46175
+          },
+          {
+            "case_id": "emp-deadde-78c1b0-large-4",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "80031124591763279685",
+            "variant_gross": "80031124591763279685",
+            "quotes_executed": 38064
+          },
+          {
+            "case_id": "emp-deadde-78c1b0-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "9514936351554643535",
+            "variant_gross": "9514936351554643535",
+            "quotes_executed": 50230
+          },
+          {
+            "case_id": "emp-deadde-78c1b0-medium-3",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1392,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "36830483266927179500",
+            "variant_gross": "36830483266927179500",
+            "quotes_executed": 40991
+          },
+          {
+            "case_id": "emp-deadde-cda86a-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "714764726634902057",
+            "variant_gross": "714764726634902057",
+            "quotes_executed": 47996
+          },
+          {
+            "case_id": "emp-deadde-cda86a-low-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "24910566674203742",
+            "variant_gross": "24910566674203742",
+            "quotes_executed": 61537
+          },
+          {
+            "case_id": "emp-deadde-cda86a-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "377673632060083114",
+            "variant_gross": "377673632060083114",
+            "quotes_executed": 51785
+          },
+          {
+            "case_id": "nod-09bc4e-c96de2-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "19841",
+            "variant_gross": "19841",
+            "quotes_executed": 25990
+          },
+          {
+            "case_id": "nod-09bc4e-c96de2-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "2516",
+            "variant_gross": "2516",
+            "quotes_executed": 28511
+          },
+          {
+            "case_id": "nod-09bc4e-c96de2-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "6007",
+            "variant_gross": "6007",
+            "quotes_executed": 27580
+          },
+          {
+            "case_id": "nod-c96de2-09bc4e-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "839382914",
+            "variant_gross": "839382914",
+            "quotes_executed": 8978
+          },
+          {
+            "case_id": "nod-c96de2-09bc4e-low-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "214239732",
+            "variant_gross": "214239732",
+            "quotes_executed": 9302
+          },
+          {
+            "case_id": "nod-c96de2-09bc4e-medium-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 200,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "345624479",
+            "variant_gross": "345624479",
+            "quotes_executed": 9133
+          },
+          {
+            "case_id": "nod-c96de2-deadde-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "311799855184997466",
+            "variant_gross": "311799855184997466",
+            "quotes_executed": 8482
+          },
+          {
+            "case_id": "nod-c96de2-deadde-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "128335778027244969",
+            "variant_gross": "128335778027244969",
+            "quotes_executed": 8691
+          },
+          {
+            "case_id": "nod-c96de2-deadde-medium-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "128429550800980973",
+            "variant_gross": "128429550800980973",
+            "quotes_executed": 8675
+          },
+          {
+            "case_id": "nod-deadde-c96de2-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "876812",
+            "variant_gross": "876812",
+            "quotes_executed": 21730
+          },
+          {
+            "case_id": "nod-deadde-c96de2-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "7653",
+            "variant_gross": "7653",
+            "quotes_executed": 28132
+          },
+          {
+            "case_id": "nod-deadde-c96de2-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 674,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "27436",
+            "variant_gross": "27436",
+            "quotes_executed": 25574
+          },
+          {
+            "case_id": "nod-09bc4e-1bdd88-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "264380038107188371851",
+            "variant_gross": "264380038107188371851",
+            "quotes_executed": 7136
+          },
+          {
+            "case_id": "nod-09bc4e-1bdd88-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "34534830268122217526",
+            "variant_gross": "34534830268122217526",
+            "quotes_executed": 8022
+          },
+          {
+            "case_id": "nod-09bc4e-1bdd88-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "82407428721215617297",
+            "variant_gross": "82407428721215617297",
+            "quotes_executed": 7680
+          },
+          {
+            "case_id": "nod-1bdd88-09bc4e-large-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "33549635",
+            "variant_gross": "33549635",
+            "quotes_executed": 5105
+          },
+          {
+            "case_id": "nod-1bdd88-09bc4e-low-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "27705057",
+            "variant_gross": "27705057",
+            "quotes_executed": 5126
+          },
+          {
+            "case_id": "nod-1bdd88-09bc4e-medium-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "30576097",
+            "variant_gross": "30576097",
+            "quotes_executed": 5119
+          },
+          {
+            "case_id": "nod-1bdd88-779ded-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "30581473",
+            "variant_gross": "30581473",
+            "quotes_executed": 1360
+          },
+          {
+            "case_id": "nod-1bdd88-779ded-low-1",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "27709925",
+            "variant_gross": "27709925",
+            "quotes_executed": 1360
+          },
+          {
+            "case_id": "nod-1bdd88-779ded-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "30521923",
+            "variant_gross": "30521923",
+            "quotes_executed": 1360
+          },
+          {
+            "case_id": "nod-779ded-1bdd88-large-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "18538435898197451653577",
+            "variant_gross": "18538435898197451653577",
+            "quotes_executed": 1348
+          },
+          {
+            "case_id": "nod-779ded-1bdd88-low-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "19223559837071575713",
+            "variant_gross": "19223559837071575713",
+            "quotes_executed": 1721
+          },
+          {
+            "case_id": "nod-779ded-1bdd88-medium-2",
+            "port_status": "ok",
+            "port_cycle": false,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 0,
+            "rejected": 0,
+            "identical_selection": true,
+            "port_gross": "3317967261241165021646",
+            "variant_gross": "3317967261241165021646",
+            "quotes_executed": 1458
+          }
+        ]
+      },
+      {
+        "name": "report_defect_regressions",
+        "bundle": "sor_cohort_report",
+        "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+        "use": "the 12 known WHI-1447 uni_sor_port invalid_plan cases only, as defect regressions: not tuning data, not a quality comparison",
+        "raw_sha256": "f2c24b3eb0ca2420644d4f30a25f8cd215b61a9c5e16149c2191b4661474157b",
+        "n": 12,
+        "with_rejections": 12,
+        "cases": [
+          {
+            "case_id": "emp-09bc4e-201eba-low-1",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 3046,
+            "rejected": 1654,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "2142160",
+            "quotes_executed": 60114
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-low-3",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 2256,
+            "rejected": 864,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "4552605",
+            "quotes_executed": 59963
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-medium-1",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 2901,
+            "rejected": 1509,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "7528591",
+            "quotes_executed": 59969
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-medium-3",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1838,
+            "rejected": 446,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "9412368",
+            "quotes_executed": 59963
+          },
+          {
+            "case_id": "emp-201eba-cda86a-low-1",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 10776,
+            "rejected": 9384,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "155420425909407",
+            "quotes_executed": 83851
+          },
+          {
+            "case_id": "emp-201eba-cda86a-low-3",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 12000,
+            "rejected": 10608,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "128883480249692",
+            "quotes_executed": 84344
+          },
+          {
+            "case_id": "emp-78c1b0-09bc4e-low-3",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 14271,
+            "rejected": 12879,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "207112",
+            "quotes_executed": 68701
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-low-1",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 3036,
+            "rejected": 1644,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "1313265084340438",
+            "quotes_executed": 56844
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-low-3",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 3833,
+            "rejected": 2441,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "940130124751864",
+            "quotes_executed": 58587
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-low-4",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 1895,
+            "rejected": 503,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "1598542812836500",
+            "quotes_executed": 56041
+          },
+          {
+            "case_id": "bnd-09bc4e-201eba-liq_at",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 3046,
+            "rejected": 1654,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "2174365",
+            "quotes_executed": 59939
+          },
+          {
+            "case_id": "bnd-09bc4e-201eba-liq_above",
+            "port_status": "invalid_plan",
+            "port_cycle": true,
+            "variant_status": "ok",
+            "variant_cycle": false,
+            "admission_checks": 3046,
+            "rejected": 1654,
+            "identical_selection": false,
+            "port_gross": null,
+            "variant_gross": "2174366",
+            "quotes_executed": 59936
+          }
+        ]
+      }
+    ]
+  },
+  "corpus_probe_enriched": {
+    "view": "current memo section 4.7 phase view; produced by re-running the same probe on the same cases with the phase-aware spec_solve (selector, table, candidate and order behaviour unchanged). Numeric and selection fields are identical to the historical corpus_probe (checked per case by historical_fields_sha256); only the phase fields are new. corpus_probe itself stays the verbatim c9c6ca4 record.",
+    "pass": "bounded diagnostic of cycle-safe-sor.md section 9.4: one in-process solve per case in which the reference selector runs on the identical quote table; process pool of 6 on a shared host; not a measured solve, no timing recorded",
+    "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "max_quotes": 300000,
+      "objective": "gross_only"
+    },
+    "trajectory_counts": {
+      "identical": 85,
+      "diverged": 23
+    },
+    "parts": [
+      {
+        "name": "tuning",
+        "bundle": "sor_cohort_tuning",
+        "bundle_hash": "b900b866d4a0ef6a3b33546f1d262ed3fc836847ef30da9e975c5bae75107ade",
+        "raw_sha256": "7f70dfe85d365cc4b7960b054ed64061fcf224afa4b320a3e23af13f22c6a7af",
+        "n": 96,
+        "cases": [
+          {
+            "case_id": "emp-09bc4e-201eba-large-3",
+            "historical_fields_sha256": "2f39679a5f86583a36bee5a622c23bfd213277d80f4aa6d6a9a63f6779754be6",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-low-2",
+            "historical_fields_sha256": "3e7f71a48243848bca38df3e3cef43f62028b015cba8f34759c1f936fdd9ad1f",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-medium-2",
+            "historical_fields_sha256": "7e000353b9bdb57ea88bb168fcc8564b00e6caa93da57d1467aa0bc76e8c998b",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-779ded-large-2",
+            "historical_fields_sha256": "06dbc7c32c43f0aee58fc705ab14d93b9f8b2cfc3a774dd45f92e0efe3b2729d",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-779ded-low-2",
+            "historical_fields_sha256": "63aef8cde9db94460f18a2c9de81389aed3f0a6cefcd098c7a39d9bb1b550456",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-779ded-medium-3",
+            "historical_fields_sha256": "5c4eff9ce57f6b0b299f5805df76979e457bdcd9de968b4cc95120576281baf6",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-78c1b0-large-1",
+            "historical_fields_sha256": "93dd537456c3562fd4bcbf466056c887fd79d730d8d4084319f14a1979111517",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-78c1b0-low-1",
+            "historical_fields_sha256": "c0fe1b3ef6ab5a514334da56d72a3bbabbaf319083ae0498aaeb5e1033be3b84",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-78c1b0-medium-3",
+            "historical_fields_sha256": "66893efabc58e7eafb88877ec567c386189f2a8a1916dbcd7228b78d7a965fab",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-1bdd88-78c1b0-large-4",
+            "historical_fields_sha256": "cabb287c06510cd7cdf876102a21a90201f2435b4720ac3357c91ab01dad0b96",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-1bdd88-78c1b0-low-1",
+            "historical_fields_sha256": "511d31a5b8bbc5ad3d99f3d4d38bdac30bd49fe3aec3306c3217516a6b0d28e0",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-1bdd88-78c1b0-medium-3",
+            "historical_fields_sha256": "c4b1e520c26830117c40c62b208ae7e5c050cd466d8ac931ab08f5b6bc06eba4",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-09bc4e-large-3",
+            "historical_fields_sha256": "87c0e1448f63294792f04c024ab59b20891a2c8c4d5818e41c7a5691db0e65b3",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-09bc4e-low-4",
+            "historical_fields_sha256": "b355f8c91af678e383eb4da1134d7e0ee3cce7bacd8dbae3371bd669af3b8325",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-09bc4e-medium-3",
+            "historical_fields_sha256": "8a4319c3d925e289344187f273504f4a322d7c03b7920bc86b09f31458ac55f1",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-779ded-large-2",
+            "historical_fields_sha256": "a0f334a3c6d459ad923bacf5a4c037b5f3fe4ad959ca83cefde25db4d7891e72",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-779ded-low-1",
+            "historical_fields_sha256": "632b8f33d4019421a6a4ae5bdc19a77e71c68c55a7b81b57ebe9a1acada9672a",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-779ded-medium-4",
+            "historical_fields_sha256": "1a2277a2f809c7c0f3d74e7588c2f6caa61bbfc07cc3f304d77d0454c9fe435b",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-78c1b0-large-1",
+            "historical_fields_sha256": "d69b7c76b077dd46dfef9055e0fd92b787c1aef27162134b764d7347b79241e4",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-78c1b0-low-3",
+            "historical_fields_sha256": "320bc05eac61727c0d18ba3af8d15de6d0471cf4f14422a8b38646f05460beac",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-78c1b0-medium-4",
+            "historical_fields_sha256": "7640141ddf8eed1c292207868513134c9b8050b8501594c16f938528fba3ec96",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-cda86a-large-1",
+            "historical_fields_sha256": "3babb85552d6d4f0451f2ed1272dd076e45a66a6fdfc01ee5b3b938b053d8221",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-cda86a-low-2",
+            "historical_fields_sha256": "6a9a8276726d7e24bdbd07b5ed969becb7603d100ef3ed2d0a8bedd262ace4a9",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-cda86a-medium-1",
+            "historical_fields_sha256": "b96130c139da6d2836a6c2e6dcefd2600b90da8a13f4fb96528a9ae31dcf60d1",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-09bc4e-large-4",
+            "historical_fields_sha256": "aff9baaae88d70eb0faf00afb9fa1aca905bebe348f04b8d2f191e741efb994e",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-09bc4e-low-3",
+            "historical_fields_sha256": "8dadbba4d1f567ffed363a7c276f0c4f309a4b1b03d8323f6af1a6d0279d0b83",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-09bc4e-medium-1",
+            "historical_fields_sha256": "344064dc8d2fe56fb2a68b6725d2e9b55c608182b54c06f43e3875cb4bf18362",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-201eba-large-1",
+            "historical_fields_sha256": "b3f2ed8bed0d974c0e6c582605242ec52b17e5c08581eaa330270a31bb7028c2",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-201eba-low-2",
+            "historical_fields_sha256": "c6d2568349275176ce536746311c66f30f3734871caa38fc7949c464c62cb605",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-201eba-medium-1",
+            "historical_fields_sha256": "12c544b22277f44d0e377ba3b01c0aaf0f4e18494983e2af02127b0b0f5153e6",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-78c1b0-large-2",
+            "historical_fields_sha256": "338abd82372a782c14f7ab6b06197b20a4873e5a27a40475a1cd9bab2d67d932",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-78c1b0-low-2",
+            "historical_fields_sha256": "f9870d6b6bf7f56f9a58dc72fffbd1380cf254489b54d8d1ecddc1a581fa1a46",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-78c1b0-medium-4",
+            "historical_fields_sha256": "f379d7051b10d7105ac1dc8e0a14ea8f6367ba92755d2ba662ca46ef56146a52",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-c96de2-large-2",
+            "historical_fields_sha256": "a37ce566816f6bb1f28d63282340466df20c9b69d9bfa10c7b2262d1c002f05f",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-c96de2-low-2",
+            "historical_fields_sha256": "c39fe376a1f9f82cd759523cc54e39b98d02640a562669c1d895b90b809b713c",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-c96de2-medium-4",
+            "historical_fields_sha256": "fdaf699c6f827787e1c91ca9588b3b743c07c383204190b2a7ffc400f279143a",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-cda86a-large-3",
+            "historical_fields_sha256": "b2a98e66e083621c9d7039b209f6c3176e282de481f422e538d8bb0f56c4aaa1",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-cda86a-low-3",
+            "historical_fields_sha256": "18bfe3a38ac30f85c75a299e7e0afb7ce43696d7925d202caa3a7f23da1094aa",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-779ded-cda86a-medium-2",
+            "historical_fields_sha256": "32c37297207c4f5f64074d1a43e9bd5ec9d151c9730cebf3f5ae2b5fb56581e4",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-09bc4e-large-1",
+            "historical_fields_sha256": "8fac2efd67321aedf9157891711b4bddbddd3025744c6024ba8097743c8f27fa",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-09bc4e-low-2",
+            "historical_fields_sha256": "b884b9edcc9e57ddc4ddc213e36f92ea369c8e14b6f1ee1e5d6b36bb2ac40acb",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-09bc4e-medium-4",
+            "historical_fields_sha256": "83ec71293444554986d81abb3ab3b83859b4a97309052105a2ba58c939683acd",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-1bdd88-large-4",
+            "historical_fields_sha256": "be7103cb7572a42271c9163116f13aafc94f892040d9e4a837e14eb13d76f20c",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-1bdd88-low-4",
+            "historical_fields_sha256": "eb61dd2fe9089ddad4dcb3208c30baa26a7e3f62af3f3e1761870e3f076b666a",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-1bdd88-medium-2",
+            "historical_fields_sha256": "e4b0ff212e6f88d7b2b7cf1df58574c82134af52ed47fa3d9871744816911857",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-201eba-large-4",
+            "historical_fields_sha256": "419f0ce8a05997dfb96c8d5ab53e85213d950182ad7e5208b5bde1f8df065624",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-201eba-low-3",
+            "historical_fields_sha256": "0332008aa427b21ed09682276820163d8a0dccddb00653eddadeb2f1d6417ac7",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-201eba-medium-1",
+            "historical_fields_sha256": "bfc54b0e586551a5c1eb5fe669552ec032355184de745f2ec0e39191b6a10191",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-779ded-large-3",
+            "historical_fields_sha256": "fe8ae25ce7d25c46bcefd5806b21d171865f15245e392a6222e7446b1bf25089",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-779ded-low-1",
+            "historical_fields_sha256": "fa9d3ecdb96f661b5ca4e19149b869151897818740bc34b5eb2d573c9c07d95d",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-779ded-medium-2",
+            "historical_fields_sha256": "6442dbeb146f707107552dd0f94917f50499b9ab3d150e406081c2a966faa484",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-large-4",
+            "historical_fields_sha256": "56079851f235fec4a063e0ebf4f97273354ab44a5716746565cbd38ac1eacb97",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-low-2",
+            "historical_fields_sha256": "6e7befef9d3090dbadf146d7b115d674c8eed158cce7458ab11d2f17da97a1ef",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-medium-4",
+            "historical_fields_sha256": "d2cdf6c051d1c63b7fed8d05483495abab48778d2c080f3f9bd6d55a6d73ad62",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-c96de2-779ded-large-3",
+            "historical_fields_sha256": "4df0ff542b74a655eb1184054f88fb7c10ccc356feae0e1bcf41ac1a3b2171f7",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-c96de2-779ded-low-4",
+            "historical_fields_sha256": "2d828b81c4a4d76957bc4a54b1606cc0665363de29fa43e40ff96842ec20effe",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-c96de2-779ded-medium-1",
+            "historical_fields_sha256": "9e860ab79b472172bbdeb40d6e9fcc60aaafc364a26d73ab89c561d331a52d3e",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-cda86a-201eba-large-2",
+            "historical_fields_sha256": "da5bff60453cbaa066756b77f8b725aa12cb7d8d094751d99f599b5f5a27ce17",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-cda86a-201eba-low-3",
+            "historical_fields_sha256": "4109bb34b588c1ef907603ce4f8d1d61d465448d989dbcd8ef67e8492826ae8d",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-cda86a-201eba-medium-4",
+            "historical_fields_sha256": "1bb4485dfb371260fc648b5fcd4a1ca1c71092d4d7a7694ae6444698a487ab54",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-cda86a-779ded-large-1",
+            "historical_fields_sha256": "8ccfe45a1be4860bfce6c6aeb8e8100830f24bc10fea81921259bf6c08608e31",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-cda86a-779ded-low-4",
+            "historical_fields_sha256": "1a9dd55afce6444a1a7c9af7013aa72c110d7181aaa97c8482b385dec1a4eea4",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-cda86a-779ded-medium-2",
+            "historical_fields_sha256": "937dd39428d447545fc533ee19d023c0d9cdf77383a61ce5a7849ef6e18b1509",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-cda86a-deadde-large-3",
+            "historical_fields_sha256": "b0345a9ec26032c7e8c7b70928273ea99a59092b2de0082c0f045d3b99364237",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-cda86a-deadde-low-3",
+            "historical_fields_sha256": "1dfe1448648fbb73d4a67ce6ac63d8f19e926a0f08f67e49b61f4aac9b316c2a",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-cda86a-deadde-medium-1",
+            "historical_fields_sha256": "411adf9c88278c03a347a151d4d0ac35d4e5479eca9f6002b4567b524b4d39ab",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-deadde-78c1b0-large-4",
+            "historical_fields_sha256": "06816f88e485eefc80a4af04aa120faadc91408590fa6e6641b9bd8571542f22",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-deadde-78c1b0-low-2",
+            "historical_fields_sha256": "8efaefae93e2634fe67559ae0b3492d061964e17972882410f2db50dc7f4f8e2",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-deadde-78c1b0-medium-3",
+            "historical_fields_sha256": "ad834aa22f4fcf76616004c9ea97d419a2b0432ac7baa5a416af333979ede95c",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-deadde-cda86a-large-2",
+            "historical_fields_sha256": "8ddc98450ef0c657022a7cd19a1a521e3e57ec4b5e35f4d1580b8cff0c172eb3",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-deadde-cda86a-low-1",
+            "historical_fields_sha256": "bed2aedb9803180fc20c00e45274c270c791986cd5d55b1eeb8157a652176623",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-deadde-cda86a-medium-2",
+            "historical_fields_sha256": "7eb64fd462f1fca3e97821b85d7b95e60fc2cdcfa39297307a79a184ad9183f8",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-09bc4e-c96de2-large-1",
+            "historical_fields_sha256": "b7dab0f05e1be4078aa058c5840e5678c666d1f91b153aaba3b42de77171608b",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-09bc4e-c96de2-low-2",
+            "historical_fields_sha256": "95c9e5b3a59f0d1855de48139efe318abeb74d1b658e9852d4ccbc07d3ae9c4a",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-09bc4e-c96de2-medium-2",
+            "historical_fields_sha256": "64dd43f55d0e54aed5aa446f582cf504d2a05ffd0b9229722665444b50fe07be",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-c96de2-09bc4e-large-1",
+            "historical_fields_sha256": "2ad8e7957cfa42af4d50f5a890e8bcdc5cf81f3e1dd23ece740b6d1070da02c0",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-c96de2-09bc4e-low-1",
+            "historical_fields_sha256": "23b41d16b3c877c877bce01c27c4dd700949310b7a8f7c162652e63045dbb17f",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-c96de2-09bc4e-medium-1",
+            "historical_fields_sha256": "6891dfaeb541b10494ddb2acfe550681eaeee8d643a94cd2f9b99098fdf3d19b",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-c96de2-deadde-large-2",
+            "historical_fields_sha256": "dcdd68fd6fce76516fce9f3b9e10dce7d4856b4fc2236e8ca08c4d7df9096a45",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-c96de2-deadde-low-2",
+            "historical_fields_sha256": "fb1d20794160990aed13ea5b7bffbf74ad7b0d071495d4d756d3922f6f67d196",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-c96de2-deadde-medium-1",
+            "historical_fields_sha256": "6f7290b797c24cdfb3fba927c436480d27e31f6b90f44d82400eb37d0c795e94",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-deadde-c96de2-large-1",
+            "historical_fields_sha256": "1f63795c532bc6972281814b906718a6462585d638204296c1802a12f21755a0",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-deadde-c96de2-low-2",
+            "historical_fields_sha256": "9b95ad79a8c0867dcbadb3cd3b3c3f6936fea377a983317eb6575f0f830d9015",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-deadde-c96de2-medium-2",
+            "historical_fields_sha256": "0f506ea0f4d5771d18144358a9b6a29667d77df7768d6e2ed1c5518dceebd2d5",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-09bc4e-1bdd88-large-2",
+            "historical_fields_sha256": "1e757934f795cb82abde01f9fb24c0a6c89aa12b9b96fb7ca26188780d02ab6f",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-09bc4e-1bdd88-low-2",
+            "historical_fields_sha256": "02c250b94ceff7539cf680fa965782df3fc66fa70408a357a5dac501215f1051",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-09bc4e-1bdd88-medium-2",
+            "historical_fields_sha256": "9b1434140b09951cbf215c2e5b764a385e3029ce6be3c57e2f49c3337ba9d786",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-1bdd88-09bc4e-large-1",
+            "historical_fields_sha256": "659c08561982bb67cd7f5aa654d2f277c73df3e1bcae7d6abe1458e1a632e1b5",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-1bdd88-09bc4e-low-1",
+            "historical_fields_sha256": "2872919d604c8f043234435781155d36a77a3b9923657e085e1dc4d40171b6d5",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-1bdd88-09bc4e-medium-1",
+            "historical_fields_sha256": "1551c9e83bf1ccd56b3dbad030b190036760552254482154077d4b574afcad6b",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-1bdd88-779ded-large-2",
+            "historical_fields_sha256": "dde215590476966ffb56980553f9be65992ea7af82216f37b3175640fddf24b6",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-1bdd88-779ded-low-1",
+            "historical_fields_sha256": "0464ac8b05956592fc495c495c48b100a9e04d237291891cb3fe21f60d100185",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-1bdd88-779ded-medium-2",
+            "historical_fields_sha256": "f44ec89d3fc89aaa0e1c63c9ef610b5bcf9ad8429c21d9c5afff7d33a9b1b87f",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-779ded-1bdd88-large-2",
+            "historical_fields_sha256": "ec72e8e232a2dda6b78e521e1c57ea6be1dc905ccad589d9ca2292fa108e6730",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-779ded-1bdd88-low-2",
+            "historical_fields_sha256": "b2e882602a1c8f670d7db936d9e8c4a5450f0fba93e1581f7af4a95f60b368f8",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "nod-779ded-1bdd88-medium-2",
+            "historical_fields_sha256": "b6e391dcb837524a19cb6e703e9f415fa39ba9e39b529a273d409f650a7a5d50",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "identical",
+            "comparable_completed": true
+          }
+        ]
+      },
+      {
+        "name": "report_defect_regressions",
+        "bundle": "sor_cohort_report",
+        "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+        "raw_sha256": "bd159c736b5640c6e474b41be1eeb6fb127b587c0b172827103e172fe3c5da8a",
+        "n": 12,
+        "cases": [
+          {
+            "case_id": "emp-09bc4e-201eba-low-1",
+            "historical_fields_sha256": "9539eb5f2978c36eed42cdd99c39158c0a309bb892125c72eaaceaeb4d8064dd",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-low-3",
+            "historical_fields_sha256": "762cf279b63d36299d7533991902409edad8313c43a31f3b87bcca1db408e5fb",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-medium-1",
+            "historical_fields_sha256": "230d80bddb2b2f86da51cf5aaecb99b26d7457d3f6a28bf685b5d89060c12887",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-09bc4e-201eba-medium-3",
+            "historical_fields_sha256": "38e460ed7544fed050ba651529ea78f9048f87a633c0fb61fccfe891c4d3d025",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-cda86a-low-1",
+            "historical_fields_sha256": "a605defc356b1e87eaf28fd861f942c1074d50f123020f91f2ef4491baf911df",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-201eba-cda86a-low-3",
+            "historical_fields_sha256": "e97d40a13596ba67fb48a1c2506a3d8ac36efad4b51a0addb0a5e2b52794c53c",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-09bc4e-low-3",
+            "historical_fields_sha256": "2e9f24a43d5869971c6890b3b7f391110c5edafc81cc3938f7d8296ae300deec",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-low-1",
+            "historical_fields_sha256": "2b59c7c5a1a1c3ec4c6dc8c63572b581194295fe1c49aff8fecba8bc7d57e40f",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-low-3",
+            "historical_fields_sha256": "6e7dbe72798d3a81ded2fd77a14fb0f74ddc9d512ce2741423c2b87582922170",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "emp-78c1b0-deadde-low-4",
+            "historical_fields_sha256": "1fa2aca1c50a07117e77613a4426e37a5a137d1a978cf581e687ccdbbc6a9006",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "bnd-09bc4e-201eba-liq_at",
+            "historical_fields_sha256": "d49bea87508b1d81cdf2bacbef6b1b655f73fb47f72723df53d43c0cbd5e216b",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          },
+          {
+            "case_id": "bnd-09bc4e-201eba-liq_above",
+            "historical_fields_sha256": "b856ad68157ade6088d5c59e57ec6669005ed52660842cc7169228ec32a5445f",
+            "selector_phase": "completed",
+            "reference_selector_ran": true,
+            "replay_phase": "completed",
+            "reference_trajectory": "diverged",
+            "comparable_completed": true
+          }
+        ]
+      }
+    ]
+  }
+}
