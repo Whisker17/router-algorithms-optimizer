@@ -1523,8 +1523,10 @@ def _probe_worker(args: tuple[str, str]) -> dict[str, Any]:
     prepared = sor.prepare(
         bundle, AlgorithmConfig(sor.NAME, {"max_hops": 3, "max_splits": 4, "percent_step": 5})
     )
-    case = next(c for c in bundle.cases if c.case_id == case_id)
-    return probe_case(bundle, prepared, case)
+    cases = [c for c in bundle.cases if c.case_id == case_id]
+    if len(cases) != 1:  # never let a pool worker drop an unknown id silently
+        raise KeyError(f"case {case_id!r} is not a case of {bundle_path}")
+    return probe_case(bundle, prepared, cases[0])
 
 
 @functools.cache
@@ -1541,6 +1543,10 @@ def main(argv: Sequence[str]) -> int:
     bundle_path, out = argv[1], Path(argv[2])
     bundle = _cached_bundle(bundle_path)
     ids = list(argv[3:]) or [c.case_id for c in bundle.cases]
+    unknown = sorted(set(ids) - {c.case_id for c in bundle.cases})
+    if unknown:
+        print(f"unknown case ids for {bundle_path}: {unknown}", file=sys.stderr)
+        return 2
     with Pool(6) as pool:
         cases = pool.map(_probe_worker, [(bundle_path, i) for i in ids], chunksize=1)
     doc = {

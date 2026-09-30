@@ -775,6 +775,10 @@ It is not `narrow_go`, because no part of the declared domain had to be excluded
   legitimately differ from the reference's (admission CPU, CS-2).
 - The corpus diagnostic has two views: the historical view kept verbatim, and an enriched
   re-run. Neither is a measured solve.
+- The `c9c6ca4` probe CLI could silently drop an unknown case id: a `StopIteration`
+  raised inside a pool worker ends the map early. Unknown ids are now refused before any
+  work starts. The pinned runs used valid ids only, as their counts of 96 and 12 cases
+  confirm, so no recorded result is affected.
 - No shared file changed. `DEFERRED_ISSUES.md` keeps the `uni_sor_port` entry; closing or
   rewording it after WHI-1556 lands is the parent's decision.
 
