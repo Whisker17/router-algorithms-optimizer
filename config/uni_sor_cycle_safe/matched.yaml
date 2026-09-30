@@ -1,0 +1,37 @@
+# uni_sor_cycle_safe MATCHED profile (WHI-1556; docs/references/research-021/cycle-safe-sor.md
+# §11 "matched_sor_cycle_safe"): the reference uni_sor_port and the cycle-safe identity side by
+# side under ONE shared objective, search grid and budget (same_domain comparison). The
+# identity has no algorithm_options, so its entry is the empty preset v1 (preset_v1.yaml).
+# Replay it literally with `main.py run|quote --strategies profile`.
+#
+# search/budget repeat config/full_gross.yaml's uni_sor_port values (3 hops, 4 splits, 5%
+# grid, 300000 quotes): at 3 hops admission can reject a combination (memo L4: at <= 2 hops
+# it never does). SMOKE-SCALE and UNVALIDATED here (one measured attempt, no warmup): the
+# profile exists for the run/quote CLI checks, not as a performance campaign (that is
+# WHI-1562's); no speed or quality claim.
+schema_version: 2
+algorithms:
+  - uni_sor_port
+  - uni_sor_cycle_safe
+objective:
+  mode: gross_only
+search:
+  max_hops: 3
+  max_splits: 4
+  percent_step: 5
+budget:
+  time_limit_seconds: 900
+  max_quotes: 300000
+  max_candidates: null      # explicitly no cap (it is the enumerated-routes threshold)
+algorithm_options:
+  uni_sor_cycle_safe: {}             # = preset_v1.yaml, so it resolves as {kind: preset}
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1556
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

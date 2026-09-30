@@ -1,0 +1,12 @@
+# Preset v1 of `uni_sor_cycle_safe` (WHI-1556; docs/references/research-021/cycle-safe-sor.md
+# §7, contract R021-C/1 §7.1). Frozen: its sha256 is pinned in
+# routing/algorithms/uni_sor_cycle_safe.py (`PRESET`) and a changed file is refused.
+# The identity has NO algorithm_options: admission cannot be switched off and the scan policy
+# cannot be chosen (both define the identity). Candidates, grid, splits and hops are the
+# profile's shared search.max_hops / search.max_splits / search.percent_step, and the budget
+# is the profile's. Settings sha256 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+# (the canonical hash of {}; cycle-safe-sor.json `options`).
+key: uni_sor_cycle_safe
+version: 1
+algorithm: uni_sor_cycle_safe
+options: {}

@@ -97,6 +97,10 @@ No loader code ships with the template — write it when the first config file l
   two smoke-scale, unvalidated run profiles next to `direct_split` with its 4-split 5% grid:
   `grid.yaml` (the preset) and `raw_stress.yaml` (the separately identified `raw_integer`
   expanded stress domain up to 100,000 raw units; explicit `--strategies profile` only).
+- `uni_sor_cycle_safe/` (WHI-1556) — `preset_v1.yaml`, the sha256-pinned preset of the
+  experimental `uni_sor_cycle_safe` (`options: {}`: the identity has no algorithm_options; not
+  a run profile, `--strategies all` writes it out), and one smoke-scale, unvalidated run
+  profile `matched.yaml` running it next to `uni_sor_port` with full_gross's 3-hop SOR values.
 - `cost_calibration.yaml` — the empirical execution-cost calibration definition (WHI-1445,
   `snapshot/cost_evidence.py`): the snapshot, the absolute Dune window (ending at the
   snapshot timestamp), the pool-family label map, sampling seed/modulus, the train/holdout

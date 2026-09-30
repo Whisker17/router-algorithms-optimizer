@@ -88,7 +88,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Protocol
 
 from pools.result import QuoteStatus, SwapResult
 from routing.algorithms import direct_split, single_path
@@ -536,6 +536,12 @@ class BestSwap:
     sorted_by_percent: Mapping[int, tuple[RouteQuote, ...]]
 
 
+# The B-S7/B-S9 chooser `(node routes, sorted percent group) -> entry | None` (`None`: this
+# percent contributes no child). The port's is `find_first_route_not_using_used_pools`; the one
+# other chooser is `uni_sor_cycle_safe`'s plan-token-DAG admission (WHI-1556, CS-1).
+Chooser = Callable[[Sequence[RouteQuote], Sequence[RouteQuote]], RouteQuote | None]
+
+
 def get_best_swap_route_by(
     percent_to_quotes: Mapping[int, Sequence[RouteQuote]],
     percents: Sequence[int],
@@ -543,8 +549,12 @@ def get_best_swap_route_by(
     min_splits: int,
     max_splits: int,
     by: Callable[[RouteQuote], int] = lambda r: r.quote_adjusted_for_gas,
+    choose: Chooser | None = None,
 ) -> BestSwap | None:
-    """`getBestSwapRouteBy` (best-swap-route.ts:174-817) for exact input."""
+    """`getBestSwapRouteBy` (best-swap-route.ts:174-817) for exact input. `choose` replaces
+    only the B-S7/B-S9 chooser; `None` (every port caller) is upstream's pool rule, resolved
+    at call time."""
+    chooser = find_first_route_not_using_used_pools if choose is None else choose
     # B-S2: `(a, b) => by(a).greaterThan(by(b)) ? -1 : 1` under V8 TimSort, which only
     # ever tests `order < 0`: a stable sort by `by` descending (contract §3.3 permits a
     # stable sort here; ties keep B-Q1 order).
@@ -592,9 +602,7 @@ def get_best_swap_route_by(
                 if percent_a not in sorted_groups:
                     continue
                 # B-S7 / B-S9: only the first non-overlapping entry of this percent.
-                route_a = find_first_route_not_using_used_pools(
-                    node.cur_routes, sorted_groups[percent_a]
-                )
+                route_a = chooser(node.cur_routes, sorted_groups[percent_a])
                 if route_a is None:
                     continue
                 remaining_new = node.remaining_percent - percent_a
@@ -626,6 +634,19 @@ def get_best_swap_route_by(
         estimated_gas_used_usd=sum(r.gas.gas_cost_in_usd for r in best_swap),
         sorted_by_percent=MappingProxyType(sorted_groups),
     )
+
+
+class Selector(Protocol):
+    """A `get_best_swap_route_by`-shaped selector (`get_best_swap_route(select=...)`)."""
+
+    def __call__(
+        self,
+        percent_to_quotes: Mapping[int, Sequence[RouteQuote]],
+        percents: Sequence[int],
+        *,
+        min_splits: int,
+        max_splits: int,
+    ) -> BestSwap | None: ...
 
 
 @dataclass(frozen=True)
@@ -677,12 +698,14 @@ def get_best_swap_route(
     max_splits: int,
     force_cross_protocol: bool = False,
     force_mixed_routes: bool = False,
+    select: Selector | None = None,
 ) -> SwapSelection | None:
     """`getBestSwapRoute` (best-swap-route.ts:42-172) for exact input: B-S1 grouping by
     percent in list order, `getBestSwapRouteBy` on `quoteAdjustedForGas`, then the B-F2
     remainder step on exact rationals -- `missingAmount = amount - sum(route.amount)` is
     added to the last route of the B-F1 array only if positive (on an exact grid it is
-    always 0; D-1 is the benchmark's integer fill, applied separately)."""
+    always 0; D-1 is the benchmark's integer fill, applied separately). `select` replaces
+    `get_best_swap_route_by` (same call); `None` (every port caller) resolves it at call time."""
     if force_cross_protocol or force_mixed_routes:
         raise ValueError("forceCrossProtocol/forceMixedRoutes are outside the parity boundary")
     if not 1 <= max_splits <= MAX_SPLITS_LIMIT:
@@ -693,7 +716,8 @@ def get_best_swap_route(
     groups: dict[int, list[RouteQuote]] = {}
     for rq in route_quotes:
         groups.setdefault(rq.percent, []).append(rq)
-    swap = get_best_swap_route_by(groups, percents, min_splits=min_splits, max_splits=max_splits)
+    selector = get_best_swap_route_by if select is None else select
+    swap = selector(groups, percents, min_splits=min_splits, max_splits=max_splits)
     if swap is None:
         return None
     amounts = [r.amount for r in swap.routes]
@@ -832,7 +856,12 @@ def _plan_legs(route: SorRoute, bundle: SnapshotBundle) -> tuple[Edge, ...]:
     return tuple(edges)
 
 
-def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+def solve(
+    case: Case, context: SolveContext, budget: Budget, *, select: Selector | None = None
+) -> SolveResult:
+    """The adapter. `select` is handed to `get_best_swap_route` unchanged (`None`: the port's
+    selector; the registered factory never passes one). `uni_sor_cycle_safe` reuses this whole
+    pipeline with its admission selector (WHI-1556)."""
     prepared = context.prepared
     if not isinstance(prepared, PreparedUniSorPort):
         raise TypeError(f"{NAME}.solve needs the PreparedUniSorPort returned by prepare()")
@@ -996,7 +1025,7 @@ def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
 
     # ---- B-S*, B-F*: the upstream selection (A-3: zero gas scores).
     selection = get_best_swap_route(
-        case.amount_in, percents, route_quotes, max_splits=prepared.max_splits
+        case.amount_in, percents, route_quotes, max_splits=prepared.max_splits, select=select
     )
     if selection is None:
         if incomplete:

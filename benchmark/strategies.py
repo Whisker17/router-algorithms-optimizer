@@ -40,8 +40,9 @@ re-expands against later defaults.
 
 `algorithm_options` (WHI-1548, R021-C/1 §2, §9.3): under `all`, every implemented 0.2.1
 identity of `R021_ADDITIONS` (contract order; so far `metis_history`, WHI-1550,
-`direct_split_certified`, WHI-1552, then `incremental_graph_repair`, WHI-1554) is appended once
-after `metis_inspired` unless the source lists it. A derived document keeps the source's declared
+`direct_split_certified`, WHI-1552, `incremental_graph_repair`, WHI-1554, then
+`uni_sor_cycle_safe`, WHI-1556) is appended once after `metis_inspired` unless the source lists
+it. A derived document keeps the source's declared
 entry of every selected algorithm (a declared entry wins; a source that lists an options algorithm
 must itself declare its entry, like any other required setting), writes out the sha256-pinned
 preset (`benchmark.profile.preset_options`) of an added algorithm the source does not configure,
@@ -73,6 +74,7 @@ from routing.algorithms import (
     incremental_graph_repair,
     metis_history,
     metis_inspired,
+    uni_sor_cycle_safe,
 )
 from routing.algorithms.registry import ALGORITHMS, OPTIMIZED_STRATEGIES
 
@@ -101,6 +103,7 @@ R021_ADDITIONS: tuple[str, ...] = (
     metis_history.NAME,  # WHI-1550 (contract order 1)
     direct_split_certified.NAME,  # WHI-1552 (contract order 2; its repository_grid preset)
     incremental_graph_repair.NAME,  # WHI-1554 (contract order 3)
+    uni_sor_cycle_safe.NAME,  # WHI-1556 (contract order 4; its empty-options preset)
 )
 DERIVATION_NOTE = (
     "`algorithms`, `strategies` and `selection` are derived from the source; under `all`, a "
