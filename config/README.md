@@ -85,6 +85,12 @@ No loader code ships with the template — write it when the first config file l
   profiles running it next to `incremental_graph` with daily_gross's shared values:
   `repair_on.yaml` (the preset), `repair_off.yaml` (the repair-off control) and `stress.yaml`
   (larger repair caps; explicit `--strategies profile` only).
+- `metis_history/` (WHI-1550) — `preset_v1.yaml`, the sha256-pinned bounded `algorithm_options`
+  preset of the experimental `metis_history` (not a run profile; `--strategies all` writes it
+  out), and two unvalidated run profiles next to `metis_inspired` with the WHI-1449 M4 shared
+  values: `history_on.yaml` (the preset beside the label search) and `history_off.yaml` (the
+  `dominance: "off"` control beside the exhaustive enumeration; `off` is quoted because YAML
+  reads a bare `off` as false).
 - `cost_calibration.yaml` — the empirical execution-cost calibration definition (WHI-1445,
   `snapshot/cost_evidence.py`): the snapshot, the absolute Dune window (ending at the
   snapshot timestamp), the pool-family label map, sampling seed/modulus, the train/holdout

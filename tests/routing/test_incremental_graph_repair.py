@@ -230,7 +230,7 @@ def test_registered_as_a_custom_options_identity_appended_by_all() -> None:
     assert ALGORITHMS[NAME] is igr.FACTORY is FACTORY
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES
     assert profile_module.strategy_group(NAME) == "custom"
-    assert R021_ADDITIONS == (NAME,)
+    assert R021_ADDITIONS == ("metis_history", NAME)  # contract order (WHI-1550 first)
     assert FACTORY.options_validator is igr.validate_options  # module-level (picklable)
     assert FACTORY.capabilities == incremental_graph.CAPABILITIES
     assert (FACTORY.search_params, FACTORY.graph_params) == (
@@ -368,7 +368,7 @@ def test_stress_values_never_reach_an_ordinary_all_comparison() -> None:
         doc = yaml.safe_load((REPO / "config" / name).read_text())
         document, profile = derive(doc, "all", source_path=name, source_sha256="0" * 64)
         assert document["algorithms"][-1] == NAME
-        assert document["algorithm_options"] == {NAME: PRESET}
+        assert document["algorithm_options"][NAME] == PRESET  # beside metis_history's (WHI-1550)
         assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
     stress = yaml.safe_load((PROFILES / "stress.yaml").read_text())
     document, _ = derive(stress, "profile", source_path="s", source_sha256="0" * 64)

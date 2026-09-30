@@ -1,0 +1,17 @@
+# Bounded comparison preset v1 of `metis_history` (WHI-1550, R021-P04;
+# docs/references/research-021/history-labels.md §6, §9.4; contract R021-C/1 §7.1).
+# Frozen: its sha256 is pinned in routing/algorithms/metis_history.py (`PRESET`) and a
+# changed file is refused. It holds only this identity's algorithm_options;
+# search/graph/budget values come from the run profile (graph.label_pruning is not read).
+# `--strategies all` writes these values out for an identity the source does not
+# configure. One label per history signature is a DECLARED APPROXIMATION on uncertified
+# (concentrated / liquidity-book / overflow-exposed) regions: capped chunks are counted
+# (chunks_state_capped) and carry no exactness claim. The disabled-mechanism control is
+# the same caps with `dominance: off` (history_off.yaml).
+key: R021-P04-metis_history
+version: 1
+algorithm: metis_history
+options:
+  dominance: history
+  max_labels_per_signature: 1
+  max_frontier_labels: 1024

@@ -39,13 +39,14 @@ saves the effective document and replays it with `--strategies profile`, so a re
 re-expands against later defaults.
 
 `algorithm_options` (WHI-1548, R021-C/1 §2, §9.3): under `all`, every implemented 0.2.1
-identity of `R021_ADDITIONS` (contract order; so far `incremental_graph_repair`, WHI-1554)
-is appended once after `metis_inspired` unless the source lists it. A derived document
-keeps the source's declared entry of every selected algorithm (a declared entry wins; a source
-that lists an options algorithm must itself declare its entry, like any other required
-setting), writes out the sha256-pinned preset (`benchmark.profile.preset_options`) of an added
-algorithm the source does not configure, and drops entries of unselected algorithms; the
-section is omitted when empty, so a source without options derives exactly as before.
+identity of `R021_ADDITIONS` (contract order; so far `metis_history`, WHI-1550, then
+`incremental_graph_repair`, WHI-1554) is appended once after `metis_inspired` unless the source
+lists it. A derived document keeps the source's declared entry of every selected algorithm (a
+declared entry wins; a source that lists an options algorithm must itself declare its entry,
+like any other required setting), writes out the sha256-pinned preset
+(`benchmark.profile.preset_options`) of an added algorithm the source does not configure,
+and drops entries of unselected algorithms; the section is omitted when empty, so a source
+without options derives exactly as before.
 `profile` mode copies it as is.
 """
 
@@ -67,7 +68,7 @@ from benchmark.profile import (
     strategy_entry,
     strategy_group,
 )
-from routing.algorithms import incremental_graph_repair, metis_inspired
+from routing.algorithms import incremental_graph_repair, metis_history, metis_inspired
 from routing.algorithms.registry import ALGORITHMS, OPTIMIZED_STRATEGIES
 
 MODES = ("all", "base", "optimized", "profile")
@@ -91,7 +92,10 @@ METIS_GRAPH_KEYS = ("label_hops", "label_pruning", "chunks")
 # WHI-1548: the implemented R021-C/1 §2 identities `all` appends after `metis_inspired`, in
 # contract order. Each implementation ticket adds its own ID here with its registry entry,
 # validator and preset; no placeholder is ever listed.
-R021_ADDITIONS: tuple[str, ...] = (incremental_graph_repair.NAME,)  # WHI-1554
+R021_ADDITIONS: tuple[str, ...] = (
+    metis_history.NAME,  # WHI-1550 (contract order 1)
+    incremental_graph_repair.NAME,  # WHI-1554 (contract order 3)
+)
 DERIVATION_NOTE = (
     "`algorithms`, `strategies` and `selection` are derived from the source; under `all`, a "
     f"graph.label_hops / label_pruning / chunks the source does not declare is copied for {METIS} "

@@ -1,0 +1,45 @@
+# metis_history HISTORY-OFF control profile: dominance off next to metis_inspired's
+# exhaustive per-chunk enumeration (arms E4 vs S4-off; plan-identical unless one truncates)
+# (WHI-1550, R021-P04; docs/references/research-021/history-labels.md §6, §9.1, §9.5).
+# Runs metis_inspired and metis_history side by side under ONE shared objective, search,
+# graph and budget; graph.label_pruning is read by metis_inspired only. Replay it literally
+# with `main.py run|quote --strategies profile`.
+#
+# search/graph/budget repeat config/metis_challenge/m4.yaml (full_gross values: 3 hops
+# fallback, 4 label hops, 50 chunks, 300000 quotes) -- the S4/L4/E4 setting of the
+# history-labels.md §9 tuning recipe. UNVALIDATED here: these profiles exist for the on/off
+# CLI checks and the bounded tuning pass, not as a performance campaign (WHI-1562's); no
+# speed or whole-plan claim.
+schema_version: 2
+algorithms:
+  - metis_inspired
+  - metis_history
+objective:
+  mode: gross_only
+search:
+  max_hops: 3
+  max_splits: 4
+  percent_step: 5
+graph:
+  chunks: 50
+  label_hops: 4
+  label_pruning: false
+budget:
+  time_limit_seconds: 900
+  max_quotes: 300000
+  max_candidates: null      # explicitly no cap (it would cap label relaxations per chunk)
+algorithm_options:
+  metis_history:                     # the preset caps with dominance: off ({kind: override})
+    dominance: "off"                 # quoted: YAML reads a bare off as false
+    max_labels_per_signature: 1
+    max_frontier_labels: 1024
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1550
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

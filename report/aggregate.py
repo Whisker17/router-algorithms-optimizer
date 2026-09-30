@@ -1017,10 +1017,14 @@ def metis_settings(manifest: RunManifest, algorithm: str) -> str | None:
         return None
     hops, max_hops = params["label_hops"], params.get("max_hops")
     domain = "the same hop bound as" if hops == max_hops else "a DIFFERENT hop domain from"
+    pruning = (  # WHI-1550: metis_history never reads it (its control is algorithm_options)
+        f"graph.label_pruning {json.dumps(params['label_pruning'])}"
+        if "label_pruning" in params
+        else "graph.label_pruning not read"
+    )
     return (
-        f"graph.label_hops {hops}, graph.chunks {params.get('chunks')}, graph.label_pruning "
-        f"{json.dumps(params.get('label_pruning'))} (recorded) -- {domain} the shared "
-        f"search.max_hops {max_hops}"
+        f"graph.label_hops {hops}, graph.chunks {params.get('chunks')}, {pruning} (recorded) "
+        f"-- {domain} the shared search.max_hops {max_hops}"
     )
 
 

@@ -294,8 +294,9 @@ def _strategies_argument(parser: argparse.ArgumentParser) -> None:
         "named optimized strategies uni_sor_adaptive / uni_sor_optimized, then the "
         "experimental metis_inspired (Metis-inspired, NOT Jupiter Metis; undeclared "
         "graph.label_hops/label_pruning/chunks from config/metis_challenge/m4.yaml), then "
-        "the implemented 0.2.1 experimental identities (incremental_graph_repair, with its "
-        "pinned preset); base / optimized: one group; profile: the profile's exact algorithm "
+        "the implemented 0.2.1 experimental identities (metis_history, "
+        "incremental_graph_repair, each with its pinned preset); base / optimized: one group; "
+        "profile: the profile's exact algorithm "
         "selection "
         "(the replay path)",
     )
