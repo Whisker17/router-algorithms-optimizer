@@ -32,7 +32,15 @@ Every scheduled (algorithm, case) pair ends with exactly one per-case record:
    scheduled pair is recorded as `cancelled`, the manifest is finalized as
    `interrupted` and `RunInterrupted` is raised; a run killed outright keeps its
    `running` (incomplete) manifest.
-6. **Separate memory pass.** With `measurement.memory_pass`, a second pass in
+6. **Research diagnostics** (WHI-1548, R021-C/1 §9.4). A returned solve's optional
+   `search_stats["r021"]` is validated here, after the independent evaluation, against the
+   runner's own run identity (source revision, bundle hash, algorithm, effective-settings
+   hash) and the exact case, and the resulting view is saved as the record's
+   `diagnostics` (`benchmark.diagnostics`); the status, evaluation and score are never
+   changed by it. A hard-killed, crashed or diagnostics-less solve of an
+   options-accepting identity gets the runner's own `unavailable` view; nothing is
+   reconstructed from its partial output. Every other record is unchanged.
+7. **Separate memory pass.** With `measurement.memory_pass`, a second pass in
    separate `tracemalloc` workers records peak allocation per case into
    `memory.jsonl`; timing workers never trace (`instrumented: false`).
 
@@ -52,6 +60,15 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+from benchmark.diagnostics import (
+    DIAGNOSTICS_KEY,
+    CheckContext,
+    canonical_r021,
+    diagnostics_view,
+    pool_protocol,
+    unavailable_view,
+    unserializable_marker,
+)
 from benchmark.objective import ObjectiveContext
 from benchmark.profile import CASE_ORDERS, CaseOrder, RunProfile
 from benchmark.results import (
@@ -66,7 +83,7 @@ from benchmark.results import (
     load_manifest,
 )
 from benchmark.worker import AttemptOutcome, SolveRequest, Worker, WorkerSpec
-from routing.algorithms.base import AlgorithmFactory, SolveResult, SolveStatus
+from routing.algorithms.base import AlgorithmFactory, SolveResult, SolveStatus, settings_sha256
 from routing.algorithms.registry import get_algorithm
 from routing.evaluator import EvalStatus, evaluate
 from routing.plan import RoutePlan
@@ -199,6 +216,20 @@ def _candidate_record(
     }
 
 
+def _comparable_search(stats: Any) -> Any:
+    """`stats` with `r021` in a canonical, deterministic form for the attempt and order
+    checks (R021-C/1 §9.4; WHI-1548 integration DEFECT-1/OBS-2). The untrusted `r021` value
+    is never `repr()`ed: it becomes its canonical JSON text without the observational
+    `stages` seconds, or, when it is not serializable at all (a >4300-digit int, a set, a
+    non-dict Mapping whose repr is a memory address, a hostile object), the same visible
+    marker the record keeps. Everything else is compared exactly as before."""
+    if not isinstance(stats, Mapping):
+        return stats
+    if DIAGNOSTICS_KEY not in stats:
+        return dict(stats)
+    return {**stats, DIAGNOSTICS_KEY: canonical_r021(stats[DIAGNOSTICS_KEY])}
+
+
 def _fingerprint(result: SolveResult | None) -> Any:
     if result is None:
         return None
@@ -211,7 +242,7 @@ def _fingerprint(result: SolveResult | None) -> Any:
         result.candidates_considered,
         result.candidates_truncated,
         result.error,
-        dict(result.search_stats),
+        _comparable_search(result.search_stats),
     )
 
 
@@ -254,6 +285,9 @@ class _Run:
     bundle: SnapshotBundle
     profile: RunProfile
     writer: RunWriter
+    git_revision: str | None = None  # the run's recorded source revision (environment)
+    # pool id -> §3.1 protocol of every pool of the run's bundle (a domain names only these)
+    pool_protocols: dict[str, str] = field(default_factory=dict)
     next_worker_id: int = 0
     event_count: int = 0
     totals: dict[str, _AlgorithmTotals] = field(default_factory=dict)
@@ -290,6 +324,7 @@ class _WorkerSlot:
             bundle=run.bundle,
             objective=run.profile.objective,
             memory=self.memory,
+            run_identity=_run_identity(run, self.factory),
         )
         worker = Worker(
             spec, start_method=run.profile.worker.start_method, worker_id=run.next_worker_id
@@ -356,6 +391,68 @@ class _WorkerSlot:
         self.worker = None
 
 
+# ------------------------------------------------------------------ diagnostics
+
+
+def _run_identity(run: _Run, factory: AlgorithmFactory) -> dict[str, str | None]:
+    """The run identity a certificate must name (R021-C/1 §4.1 `source`), from the runner's
+    own records: the environment's git revision, the bundle hash, the scheduled algorithm and
+    the §9.3 `settings_sha256` of its resolved options (of `{}` when it has none)."""
+    entry = run.profile.algorithm_options.get(factory.name)
+    return {
+        "git_revision": run.git_revision,
+        "bundle_hash": run.bundle.bundle_hash,
+        "algorithm": factory.name,
+        "effective_settings_sha256": (
+            entry["settings_sha256"] if entry is not None else settings_sha256({})
+        ),
+    }
+
+
+def _with_diagnostics(
+    run: _Run,
+    factory: AlgorithmFactory,
+    case: Case,
+    record: CaseRecord,
+    result: SolveResult | None,
+    *,
+    failure: str | None = None,
+) -> CaseRecord:
+    """`record` plus its research-diagnostics view (module docstring, item 6). `result` is
+    the measured attempt's own `SolveResult` when one was returned and attributed to this
+    case; `failure` the unavailable reason the runner observed otherwise."""
+    stats = result.search_stats if result is not None else None
+    if isinstance(stats, Mapping) and DIAGNOSTICS_KEY in stats:
+        raw = stats[DIAGNOSTICS_KEY]
+        context = CheckContext(
+            run=_run_identity(run, factory),
+            request={
+                "case_id": case.case_id,
+                "token_in": case.token_in,
+                "token_out": case.token_out,
+                "amount_in": str(case.amount_in),
+            },
+            status=record.status.value,
+            score=None if record.score is None else str(record.score),
+            objective=run.profile.objective.mode,
+            quotes_counted=record.quotes_counted,
+            pools=run.pool_protocols,
+        )
+        search = dict(record.search)
+        marker = unserializable_marker(raw)
+        if marker is not None:  # the writer could not persist it; keep a visible marker
+            search[DIAGNOSTICS_KEY] = marker
+        return replace(record, search=search, diagnostics=diagnostics_view(raw, context))
+    if factory.options_validator is None:
+        return record  # every pre-0.2.1 algorithm: the record is exactly as before
+    return replace(record, diagnostics=unavailable_view(failure or "not_produced"))
+
+
+def _unavailable_reason(kind: str) -> str:
+    """A hard limit ending the attempt is `hard_timeout`; a crash or error `worker_error`."""
+    return "hard_timeout" if kind in ("timeout", "quote_limit") else "worker_error"
+
+
 # ------------------------------------------------------------------ passes
 
 
@@ -387,7 +484,7 @@ def _measure_case(run: _Run, slot: _WorkerSlot, case: Case, schedule_index: int)
     acquired = slot.acquire()
     measurement["prepare_event"] = slot.event_index
     if isinstance(acquired, _PrepareFailure):
-        return CaseRecord(
+        prepare_failed = CaseRecord(
             case_id=case.case_id,
             algorithm=algorithm,
             status=acquired.status,
@@ -401,6 +498,8 @@ def _measure_case(run: _Run, slot: _WorkerSlot, case: Case, schedule_index: int)
             limit_hit=acquired.limit_hit,
             measurement=measurement,
         )
+        reason = "hard_timeout" if acquired.limit_hit == "prepare_time" else "worker_error"
+        return _with_diagnostics(run, slot.factory, case, prepare_failed, None, failure=reason)
     worker = acquired
     measurement["worker_id"] = worker.worker_id
 
@@ -437,7 +536,7 @@ def _measure_case(run: _Run, slot: _WorkerSlot, case: Case, schedule_index: int)
         status, limit_hit = _failure_status(failure)
         measurement["elapsed_seconds"] = failure.elapsed_ns / NS_PER_SECOND
         measurement["candidates_reported"] = failure.candidates_reported
-        return CaseRecord(
+        cut_off = CaseRecord(
             case_id=case.case_id,
             algorithm=algorithm,
             status=status,
@@ -456,13 +555,19 @@ def _measure_case(run: _Run, slot: _WorkerSlot, case: Case, schedule_index: int)
             ),
             measurement=measurement,
         )
+        # Only the separately labeled last_valid_candidate survives; no certificate is ever
+        # rebuilt from a killed attempt (R021-C/1 §4.5, C_KILLED).
+        return _with_diagnostics(
+            run, slot.factory, case, cut_off, None, failure=_unavailable_reason(failure.kind)
+        )
 
     measured = returned[settings.warmup]
     assert measured.result is not None
     measurement["elapsed_seconds"] = measured.elapsed_ns / NS_PER_SECOND
     measurement["candidates_reported"] = measured.candidates_reported
     result = measured.result
-    if result.case_id != case.case_id or result.algorithm != algorithm:
+    attributed = result.case_id == case.case_id and result.algorithm == algorithm
+    if not attributed:
         record = CaseRecord(
             case_id=case.case_id,
             algorithm=algorithm,
@@ -483,7 +588,7 @@ def _measure_case(run: _Run, slot: _WorkerSlot, case: Case, schedule_index: int)
         record, evaluation_ns = _independent_record(run.bundle, case, profile.objective, result)
     measurement["evaluation_seconds"] = evaluation_ns / NS_PER_SECOND
     totals.evaluation_ns += evaluation_ns
-    return CaseRecord(
+    final = CaseRecord(
         **{
             **record.__dict__,
             "quotes_attempted": measured.quotes_attempted,
@@ -491,6 +596,9 @@ def _measure_case(run: _Run, slot: _WorkerSlot, case: Case, schedule_index: int)
             "measurement": measurement,
         }
     )
+    if not attributed:  # an answer for another case/algorithm certifies nothing here
+        return _with_diagnostics(run, slot.factory, case, final, None, failure="worker_error")
+    return _with_diagnostics(run, slot.factory, case, final, result)
 
 
 def _measure_memory(
@@ -571,6 +679,7 @@ def run_experiment(
     factories = [get_algorithm(name) for name in profile.algorithms]
     schedule = [(factory, case) for factory in factories for case in cases]
 
+    environment = environment_record(profile.worker.to_dict())
     writer = RunWriter.create(
         results_dir,
         bundle=bundle,
@@ -584,12 +693,19 @@ def run_experiment(
             "case_order": [case.case_id for case in cases],
             "budget": profile.budget.to_dict(),
         },
-        environment=environment_record(profile.worker.to_dict()),
+        environment=environment,
         memory=settings.memory_pass,
         run_id=run_id,
         profile_text=profile_text,
     )
-    run = _Run(bundle=bundle, profile=profile, writer=writer)
+    revision = environment.get("git_revision")
+    run = _Run(
+        bundle=bundle,
+        profile=profile,
+        writer=writer,
+        git_revision=revision if isinstance(revision, str) and revision else None,
+        pool_protocols={pid: pool_protocol(state) for pid, state in bundle.pools.items()},
+    )
     timing: dict[str, Any] = {"clock": "perf_counter_ns"}
     done = 0
     memory_done = 0
@@ -673,19 +789,23 @@ def _deterministic_view(record: Mapping[str, Any]) -> Any:
         # How far a killed search got is timing-dependent; only its status and
         # which limit ended it are deterministic.
         return {"status": record["status"], "limit_hit": record.get("limit_hit")}
-    return {
+    view = {
         "status": record["status"],
         "evaluation": record["evaluation"],
         "score": record["score"],
         "error": record["error"],
         "candidates_considered": record["candidates_considered"],
         "candidates_truncated": record["candidates_truncated"],
-        "search": record.get("search"),
+        "search": _comparable_search(record.get("search")),
         "quotes_counted": record["quotes"]["counted"],
         "solver_reported": record["solver_reported"],
         "seed": record["measurement"].get("seed"),
         "attempts_consistent": record["measurement"].get("attempts_consistent"),
     }
+    diagnostics = record.get("diagnostics")
+    if isinstance(diagnostics, Mapping):  # WHI-1548; absent from every older record
+        view["diagnostics"] = {k: v for k, v in diagnostics.items() if k != "stages"}
+    return view
 
 
 def compare_runs(run_a: str | Path, run_b: str | Path) -> list[str]:

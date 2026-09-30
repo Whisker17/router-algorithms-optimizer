@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from benchmark import diagnostics as dx
 from benchmark.results import RunManifest
 from report import aggregate as agg
 from report.aggregate import DEFAULT_MIN_SAMPLES, RunData, load_run
@@ -59,6 +60,11 @@ _DIST = ("n", "p5", "p25", "p50", "p75", "p95", "mean", "underpowered")
 
 def _dist(d: Mapping[str, Any]) -> list[Any]:
     return [d[k] for k in _DIST]
+
+
+def _domain_field(view: Mapping[str, Any], key: str) -> Any:
+    domain = view.get("domain")
+    return domain.get(key) if isinstance(domain, Mapping) else None
 
 
 def _csvs(runs: Sequence[RunData], out: Path, min_samples: int) -> dict[str, Path]:
@@ -415,6 +421,59 @@ def _csvs(runs: Sequence[RunData], out: Path, min_samples: int) -> dict[str, Pat
             for source in cov["sources"]
         ),
     )
+    diagnosed = [  # WHI-1548: only runs whose records carry a diagnostics view
+        (r, row, view)
+        for r in runs
+        for c in r.case_ids
+        for a in r.algorithms
+        for row in (r.row(c, a),)
+        if row.record is not None and (view := dx.read_view(row.record)) is not None
+    ]
+    if diagnosed:
+        emit(
+            "diagnostics",
+            [
+                "run_id",
+                "cohort",
+                "case_id",
+                "algorithm",
+                "status",
+                "state",
+                "codes",
+                "bound",
+                "lower_raw",
+                "upper_raw",
+                "gap_raw",
+                "domain_hash",
+                "grid",
+                "max_candidates_unit",
+                "work",
+                "fallback_repair",
+                "scope",
+            ],
+            (
+                [
+                    r.manifest.run_id,
+                    r.cohort,
+                    row.case_id,
+                    row.algorithm,
+                    row.status,
+                    view["state"],
+                    " ".join(view.get("codes") or []),
+                    dx.bound_text(view),
+                    view.get("lower") if view["state"] != "invalid" else None,
+                    view.get("upper") if view["state"] == "certified" else None,
+                    view.get("gap") if view["state"] == "certified" else None,
+                    _domain_field(view, "hash"),
+                    _domain_field(view, "grid"),
+                    view.get("max_candidates_unit"),
+                    view.get("work"),
+                    dx.fallback_text(view),
+                    dx.scope_text(view),
+                ]
+                for r, row, view in diagnosed
+            ),
+        )
     emit(
         "cases",
         [

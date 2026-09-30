@@ -1,0 +1,9 @@
+# Test-only bounded comparison preset of the test-only `opt_fixture_a` factory
+# (tests/benchmark/option_solvers.py), WHI-1548. Not a registered strategy preset.
+key: R021-TEST-OPTIONS-A
+version: 1
+algorithm: opt_fixture_a
+options:
+  width: 3
+  ratio: 0.5
+  label: bounded

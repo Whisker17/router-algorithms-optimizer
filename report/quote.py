@@ -19,6 +19,13 @@ re-evaluates a plan.
 
 A single execution has one latency observation per algorithm, reported as that: this
 module never prints sample lists or distribution statistics.
+
+Research diagnostics (WHI-1548, R021-C/1 §9.5): a record carrying the runner's validated
+`diagnostics` view gets one bound line in the compact output and, in the details, its bound
+(`certified [lower, upper] gap g`, `estimate v (not a bound)`, `unknown (no bound)`,
+`unavailable (<reason>)` or `invalid certificate (<codes>)`), domain hash prefix and grid
+kind, `max_candidates` unit, named work counters, fallback/repair and scope. A record without
+one (every existing algorithm, every older run) prints exactly as before.
 """
 
 from __future__ import annotations
@@ -30,6 +37,15 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
+from benchmark.diagnostics import (
+    bound_text,
+    domain_text,
+    fallback_text,
+    read_view,
+    scope_text,
+    stages_text,
+    work_text,
+)
 from benchmark.results import RunManifest, load_case_records, load_manifest
 from report.aggregate import (
     STRATEGY_GROUP_TITLES,
@@ -343,6 +359,18 @@ def render_compact(view: QuoteView) -> str:
         lines.append(f"vs direct: N/A -- the direct baseline has no valid output ({status})")
     elif direct_gross == 0:
         lines.append("vs direct: N/A -- the direct baseline output is zero")
+    bounds = [
+        f"  {name}: {bound_text(diagnostics)}"
+        for name, record in records
+        if record is not None and (diagnostics := read_view(record)) is not None
+    ]
+    if bounds:
+        lines += [
+            "",
+            "research diagnostics (R021-C/1; checked by the runner against this run and request; "
+            "--details for domain and work):",
+            *bounds,
+        ]
     if notes:
         lines += ["", "non-ok outcomes:", *notes]
     return "\n".join(lines) + "\n"
@@ -495,6 +523,40 @@ def _performance_lines(view: QuoteView, record: dict[str, Any]) -> list[str]:
     ]
 
 
+def _diagnostics_lines(record: dict[str, Any]) -> list[str]:
+    """The record's research-diagnostics block; empty for a record without one."""
+    view = read_view(record)
+    if view is None:
+        return []
+    origin = ""
+    if view.get("origin") == "runner":
+        origin = (
+            " (observed by the runner: the solve returned without diagnostics)"
+            if view.get("reason") == "not_produced"
+            else " (observed by the runner: no certificate survives a cut-off or failed solve)"
+        )
+    lines = [
+        "  research diagnostics (R021-C/1; checked by the runner against its own run identity, "
+        "request and evaluated score, never the solver's claims):",
+        f"    bound: {bound_text(view)}{origin}",
+    ]
+    if view["state"] == "invalid" or view.get("unvalidated"):
+        lines += [f"      - {detail}" for detail in view.get("details") or []]
+        return lines
+    unit = view.get("max_candidates_unit")
+    for label, text in (
+        ("domain", domain_text(view)),
+        ("max_candidates unit", unit if isinstance(unit, str) else None),
+        ("work (named units; different units are never divided)", work_text(view)),
+        ("fallback/repair", fallback_text(view)),
+        ("scope", scope_text(view)),
+        ("stages (observed seconds, not budgets)", stages_text(view)),
+    ):
+        if text is not None:
+            lines.append(f"    {label}: {text}")
+    return lines
+
+
 def render_details(view: QuoteView) -> str:
     lines: list[str] = []
     records = dict(_records_by_algorithm(view))
@@ -533,6 +595,7 @@ def render_details(view: QuoteView) -> str:
                 lines.append(f"  PARTIAL DIAGNOSTIC -- {candidate['label']}:")
                 lines += _plan_lines(view, candidate["evaluation"], "    ")
         lines += _performance_lines(view, record)
+        lines += _diagnostics_lines(record)
     return "\n".join(lines) + "\n"
 
 

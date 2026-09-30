@@ -119,6 +119,7 @@ from routing.algorithms.base import (
     SolveContext,
     SolveResult,
     SolveStatus,
+    refuse_options,
 )
 from routing.algorithms.path_split import split_path_plan
 from routing.evaluator import EvalStatus, evaluate
@@ -294,6 +295,7 @@ class PreparedUniSorFast:
 def prepare(
     bundle: SnapshotBundle, config: AlgorithmConfig, *, catalog: Any = sor.DEFAULT_CATALOG
 ) -> PreparedUniSorFast:
+    refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     search = {k: config.params[k] for k in sor.SEARCH_PARAMS if k in config.params}
     try:
         port = sor.prepare(bundle, AlgorithmConfig(sor.NAME, search), catalog=catalog)

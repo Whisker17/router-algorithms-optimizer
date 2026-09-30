@@ -105,6 +105,7 @@ from routing.algorithms.base import (
     SolveContext,
     SolveResult,
     SolveStatus,
+    refuse_options,
 )
 from routing.evaluator import EvalStatus, Evaluation, evaluate
 from routing.plan import ALL_REMAINING, REQUEST_FUND_ID, FundInput, RoutePlan, SwapStep
@@ -134,6 +135,7 @@ class PreparedIncrementalGraph:
 
 
 def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedIncrementalGraph:
+    refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     chunks = config.params.get("chunks")
     if not isinstance(chunks, int) or isinstance(chunks, bool) or chunks < 1:
         raise IncrementalGraphConfigError(

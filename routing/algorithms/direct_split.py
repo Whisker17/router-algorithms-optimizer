@@ -75,6 +75,7 @@ from routing.algorithms.base import (
     SolveContext,
     SolveResult,
     SolveStatus,
+    refuse_options,
 )
 from routing.evaluator import EvalStatus, Evaluation, evaluate
 from routing.plan import ALL_REMAINING, REQUEST_FUND_ID, FundInput, RoutePlan, SwapStep
@@ -105,6 +106,7 @@ class PreparedDirectSplit:
 
 
 def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedDirectSplit:
+    refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     max_splits = config.params.get("max_splits")
     step = config.params.get("percent_step")
     if not isinstance(max_splits, int) or isinstance(max_splits, bool) or max_splits < 1:

@@ -116,9 +116,13 @@ class CaseRecord:
     # e.g. `single_path` hop bound / truncation / memoized quotes); empty when the
     # solver declares none or never returned.
     search: Mapping[str, Any] = field(default_factory=dict)
+    # WHI-1548 (R021-C/1 §9.4): the runner's validated view of `search["r021"]` (or its own
+    # `unavailable` view of an options-accepting identity's failed solve); `None` -- and no
+    # `diagnostics` key at all in the saved record -- for every other record.
+    diagnostics: Mapping[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "case_id": self.case_id,
             "algorithm": self.algorithm,
             "status": self.status.value,
@@ -147,6 +151,9 @@ class CaseRecord:
             ),
             "measurement": dict(self.measurement),
         }
+        if self.diagnostics is not None:
+            out["diagnostics"] = dict(self.diagnostics)
+        return out
 
 
 def _run_git(args: list[str], cwd: Path) -> str | None:

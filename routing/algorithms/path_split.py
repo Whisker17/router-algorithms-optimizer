@@ -96,6 +96,7 @@ from routing.algorithms.base import (
     SolveContext,
     SolveResult,
     SolveStatus,
+    refuse_options,
 )
 from routing.evaluator import EvalStatus, Evaluation, evaluate
 from routing.plan import ALL_REMAINING, REQUEST_FUND_ID, FundInput, RoutePlan, SwapStep
@@ -128,6 +129,7 @@ class PreparedPathSplit:
 
 
 def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedPathSplit:
+    refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     try:
         single = single_path.prepare(bundle, config)
         split = direct_split.prepare(bundle, config)
