@@ -19,7 +19,10 @@ not to imply integer optimality.
 
 from __future__ import annotations
 
+import copy
+import dataclasses
 import hashlib
+import importlib.util
 import json
 import math
 import re
@@ -161,6 +164,9 @@ def test_author_reference_is_the_pinned_offline_run() -> None:
 
 def test_model_reference_is_labeled_python_not_author() -> None:
     assert "NOT author execution" in MODEL["_comment"]
+    for path, digest in MODEL["environment"]["sources_sha256"].items():
+        # bound to the exact generator/model/input bytes: regenerate after any change
+        assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == digest, path
     env = MODEL["environment"]
     assert (env["scipy"], env["numpy"]) == ("1.18.1", "2.5.3")
     assert MODEL["preset"] == {k: v for k, v in PRESET.items() if k in MODEL["preset"]}
@@ -564,7 +570,161 @@ def test_real_moe_triangle_uses_multi_hop_and_split() -> None:
     assert _check_plan_invariants(bundle, c, rec) > max(single)
 
 
+# ------------------------------------------------------ 4b. evaluation budget (§5.3)
+
+
+def _grid38_problem() -> m.DualProblem:
+    bundle, c = _net_bundle(_router_input("r-grid38"))
+    return m.dual_problem(bundle, c, tuple(bundle.pools))
+
+
+def test_guard_refuses_the_evaluation_beyond_the_cap_mid_line_search() -> None:
+    """An optimizer that keeps evaluating inside one line search (what SciPy does past
+    `maxfun`) is stopped at exactly the cap; repeats are cached, the final point costs
+    nothing extra, and the lowest-Phi point is reported."""
+    problem = _grid38_problem()
+    sigma = m.scales(problem)
+    budget = m.EvaluationBudget(3)
+    guard = m.GuardedObjective(problem, sigma, budget)
+    trial = [[0.0], [0.0], [0.1], [0.05], [0.02], [0.01]]  # x0 twice, then a line search
+    seen: list[float] = []
+    with pytest.raises(m.EvaluationCapReached):
+        for x in trial:
+            seen.append(guard(x)[0])
+    assert (budget.used, guard.evaluations, len(seen)) == (3, 3, 4) and guard.fired
+    assert budget.oracle_calls == 3 * len(problem.markets)
+    x, phi, _, _ = guard.final([0.02])  # not evaluated and unaffordable -> best point
+    assert phi == min(seen) and x in ([0.0], [0.1], [0.05]) and budget.used == 3
+    x_cached, _, _, _ = guard.final([0.1])  # evaluated -> reused, uncharged
+    assert x_cached == [0.1] and budget.used == 3
+
+
+def test_guard_budget_is_shared_with_the_resolve_and_final_is_charged_once() -> None:
+    problem = _grid38_problem()
+    sigma = m.scales(problem)
+    budget = m.EvaluationBudget(4)
+    first = m.GuardedObjective(problem, sigma, budget)
+    first([0.0])
+    first([0.2])
+    _, _, _, _ = first.final([0.3])  # affordable and new -> charged exactly once
+    assert budget.used == 3 and first.evaluations == 3
+    second = m.GuardedObjective(problem, sigma, budget)  # the re-solve: remainder only
+    second([0.0])  # a new guard has its own cache: charged again, no reset
+    assert budget.remaining == 0
+    with pytest.raises(m.EvaluationCapReached):
+        second([0.4])
+    with pytest.raises(m.EvaluationCapReached):
+        m.GuardedObjective(problem, sigma, budget).final(None)
+
+
+@pytest.mark.parametrize(
+    "run", MODEL["forced_caps"]["runs"], ids=lambda r: f"{r['case']}-{r['cap_key']}-{r['cap']}"
+)
+def test_forced_caps_with_the_pinned_scipy_hold(run: dict[str, Any]) -> None:
+    """Real SciPy 1.18.1 runs (model reference, not author): the guarded evaluations never
+    exceed the cap (0c5890f made 4/4/5/5 for a cap of 1), oracle calls are exactly
+    evaluations x |M|, iterations never exceed `max_iterations`, and the stored point
+    re-verifies offline with a termination consistent with §5.4."""
+    cap_evals = (
+        run["cap"]
+        if run["cap_key"] == "max_function_evaluations"
+        else PRESET["max_function_evaluations"]
+    )
+    cap_iters = run["cap"] if run["cap_key"] == "max_iterations" else PRESET["max_iterations"]
+    assert run["evaluations"] == run["budget_used"] <= cap_evals
+    assert run["oracle_calls"] == run["evaluations"] * len(run["markets"])
+    assert run["nit"] <= cap_iters and run["iterations_left"] == cap_iters - run["nit"]
+    bundle, c = _net_bundle(_router_input(run["case"]))
+    problem = m.dual_problem(bundle, c, run["markets"])
+    _, grad, ev = m.log_objective(problem, m.scales(problem), run["u"])
+    bound = PRESET["log_price_bound"]
+    residual = m.projected_residual(run["u"], grad, -bound, bound)
+    assert residual == pytest.approx(run["residual"], rel=1e-9, abs=1e-15)
+    assert ev.value == pytest.approx(run["value"], rel=1e-12)
+    if residual <= PRESET["residual_tolerance"]:
+        assert run["termination"] == "converged"
+    else:
+        assert run["termination"] == "iteration_cap" and (
+            run["guard_fired"] or run["scipy_status"] == 1
+        )
+    if run["cap_key"] == "max_function_evaluations" and run["cap"] == 1:
+        assert run["guard_fired"] and run["evaluations"] == 1
+
+
+def test_starved_resolve_is_skipped_not_refunded() -> None:
+    """r-cycle with `max_function_evaluations` equal to what its initial solve uses: the
+    cycle is broken, the re-solve is skipped (budget exhausted), and the projection of the
+    cycle-broken support still yields a valid plan."""
+    doc = MODEL["forced_caps"]["resolve_starved"]
+    assert doc["budget_used"] == doc["cap"] == doc["budget"]["evaluations_used"]
+    assert doc["resolves"] == [] and doc["recovery"]["resolve_skipped"]
+    assert not doc["recovery"]["resolved"] and doc["recovery"]["cycle_removed"] == ["ab2"]
+    bundle, c = _net_bundle(_router_input("r-cycle"))
+    sol = doc["solution"]
+
+    def starved(_allowed: Mapping[str, str]) -> list[m.Trade]:
+        raise m.ResolveBudgetExhausted
+
+    rec = m.recover(
+        bundle,
+        c,
+        doc["markets"],
+        _trades(sol["trades"]),
+        sol["nu"],
+        _options(),
+        QuoteCache(bundle),
+        starved,
+    )
+    assert (
+        rec.resolve_skipped
+        and str(_check_plan_invariants(bundle, c, rec)) == doc["recovery"]["gross"]
+    )
+
+
 # ----------------------------------------------------------------- 5. CL stage boundary
+
+
+def test_cl_current_word_outside_the_collected_range_is_empty_in_both_directions() -> None:
+    """Parent repro (comment 2104a98d): the current tick 100 (spacing 60) lies in word 0.
+    Collected words (1, 1): going up reads word 0 -> unknown; (-2, -2): going down reads
+    word 0 -> unknown. The exact quote is incomplete_snapshot, so the model must be empty."""
+    base = m.synthetic_cl()
+    above = dataclasses.replace(base, bitmap_word_range=(1, 1), tick_bitmap={}, ticks={})
+    below = dataclasses.replace(base, bitmap_word_range=(-2, -2), tick_bitmap={}, ticks={})
+    for state, token, zero_for_one in ((above, "T1", False), (below, "T0", True)):
+        ladder = m.cl_ladder(state)
+        assert (ladder.down if zero_for_one else ladder.up) == ()
+        assert m.cl_forward(ladder, zero_for_one, 1_000_000.0) is None
+        assert quote_exact_in(state, token, 1_000_000).status is QuoteStatus.INCOMPLETE_SNAPSHOT
+        nu = {"T0": 0.5, "T1": 1.0} if zero_for_one else {"T0": 2.0, "T1": 1.0}
+        assert m.cl_arb(state, ladder, nu) is None
+
+
+@pytest.mark.parametrize("tick", [-15360, -60, 0, 100, 15240, 15300, 15359])
+@pytest.mark.parametrize("words", [(-1, 0), (0, 0), (-1, -1), (1, 1), (-2, -2), (0, 1), (-2, -1)])
+def test_cl_direction_known_iff_the_exact_swap_can_start(tick: int, words: tuple[int, int]) -> None:
+    """Over word ranges around the current word and ticks at word edges (bit 0 and bit 255
+    of a word), the continuous model answers (no `None`) exactly when the exact swap of a
+    price-moving input does not fail with incomplete_snapshot; an empty direction never
+    extrapolates the active liquidity."""
+    from pools.cl_math import get_sqrt_ratio_at_tick
+
+    state = dataclasses.replace(
+        m.synthetic_cl(),
+        tick=tick,
+        sqrt_price_x96=get_sqrt_ratio_at_tick(tick) + 1,
+        bitmap_word_range=words,
+        tick_bitmap={},
+        ticks={},
+        liquidity=10**16,
+    )
+    ladder = m.cl_ladder(state)
+    for token, zero_for_one in (("T0", True), ("T1", False)):
+        exact = quote_exact_in(state, token, 10**6)
+        model = m.cl_forward(ladder, zero_for_one, 1e6)
+        assert (exact.status is QuoteStatus.INCOMPLETE_SNAPSHOT) == (model is None), (token, exact)
+        if model is not None:
+            assert exact.status is QuoteStatus.OK and exact.amount_out <= model + 1
 
 
 def test_cl_known_range_boundaries() -> None:
@@ -688,7 +848,7 @@ def test_estimate_record_shape() -> None:
         "tolerance": str(Decimal(repr(PRESET["residual_tolerance"]))),
     }
     assert Fraction(est["value"]) > 59 and Fraction(est["residual"]) <= Fraction(est["tolerance"])
-    example = CONTRACT["example_certificate"]
+    example = CONTRACT["example_diagnostics"]["record"]["certificate"]
     assert example["bound_kind"] == "estimate" and example["upper_raw"] is None
     assert example["gap_raw"] is None and example["optimality_proven"] is False
     assert (
@@ -696,6 +856,60 @@ def test_estimate_record_shape() -> None:
         and example["lower_raw"] == _model("r-grid38")["recovery"]["gross"]
     )
     assert example["candidate_domain_hash"] == CONTRACT["example_domain_hash"]
+
+
+def _r021_validator() -> Any:
+    path = ROOT / "tests" / "docs" / "test_research_021_contract.py"
+    spec = importlib.util.spec_from_file_location("r021_contract_checks", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_example_diagnostics_is_a_complete_record_accepted_by_the_r021_validator() -> None:
+    """The memo's example is the shared P-CFMM-EST positive (record + the runner's
+    independent run/request context); the R021 validator accepts it, rejects a wrong run
+    identity or request, and its numbers are the r-grid38 model reference."""
+    r021 = _r021_validator()
+    examples = json.loads(
+        (ROOT / "docs/references/research-021/fixtures/examples.json").read_text()
+    )
+    positive = next(p for p in examples["positives"] if p["id"] == "P-CFMM-EST")
+    doc = CONTRACT["example_diagnostics"]
+    assert doc == {"record": positive["record"], "context": positive["context"]}
+    record, context = doc["record"], doc["context"]
+    assert r021.check_diagnostics(copy.deepcopy(record), context) == set()
+    assert record["domain"] == CONTRACT["example_domain"] == examples["domains"]["cfmm38_recovered"]
+    assert record["max_candidates_unit"] == CONTRACT["row"]["max_candidates_unit"]
+    wrong_run = {**context, "run": {**context["run"], "git_revision": "0" * 40}}
+    assert r021.check_diagnostics(copy.deepcopy(record), wrong_run) == {"C_IDENTITY"}
+    wrong_request = {**context, "request": {**context["request"], "amount_in": "39"}}
+    assert r021.check_diagnostics(copy.deepcopy(record), wrong_request) == {"C_REQUEST"}
+    settings = hashlib.sha256(json.dumps(PRESET, sort_keys=True).encode()).hexdigest()
+    assert record["certificate"]["source"]["effective_settings_sha256"] == settings
+    sol, stored = _model("r-grid38")["solution"], _model("r-grid38")["recovery"]
+    work = record["work"]
+    assert work["objective_evaluations"] == work["gradient_evaluations"] == sol["evaluations"]
+    assert work["market_oracle_calls"] == sol["oracle_calls"] == sol["evaluations"] * 2
+    assert work["optimizer_iterations"] == sol["nit"]
+    assert work["quotes_executed"] == context["quotes_counted"] == len(stored["flows"])
+    assert record["certificate"]["lower_raw"] == context["final_score"] == stored["gross"]
+    history = positive["history"]["previous"]
+    assert history["max_candidates_unit"] == "declared_by_research"
+    assert examples["domain_hashes"]["cfmm38"] == history["candidate_domain_hash"]
+
+
+def test_shared_contract_row_is_filled_with_history() -> None:
+    row = next(i for i in R021["identities"] if i["id"] == "cfmm_dual")
+    assert row["max_candidates_unit"] == CONTRACT["row"]["max_candidates_unit"]
+    assert "declared_by_research" not in json.dumps(row["governing"])
+    assert (
+        row["row_fill"]["issue"] == "WHI-1557"
+        and "declared_by_research" in row["row_fill"]["replaces"]
+    )
+    line = next(x for x in R021_PROSE.splitlines() if x.startswith("| `cfmm_dual` |"))
+    assert "`fallback_paths_evaluated`" in line and "declared by WHI-1557" not in line
 
 
 def test_fallback_single_path_is_inside_the_domain() -> None:

@@ -1,10 +1,11 @@
 {
-  "_comment": "R021-C/1 example records (contract.md §4-§8). Positives must validate; each negative is a minimal mutation of a positive and must fail with exactly its declared violation. Values are illustrative records whose numbers were derived independently (reconstruction R6), not outputs of any 0.2.1 implementation.",
+  "_comment": "R021-C/1 example records (contract.md §4-§8). Positives must validate; each negative is a minimal mutation of a positive and must fail with exactly its declared violation. Values are illustrative records whose numbers were derived independently (reconstruction R6, and for P-CFMM-EST the WHI-1557 model reference), not outputs of any 0.2.1 implementation. cfmm38 is the historical WHI-1547 placeholder domain; cfmm38_recovered is the filled cfmm_dual row.",
   "domain_hashes": {
     "grid38_p1p2": "e1afda09c38fd3d387a0589f41e336c998af1038c7b0ff089c7c21ad4899989e",
     "grid38_p2p1": "f98ddef619154380151ea9b9d4835c9c067aba59a52d1fbe212033e979add84c",
     "raw38": "5925efb238b2aec6e0461905277c4cbb94722dfb31176b57deb334c26f8765c7",
     "cfmm38": "e0379a96b2164ef9622a86749911f57831a9ffc0343b83b8a8bfb27f5a579201",
+    "cfmm38_recovered": "398de29f86d39408b4aa62f10c7dae0df2292aaaa7f5bc06f41f5d777aaf8025",
     "chunk38": "c22ebb126347f51b63928e37e4ece2310cab4552d2cb71f45b2e9876e8bcfa89"
   },
   "domains": {
@@ -121,6 +122,36 @@
       "zero_output_leg": "infeasible",
       "token_reuse": "simple_path",
       "pool_reuse": "disjoint",
+      "dag_admission": "plan_token_dag",
+      "full_fill": "v1_full_fill"
+    },
+    "cfmm38_recovered": {
+      "schema": "r021.domain/1",
+      "universe": {
+        "bundle": "fixture:R021-FX-GRID38",
+        "cohort": "fixture",
+        "pools": ["p1", "p2"]
+      },
+      "protocols": ["constant_product"],
+      "pool_order": ["p1", "p2"],
+      "hops": {
+        "max": 3,
+        "param": "search.max_hops"
+      },
+      "splits": {
+        "max": null,
+        "param": null,
+        "governs": "none"
+      },
+      "amount_grid": {
+        "kind": "recovered_continuous",
+        "recovery": "cfmm_share_projection/1",
+        "min_split_share": "0.000001",
+        "remainder": "last_leg_all_remaining"
+      },
+      "zero_output_leg": "infeasible",
+      "token_reuse": "simple_path",
+      "pool_reuse": "shared_merged",
       "dag_admission": "plan_token_dag",
       "full_fill": "v1_full_fill"
     },
@@ -438,7 +469,20 @@
     {
       "id": "P-CFMM-EST",
       "kind": "diagnostics",
-      "note": "numerical continuous optimum ~59.3676 is an estimate, never a certified gap",
+      "note": "numerical continuous optimum ~59.3676 is an estimate, never a certified gap; re-bound by WHI-1557 to the filled cfmm_dual row (cfmm-dual.md section 9): estimate, residual, counters and the recovered 59 (p1 10 -> 13, p2 28 -> 46) are r-grid38 of tests/fixtures/cfmm/model_reference.json (Python contract model + SciPy, not a cfmm_dual implementation); effective_settings_sha256 is the section 9.3 hash of preset cfmm_dual/1; the run identity is illustrative",
+      "history": {
+        "produced_by": "WHI-1547 (R021-C/1 freeze, placeholder row)",
+        "rebound_by": "WHI-1557",
+        "previous": {
+          "domain": "cfmm38",
+          "candidate_domain_hash": "e0379a96b2164ef9622a86749911f57831a9ffc0343b83b8a8bfb27f5a579201",
+          "max_candidates_unit": "declared_by_research",
+          "estimate": {"value": "59.3676", "residual": "1e-12", "tolerance": "1e-9"},
+          "effective_settings_sha256": "5a719fb806d92f4b317f5a62117de383183b907efc08b41e3c56659fe9def971",
+          "work": {"quotes_executed": 4, "exact_replay_quotes": 2, "internal_evaluations": 1, "market_oracle_calls": 24, "gradient_evaluations": 12, "optimizer_iterations": 6, "recovery_attempts": 1},
+          "quotes_counted": 4
+        }
+      },
       "record": {
         "schema": "r021.diagnostics/1",
         "contract": "R021-C/1",
@@ -453,35 +497,36 @@
           "protocols": ["constant_product"],
           "pool_order": ["p1", "p2"],
           "hops": {
-            "max": 1,
-            "param": null
+            "max": 3,
+            "param": "search.max_hops"
           },
           "splits": {
-            "max": 2,
-            "param": "search.max_splits",
-            "governs": "allocation"
+            "max": null,
+            "param": null,
+            "governs": "none"
           },
           "amount_grid": {
             "kind": "recovered_continuous",
-            "percent_step": null,
-            "remainder": "explicit_integer_legs"
+            "recovery": "cfmm_share_projection/1",
+            "min_split_share": "0.000001",
+            "remainder": "last_leg_all_remaining"
           },
           "zero_output_leg": "infeasible",
           "token_reuse": "simple_path",
-          "pool_reuse": "disjoint",
+          "pool_reuse": "shared_merged",
           "dag_admission": "plan_token_dag",
           "full_fill": "v1_full_fill"
         },
-        "candidate_domain_hash": "e0379a96b2164ef9622a86749911f57831a9ffc0343b83b8a8bfb27f5a579201",
+        "candidate_domain_hash": "398de29f86d39408b4aa62f10c7dae0df2292aaaa7f5bc06f41f5d777aaf8025",
         "certificate": {
           "schema": "r021.certificate/1",
-          "candidate_domain_hash": "e0379a96b2164ef9622a86749911f57831a9ffc0343b83b8a8bfb27f5a579201",
+          "candidate_domain_hash": "398de29f86d39408b4aa62f10c7dae0df2292aaaa7f5bc06f41f5d777aaf8025",
           "objective": "gross_only",
           "source": {
             "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
             "bundle_hash": "fixture:R021-FX-GRID38",
             "algorithm": "cfmm_dual",
-            "effective_settings_sha256": "5a719fb806d92f4b317f5a62117de383183b907efc08b41e3c56659fe9def971"
+            "effective_settings_sha256": "63b62554234ac5ac3f03639bc4069fca8a3e39e053a026b88a6f5d9f48d3e3ac"
           },
           "request": {
             "case_id": "r021-grid38",
@@ -495,22 +540,25 @@
           "bound_kind": "estimate",
           "upper_source": null,
           "estimate": {
-            "value": "59.3676",
-            "residual": "1e-12",
-            "tolerance": "1e-9"
+            "value": "59.3676093701934",
+            "residual": "8.234801729400942E-12",
+            "tolerance": "0.00001"
           },
           "optimality_proven": false,
           "termination": "converged"
         },
         "certificate_unavailable_reason": null,
-        "max_candidates_unit": "declared_by_research",
+        "max_candidates_unit": "fallback_paths_evaluated",
         "work": {
-          "quotes_executed": 4,
+          "quotes_executed": 2,
+          "quotes_memoized": 2,
           "exact_replay_quotes": 2,
           "internal_evaluations": 1,
-          "market_oracle_calls": 24,
-          "gradient_evaluations": 12,
-          "optimizer_iterations": 6,
+          "admission_checks": 1,
+          "market_oracle_calls": 12,
+          "objective_evaluations": 6,
+          "gradient_evaluations": 6,
+          "optimizer_iterations": 4,
           "recovery_attempts": 1
         }
       },
@@ -518,13 +566,13 @@
         "status": "ok",
         "final_score": "59",
         "objective": "gross_only",
-        "quotes_counted": 4,
+        "quotes_counted": 2,
         "hard_killed": false,
         "run": {
           "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
           "bundle_hash": "fixture:R021-FX-GRID38",
           "algorithm": "cfmm_dual",
-          "effective_settings_sha256": "5a719fb806d92f4b317f5a62117de383183b907efc08b41e3c56659fe9def971"
+          "effective_settings_sha256": "63b62554234ac5ac3f03639bc4069fca8a3e39e053a026b88a6f5d9f48d3e3ac"
         },
         "request": {
           "case_id": "r021-grid38",
@@ -1218,6 +1266,18 @@
       "rehash": false,
       "violation": "W_NUMERIC_REPLAY",
       "note": "numeric work is reported next to its exact replay quotes"
+    },
+    {
+      "id": "N-CFMM-PLACEHOLDER-UNIT",
+      "kind": "negative",
+      "base": "P-CFMM-EST",
+      "patch": {
+        "max_candidates_unit": "declared_by_research"
+      },
+      "context_patch": {},
+      "rehash": false,
+      "violation": "W_MAX_CANDIDATES",
+      "note": "the WHI-1547 placeholder unit is no longer the cfmm_dual row after the WHI-1557 fill (history of P-CFMM-EST)"
     },
     {
       "id": "N-CMP-SAME-ORDER",

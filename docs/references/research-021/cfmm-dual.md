@@ -16,6 +16,15 @@ then WHI-1559 can implement without inventing semantics. It implements no solver
 six base identities, the optimized recipes, `metis_inspired` and every historical record
 are untouched. No performance gain is promised; no runtime/SLA threshold exists.
 
+**Corrections after parent verification of `0c5890f`** (issue comment `2104a98d`): (1)
+the CL known range is now empty when the current word lies outside the collected
+interval on either side (§8.1); (2) `max_function_evaluations` is enforced by our guard,
+not SciPy's `maxfun`, one budget per solve attempt shared by the re-solve (§5.3; the old
+bound 2 × (cap + 1) × |M| was false); fixture evaluation counts changed accordingly (e.g.
+r-triangle 21 → 15: `nfev + 1` had counted cache-served repeats), all dual points, plans
+and tuning outcomes are identical; (3) the `cfmm_dual` row is filled in the shared
+contract and the example is a complete record validated by the R021 validator (§9.2, §14).
+
 ## 1. Evidence classes (never merged)
 
 | Class | What | Where |
@@ -137,23 +146,42 @@ the convex g (no spurious stationary points; convexity in x is not claimed). Sum
 options={maxcor: lbfgs_memory, ftol, gtol: pgtol, maxiter: max_iterations, maxfun:
 max_function_evaluations})` — an established implementation of the same algorithm the
 paper and author use; no hand-written optimizer. One evaluation = one Φ, one gradient and
-|M| oracle calls. The initial solve and each restricted re-solve have their own
-`max_iterations`/`max_function_evaluations` caps; at most one re-solve runs (§6.3), so the
-numeric work per solve is bounded by 2 × (`max_function_evaluations` + 1) × |M| oracle
-calls. The oracle makes no exact quote and does not touch the quote meter (numeric units,
+|M| oracle calls.
+
+**Caps are ours, not SciPy's.** SciPy checks `maxfun` only between iterations and
+finishes a line search past it: with the exact pinned SciPy 1.18.1 and
+`max_function_evaluations` 1, the first four author router cases made 4, 4, 5 and 5
+evaluations at `0c5890f` (parent reproduction, re-run here). The objective is therefore
+wrapped in a guard (`GuardedObjective` of the executable model) that owns one
+`EvaluationBudget` of `max_function_evaluations` per **solve attempt**:
+
+- every Φ/gradient evaluation is charged before it is made, including the final point;
+  the evaluation beyond the cap is refused (`EvaluationCapReached`), which stops SciPy;
+- an identical point is served from the per-attempt cache (a pure function, uncharged);
+- the reported point is SciPy's returned x when it was evaluated (reused, no hidden extra
+  evaluation) or is still affordable, else the lowest-Φ evaluated point (ties: earlier);
+- the restricted re-solve (§6 step 3) draws on the **same** evaluation budget and on the
+  remaining `max_iterations` (SciPy stops exactly at `maxiter`); nothing is reset. With no
+  evaluation or iteration left the re-solve is skipped (`resolve_skipped`).
+
+Hence per solve attempt: objective evaluations ≤ `max_function_evaluations`, market
+oracle calls ≤ `max_function_evaluations` × |M|, iterations ≤ `max_iterations`. Forced-cap
+evidence with the real SciPy (caps 1, 2, 3, 5 and `max_iterations` 1, 2 on four
+networks, and r-cycle with the budget exhausted before its re-solve) is stored in
+`model_reference.json` `forced_caps` and re-checked offline. The oracle makes no exact quote and does not touch the quote meter (numeric units,
 R021 §5.3). Single thread: the oracle loop is sequential Python; the optimizer is called
 in the worker process, and BLAS is used only on vectors of length ≤ |tokens| and
 2·`lbfgs_memory` square matrices (provenance must record the BLAS vendor).
 
 ### 5.4 Stop rules and termination (never inferred from optimizer success)
 
-After L-BFGS-B returns, evaluate once more at its x (counted) and compute the projected
-residual r = maxⱼ |P_box(x − ∇Φ) − x|ⱼ.
+At the reported point (§5.3) compute the projected residual
+r = maxⱼ |P_box(x − ∇Φ) − x|ⱼ from its (cached) gradient.
 
 | Condition | `termination` |
 | --- | --- |
 | r ≤ `residual_tolerance` (whatever SciPy's `status`/`message`) | `converged` |
-| r > tolerance and SciPy stopped on `maxiter`/`maxfun` (status 1) | `iteration_cap` |
+| r > tolerance and the evaluation guard fired, or SciPy stopped on `maxiter`/`maxfun` (status 1) | `iteration_cap` |
 | r > tolerance otherwise (relative-reduction stop, `ABNORMAL` line search, …) | `not_converged` |
 | a non-finite Φ or gradient (exception inside the objective) | recovery code `numeric_failure` |
 
@@ -178,8 +206,10 @@ the initial solve, its ν, the case. Output: one complete `RoutePlan` or a failu
    `combinations_rejected_cycle`. If any market was removed and `cycle_resolve`: **re-solve**
    §5 on the remaining markets with their directions fixed (one-directional oracles: a
    market trades only in its kept direction; any flow on a DAG is acyclic), warm-started,
-   and take support + relevance from that solution. Without `cycle_resolve`, only step 2
-   is re-applied. A re-solve that yields no trades is `resolve_failed`.
+   and take support + relevance from that solution. The re-solve uses the remainder of
+   the attempt's numeric budget (§5.3); if none is left it is skipped (`resolve_skipped`,
+   in `search_stats["cfmm"]`) and, as without `cycle_resolve`, only step 2 is re-applied.
+   A re-solve that yields no trades is `resolve_failed`.
 4. **Share projection (exact, integer).** Visit tokens in topological order (Kahn; ties by
    first use = smallest admitted index of an incident support market, then token id). A
    token's exact inflow I (A at s; otherwise the sum of exact outputs of its incoming legs)
@@ -259,8 +289,14 @@ L, cross initialized ticks t ≤ `tick` in descending order (L −= liquidity_ne
 first of: an initialized tick without `TickInfo` (`missing_tick_data`, cannot be crossed),
 the collected bottom w_lo·256·s (`collected_range`; the next step would read word
 w_lo − 1), MIN_TICK. Going **up** (token1 in): ticks `tick` < t (L += liquidity_net) up to a
-missing tick, (w_hi·256+255)·s, or MAX_TICK. If the current word itself is outside the
-range the direction is empty. Segments with L = 0 are **empty ranges**: crossing them
+missing tick, (w_hi·256+255)·s, or MAX_TICK. A direction is **empty** when the first word
+the exact swap reads lies outside [w_lo, w_hi] on **either** side — going down the word
+of the current compressed tick, going up the word of compressed + 1 (so a current tick in
+the last bit of w_hi already makes "up" empty); the exact quote is then
+`incomplete_snapshot` and the model assumes no liquidity. (At `0c5890f` the model checked
+only one side per direction and extrapolated active liquidity when the current word lay
+above the range going down, or below it going up; fixed and tested over a grid of word
+ranges and word-edge ticks against the exact swap.) Segments with L = 0 are **empty ranges**: crossing them
 costs no input and yields no output, as in the exact swap loop. Multiple positions give
 multiple segments; nothing beyond the known range is ever extrapolated.
 
@@ -314,7 +350,13 @@ governs: "none"}`; `amount_grid = {kind: "recovered_continuous", recovery:
 
 | Hop bound | Split bound | `Budget.max_candidates` unit | Separate caps |
 | --- | --- | --- | --- |
-| `search.max_hops` (market universe) | none: `search.max_splits`, `search.percent_step` unused (`governs: none`); at most one merged step per market | `fallback_paths_evaluated` (only the single-path fallback consumes it; the dual and recovery never do) | `max_iterations`, `max_function_evaluations` (per solve), `max_recovery_attempts`; one re-solve |
+| `search.max_hops` (market universe) | none: `search.max_splits`, `search.percent_step` unused (`governs: none`); at most one merged step per market | `fallback_paths_evaluated` (only the single-path fallback consumes it; the dual and recovery never do) | `max_iterations`, `max_function_evaluations` (one guarded budget per solve attempt, shared by the one re-solve), `max_recovery_attempts` |
+
+This row is now filled in [`contract.md`](contract.md) §3.3 and in the `cfmm_dual` identity
+of `contract-v1.json` (`row_fill` records the replaced WHI-1547 placeholder
+`declared_by_research`); `fixtures/examples.json` `P-CFMM-EST` is re-bound to it with its
+WHI-1547 values in `history`, the historical domain `cfmm38` is kept, and
+`N-CFMM-PLACEHOLDER-UNIT` shows the old unit failing `W_MAX_CANDIDATES`.
 
 Factory: `search_params = ("max_hops",)`, capabilities multi-hop, split, shared pools.
 
@@ -323,8 +365,8 @@ Factory: `search_params = ("max_hops",)`, capabilities multi-hop, split, shared 
 | Key | Type | Range | Preset | Role |
 | --- | --- | --- | --- | --- |
 | `market_protocols` | enum | `constant_product`; `constant_product+concentrated` (accepted only after WHI-1559) | `constant_product` | stage |
-| `max_iterations` | int | 1–1000 | 200 | L-BFGS-B `maxiter` per solve |
-| `max_function_evaluations` | int | 1–3000 | 600 | `maxfun` per solve |
+| `max_iterations` | int | 1–1000 | 200 | L-BFGS-B iterations per solve attempt (initial + re-solve) |
+| `max_function_evaluations` | int | 1–3000 | 600 | guarded Φ/gradient evaluations per solve attempt (initial + re-solve + final point) |
 | `lbfgs_memory` | int | 3–30 | 10 | `maxcor` |
 | `pgtol` | float | 1e-14–1e-3 | 1e-9 | optimizer `gtol` on ∇Φ |
 | `ftol` | float | 1e-16–1e-3 | 1e-15 | optimizer relative reduction (author uses factr 1e1 ≈ 2.2e-15) |
@@ -341,7 +383,8 @@ out-of-range values are refused before any worker starts.
 ### 9.4 Work units, ties, determinism
 
 Work (§5.2 units only): `market_oracle_calls`, `objective_evaluations`,
-`gradient_evaluations` (each SciPy `nfev` + 1 final, per solve), `optimizer_iterations`
+`gradient_evaluations` (each = the guard's charged evaluations, summed over the attempt; not
+SciPy's `nfev`, which also counts cache-served repeats), `optimizer_iterations`
 (`nit` summed), `recovery_attempts`, `admission_checks`, `combinations_rejected_cycle`,
 `quotes_executed`, `quotes_memoized`, `exact_replay_quotes` (quotes of steps 4–6),
 `internal_evaluations`, `paths_scored` (fallback only). Details that are not R021 units
@@ -364,14 +407,14 @@ Probe (Python model + SciPy 1.18.1, CPMM markets, `max_hops` 3, `bundle_tuning`
 | --- | --- |
 | cases with a CPMM market universe | 96 / 96 (1–12 markets, 2–7 tokens) |
 | termination | 88 `converged`, 8 `not_converged`, 0 `iteration_cap` |
-| iterations / evaluations | max `nit` 113 (cap 200), max `nfev` 303 (cap 600), median `nit` 34; ≤ 2,376 oracle calls |
+| iterations / evaluations | max `nit` 113 (cap 200), max charged evaluations 296 per attempt incl. re-solve (cap 600), median `nit` 34; ≤ 2,358 oracle calls |
 | recovery | 94 plans; 2 failures (`support_exhausted`, `empty_support`, both into a 14,410-unit output pool) → fallback; 7 cases broke an arbitrage cycle and re-solved; 14 pruned the same dust leg (a pool holding 1 raw unit of the output token), 13 of them recovered on the second attempt |
 | recovered vs best exact single path over the same markets | 69 higher, 25 equal, 0 lower (median +6.1 bp, max +741 bp) |
 | recovered / estimate (converged) | median 0.99999, min 0.974 |
 | exact quotes per recovery | ≤ 12 |
 
 Ablations (same split): `ftol` at SciPy's default converges 34/96; `max_iterations` 50
-caps 10 cases, 25 caps 62; `lbfgs_memory` 5 → 87, 20 → 90 at 1e-5; `min_split_share` 0
+leaves 3 cases at `iteration_cap`, 25 leaves 51; `lbfgs_memory` 5 → 87, 20 → 90 at 1e-5; `min_split_share` 0
 beats 1e-6 on 3 cases, 1e-4 loses 6, 1e-3 loses 16, 1e-2 loses 30 (1e-6 kept as a
 float-noise guard ≥ 10⁴× the observed noise floor). The preset is finite everywhere.
 
@@ -393,7 +436,9 @@ G-C1 oracle and dual equal the author fixtures (`cpmm_oracle`, router cases at t
 point) within 1e-12 / 1e-9 relative; G-C2 the port reproduces every `model_reference`
 dual point (value 1e-9, residual, termination class) and its optimum matches the author
 where the author converged (1e-6); G-C3 recovered plans equal the stored flows on the
-fixtures and satisfy §6 invariants under a fresh evaluator replay; G-C4 every §6/§6.1
+fixtures and satisfy §6 invariants under a fresh evaluator replay; G-C3b forced-cap tests:
+guarded evaluations ≤ `max_function_evaluations` (incl. the final point), oracle calls =
+evaluations × |M|, a starved re-solve is skipped, never re-funded; G-C4 every §6/§6.1
 failure category and cap has a test (cycle with/without re-solve, surplus, disconnected,
 tiny/dust, quote budget, attempts, empty support, numeric failure, resolve failure,
 fallback, `model_error`); G-C5 certificates validate under R021 §4.4 and are never
@@ -406,8 +451,8 @@ is not a gate.
 ### 11.2 CL GO gate (WHI-1559)
 
 G-L1 the CL oracle equals the author `UniV3` fixtures; G-L2 known-range extraction per
-§8.1 (collected words, missing tick data, MIN/MAX tick, empty and multiple ranges, both
-directions); G-L3 exact ≤ continuous within tolerance inside the range, never
+§8.1 (collected words incl. a current word outside the range on either side and word-edge
+ticks, missing tick data, MIN/MAX tick, empty and multiple ranges, both directions); G-L3 exact ≤ continuous within tolerance inside the range, never
 extrapolated outside; G-L4 per-source tests for `uniswap_v3`, `agni_v3` (LM hook),
 `fusionx_v3`; G-L5 LB never a market, LB-only cases `unsupported`; G-L6 CL zero-output
 legs pruned; G-L7 all CPMM gates on mixed networks, new preset version tuned on
@@ -422,6 +467,10 @@ uv run --with scipy==1.18.1 --with numpy==2.5.3 python tools/upstream/cfmm/pytho
 uv run --with scipy==1.18.1 --with numpy==2.5.3 python tools/upstream/cfmm/python_reference.py tuning|sweep <bundle_tuning> <out>
 ```
 
+`model_reference.json` records the sha256 of the generator, the model and the author
+inputs it was produced from (`environment.sources_sha256`); the offline test fails when
+any of them changes without regeneration.
+
 ## 13. Limitations
 
 The estimate is float and uncertified; the recovery is a heuristic projection with no
@@ -430,6 +479,12 @@ capped point 138, which is the brute-force integer optimum); `not_converged` rem
 pools; the market universe can exclude a pool reachable only by a longer path; cross-
 platform float identity is not claimed; the CL stage is specified and oracle-verified but
 not tuned; only 14 CPMM pools exist in the frozen corpus.
+
+## 14. Machine-readable contract
+
+`example_diagnostics` equals `fixtures/examples.json` `P-CFMM-EST` (record and the
+runner's independent run/request context) and is checked by the R021 validator
+(`tests/docs/test_research_021_contract.py` `check_diagnostics`).
 
 <!-- cfmm-dual-contract -->
 ```json
@@ -486,33 +541,115 @@ not tuned; only 14 CPMM pools exist in the frozen corpus.
   "bound_kinds": ["estimate", "unknown"],
   "recovery_failures": ["empty_support", "support_exhausted", "attempts_exhausted", "resolve_failed", "numeric_failure", "quote_budget"],
   "prune_reasons": ["insufficient_output_amount", "insufficient_liquidity", "incomplete_snapshot", "reverted", "unsupported", "zero_output"],
-  "example_domain": {
-    "schema": "r021.domain/1",
-    "universe": {"bundle": "fixture:cfmm-r-grid38", "cohort": "fixture", "pools": ["p1", "p2"]},
-    "protocols": ["constant_product"],
-    "pool_order": ["p1", "p2"],
-    "hops": {"max": 3, "param": "search.max_hops"},
-    "splits": {"max": null, "param": null, "governs": "none"},
-    "amount_grid": {"kind": "recovered_continuous", "recovery": "cfmm_share_projection/1", "min_split_share": "0.000001", "remainder": "last_leg_all_remaining"},
-    "zero_output_leg": "infeasible",
-    "token_reuse": "simple_path",
-    "pool_reuse": "shared_merged",
-    "dag_admission": "plan_token_dag",
-    "full_fill": "v1_full_fill"
-  },
-  "example_domain_hash": "c478636b14bad33fed2710b7db8cefac1df412ac26d58951dd7a15dd561ad71b",
-  "example_certificate": {
-    "schema": "r021.certificate/1",
-    "candidate_domain_hash": "c478636b14bad33fed2710b7db8cefac1df412ac26d58951dd7a15dd561ad71b",
-    "objective": "gross_only",
-    "lower_raw": "59",
-    "upper_raw": null,
-    "gap_raw": null,
-    "bound_kind": "estimate",
-    "upper_source": null,
-    "estimate": {"value": "59.3676093701934", "residual": "8.234801729400942E-12", "tolerance": "0.00001"},
-    "optimality_proven": false,
-    "termination": "converged"
+  "example_domain": {"schema": "r021.domain/1", "universe": {"bundle": "fixture:R021-FX-GRID38", "cohort": "fixture", "pools": ["p1", "p2"]}, "protocols": ["constant_product"], "pool_order": ["p1", "p2"], "hops": {"max": 3, "param": "search.max_hops"}, "splits": {"max": null, "param": null, "governs": "none"}, "amount_grid": {"kind": "recovered_continuous", "recovery": "cfmm_share_projection/1", "min_split_share": "0.000001", "remainder": "last_leg_all_remaining"}, "zero_output_leg": "infeasible", "token_reuse": "simple_path", "pool_reuse": "shared_merged", "dag_admission": "plan_token_dag", "full_fill": "v1_full_fill"},
+  "example_domain_hash": "398de29f86d39408b4aa62f10c7dae0df2292aaaa7f5bc06f41f5d777aaf8025",
+  "example_diagnostics": {
+    "record": {
+      "schema": "r021.diagnostics/1",
+      "contract": "R021-C/1",
+      "algorithm": "cfmm_dual",
+      "domain": {
+        "schema": "r021.domain/1",
+        "universe": {
+          "bundle": "fixture:R021-FX-GRID38",
+          "cohort": "fixture",
+          "pools": [
+            "p1",
+            "p2"
+          ]
+        },
+        "protocols": [
+          "constant_product"
+        ],
+        "pool_order": [
+          "p1",
+          "p2"
+        ],
+        "hops": {
+          "max": 3,
+          "param": "search.max_hops"
+        },
+        "splits": {
+          "max": null,
+          "param": null,
+          "governs": "none"
+        },
+        "amount_grid": {
+          "kind": "recovered_continuous",
+          "recovery": "cfmm_share_projection/1",
+          "min_split_share": "0.000001",
+          "remainder": "last_leg_all_remaining"
+        },
+        "zero_output_leg": "infeasible",
+        "token_reuse": "simple_path",
+        "pool_reuse": "shared_merged",
+        "dag_admission": "plan_token_dag",
+        "full_fill": "v1_full_fill"
+      },
+      "candidate_domain_hash": "398de29f86d39408b4aa62f10c7dae0df2292aaaa7f5bc06f41f5d777aaf8025",
+      "certificate": {
+        "schema": "r021.certificate/1",
+        "candidate_domain_hash": "398de29f86d39408b4aa62f10c7dae0df2292aaaa7f5bc06f41f5d777aaf8025",
+        "objective": "gross_only",
+        "source": {
+          "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+          "bundle_hash": "fixture:R021-FX-GRID38",
+          "algorithm": "cfmm_dual",
+          "effective_settings_sha256": "63b62554234ac5ac3f03639bc4069fca8a3e39e053a026b88a6f5d9f48d3e3ac"
+        },
+        "request": {
+          "case_id": "r021-grid38",
+          "token_in": "S",
+          "token_out": "T",
+          "amount_in": "38"
+        },
+        "lower_raw": "59",
+        "upper_raw": null,
+        "gap_raw": null,
+        "bound_kind": "estimate",
+        "upper_source": null,
+        "estimate": {
+          "value": "59.3676093701934",
+          "residual": "8.234801729400942E-12",
+          "tolerance": "0.00001"
+        },
+        "optimality_proven": false,
+        "termination": "converged"
+      },
+      "certificate_unavailable_reason": null,
+      "max_candidates_unit": "fallback_paths_evaluated",
+      "work": {
+        "quotes_executed": 2,
+        "quotes_memoized": 2,
+        "exact_replay_quotes": 2,
+        "internal_evaluations": 1,
+        "admission_checks": 1,
+        "market_oracle_calls": 12,
+        "objective_evaluations": 6,
+        "gradient_evaluations": 6,
+        "optimizer_iterations": 4,
+        "recovery_attempts": 1
+      }
+    },
+    "context": {
+      "status": "ok",
+      "final_score": "59",
+      "objective": "gross_only",
+      "quotes_counted": 2,
+      "hard_killed": false,
+      "run": {
+        "git_revision": "81559ab16376cf46416a69727c3ca0b45e72771a",
+        "bundle_hash": "fixture:R021-FX-GRID38",
+        "algorithm": "cfmm_dual",
+        "effective_settings_sha256": "63b62554234ac5ac3f03639bc4069fca8a3e39e053a026b88a6f5d9f48d3e3ac"
+      },
+      "request": {
+        "case_id": "r021-grid38",
+        "token_in": "S",
+        "token_out": "T",
+        "amount_in": "38"
+      }
+    }
   }
 }
 ```

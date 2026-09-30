@@ -185,7 +185,13 @@ def cl_ladder(state: ConcentratedPoolState) -> ClLadder:
     """The known-range continuous aggregate. A direction ends at the first of: the
     collected bitmap boundary (the swap would read an uncollected word), an initialized
     tick without `TickInfo` (it could not be crossed), or MIN_TICK/MAX_TICK. Liquidity
-    changes by `liquidity_net` at every initialized tick crossed (minus going down)."""
+    changes by `liquidity_net` at every initialized tick crossed (minus going down).
+
+    A direction is **empty** when the first word the exact swap reads lies outside the
+    collected interval, on either side: going down that is the word of the current
+    compressed tick, going up the word of `compressed + 1`
+    (`TickBitmap.nextInitializedTickWithinOneWord`). The swap would fail at once with
+    `incomplete_snapshot`, so no liquidity is assumed."""
     s = state.tick_spacing
     w_lo, w_hi = state.bitmap_word_range
     compressed = state.tick // s
@@ -194,7 +200,7 @@ def cl_ladder(state: ConcentratedPoolState) -> ClLadder:
 
     down: list[Segment] = []
     down_boundary = "collected_range"
-    if compressed >> 8 < w_lo:
+    if not w_lo <= compressed >> 8 <= w_hi:
         lo_tick = None
     else:
         lo_tick = max(w_lo * 256 * s, MIN_TICK)
@@ -220,7 +226,7 @@ def cl_ladder(state: ConcentratedPoolState) -> ClLadder:
 
     up: list[Segment] = []
     up_boundary = "collected_range"
-    if (compressed + 1) >> 8 > w_hi:
+    if not w_lo <= (compressed + 1) >> 8 <= w_hi:
         hi_tick = None
     else:
         hi_tick = min((w_hi * 256 + 255) * s, MAX_TICK)
@@ -303,11 +309,12 @@ def cl_forward(ladder: ClLadder, zero_for_one: bool, amount_in: float) -> float 
         if net <= cap:
             if seg.liquidity == 0.0:
                 return out
+            # cancellation-free forms: L(sa - sb) = sa*sb*net and L(1/sa - 1/sb) = net/(sa*sb)
             if zero_for_one:
                 nxt = 1.0 / (1.0 / seg.start + net / seg.liquidity)
-                return out + seg.liquidity * (seg.start - nxt)
+                return out + seg.start * nxt * net
             nxt = seg.start + net / seg.liquidity
-            return out + seg.liquidity * (1.0 / seg.start - 1.0 / nxt)
+            return out + net / (seg.start * nxt)
         net -= cap
         if zero_for_one:
             out += seg.liquidity * (seg.start - seg.end)
@@ -501,6 +508,75 @@ def projected_residual(
     return worst
 
 
+class EvaluationCapReached(Exception):  # noqa: N818 -- a declared cap, not an error
+    """Raised instead of any objective evaluation beyond `max_function_evaluations`."""
+
+
+@dataclass
+class EvaluationBudget:
+    """`max_function_evaluations` of one solve attempt (§5.3): every Phi/gradient
+    evaluation (|M| oracle calls each) of the initial solve, the restricted re-solve and
+    the final point is charged here; the re-solve gets only the remainder (no reset)."""
+
+    cap: int
+    used: int = 0
+    oracle_calls: int = 0
+
+    @property
+    def remaining(self) -> int:
+        return self.cap - self.used
+
+
+class GuardedObjective:
+    """The optimizer's function with a hard evaluation guard (§5.3). SciPy checks `maxfun`
+    only between iterations and finishes line searches past it, so the guard itself
+    refuses the evaluation beyond the cap by raising `EvaluationCapReached`. Identical
+    points are served from a cache (pure function, not charged). `final` returns the
+    reported point without a hidden extra evaluation."""
+
+    def __init__(
+        self, problem: DualProblem, sigma: Mapping[str, float], budget: EvaluationBudget
+    ) -> None:
+        self.problem, self.sigma, self.budget = problem, sigma, budget
+        self.cache: dict[tuple[float, ...], tuple[float, list[float], DualEval]] = {}
+        self.best: tuple[float, ...] | None = None
+        self.evaluations = 0
+        self.fired = False
+
+    def __call__(self, x: Sequence[float]) -> tuple[float, list[float]]:
+        key = tuple(float(t) for t in x)
+        hit = self.cache.get(key)
+        if hit is not None:
+            return hit[0], hit[1]
+        if self.budget.remaining <= 0:
+            self.fired = True
+            raise EvaluationCapReached(f"max_function_evaluations {self.budget.cap} reached")
+        self.budget.used += 1
+        self.evaluations += 1
+        phi, grad, ev = log_objective(self.problem, self.sigma, key)
+        self.budget.oracle_calls += ev.oracle_calls
+        if not math.isfinite(phi) or not all(math.isfinite(g) for g in grad):
+            raise FloatingPointError("non-finite dual value")
+        self.cache[key] = (phi, grad, ev)
+        if self.best is None or phi < self.cache[self.best][0]:
+            self.best = key  # ties keep the earlier point
+        return phi, grad
+
+    def final(self, x: Sequence[float] | None) -> tuple[list[float], float, list[float], DualEval]:
+        """The reported point: the optimizer's `x` when given and already evaluated
+        (reused) or still affordable (charged); otherwise the lowest-Phi evaluated point.
+        Requires at least one evaluation."""
+        if x is not None:
+            key = tuple(float(t) for t in x)
+            if key in self.cache or self.budget.remaining > 0:
+                phi, grad = self(key)
+                return list(key), phi, grad, self.cache[key][2]
+        if self.best is None:
+            raise EvaluationCapReached("no evaluation was affordable")
+        phi, grad, ev = self.cache[self.best]
+        return list(self.best), phi, grad, ev
+
+
 # --------------------------------------------------------------------------- recovery
 
 
@@ -524,6 +600,7 @@ class Recovery:
     cycle_removed: list[str] = field(default_factory=list)
     pruned: list[tuple[str, str]] = field(default_factory=list)
     resolved: bool = False
+    resolve_skipped: bool = False
     support: tuple[str, ...] = ()
     flows: tuple[PoolFlow, ...] = ()
     quotes_executed: int = 0
@@ -532,6 +609,11 @@ class Recovery:
 
 
 Resolve = Callable[[Mapping[str, str]], Sequence[Trade] | None]
+
+
+class ResolveBudgetExhausted(Exception):  # noqa: N818 -- a declared budget outcome
+    """The shared numeric budget has no evaluation or iteration left for the re-solve;
+    recovery then projects the cycle-broken support without re-solving (§6 step 3)."""
 
 
 def _support(trades: Sequence[Trade], min_share: float) -> dict[str, Trade]:
@@ -724,19 +806,24 @@ def recover(
         return rec
     edges = _relevant(_support(trades, options.min_split_share), case.token_in, case.token_out)
     edges = _break_cycles(edges, nu_full, order, rec)
+    resolved: Sequence[Trade] | None = None
     if rec.cycle_removed and options.cycle_resolve and resolve is not None:
         allowed = {pid: edges[pid].token_in for pid in sorted(edges, key=order.__getitem__)}
-        resolved = resolve(allowed)
-        rec.resolved = True
-        if resolved is None:
-            rec.failure = "resolve_failed"
-            return rec
-        edges = _relevant(
-            _support([t for t in resolved if t.pool_id in allowed], options.min_split_share),
-            case.token_in,
-            case.token_out,
-        )
-    else:
+        try:
+            resolved = resolve(allowed)
+        except ResolveBudgetExhausted:
+            rec.resolve_skipped = True
+        else:
+            rec.resolved = True
+            if resolved is None:
+                rec.failure = "resolve_failed"
+                return rec
+            edges = _relevant(
+                _support([t for t in resolved if t.pool_id in allowed], options.min_split_share),
+                case.token_in,
+                case.token_out,
+            )
+    if not rec.resolved:
         _cascade(edges, case.token_in, case.token_out)
     rec.support = tuple(sorted(edges, key=order.__getitem__))
     if not edges:

@@ -125,7 +125,7 @@ The two grids are different domains with different hashes, so the grid certifica
 | `direct_split_certified` | 1 | `search.max_splits` (allocation), grid and pool order in `repository_grid` | `finalist_plans_evaluated` | `max_bound_nodes`, memory (WHI-1551) |
 | `incremental_graph_repair` | as `incremental_graph` | `graph.chunks` for incumbent and rebuilt suffix; `max_splits` fallback only | `paths_scored_per_chunk` | repair windows/attempts (WHI-1553) |
 | `uni_sor_cycle_safe` | as `uni_sor_port` | as `uni_sor_port` | `enumerated_routes_threshold` | none initially (WHI-1555) |
-| `cfmm_dual` | declared by WHI-1557 | declared by WHI-1557 | declared by WHI-1557 (or explicitly unused) | iteration/oracle/recovery caps (WHI-1557) |
+| `cfmm_dual` | `search.max_hops` bounds the market universe (pools on some simple path of ≤ `max_hops` admitted pools; the merged DAG may contain longer composite paths, as for `incremental_graph`) | none (`governs: none`; `search.max_splits`/`search.percent_step` unused; one merged step per market) | `fallback_paths_evaluated` (only the single-path fallback consumes it) | `max_iterations`, `max_function_evaluations` (one guarded numeric budget per solve attempt, shared by the re-solve), `max_recovery_attempts` ([`cfmm-dual.md`](cfmm-dual.md) §9) |
 
 Consequences: a `search.max_splits` scan says nothing about a graph solver's own plan, only
 about its fallback; a node, state, label, iteration or repair cap is its own option (§9) and
@@ -501,3 +501,14 @@ domain hashes and R1–R10.
 or renaming an identity, a vocabulary value, a domain field or a work unit, or widening a
 ceiling, requires `R021-C/2`: a new `contract-v2.json`, updated examples/checks and a
 changelog entry here. Historical records keep the version they were produced under.
+
+Row fills within `R021-C/1` (narrowing of a row the contract itself delegated, no new
+vocabulary, domain field or work unit):
+
+- WHI-1557 filled the `cfmm_dual` §3.3 row and the `cfmm_dual` identity of
+  `contract-v1.json` (`max_candidates_unit`, `governing`, `separate_caps`; recorded in its
+  `row_fill`), replacing the WHI-1547 placeholder `declared_by_research`. The example
+  `P-CFMM-EST` was re-bound to the filled row with its WHI-1547 values kept in its
+  `history`; the WHI-1547 domain `cfmm38` stays in `fixtures/examples.json` unchanged as a
+  historical record, and `N-CFMM-PLACEHOLDER-UNIT` shows the old unit now fails
+  `W_MAX_CANDIDATES`.

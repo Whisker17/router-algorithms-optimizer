@@ -2,6 +2,11 @@
  "_comment": "Python contract model + SciPy L-BFGS-B (NOT author execution). Written by tools/upstream/cfmm/python_reference.py fixtures; tests re-verify each dual point.",
  "cases": [
   {
+   "budget": {
+    "evaluations_used": 6,
+    "iterations_left": 196,
+    "oracle_calls": 12
+   },
    "id": "r-grid38",
    "markets": [
     "p1",
@@ -27,6 +32,7 @@
     ],
     "gross": "59",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "p1",
@@ -35,17 +41,20 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 6,
+    "guard_fired": false,
     "markets": [
      "p1",
      "p2"
     ],
-    "nfev": 7,
     "nit": 4,
     "nu": {
      "S": 1.2171905370165803
     },
+    "oracle_calls": 12,
     "residual": 8.234801729400942e-12,
     "scipy_message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+    "scipy_nfev": 6,
     "scipy_status": 0,
     "sigma": {
      "S": 1.4179104477611941,
@@ -79,6 +88,11 @@
    "universe": "author_network_all_pools"
   },
   {
+   "budget": {
+    "evaluations_used": 15,
+    "iterations_left": 193,
+    "oracle_calls": 60
+   },
    "id": "r-triangle",
    "markets": [
     "st",
@@ -118,6 +132,7 @@
     ],
     "gross": "137",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "st",
@@ -128,20 +143,23 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 15,
+    "guard_fired": false,
     "markets": [
      "st",
      "sm",
      "mt",
      "mt2"
     ],
-    "nfev": 21,
     "nit": 7,
     "nu": {
      "M": 0.45612838577274034,
      "S": 0.8448187283390346
     },
+    "oracle_calls": 60,
     "residual": 1.5580080003907426e-09,
     "scipy_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "scipy_nfev": 20,
     "scipy_status": 0,
     "sigma": {
      "M": 0.47619047619047616,
@@ -192,6 +210,11 @@
    "universe": "author_network_all_pools"
   },
   {
+   "budget": {
+    "evaluations_used": 4,
+    "iterations_left": 0,
+    "oracle_calls": 16
+   },
    "id": "r-triangle-maxiter2",
    "markets": [
     "st",
@@ -231,6 +254,7 @@
     ],
     "gross": "138",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "st",
@@ -241,20 +265,23 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 4,
+    "guard_fired": false,
     "markets": [
      "st",
      "sm",
      "mt",
      "mt2"
     ],
-    "nfev": 5,
     "nit": 2,
     "nu": {
      "M": 0.470910794370253,
      "S": 0.8637046672750865
     },
+    "oracle_calls": 16,
     "residual": 0.17269318105420856,
     "scipy_message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "scipy_nfev": 4,
     "scipy_status": 1,
     "sigma": {
      "M": 0.47619047619047616,
@@ -305,6 +332,11 @@
    "universe": "author_network_all_pools"
   },
   {
+   "budget": {
+    "evaluations_used": 26,
+    "iterations_left": 182,
+    "oracle_calls": 117
+   },
    "id": "r-cycle",
    "markets": [
     "sa",
@@ -347,6 +379,7 @@
     ],
     "gross": "511",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": true,
     "support": [
      "sa",
@@ -357,21 +390,24 @@
    },
    "resolves": [
     {
+     "evaluations": 13,
+     "guard_fired": false,
      "markets": [
       "sa",
       "ab1",
       "bt",
       "at"
      ],
-     "nfev": 14,
      "nit": 9,
      "nu": {
       "A": 0.9908601958198496,
       "B": 0.9031139063803498,
       "S": 0.8962992422125626
      },
+     "oracle_calls": 52,
      "residual": 1.376119090346073e-07,
      "scipy_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+     "scipy_nfev": 13,
      "scipy_status": 0,
      "sigma": {
       "A": 1.2,
@@ -424,6 +460,8 @@
     }
    ],
    "solution": {
+    "evaluations": 13,
+    "guard_fired": false,
     "markets": [
      "sa",
      "ab1",
@@ -431,15 +469,16 @@
      "bt",
      "at"
     ],
-    "nfev": 14,
     "nit": 9,
     "nu": {
      "A": 0.9272954335380179,
      "B": 0.9436741991917849,
      "S": 0.8388006808110937
     },
+    "oracle_calls": 65,
     "residual": 5.764530519591915e-10,
     "scipy_message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+    "scipy_nfev": 13,
     "scipy_status": 0,
     "sigma": {
      "A": 1.2,
@@ -500,6 +539,11 @@
    "universe": "author_network_all_pools"
   },
   {
+   "budget": {
+    "evaluations_used": 20,
+    "iterations_left": 190,
+    "oracle_calls": 60
+   },
    "id": "r-deadend",
    "markets": [
     "st",
@@ -520,6 +564,7 @@
     ],
     "gross": "97",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "st"
@@ -527,20 +572,23 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 20,
+    "guard_fired": false,
     "markets": [
      "st",
      "sx",
      "xy"
     ],
-    "nfev": 26,
     "nit": 10,
     "nu": {
      "S": 0.9583980250279103,
      "X": 0.9612816635638527,
      "Y": 0.9628616631271111
     },
+    "oracle_calls": 60,
     "residual": 1.9391360274456648e-08,
     "scipy_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "scipy_nfev": 25,
     "scipy_status": 0,
     "sigma": {
      "S": 1.0,
@@ -573,6 +621,11 @@
    "universe": "author_network_all_pools"
   },
   {
+   "budget": {
+    "evaluations_used": 101,
+    "iterations_left": 193,
+    "oracle_calls": 202
+   },
    "id": "r-tiny",
    "markets": [
     "h1",
@@ -598,6 +651,7 @@
     ],
     "gross": "99",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "h1",
@@ -606,18 +660,21 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 101,
+    "guard_fired": false,
     "markets": [
      "h1",
      "h2"
     ],
-    "nfev": 103,
     "nit": 7,
     "nu": {
      "M": 99.69999965451527,
      "S": 99.04804246914343
     },
+    "oracle_calls": 202,
     "residual": 0.10732250598151566,
     "scipy_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "scipy_nfev": 102,
     "scipy_status": 0,
     "sigma": {
      "M": 100.0,
@@ -654,6 +711,11 @@
    "universe": "author_network_all_pools"
   },
   {
+   "budget": {
+    "evaluations_used": 8,
+    "iterations_left": 194,
+    "oracle_calls": 24
+   },
    "id": "r-moe-usdc-usdt",
    "markets": [
     "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -686,6 +748,7 @@
     ],
     "gross": "17763882",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -695,19 +758,22 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 8,
+    "guard_fired": false,
     "markets": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
      "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
      "0x8e3a13418743ab1a98434551937ea687e451b589"
     ],
-    "nfev": 9,
     "nit": 6,
     "nu": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 0.7912463641570594,
      "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": 6.022873828063755e-13
     },
+    "oracle_calls": 24,
     "residual": 1.2946003019598251e-08,
     "scipy_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "scipy_nfev": 8,
     "scipy_status": 0,
     "sigma": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 1.0035322454871323,
@@ -751,6 +817,11 @@
    "universe": "author_network_all_pools"
   },
   {
+   "budget": {
+    "evaluations_used": 9,
+    "iterations_left": 192,
+    "oracle_calls": 27
+   },
    "id": "usdt_wmnt_evidence_split",
    "markets": [
     "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -783,6 +854,7 @@
     ],
     "gross": "146280843311709543462",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -792,19 +864,22 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 9,
+    "guard_fired": false,
     "markets": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
      "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
      "0x8e3a13418743ab1a98434551937ea687e451b589"
     ],
-    "nfev": 10,
     "nit": 8,
     "nu": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 1349606239965.1714,
      "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": 710917376993.5132
     },
+    "oracle_calls": 27,
     "residual": 6.352018910860124e-11,
     "scipy_message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+    "scipy_nfev": 9,
     "scipy_status": 0,
     "sigma": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 1507719853489.9392,
@@ -848,6 +923,11 @@
    "universe": "mantle_mixed_cpmm_h3"
   },
   {
+   "budget": {
+    "evaluations_used": 12,
+    "iterations_left": 189,
+    "oracle_calls": 36
+   },
    "id": "wmnt_usdt_evidence_split",
    "markets": [
     "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -880,6 +960,7 @@
     ],
     "gross": "159689187",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -889,19 +970,22 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 12,
+    "guard_fired": false,
     "markets": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
      "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
      "0x8e3a13418743ab1a98434551937ea687e451b589"
     ],
-    "nfev": 13,
     "nit": 11,
     "nu": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 0.3317759395045411,
      "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": 1.5885654576905802e-13
     },
+    "oracle_calls": 36,
     "residual": 2.377289698429763e-09,
     "scipy_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "scipy_nfev": 12,
     "scipy_status": 0,
     "sigma": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 1.0035322454871323,
@@ -945,6 +1029,11 @@
    "universe": "mantle_mixed_cpmm_h3"
   },
   {
+   "budget": {
+    "evaluations_used": 26,
+    "iterations_left": 191,
+    "oracle_calls": 78
+   },
    "id": "usdc_wmnt_small",
    "markets": [
     "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -977,6 +1066,7 @@
     ],
     "gross": "1496162065400485161",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -986,19 +1076,22 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 26,
+    "guard_fired": false,
     "markets": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
      "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
      "0x8e3a13418743ab1a98434551937ea687e451b589"
     ],
-    "nfev": 28,
     "nit": 9,
     "nu": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 1489439628529.5708,
      "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": 1497651934414.902
     },
+    "oracle_calls": 78,
     "residual": 4.735765138704634e-07,
     "scipy_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "scipy_nfev": 27,
     "scipy_status": 0,
     "sigma": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 1507719853489.9392,
@@ -1042,6 +1135,11 @@
    "universe": "mantle_mixed_cpmm_h3"
   },
   {
+   "budget": {
+    "evaluations_used": 14,
+    "iterations_left": 194,
+    "oracle_calls": 42
+   },
    "id": "usdc_usdt_small",
    "markets": [
     "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -1074,6 +1172,7 @@
     ],
     "gross": "990975",
     "pruned": [],
+    "resolve_skipped": false,
     "resolved": false,
     "support": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
@@ -1083,19 +1182,22 @@
    },
    "resolves": [],
    "solution": {
+    "evaluations": 14,
+    "guard_fired": false,
     "markets": [
      "0x4e7685df06201521f35a182467feefe02c53d847",
      "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
      "0x8e3a13418743ab1a98434551937ea687e451b589"
     ],
-    "nfev": 16,
     "nit": 6,
     "nu": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 0.9849127071058856,
      "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": 6.599643684687475e-13
     },
+    "oracle_calls": 42,
     "residual": 1.8039934915684008e-07,
     "scipy_message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "scipy_nfev": 15,
     "scipy_status": 0,
     "sigma": {
      "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": 1.0035322454871323,
@@ -1145,7 +1247,1585 @@
   "numpy": "2.5.3",
   "python": "3.13.13",
   "scipy": "1.18.1",
+  "sources_sha256": {
+   "tests/fixtures/cfmm/author_inputs.json": "6600e52a5c363566d87a487a229625639a3731b6d3be4db4f17a2ad48b79dc44",
+   "tests/routing/cfmm_contract_model.py": "7fb979394cbcba243058fe38ebdc37b56602735ab3887475c6386851006ac387",
+   "tools/upstream/cfmm/python_reference.py": "d7657c561d194db6aaff4447745e2dd1c6c4a4d868c93586a5c1fd21049c9148"
+  },
   "system": "Darwin"
+ },
+ "forced_caps": {
+  "resolve_starved": {
+   "budget": {
+    "evaluations_used": 13,
+    "iterations_left": 191,
+    "oracle_calls": 65
+   },
+   "budget_used": 13,
+   "cap": 13,
+   "id": "r-cycle-resolve-starved",
+   "markets": [
+    "sa",
+    "ab1",
+    "ab2",
+    "bt",
+    "at"
+   ],
+   "recovery": {
+    "attempts": 1,
+    "cycle_removed": [
+     "ab2"
+    ],
+    "failure": null,
+    "flows": [
+     {
+      "amount_in": "500",
+      "amount_out": "474",
+      "pool_id": "sa",
+      "token_in": "S"
+     },
+     {
+      "amount_in": "349",
+      "amount_out": "403",
+      "pool_id": "ab1",
+      "token_in": "A"
+     },
+     {
+      "amount_in": "125",
+      "amount_out": "123",
+      "pool_id": "at",
+      "token_in": "A"
+     },
+     {
+      "amount_in": "403",
+      "amount_out": "386",
+      "pool_id": "bt",
+      "token_in": "B"
+     }
+    ],
+    "gross": "509",
+    "pruned": [],
+    "resolve_skipped": true,
+    "resolved": false,
+    "support": [
+     "sa",
+     "ab1",
+     "bt",
+     "at"
+    ]
+   },
+   "resolves": [],
+   "solution": {
+    "evaluations": 13,
+    "guard_fired": false,
+    "markets": [
+     "sa",
+     "ab1",
+     "ab2",
+     "bt",
+     "at"
+    ],
+    "nit": 9,
+    "nu": {
+     "A": 0.9272954335380179,
+     "B": 0.9436741991917849,
+     "S": 0.8388006808110937
+    },
+    "oracle_calls": 65,
+    "residual": 5.764530519591915e-10,
+    "scipy_message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+    "scipy_nfev": 13,
+    "scipy_status": 0,
+    "sigma": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2,
+     "T": 1.0
+    },
+    "termination": "converged",
+    "trades": [
+     {
+      "amount_in": 499.99999991237314,
+      "amount_out": 474.82973750229473,
+      "pool_id": "sa",
+      "token_in": "S",
+      "token_out": "A"
+     },
+     {
+      "amount_in": 1037.294881402565,
+      "amount_out": 1124.7045626075057,
+      "pool_id": "ab1",
+      "token_in": "A",
+      "token_out": "B"
+     },
+     {
+      "amount_in": 845.2051665800575,
+      "amount_out": 932.6148477849987,
+      "pool_id": "ab2",
+      "token_in": "B",
+      "token_out": "A"
+     },
+     {
+      "amount_in": 279.49939591214627,
+      "amount_out": 271.1062272577769,
+      "pool_id": "bt",
+      "token_in": "B",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 370.1497034949471,
+      "amount_out": 355.90496412521213,
+      "pool_id": "at",
+      "token_in": "A",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     -0.3581037250997604,
+     -0.2578046224530623,
+     -0.057974300381806676
+    ],
+    "value": 627.0111919267405,
+    "variables": [
+     "S",
+     "A",
+     "B"
+    ]
+   },
+   "universe": "author_network_all_pools"
+  },
+  "runs": [
+   {
+    "budget_used": 1,
+    "cap": 1,
+    "cap_key": "max_function_evaluations",
+    "case": "r-grid38",
+    "evaluations": 1,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "p1",
+     "p2"
+    ],
+    "nit": 0,
+    "nu": {
+     "S": 1.4179104477611941
+    },
+    "oracle_calls": 2,
+    "residual": 0.41811776407489254,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "S": 1.4179104477611941,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 19.932329028332354,
+      "amount_out": 35.65229204152013,
+      "pool_id": "p2",
+      "token_in": "S",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     0.0
+    ],
+    "value": 61.27063147895933,
+    "variables": [
+     "S"
+    ]
+   },
+   {
+    "budget_used": 2,
+    "cap": 2,
+    "cap_key": "max_function_evaluations",
+    "case": "r-grid38",
+    "evaluations": 2,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "p1",
+     "p2"
+    ],
+    "nit": 0,
+    "nu": {
+     "S": 1.4179104477611941
+    },
+    "oracle_calls": 4,
+    "residual": 0.41811776407489254,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "S": 1.4179104477611941,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 19.932329028332354,
+      "amount_out": 35.65229204152013,
+      "pool_id": "p2",
+      "token_in": "S",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     0.0
+    ],
+    "value": 61.27063147895933,
+    "variables": [
+     "S"
+    ]
+   },
+   {
+    "budget_used": 3,
+    "cap": 3,
+    "cap_key": "max_function_evaluations",
+    "case": "r-grid38",
+    "evaluations": 3,
+    "guard_fired": true,
+    "iterations_left": 199,
+    "markets": [
+     "p1",
+     "p2"
+    ],
+    "nit": 1,
+    "nu": {
+     "S": 1.2184851118405147
+    },
+    "oracle_calls": 6,
+    "residual": 0.00271155998710787,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "S": 1.4179104477611941,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 10.364434491857574,
+      "amount_out": 13.602780962647167,
+      "pool_id": "p1",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 27.503451406396742,
+      "amount_out": 45.603934880026245,
+      "pool_id": "p2",
+      "token_in": "S",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     -0.15157589663317333
+    ],
+    "value": 59.36769490871471,
+    "variables": [
+     "S"
+    ]
+   },
+   {
+    "budget_used": 5,
+    "cap": 5,
+    "cap_key": "max_function_evaluations",
+    "case": "r-grid38",
+    "evaluations": 5,
+    "guard_fired": true,
+    "iterations_left": 197,
+    "markets": [
+     "p1",
+     "p2"
+    ],
+    "nit": 3,
+    "nu": {
+     "S": 1.2171906082687325
+    },
+    "oracle_calls": 10,
+    "residual": 1.4921045249360887e-07,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "S": 1.4179104477611941,
+     "T": 1.0
+    },
+    "termination": "converged",
+    "trades": [
+     {
+      "amount_in": 10.441395499939356,
+      "amount_out": 13.69650697879987,
+      "pool_id": "p1",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 27.55859722242656,
+      "amount_out": 45.67109353312593,
+      "pool_id": "p2",
+      "token_in": "S",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     -0.1526388490475521
+    ],
+    "value": 59.36760937019365,
+    "variables": [
+     "S"
+    ]
+   },
+   {
+    "budget_used": 3,
+    "cap": 1,
+    "cap_key": "max_iterations",
+    "case": "r-grid38",
+    "evaluations": 3,
+    "guard_fired": false,
+    "iterations_left": 0,
+    "markets": [
+     "p1",
+     "p2"
+    ],
+    "nit": 1,
+    "nu": {
+     "S": 1.2184851118405147
+    },
+    "oracle_calls": 6,
+    "residual": 0.00271155998710787,
+    "scipy_message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "scipy_nfev": 3,
+    "scipy_status": 1,
+    "sigma": {
+     "S": 1.4179104477611941,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 10.364434491857574,
+      "amount_out": 13.602780962647167,
+      "pool_id": "p1",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 27.503451406396742,
+      "amount_out": 45.603934880026245,
+      "pool_id": "p2",
+      "token_in": "S",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     -0.15157589663317333
+    ],
+    "value": 59.36769490871471,
+    "variables": [
+     "S"
+    ]
+   },
+   {
+    "budget_used": 4,
+    "cap": 2,
+    "cap_key": "max_iterations",
+    "case": "r-grid38",
+    "evaluations": 4,
+    "guard_fired": false,
+    "iterations_left": 0,
+    "markets": [
+     "p1",
+     "p2"
+    ],
+    "nit": 2,
+    "nu": {
+     "S": 1.217280126450529
+    },
+    "oracle_calls": 8,
+    "residual": 0.00018760399582215537,
+    "scipy_message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "scipy_nfev": 4,
+    "scipy_status": 1,
+    "sigma": {
+     "S": 1.4179104477611941,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 10.436069501509083,
+      "amount_out": 13.690023985148438,
+      "pool_id": "p1",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 27.554780919379965,
+      "amount_out": 45.66644819408819,
+      "pool_id": "p2",
+      "token_in": "S",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     -0.1525653068352262
+    ],
+    "value": 59.367609780053776,
+    "variables": [
+     "S"
+    ]
+   },
+   {
+    "budget_used": 1,
+    "cap": 1,
+    "cap_key": "max_function_evaluations",
+    "case": "r-triangle",
+    "evaluations": 1,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "st",
+     "sm",
+     "mt",
+     "mt2"
+    ],
+    "nit": 0,
+    "nu": {
+     "M": 0.47619047619047616,
+     "S": 1.0
+    },
+    "oracle_calls": 4,
+    "residual": 0.9934512604473356,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "M": 0.47619047619047616,
+     "S": 1.0,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 46.45311828823022,
+      "amount_out": 22.632775023467723,
+      "pool_id": "mt",
+      "token_in": "M",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 22.3745665510033,
+      "amount_out": 11.131099231650252,
+      "pool_id": "mt2",
+      "token_in": "M",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     0.0,
+     0.0
+    ],
+    "value": 150.98878623643535,
+    "variables": [
+     "S",
+     "M"
+    ]
+   },
+   {
+    "budget_used": 2,
+    "cap": 2,
+    "cap_key": "max_function_evaluations",
+    "case": "r-triangle",
+    "evaluations": 2,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "st",
+     "sm",
+     "mt",
+     "mt2"
+    ],
+    "nit": 0,
+    "nu": {
+     "M": 0.47619047619047616,
+     "S": 1.0
+    },
+    "oracle_calls": 8,
+    "residual": 0.9934512604473356,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "M": 0.47619047619047616,
+     "S": 1.0,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 46.45311828823022,
+      "amount_out": 22.632775023467723,
+      "pool_id": "mt",
+      "token_in": "M",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 22.3745665510033,
+      "amount_out": 11.131099231650252,
+      "pool_id": "mt2",
+      "token_in": "M",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     0.0,
+     0.0
+    ],
+    "value": 150.98878623643535,
+    "variables": [
+     "S",
+     "M"
+    ]
+   },
+   {
+    "budget_used": 3,
+    "cap": 3,
+    "cap_key": "max_function_evaluations",
+    "case": "r-triangle",
+    "evaluations": 3,
+    "guard_fired": true,
+    "iterations_left": 199,
+    "markets": [
+     "st",
+     "sm",
+     "mt",
+     "mt2"
+    ],
+    "nit": 1,
+    "nu": {
+     "M": 0.49071743612336394,
+     "S": 0.8715075834401176
+    },
+    "oracle_calls": 12,
+    "residual": 0.4692512789750873,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "M": 0.47619047619047616,
+     "S": 1.0,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 69.78620729130249,
+      "amount_out": 65.05081776590748,
+      "pool_id": "st",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 86.02695132817354,
+      "amount_out": 165.8867120744908,
+      "pool_id": "sm",
+      "token_in": "S",
+      "token_out": "M"
+     },
+     {
+      "amount_in": 15.844709001776945,
+      "amount_out": 7.836688666732039,
+      "pool_id": "mt",
+      "token_in": "M",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 14.580688284244049,
+      "amount_out": 7.363543237164308,
+      "pool_id": "mt2",
+      "token_in": "M",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     -0.13753071246483398,
+     0.03005054137538044
+    ],
+    "value": 141.658066936088,
+    "variables": [
+     "S",
+     "M"
+    ]
+   },
+   {
+    "budget_used": 5,
+    "cap": 5,
+    "cap_key": "max_function_evaluations",
+    "case": "r-triangle",
+    "evaluations": 5,
+    "guard_fired": true,
+    "iterations_left": 197,
+    "markets": [
+     "st",
+     "sm",
+     "mt",
+     "mt2"
+    ],
+    "nit": 3,
+    "nu": {
+     "M": 0.45674244542215353,
+     "S": 0.8463775126053061
+    },
+    "oracle_calls": 20,
+    "residual": 0.007709770191523663,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "M": 0.47619047619047616,
+     "S": 1.0,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 85.59606839424674,
+      "amount_out": 78.62912708199232,
+      "pool_id": "st",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 63.1345541658429,
+      "amount_out": 124.35713733152708,
+      "pool_id": "sm",
+      "token_in": "S",
+      "token_out": "M"
+     },
+     {
+      "amount_in": 89.6945833725721,
+      "amount_out": 42.79908503012575,
+      "pool_id": "mt",
+      "token_in": "M",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 33.38522417092858,
+      "amount_out": 16.266085627404628,
+      "pool_id": "mt2",
+      "token_in": "M",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     -0.16678978651400103,
+     -0.041698278984403855
+    ],
+    "value": 139.35208099066506,
+    "variables": [
+     "S",
+     "M"
+    ]
+   },
+   {
+    "budget_used": 3,
+    "cap": 1,
+    "cap_key": "max_iterations",
+    "case": "r-triangle",
+    "evaluations": 3,
+    "guard_fired": false,
+    "iterations_left": 0,
+    "markets": [
+     "st",
+     "sm",
+     "mt",
+     "mt2"
+    ],
+    "nit": 1,
+    "nu": {
+     "M": 0.49071743612336394,
+     "S": 0.8715075834401176
+    },
+    "oracle_calls": 12,
+    "residual": 0.4692512789750873,
+    "scipy_message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "scipy_nfev": 3,
+    "scipy_status": 1,
+    "sigma": {
+     "M": 0.47619047619047616,
+     "S": 1.0,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 69.78620729130249,
+      "amount_out": 65.05081776590748,
+      "pool_id": "st",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 86.02695132817354,
+      "amount_out": 165.8867120744908,
+      "pool_id": "sm",
+      "token_in": "S",
+      "token_out": "M"
+     },
+     {
+      "amount_in": 15.844709001776945,
+      "amount_out": 7.836688666732039,
+      "pool_id": "mt",
+      "token_in": "M",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 14.580688284244049,
+      "amount_out": 7.363543237164308,
+      "pool_id": "mt2",
+      "token_in": "M",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     -0.13753071246483398,
+     0.03005054137538044
+    ],
+    "value": 141.658066936088,
+    "variables": [
+     "S",
+     "M"
+    ]
+   },
+   {
+    "budget_used": 4,
+    "cap": 2,
+    "cap_key": "max_iterations",
+    "case": "r-triangle",
+    "evaluations": 4,
+    "guard_fired": false,
+    "iterations_left": 0,
+    "markets": [
+     "st",
+     "sm",
+     "mt",
+     "mt2"
+    ],
+    "nit": 2,
+    "nu": {
+     "M": 0.470910794370253,
+     "S": 0.8637046672750865
+    },
+    "oracle_calls": 16,
+    "residual": 0.17269318105420856,
+    "scipy_message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "scipy_nfev": 4,
+    "scipy_status": 1,
+    "sigma": {
+     "M": 0.47619047619047616,
+     "S": 1.0,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 74.62125696881004,
+      "amount_out": 69.24569406899117,
+      "pool_id": "st",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 68.63058326778561,
+      "amount_out": 134.48945286317755,
+      "pool_id": "sm",
+      "token_in": "S",
+      "token_out": "M"
+     },
+     {
+      "amount_in": 57.92683105152267,
+      "amount_out": 28.066074567449583,
+      "pool_id": "mt",
+      "token_in": "M",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 25.296140152165215,
+      "amount_out": 12.51459076942754,
+      "pool_id": "mt2",
+      "token_in": "M",
+      "token_out": "T"
+     }
+    ],
+    "u": [
+     -0.1465243888954155,
+     -0.011149254415576045
+    ],
+    "value": 139.79671609187687,
+    "variables": [
+     "S",
+     "M"
+    ]
+   },
+   {
+    "budget_used": 1,
+    "cap": 1,
+    "cap_key": "max_function_evaluations",
+    "case": "r-cycle",
+    "evaluations": 1,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "sa",
+     "ab1",
+     "ab2",
+     "bt",
+     "at"
+    ],
+    "nit": 0,
+    "nu": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2
+    },
+    "oracle_calls": 5,
+    "residual": 3.1517758244787157,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 1987.9503307040623,
+      "amount_out": 1984.9661654029144,
+      "pool_id": "ab2",
+      "token_in": "B",
+      "token_out": "A"
+     },
+     {
+      "amount_in": 940.829619960134,
+      "amount_out": 857.566757689524,
+      "pool_id": "at",
+      "token_in": "T",
+      "token_out": "A"
+     }
+    ],
+    "u": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "value": 1082.2595570467297,
+    "variables": [
+     "S",
+     "A",
+     "B"
+    ]
+   },
+   {
+    "budget_used": 2,
+    "cap": 2,
+    "cap_key": "max_function_evaluations",
+    "case": "r-cycle",
+    "evaluations": 2,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "sa",
+     "ab1",
+     "ab2",
+     "bt",
+     "at"
+    ],
+    "nit": 0,
+    "nu": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2
+    },
+    "oracle_calls": 10,
+    "residual": 3.1517758244787157,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 1987.9503307040623,
+      "amount_out": 1984.9661654029144,
+      "pool_id": "ab2",
+      "token_in": "B",
+      "token_out": "A"
+     },
+     {
+      "amount_in": 940.829619960134,
+      "amount_out": 857.566757689524,
+      "pool_id": "at",
+      "token_in": "T",
+      "token_out": "A"
+     }
+    ],
+    "u": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "value": 1082.2595570467297,
+    "variables": [
+     "S",
+     "A",
+     "B"
+    ]
+   },
+   {
+    "budget_used": 3,
+    "cap": 3,
+    "cap_key": "max_function_evaluations",
+    "case": "r-cycle",
+    "evaluations": 3,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "sa",
+     "ab1",
+     "ab2",
+     "bt",
+     "at"
+    ],
+    "nit": 0,
+    "nu": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2
+    },
+    "oracle_calls": 15,
+    "residual": 3.1517758244787157,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 1987.9503307040623,
+      "amount_out": 1984.9661654029144,
+      "pool_id": "ab2",
+      "token_in": "B",
+      "token_out": "A"
+     },
+     {
+      "amount_in": 940.829619960134,
+      "amount_out": 857.566757689524,
+      "pool_id": "at",
+      "token_in": "T",
+      "token_out": "A"
+     }
+    ],
+    "u": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "value": 1082.2595570467297,
+    "variables": [
+     "S",
+     "A",
+     "B"
+    ]
+   },
+   {
+    "budget_used": 5,
+    "cap": 5,
+    "cap_key": "max_function_evaluations",
+    "case": "r-cycle",
+    "evaluations": 5,
+    "guard_fired": true,
+    "iterations_left": 198,
+    "markets": [
+     "sa",
+     "ab1",
+     "ab2",
+     "bt",
+     "at"
+    ],
+    "nit": 2,
+    "nu": {
+     "A": 1.059497533915467,
+     "B": 1.060141591524295,
+     "S": 1.1279668908110463
+    },
+    "oracle_calls": 25,
+    "residual": 1.1530499642323189,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 303.4853446769589,
+      "amount_out": 293.68860883163484,
+      "pool_id": "sa",
+      "token_in": "A",
+      "token_out": "S"
+     },
+     {
+      "amount_in": 944.1636678031073,
+      "amount_out": 1032.4131441655543,
+      "pool_id": "ab1",
+      "token_in": "A",
+      "token_out": "B"
+     },
+     {
+      "amount_in": 937.4965850220104,
+      "amount_out": 1025.7460613844569,
+      "pool_id": "ab2",
+      "token_in": "B",
+      "token_out": "A"
+     },
+     {
+      "amount_in": 281.70679023926175,
+      "amount_out": 273.18884242135243,
+      "pool_id": "bt",
+      "token_in": "T",
+      "token_out": "B"
+     },
+     {
+      "amount_in": 278.5740009908193,
+      "amount_out": 270.2328775540663,
+      "pool_id": "at",
+      "token_in": "T",
+      "token_out": "A"
+     }
+    ],
+    "u": [
+     -0.06190475626673604,
+     -0.1245267856632103,
+     0.058402476113087035
+    ],
+    "value": 776.4229653066328,
+    "variables": [
+     "S",
+     "A",
+     "B"
+    ]
+   },
+   {
+    "budget_used": 4,
+    "cap": 1,
+    "cap_key": "max_iterations",
+    "case": "r-cycle",
+    "evaluations": 4,
+    "guard_fired": false,
+    "iterations_left": 0,
+    "markets": [
+     "sa",
+     "ab1",
+     "ab2",
+     "bt",
+     "at"
+    ],
+    "nit": 1,
+    "nu": {
+     "A": 1.0641013569923998,
+     "B": 1.072558739695317,
+     "S": 1.1748964791646659
+    },
+    "oracle_calls": 20,
+    "residual": 1.383327541168339,
+    "scipy_message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "scipy_nfev": 4,
+    "scipy_status": 1,
+    "sigma": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 493.4222836084236,
+      "amount_out": 468.8760345528742,
+      "pool_id": "sa",
+      "token_in": "A",
+      "token_out": "S"
+     },
+     {
+      "amount_in": 984.3412808933416,
+      "amount_out": 1072.419880705581,
+      "pool_id": "ab1",
+      "token_in": "A",
+      "token_out": "B"
+     },
+     {
+      "amount_in": 897.489848481982,
+      "amount_out": 985.568448294222,
+      "pool_id": "ab2",
+      "token_in": "B",
+      "token_out": "A"
+     },
+     {
+      "amount_in": 341.92061420539926,
+      "amount_out": 329.6570144361266,
+      "pool_id": "bt",
+      "token_in": "T",
+      "token_out": "B"
+     },
+     {
+      "amount_in": 300.9467864862054,
+      "amount_out": 291.3035591848867,
+      "pool_id": "at",
+      "token_in": "T",
+      "token_out": "A"
+     }
+    ],
+    "u": [
+     -0.021141515917697556,
+     -0.12019091008027631,
+     0.07004713926695343
+    ],
+    "value": 822.8919094474028,
+    "variables": [
+     "S",
+     "A",
+     "B"
+    ]
+   },
+   {
+    "budget_used": 5,
+    "cap": 2,
+    "cap_key": "max_iterations",
+    "case": "r-cycle",
+    "evaluations": 5,
+    "guard_fired": false,
+    "iterations_left": 0,
+    "markets": [
+     "sa",
+     "ab1",
+     "ab2",
+     "bt",
+     "at"
+    ],
+    "nit": 2,
+    "nu": {
+     "A": 1.059497533915467,
+     "B": 1.060141591524295,
+     "S": 1.1279668908110463
+    },
+    "oracle_calls": 25,
+    "residual": 1.1530499642323189,
+    "scipy_message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "scipy_nfev": 5,
+    "scipy_status": 1,
+    "sigma": {
+     "A": 1.2,
+     "B": 1.0,
+     "S": 1.2,
+     "T": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 303.4853446769589,
+      "amount_out": 293.68860883163484,
+      "pool_id": "sa",
+      "token_in": "A",
+      "token_out": "S"
+     },
+     {
+      "amount_in": 944.1636678031073,
+      "amount_out": 1032.4131441655543,
+      "pool_id": "ab1",
+      "token_in": "A",
+      "token_out": "B"
+     },
+     {
+      "amount_in": 937.4965850220104,
+      "amount_out": 1025.7460613844569,
+      "pool_id": "ab2",
+      "token_in": "B",
+      "token_out": "A"
+     },
+     {
+      "amount_in": 281.70679023926175,
+      "amount_out": 273.18884242135243,
+      "pool_id": "bt",
+      "token_in": "T",
+      "token_out": "B"
+     },
+     {
+      "amount_in": 278.5740009908193,
+      "amount_out": 270.2328775540663,
+      "pool_id": "at",
+      "token_in": "T",
+      "token_out": "A"
+     }
+    ],
+    "u": [
+     -0.06190475626673604,
+     -0.1245267856632103,
+     0.058402476113087035
+    ],
+    "value": 776.4229653066328,
+    "variables": [
+     "S",
+     "A",
+     "B"
+    ]
+   },
+   {
+    "budget_used": 1,
+    "cap": 1,
+    "cap_key": "max_function_evaluations",
+    "case": "r-deadend",
+    "evaluations": 1,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "st",
+     "sx",
+     "xy"
+    ],
+    "nit": 0,
+    "nu": {
+     "S": 1.0,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "oracle_calls": 3,
+    "residual": 1.0,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "S": 1.0,
+     "T": 1.0,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [],
+    "u": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "value": 100.0,
+    "variables": [
+     "S",
+     "X",
+     "Y"
+    ]
+   },
+   {
+    "budget_used": 2,
+    "cap": 2,
+    "cap_key": "max_function_evaluations",
+    "case": "r-deadend",
+    "evaluations": 2,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "st",
+     "sx",
+     "xy"
+    ],
+    "nit": 0,
+    "nu": {
+     "S": 1.0,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "oracle_calls": 6,
+    "residual": 1.0,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "S": 1.0,
+     "T": 1.0,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [],
+    "u": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "value": 100.0,
+    "variables": [
+     "S",
+     "X",
+     "Y"
+    ]
+   },
+   {
+    "budget_used": 3,
+    "cap": 3,
+    "cap_key": "max_function_evaluations",
+    "case": "r-deadend",
+    "evaluations": 3,
+    "guard_fired": true,
+    "iterations_left": 200,
+    "markets": [
+     "st",
+     "sx",
+     "xy"
+    ],
+    "nit": 0,
+    "nu": {
+     "S": 1.0,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "oracle_calls": 9,
+    "residual": 1.0,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "S": 1.0,
+     "T": 1.0,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [],
+    "u": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "value": 100.0,
+    "variables": [
+     "S",
+     "X",
+     "Y"
+    ]
+   },
+   {
+    "budget_used": 5,
+    "cap": 5,
+    "cap_key": "max_function_evaluations",
+    "case": "r-deadend",
+    "evaluations": 5,
+    "guard_fired": true,
+    "iterations_left": 198,
+    "markets": [
+     "st",
+     "sx",
+     "xy"
+    ],
+    "nit": 2,
+    "nu": {
+     "S": 0.9729181886945157,
+     "X": 0.9908899892899335,
+     "Y": 1.0
+    },
+    "oracle_calls": 15,
+    "residual": 0.22830378147759556,
+    "scipy_message": "GUARD: evaluation cap",
+    "scipy_nfev": null,
+    "scipy_status": null,
+    "sigma": {
+     "S": 1.0,
+     "T": 1.0,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 61.687171075736224,
+      "amount_out": 60.754799890644364,
+      "pool_id": "st",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 38.50972075586796,
+      "amount_out": 38.10161544888613,
+      "pool_id": "sx",
+      "token_in": "S",
+      "token_out": "X"
+     },
+     {
+      "amount_in": 15.438085391545906,
+      "amount_out": 15.344535220512823,
+      "pool_id": "xy",
+      "token_in": "X",
+      "token_out": "Y"
+     }
+    ],
+    "u": [
+     -0.027455281837330342,
+     -0.009151760612443445,
+     0.0
+    ],
+    "value": 98.36484052277405,
+    "variables": [
+     "S",
+     "X",
+     "Y"
+    ]
+   },
+   {
+    "budget_used": 4,
+    "cap": 1,
+    "cap_key": "max_iterations",
+    "case": "r-deadend",
+    "evaluations": 4,
+    "guard_fired": false,
+    "iterations_left": 0,
+    "markets": [
+     "st",
+     "sx",
+     "xy"
+    ],
+    "nit": 1,
+    "nu": {
+     "S": 0.9776359891890125,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "oracle_calls": 12,
+    "residual": 0.49428472578526994,
+    "scipy_message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "scipy_nfev": 4,
+    "scipy_status": 1,
+    "sigma": {
+     "S": 1.0,
+     "T": 1.0,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 49.42290522546153,
+      "amount_out": 48.79377738090829,
+      "pool_id": "st",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 49.42290522546153,
+      "amount_out": 48.79377738090829,
+      "pool_id": "sx",
+      "token_in": "S",
+      "token_out": "X"
+     }
+    ],
+    "u": [
+     -0.02261787742387022,
+     0.0,
+     0.0
+    ],
+    "value": 98.71593200334004,
+    "variables": [
+     "S",
+     "X",
+     "Y"
+    ]
+   },
+   {
+    "budget_used": 5,
+    "cap": 2,
+    "cap_key": "max_iterations",
+    "case": "r-deadend",
+    "evaluations": 5,
+    "guard_fired": false,
+    "iterations_left": 0,
+    "markets": [
+     "st",
+     "sx",
+     "xy"
+    ],
+    "nit": 2,
+    "nu": {
+     "S": 0.9729181886945157,
+     "X": 0.9908899892899335,
+     "Y": 1.0
+    },
+    "oracle_calls": 15,
+    "residual": 0.22830378147759556,
+    "scipy_message": "STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    "scipy_nfev": 5,
+    "scipy_status": 1,
+    "sigma": {
+     "S": 1.0,
+     "T": 1.0,
+     "X": 1.0,
+     "Y": 1.0
+    },
+    "termination": "iteration_cap",
+    "trades": [
+     {
+      "amount_in": 61.687171075736224,
+      "amount_out": 60.754799890644364,
+      "pool_id": "st",
+      "token_in": "S",
+      "token_out": "T"
+     },
+     {
+      "amount_in": 38.50972075586796,
+      "amount_out": 38.10161544888613,
+      "pool_id": "sx",
+      "token_in": "S",
+      "token_out": "X"
+     },
+     {
+      "amount_in": 15.438085391545906,
+      "amount_out": 15.344535220512823,
+      "pool_id": "xy",
+      "token_in": "X",
+      "token_out": "Y"
+     }
+    ],
+    "u": [
+     -0.027455281837330342,
+     -0.009151760612443445,
+     0.0
+    ],
+    "value": 98.36484052277405,
+    "variables": [
+     "S",
+     "X",
+     "Y"
+    ]
+   }
+  ]
  },
  "preset": {
   "cycle_resolve": true,

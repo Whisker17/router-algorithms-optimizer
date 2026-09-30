@@ -18,6 +18,7 @@ the 96-case tuning split only (contract §10); it writes per-case JSON outside t
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import math
 import platform
@@ -67,22 +68,37 @@ class Solved:
     nu: dict[str, float]
     value: float
     residual: float
-    status: int
+    status: int | None  # scipy warnflag; None when our guard stopped the solve
     message: str
     nit: int
-    nfev: int
+    evaluations: int  # Phi/gradient evaluations actually made (guard count, incl. final)
+    scipy_nfev: int | None
+    guard_fired: bool
     termination: str
     trades: tuple[m.Trade, ...]
     oracle_calls: int
     seconds: float
 
 
+@dataclasses.dataclass
+class Budgets:
+    """One numeric budget per solve attempt (§5.3), shared by the re-solve: evaluations
+    (hard guard) and L-BFGS-B iterations (SciPy enforces `maxiter` exactly)."""
+
+    evaluations: m.EvaluationBudget
+    iterations_left: int
+
+
 def solve(
-    problem: m.DualProblem, opts: Mapping[str, Any], warm: Mapping[str, float] | None = None
+    problem: m.DualProblem,
+    opts: Mapping[str, Any],
+    budgets: Budgets,
+    warm: Mapping[str, float] | None = None,
 ) -> Solved:
     """§5: x_j = log(nu_j / sigma_j), x0 = 0 (spot prices) or a warm start, box
-    |x_j| <= log_price_bound, L-BFGS-B on Phi = log g with the preset caps; termination
-    per §5.4 from our own projected residual, never from scipy's success flag."""
+    |x_j| <= log_price_bound, L-BFGS-B on Phi = log g under the shared budgets, the
+    evaluation cap enforced by `GuardedObjective` (SciPy's `maxfun` alone overruns);
+    termination per §5.4 from our own projected residual, never from SciPy's success."""
     sigma = m.scales(problem)
     n = len(problem.variables)
     bound = opts["log_price_bound"]
@@ -92,40 +108,55 @@ def solve(
         else min(max(math.log(warm[v] / sigma[v]), -bound), bound)
         for v in problem.variables
     ]
-    calls = 0
+    guard = m.GuardedObjective(problem, sigma, budgets.evaluations)
+    calls_before = budgets.evaluations.oracle_calls
+    iterations = 0
 
     def fun(x: np.ndarray) -> tuple[float, np.ndarray]:
-        nonlocal calls
-        val, grad, ev = m.log_objective(problem, sigma, [float(t) for t in x])
-        calls += ev.oracle_calls
-        if not math.isfinite(val) or not all(math.isfinite(g) for g in grad):
-            raise FloatingPointError("non-finite dual value")
-        return val, np.array(grad)
+        phi, grad = guard([float(t) for t in x])
+        return phi, np.array(grad)
+
+    def count(intermediate_result: Any) -> None:
+        nonlocal iterations
+        iterations += 1
 
     t0 = time.perf_counter()
-    res = minimize(
-        fun,
-        np.array(x0),
-        jac=True,
-        method="L-BFGS-B",
-        bounds=[(-bound, bound)] * n,
-        options={
-            "maxcor": opts["lbfgs_memory"],
-            "ftol": opts["ftol"],
-            "gtol": opts["pgtol"],
-            "maxiter": opts["max_iterations"],
-            "maxfun": opts["max_function_evaluations"],
-        },
-    )
-    x = [float(t) for t in res.x]
-    val, grad, ev = m.log_objective(problem, sigma, x)  # the final, counted evaluation
-    calls += ev.oracle_calls
+    x_ret: list[float] | None
+    try:
+        res = minimize(
+            fun,
+            np.array(x0),
+            jac=True,
+            method="L-BFGS-B",
+            bounds=[(-bound, bound)] * n,
+            callback=count,
+            options={
+                "maxcor": opts["lbfgs_memory"],
+                "ftol": opts["ftol"],
+                "gtol": opts["pgtol"],
+                "maxiter": budgets.iterations_left,
+                "maxfun": budgets.evaluations.remaining,
+            },
+        )
+        x_ret = [float(t) for t in res.x]
+        status: int | None = int(res.status)
+        message, nit, scipy_nfev = str(res.message), int(res.nit), int(res.nfev)
+    except m.EvaluationCapReached:
+        x_ret, status, message, nit, scipy_nfev = (
+            None,
+            None,
+            "GUARD: evaluation cap",
+            iterations,
+            None,
+        )
+    budgets.iterations_left -= nit
+    x, _, grad, ev = guard.final(x_ret)
     seconds = time.perf_counter() - t0
     residual = m.projected_residual(x, grad, -bound, bound)
     # §5.4: acceptance is our own KKT residual at the final point, never scipy "success".
     if residual <= opts["residual_tolerance"]:
         termination = "converged"
-    elif res.status == 1:
+    elif guard.fired or status == 1:
         termination = "iteration_cap"
     else:
         termination = "not_converged"
@@ -138,15 +169,21 @@ def solve(
         nu,
         ev.value,
         residual,
-        int(res.status),
-        str(res.message),
-        int(res.nit),
-        int(res.nfev) + 1,
+        status,
+        message,
+        nit,
+        guard.evaluations,
+        scipy_nfev,
+        guard.fired,
         termination,
         ev.trades,
-        calls,
+        budgets.evaluations.oracle_calls - calls_before,
         seconds,
     )
+
+
+def new_budgets(opts: Mapping[str, Any]) -> Budgets:
+    return Budgets(m.EvaluationBudget(opts["max_function_evaluations"]), opts["max_iterations"])
 
 
 def cfmm_solve(
@@ -156,14 +193,18 @@ def cfmm_solve(
     opts: Mapping[str, Any],
     max_quotes: int | None = None,
 ) -> dict[str, Any]:
-    """Dual solve + §6 recovery with the restricted re-solve wired to `solve`."""
+    """Dual solve + §6 recovery with the restricted re-solve wired to `solve`; both draw
+    on one `Budgets` (the re-solve is skipped, never re-funded, when nothing is left)."""
     problem = m.dual_problem(bundle, case, markets)
-    sol = solve(problem, opts)
+    budgets = new_budgets(opts)
+    sol = solve(problem, opts, budgets)
     resolves: list[Solved] = []
 
     def resolve(allowed: Mapping[str, str]) -> Sequence[m.Trade] | None:
+        if budgets.evaluations.remaining < 1 or budgets.iterations_left < 1:
+            raise m.ResolveBudgetExhausted
         restricted = m.dual_problem(bundle, case, list(allowed), allowed)
-        r = solve(restricted, opts, warm=sol.nu)
+        r = solve(restricted, opts, budgets, warm=sol.nu)
         resolves.append(r)
         return r.trades
 
@@ -183,7 +224,7 @@ def cfmm_solve(
         cache,
         resolve,
     )
-    return {"solution": sol, "resolves": resolves, "recovery": rec}
+    return {"solution": sol, "resolves": resolves, "recovery": rec, "budgets": budgets}
 
 
 def trades_json(trades: Sequence[m.Trade]) -> list[dict[str, Any]]:
@@ -202,7 +243,10 @@ def solved_json(s: Solved) -> dict[str, Any]:
         "scipy_status": s.status,
         "scipy_message": s.message,
         "nit": s.nit,
-        "nfev": s.nfev,
+        "evaluations": s.evaluations,
+        "scipy_nfev": s.scipy_nfev,
+        "guard_fired": s.guard_fired,
+        "oracle_calls": s.oracle_calls,
         "termination": s.termination,
         "trades": trades_json(s.trades),
     }
@@ -224,8 +268,18 @@ def network_bundle(case_doc: Mapping[str, Any]) -> tuple[SnapshotBundle, Case]:
     ), case
 
 
+SOURCE_FILES = (
+    "tools/upstream/cfmm/python_reference.py",
+    "tests/routing/cfmm_contract_model.py",
+    "tests/fixtures/cfmm/author_inputs.json",
+)
+
+
 def environment() -> dict[str, Any]:
     return {
+        "sources_sha256": {
+            f: hashlib.sha256((REPO / f).read_bytes()).hexdigest() for f in SOURCE_FILES
+        },
         "python": platform.python_version(),
         "scipy": scipy.__version__,
         "numpy": np.__version__,
@@ -257,6 +311,7 @@ def fixtures() -> None:
             out["cases"].append(
                 case_json("r-triangle-maxiter2", "author_network_all_pools", markets, capped)
             )
+    out["forced_caps"] = forced_caps(inputs)
     mantle = load_bundle(REPO / "tests/fixtures/routing/mantle_mixed")
     for case in mantle.cases:
         markets = m.market_universe(mantle, case, 3, [m.CPMM])
@@ -265,6 +320,49 @@ def fixtures() -> None:
     path = REPO / "tests/fixtures/cfmm/model_reference.json"
     path.write_text(json.dumps(out, indent=1, sort_keys=True) + "\n")
     print(f"wrote {path.relative_to(REPO)}")
+
+
+FORCED_CAPS = (1, 2, 3, 5)
+
+
+def forced_caps(inputs: Mapping[str, Any]) -> dict[str, Any]:
+    """§5.3 regression evidence with the real pinned SciPy: the first four author router
+    cases under `max_function_evaluations` in FORCED_CAPS (the cap SciPy's `maxfun` alone
+    overran: 4/4/5/5 evaluations for a cap of 1 at 0c5890f), a `max_iterations` cap, and
+    r-cycle with the shared budget exhausted by the initial solve (re-solve skipped)."""
+    runs: list[dict[str, Any]] = []
+    for doc in inputs["router"][:4]:
+        bundle, case = network_bundle(doc)
+        problem = m.dual_problem(bundle, case, tuple(bundle.pools))
+        for key, caps in (("max_function_evaluations", FORCED_CAPS), ("max_iterations", (1, 2))):
+            for cap in caps:
+                opts = PRESET | {key: cap}
+                budgets = new_budgets(opts)
+                sol = solve(problem, opts, budgets)
+                runs.append(
+                    {
+                        "case": doc["id"],
+                        "cap_key": key,
+                        "cap": cap,
+                        "markets": list(problem.markets),
+                    }
+                    | solved_json(sol)
+                    | {
+                        "budget_used": budgets.evaluations.used,
+                        "iterations_left": budgets.iterations_left,
+                    }
+                )
+    cycle = next(d for d in inputs["router"] if d["id"] == "r-cycle")
+    bundle, case = network_bundle(cycle)
+    full = solve(m.dual_problem(bundle, case, tuple(bundle.pools)), PRESET, new_budgets(PRESET))
+    starved = PRESET | {"max_function_evaluations": full.evaluations}
+    r = cfmm_solve(bundle, case, tuple(bundle.pools), starved)
+    shared = case_json(
+        "r-cycle-resolve-starved", "author_network_all_pools", tuple(bundle.pools), r
+    )
+    shared["cap"] = full.evaluations
+    shared["budget_used"] = r["budgets"].evaluations.used
+    return {"runs": runs, "resolve_starved": shared}
 
 
 def case_json(
@@ -277,12 +375,18 @@ def case_json(
         "markets": list(markets),
         "solution": solved_json(r["solution"]),
         "resolves": [solved_json(x) for x in r["resolves"]],
+        "budget": {
+            "evaluations_used": r["budgets"].evaluations.used,
+            "oracle_calls": r["budgets"].evaluations.oracle_calls,
+            "iterations_left": r["budgets"].iterations_left,
+        },
         "recovery": {
             "failure": rec.failure,
             "attempts": rec.attempts,
             "cycle_removed": rec.cycle_removed,
             "pruned": [list(p) for p in rec.pruned],
             "resolved": rec.resolved,
+            "resolve_skipped": rec.resolve_skipped,
             "support": list(rec.support),
             "gross": None if rec.evaluation is None else str(rec.evaluation.gross_output),
             "flows": [
@@ -340,7 +444,9 @@ def tuning(corpus: Path, out_dir: Path) -> None:
             termination=sol.termination,
             scipy_message=sol.message,
             nit=sol.nit,
-            nfev=sol.nfev,
+            evaluations=sol.evaluations,
+            evaluations_total=r["budgets"].evaluations.used,
+            oracle_calls_total=r["budgets"].evaluations.oracle_calls,
             residual=sol.residual,
             estimate=sol.value,
             resolves=[
@@ -403,16 +509,16 @@ def sweep(corpus: Path, out_dir: Path) -> None:
     ]
     solver: dict[str, Any] = {}
     for name, delta in SWEEP_SOLVER.items():
-        runs = [solve(p, PRESET | delta) for p in problems]
+        runs = [solve(p, PRESET | delta, new_budgets(PRESET | delta)) for p in problems]
         res = sorted(r.residual for r in runs)
         solver[name] = {
             "delta": delta,
             "converged_at_1e-6": sum(r <= 1e-6 for r in res),
             "converged_at_1e-5": sum(r <= 1e-5 for r in res),
             "converged_at_1e-4": sum(r <= 1e-4 for r in res),
-            "iteration_cap_hits": sum(r.status == 1 for r in runs),
+            "iteration_cap_hits": sum(r.termination == "iteration_cap" for r in runs),
             "nit_max": max(r.nit for r in runs),
-            "nfev_max": max(r.nfev for r in runs),
+            "evaluations_max": max(r.evaluations for r in runs),
             "residual_p50": res[len(res) // 2],
             "residual_p90": res[int(0.9 * len(res))],
             "residual_max": res[-1],
