@@ -58,10 +58,12 @@ no `algorithm_options` (its pinned preset is `{}`); `--strategies all` appends i
 
 `cfmm_dual` (WHI-1558, R021-C/1 §2 row 5) is the CFMM dual-decomposition router
 (arXiv:2302.04938v1; CFMMRouter.jl pin, MIT notice in routing/cfmm/NOTICE.md) over the
-admitted constant-product markets (CPMM stage; concentrated is WHI-1559, LB excluded),
-recovered into one exact integer plan (`cfmm_share_projection/1`, docs/references/
-research-021/cfmm-dual.md). Gross-only and estimate-only; `custom`, configured by validated
-`algorithm_options` (sha256-pinned `cfmm_dual/1` preset); `--strategies all` appends it after
+admitted markets of its stage (`market_protocols`: constant-product, the WHI-1558 CPMM stage,
+or constant-product + concentrated, the WHI-1559 CL stage; LB excluded), recovered into one
+exact integer plan (`cfmm_share_projection/1`, docs/references/research-021/cfmm-dual.md).
+Gross-only and estimate-only; `custom`, configured by validated `algorithm_options` (current
+sha256-pinned preset `cfmm_dual/2`, CL stage; `cfmm_dual/1` stays a historical pin);
+`--strategies all` appends it after
 `uni_sor_cycle_safe` (contract order 5). Importing it loads no NumPy/SciPy.
 """
 
@@ -104,7 +106,7 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     direct_split_certified.NAME: direct_split_certified.FACTORY,  # WHI-1552
     incremental_graph_repair.NAME: incremental_graph_repair.FACTORY,  # WHI-1554
     uni_sor_cycle_safe.NAME: uni_sor_cycle_safe.FACTORY,  # WHI-1556
-    cfmm_dual.NAME: cfmm_dual.FACTORY,  # WHI-1558 (CPMM stage)
+    cfmm_dual.NAME: cfmm_dual.FACTORY,  # WHI-1558 (CPMM stage), WHI-1559 (CL stage)
 }
 
 # The comparison groups, in their deterministic run order (base first, then optimized).

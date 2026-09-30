@@ -105,7 +105,7 @@ R021_ADDITIONS: tuple[str, ...] = (
     direct_split_certified.NAME,  # WHI-1552 (contract order 2; its repository_grid preset)
     incremental_graph_repair.NAME,  # WHI-1554 (contract order 3)
     uni_sor_cycle_safe.NAME,  # WHI-1556 (contract order 4; its empty-options preset)
-    cfmm_dual.NAME,  # WHI-1558 (contract order 5; its cfmm_dual/1 CPMM-stage preset)
+    cfmm_dual.NAME,  # WHI-1558 (contract order 5; WHI-1559: its current cfmm_dual/2 CL preset)
 )
 DERIVATION_NOTE = (
     "`algorithms`, `strategies` and `selection` are derived from the source; under `all`, a "

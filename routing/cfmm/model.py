@@ -1,14 +1,24 @@
-"""CPMM continuous model of `cfmm_dual` (WHI-1558; `cfmm-dual.md` §§4.1-4.2, 5.1-5.2).
+"""Continuous market model of `cfmm_dual` (WHI-1558 CPMM; WHI-1559 CL component A;
+`cfmm-dual.md` §§4.1-4.2, 5.1-5.2, 8).
 
-Ported, CPMM part only, from the validated executable contract model
-`tests/routing/cfmm_contract_model.py` of WHI-1557 (merged `91d7f4b`, sha256
-`7fb979394cbcba243058fe38ebdc37b56602735ab3887475c6386851006ac387`), keeping its float
-operation order so the committed `tests/fixtures/cfmm/model_reference.json` dual points
-reproduce. The oracle is the closed form of the paper (Diamandis, Resnick, Chitra, Angeris,
-arXiv:2302.04938v1, App. A, eta = 1) as implemented by the pinned author code
+Ported (CPMM in WHI-1558; CL oracle, universe and scales in WHI-1559) from the validated
+executable contract model `tests/routing/cfmm_contract_model.py` of WHI-1557 (merged
+`91d7f4b`, sha256 `7fb979394cbcba243058fe38ebdc37b56602735ab3887475c6386851006ac387`),
+keeping its float operation order so the committed `tests/fixtures/cfmm/model_reference.json`
+dual points reproduce. The oracle is the closed form of the paper (Diamandis, Resnick,
+Chitra, Angeris, arXiv:2302.04938v1, App. A, eta = 1) as implemented by the pinned author code
 (`bcc-research/CFMMRouter.jl` `5932e42e5077ffc7d8e02c3b3ad2e9ed1d441267`, `ProductTwoCoin`
 `find_arb!`; MIT, notice in `routing/cfmm/NOTICE.md`). No test or research module is
-imported. The CL oracle is WHI-1559; Liquidity Book pools never become markets.
+imported. The CL oracle (WHI-1559) evaluates the prepared continuous V3 aggregate of
+`routing.cfmm.cl` (`ClIndex`), ported from the same model's `cl_arb`; Liquidity Book pools
+never become markets.
+
+**Stage defaults.** Every entry point defaults to the CPMM stage: `market_universe`
+without `protocols` admits constant-product pools only and `dual_problem` without
+`cl_indexes` refuses a concentrated pool, so existing CPMM callers are unchanged. A CL
+market enters a problem only with a prepared `ClIndex` supplied by the caller (built once in
+its charged preparation, bound to the exact snapshot state); no index is ever built, cached
+or refreshed here, so no oracle call or objective evaluation pays or hides index work.
 
 Units are raw integer token units; prices nu are "raw token_out units per raw unit" with
 nu_out fixed to 1. Everything here is float64 and deterministic (sequential market loop in
@@ -26,10 +36,13 @@ from dataclasses import dataclass
 from types import MappingProxyType
 
 from pools.constant_product import SOURCES as CP_SOURCES
+from routing.cfmm.cl import CL, Q96, ClIndex, cl_admitted
 from routing.search import build_graph_index, enumerate_paths
-from snapshot.models import Case, ConstantProductPoolState, SnapshotBundle
+from snapshot.models import Case, ConcentratedPoolState, ConstantProductPoolState, SnapshotBundle
 
 CPMM = "constant_product"
+STAGE_PROTOCOLS = (CPMM, CL)
+Market = ConstantProductPoolState | ConcentratedPoolState
 
 
 class NumericFailure(ArithmeticError):
@@ -55,15 +68,28 @@ def cpmm_admitted(pool: ConstantProductPoolState) -> bool:
     return pool.reserve0 > 0 and pool.reserve1 > 0 and 0 <= pool.fee_bps < 10_000
 
 
-def market_universe(bundle: SnapshotBundle, case: Case, max_hops: int) -> tuple[str, ...]:
-    """§4.1 `simple_path_union` (CPMM stage): the admitted CPMM pools, in bundle insertion
-    order, that lie on at least one simple `token_in -> token_out` path of at most
-    `max_hops` admitted pools (`routing.search.enumerate_paths`)."""
-    pools = {
-        pid: p
-        for pid, p in bundle.pools.items()
-        if isinstance(p, ConstantProductPoolState) and cpmm_admitted(p)
-    }
+def admitted(pool: object, protocols: Sequence[str] = (CPMM,)) -> bool:
+    """A pool is a market of a stage over `protocols` iff it is an admitted CPMM
+    (`cpmm_admitted`) or an admitted CL pool (`routing.cfmm.cl.cl_admitted`) of a listed
+    protocol. Liquidity Book (and any other kind) never is."""
+    if isinstance(pool, ConstantProductPoolState):
+        return CPMM in protocols and cpmm_admitted(pool)
+    if isinstance(pool, ConcentratedPoolState):
+        return CL in protocols and cl_admitted(pool)
+    return False
+
+
+def market_universe(
+    bundle: SnapshotBundle, case: Case, max_hops: int, protocols: Sequence[str] = (CPMM,)
+) -> tuple[str, ...]:
+    """§4.1 `simple_path_union`: the admitted pools of the stage's `protocols` (default the
+    CPMM stage; `(CPMM, CL)` for the CL stage), in bundle insertion order, that lie on at
+    least one simple `token_in -> token_out` path of at most `max_hops` admitted pools
+    (`routing.search.enumerate_paths`)."""
+    unknown = sorted(set(protocols) - set(STAGE_PROTOCOLS))
+    if unknown or not protocols:
+        raise ValueError(f"protocols must be a non-empty subset of {STAGE_PROTOCOLS}: {unknown}")
+    pools = {pid: p for pid, p in bundle.pools.items() if admitted(p, protocols)}
     index = build_graph_index(dataclasses.replace(bundle, pools=pools))
     used: set[str] = set()
     for path in enumerate_paths(index, case.token_in, case.token_out, max_hops):
@@ -111,20 +137,43 @@ def cpmm_arb(
     return None
 
 
+def cl_arb(index: ClIndex, nu: Mapping[str, float], allowed_in: str | None = None) -> Trade | None:
+    """Optimal arbitrage of the continuous V3 aggregate with the actual fee (§8.2; author
+    `UniV3` `find_arb!`): sell token0 while gamma*P > nu0/nu1, i.e. down to
+    sqrt(nu0/(gamma*nu1)); sell token1 while P < gamma*nu0/nu1, i.e. up to
+    sqrt(gamma*nu0/nu1). Both stop at the known boundary (an empty direction trades
+    nothing); the fee divides the net input once. `allowed_in` restricts the direction."""
+    state = index.state
+    g, n0, n1 = index.gamma, nu[state.token0], nu[state.token1]
+    if allowed_in in (None, state.token0) and g * index.sqrt_price**2 > n0 / n1:
+        net, out = index.down.to_price(math.sqrt(n0 / (g * n1)))
+        if net > 0.0:
+            return Trade(state.pool_id, state.token0, state.token1, net / g, out)
+        return None
+    if allowed_in in (None, state.token1) and index.sqrt_price**2 < g * n0 / n1:
+        net, out = index.up.to_price(math.sqrt(g * n0 / n1))
+        if net > 0.0:
+            return Trade(state.pool_id, state.token1, state.token0, net / g, out)
+    return None
+
+
 # --------------------------------------------------------------------------- dual
 
 
 @dataclass(frozen=True)
 class DualProblem:
-    """Immutable inputs of g(nu) for one exact-input case: the admitted CPMM `markets`
-    (admitted order), the priced `variables` (every market token except `token_out`, in
-    first-seen order starting with `token_in`) and, for a restricted re-solve, the one
-    allowed input token per market (`allowed[i]` for `markets[i]`; `None` = both ways)."""
+    """Immutable inputs of g(nu) for one exact-input case: the admitted `markets`
+    (admitted order; CPMM pools and, in the CL stage, CL pools), the priced `variables`
+    (every market token except `token_out`, in first-seen order starting with `token_in`),
+    for a restricted re-solve the one allowed input token per market (`allowed[i]` for
+    `markets[i]`; `None` = both ways) and the caller-prepared `ClIndex` of every CL market
+    (`cl[pool_id]`, bound to that market's state; empty for a CPMM-only problem)."""
 
     case: Case
-    markets: tuple[ConstantProductPoolState, ...]
+    markets: tuple[Market, ...]
     variables: tuple[str, ...]
     allowed: tuple[str | None, ...]
+    cl: Mapping[str, ClIndex] = dataclasses.field(default_factory=lambda: MappingProxyType({}))
 
     @property
     def market_ids(self) -> tuple[str, ...]:
@@ -132,33 +181,54 @@ class DualProblem:
 
 
 def _problem(
-    case: Case, markets: Sequence[ConstantProductPoolState], allowed: Sequence[str | None]
+    case: Case,
+    markets: Sequence[Market],
+    allowed: Sequence[str | None],
+    cl: Mapping[str, ClIndex],
 ) -> DualProblem:
     seen: dict[str, None] = {case.token_in: None}
     for p in markets:
         seen.setdefault(p.token0, None)
         seen.setdefault(p.token1, None)
     variables = tuple(t for t in seen if t != case.token_out)
-    return DualProblem(case, tuple(markets), variables, tuple(allowed))
+    kept = {p.pool_id: cl[p.pool_id] for p in markets if isinstance(p, ConcentratedPoolState)}
+    return DualProblem(case, tuple(markets), variables, tuple(allowed), MappingProxyType(kept))
 
 
-def dual_problem(bundle: SnapshotBundle, case: Case, markets: Sequence[str]) -> DualProblem:
+def dual_problem(
+    bundle: SnapshotBundle,
+    case: Case,
+    markets: Sequence[str],
+    cl_indexes: Mapping[str, ClIndex] | None = None,
+) -> DualProblem:
     """The full-network problem over `markets` (normally `market_universe`, in admitted
-    order). Every id must name a distinct admitted CPMM pool of `bundle`; the case must be
-    a positive exact-input order between two different tokens."""
+    order). Every id must name a distinct admitted market of `bundle`: a CPMM pool, or --
+    only when the caller passes its prepared `cl_indexes` (e.g. `prepare_cl_indexes` run in
+    a charged preparation) -- an admitted CL pool whose index `matches` its state exactly.
+    Without `cl_indexes` (the CPMM stage) a CL pool is refused like any non-CPMM pool; an
+    index is never built here. The case must be a positive exact-input order between two
+    different tokens."""
     if isinstance(case.amount_in, bool) or not isinstance(case.amount_in, int):
         raise ValueError(f"amount_in must be an int, got {case.amount_in!r}")
     if case.amount_in <= 0 or case.token_in == case.token_out:
         raise ValueError(f"case {case.case_id!r}: not a positive exact-input order")
     if not markets or len(set(markets)) != len(markets):
         raise ValueError(f"markets must be a non-empty list of distinct ids: {list(markets)}")
-    pools: list[ConstantProductPoolState] = []
+    pools: list[Market] = []
     for pid in markets:
         pool = bundle.pools.get(pid)
-        if not isinstance(pool, ConstantProductPoolState) or not cpmm_admitted(pool):
+        if isinstance(pool, ConcentratedPoolState) and cl_indexes is not None:
+            if not cl_admitted(pool):
+                raise ValueError(f"{pid!r}: not an admitted CL market")
+            index = cl_indexes.get(pid)
+            if index is None:
+                raise ValueError(f"{pid!r}: no prepared CL index was supplied")
+            if not index.matches(pool):
+                raise ValueError(f"{pid!r}: the prepared CL index is not of this snapshot state")
+        elif not isinstance(pool, ConstantProductPoolState) or not cpmm_admitted(pool):
             raise ValueError(f"{pid!r}: not an admitted CPMM market")
         pools.append(pool)
-    return _problem(case, pools, [None] * len(pools))
+    return _problem(case, pools, [None] * len(pools), cl_indexes or {})
 
 
 def restricted(problem: DualProblem, allowed: Mapping[str, str]) -> DualProblem:
@@ -173,7 +243,7 @@ def restricted(problem: DualProblem, allowed: Mapping[str, str]) -> DualProblem:
     for p in kept:
         if allowed[p.pool_id] not in (p.token0, p.token1):
             raise ValueError(f"{p.pool_id!r}: {allowed[p.pool_id]!r} is not one of its tokens")
-    return _problem(problem.case, kept, [allowed[p.pool_id] for p in kept])
+    return _problem(problem.case, kept, [allowed[p.pool_id] for p in kept], problem.cl)
 
 
 @dataclass(frozen=True)
@@ -197,7 +267,10 @@ def dual_value(problem: DualProblem, prices: Mapping[str, float]) -> DualEval:
     trades: list[Trade] = []
     for i, (pool, allowed_in) in enumerate(zip(problem.markets, problem.allowed, strict=True)):
         try:
-            t = cpmm_arb(pool, nu, allowed_in)
+            if isinstance(pool, ConcentratedPoolState):
+                t = cl_arb(problem.cl[pool.pool_id], nu, allowed_in)
+            else:
+                t = cpmm_arb(pool, nu, allowed_in)
         except (ArithmeticError, ValueError) as exc:
             raise NumericFailure(f"{pool.pool_id}: oracle failed: {exc}", i + 1) from exc
         if t is not None:
@@ -228,10 +301,13 @@ def dual_value(problem: DualProblem, prices: Mapping[str, float]) -> DualEval:
 def scales(problem: DualProblem) -> Mapping[str, float]:
     """§5.1 sigma (sigma_out = 1): a maximum-depth spanning tree grown from token_out
     (Prim): repeatedly price the unpriced token reachable through the market with the
-    largest priced-side depth valued in token_out units, sigma_k * reserve_k (ties: admitted
-    market order); sigma_j = sigma_k * fee-free spot value of j in k (R_k / R_j). A shallow
-    pool with an extreme price therefore never sets a token's scale when a deeper one
-    exists. A scale that cannot be formed in float64 is a `NumericFailure`."""
+    largest priced-side depth valued in token_out units, sigma_k * depth_k (ties: admitted
+    market order); sigma_j = sigma_k * fee-free spot value of j in k. CPMM depth is the
+    reserve and the spot value R_k / R_j; CL depth is the active liquidity's virtual
+    reserve (L/sqrtP for token0, L*sqrtP for token1) and the spot value P or 1/P
+    (P = token1 per token0). A shallow pool with an extreme price therefore never sets a
+    token's scale when a deeper one exists. A scale that cannot be formed in float64 is a
+    `NumericFailure`."""
     try:
         return _scales(problem)
     except (ArithmeticError, ValueError) as exc:
@@ -245,14 +321,29 @@ def _scales(problem: DualProblem) -> Mapping[str, float]:
         for i, pool in enumerate(problem.markets):
             for known, other in ((pool.token0, pool.token1), (pool.token1, pool.token0)):
                 if known in sigma and other not in sigma:
-                    value = sigma[known] * float(pool.reserves_for(known)[0])
+                    value = sigma[known] * _depth(pool, known)
                     if best is None or value > best[0]:
                         best = (value, i, known, other)
         if best is None:
             return MappingProxyType(sigma)
         _, i, known, other = best
-        r_in, r_out = problem.markets[i].reserves_for(other)
-        sigma[other] = sigma[known] * (r_out / r_in)
+        sigma[other] = sigma[known] * _spot(problem.markets[i], other)
+
+
+def _depth(pool: Market, token: str) -> float:
+    if isinstance(pool, ConcentratedPoolState):
+        sp = pool.sqrt_price_x96 / Q96
+        return pool.liquidity / sp if token == pool.token0 else pool.liquidity * sp
+    return float(pool.reserves_for(token)[0])
+
+
+def _spot(pool: Market, token: str) -> float:
+    """Fee-free spot value of one unit of `token` in units of the pool's other token."""
+    if isinstance(pool, ConcentratedPoolState):
+        p = (pool.sqrt_price_x96 / Q96) ** 2  # token1 per token0
+        return p if token == pool.token0 else 1.0 / p
+    r_in, r_out = pool.reserves_for(token)
+    return r_out / r_in
 
 
 def log_objective(

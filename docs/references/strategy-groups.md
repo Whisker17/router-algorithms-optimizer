@@ -106,17 +106,20 @@ its search record carries `cycle_safe` counters and phases. `config/uni_sor_cycl
 matched.yaml` runs it next to `uni_sor_port` at 3 hops. Saved effective profiles, including
 the earlier eight- to twelve-strategy ones, replay literally and never gain it.
 
-`cfmm_dual` (WHI-1558) is the CFMM dual-decomposition router over the admitted
-constant-product markets on <= `search.max_hops` paths (CPMM stage; the concentrated stage is
-WHI-1559, Liquidity Book is excluded), recovered into one exact integer plan
-(`docs/references/research-021/cfmm-dual.md` §6). It is in the `custom` group, runs after
-`uni_sor_cycle_safe`, receives `search.max_hops` and its pinned `cfmm_dual/1` preset
-(`config/cfmm_dual/preset_v1.yaml`). It is gross-only (net objectives: every case a visible
-`unsupported` row) and estimate-only (never a certified bound); a case with only
-concentrated/LB paths is `unsupported` (`protocol_ceiling`). A recovery failure falls back to
-the best exact single path over the same markets, labeled in its diagnostics.
-`config/cfmm_dual/cpmm.yaml` runs it next to `path_split` and `incremental_graph` with
-full_gross's values. Saved effective profiles, including the earlier eight- to
+`cfmm_dual` (WHI-1558, CL stage WHI-1559) is the CFMM dual-decomposition router over the
+admitted markets on <= `search.max_hops` paths, recovered into one exact integer plan
+(`docs/references/research-021/cfmm-dual.md` §6). Its stage is `market_protocols`:
+`constant_product+concentrated` (constant-product plus admitted Uniswap v3 / Agni / FusionX
+concentrated pools, §8) in its current pinned `cfmm_dual/2` preset
+(`config/cfmm_dual/preset_v2.yaml`), or `constant_product` in the historical `cfmm_dual/1`
+(`preset_v1.yaml`, the CPMM-only ablation). Liquidity Book is excluded from both. It is in the
+`custom` group, runs after `uni_sor_cycle_safe` and receives `search.max_hops` and, under
+`all`, the current preset. It is gross-only (net objectives: every case a visible
+`unsupported` row) and estimate-only (never a certified bound); a case with only paths outside
+the stage (e.g. LB-only) is `unsupported` (`protocol_ceiling`). A recovery failure falls back
+to the best exact single path over the same markets, labeled in its diagnostics.
+`config/cfmm_dual/cl.yaml` (CL stage) and `config/cfmm_dual/cpmm.yaml` (CPMM-only ablation)
+run it next to `path_split` and `incremental_graph` with full_gross's values. Saved effective profiles, including the earlier eight- to
 thirteen-strategy ones, replay literally and never gain it.
 
 ### Metis-inspired settings under `all`
