@@ -510,7 +510,7 @@ class RepairLedger:
 
     checkpoint_restores: int = 0
     repair_attempts: int = 0
-    internal_evaluations: int = 0
+    repair_evaluations: int = 0  # stage extra: candidate replays only, not the R021 total
     candidates_complete: int = 0
     candidates_failed: int = 0
     duplicates: int = 0
@@ -534,6 +534,66 @@ class RepairResult:
     candidates: list[dict[str, Any]]
 
 
+class EvaluationCounter:
+    """Research emulation of the proposed optional seam (suffix-repair.md §8.1): a count of
+    **every** complete-plan `evaluate` call made inside one solve, whichever module makes
+    it. The proposed production seam is a context-local counter inside
+    `routing.evaluator.evaluate` (default: none active, behavior unchanged). Without editing
+    production code, this emulation wraps, for the duration of the solve only, the module-
+    level `evaluate` name of every loaded `routing.algorithms` module (every alias the
+    reference fallback stage can call) and counts the specification's own replays
+    explicitly (`own`). Wrappers call whatever the name held before and are restored in
+    `finally`; outputs are unchanged."""
+
+    def __init__(self) -> None:
+        self.aliased = 0  # calls through reference-module aliases (fallback stage)
+        self.own = 0  # the specification's own replays (incumbent + repair)
+        self._saved: list[tuple[ModuleType, Any]] = []
+
+    @property
+    def total(self) -> int:
+        return self.aliased + self.own
+
+    def __enter__(self) -> EvaluationCounter:
+        import routing.algorithms as package
+
+        prefix = package.__name__ + "."
+        for name, module in sorted(sys.modules.items()):
+            if module is None or not name.startswith(prefix):
+                continue
+            inner = getattr(module, "evaluate", None)
+            if inner is None or not callable(inner):
+                continue
+
+            def counting(*args: Any, _inner: Any = inner, **kwargs: Any) -> Evaluation:
+                self.aliased += 1
+                return _inner(*args, **kwargs)  # type: ignore[no-any-return]
+
+            self._saved.append((module, inner))
+            module.evaluate = counting  # type: ignore[attr-defined]
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        for module, inner in reversed(self._saved):
+            module.evaluate = inner  # type: ignore[attr-defined]
+        self._saved.clear()
+
+
+def consistency_record(
+    stage: str, index: int, accounted: int, ev: Evaluation | None, detail: str | None = None
+) -> dict[str, Any]:
+    """Provenance of a consistency failure (suffix-repair.md §5.7): the stage, the stage's
+    own replay index (1-based), the accounted gross, the replay status and claimed gross."""
+    return {
+        "stage": stage,
+        "replay_index": index,
+        "accounted_gross": str(accounted),
+        "evaluation_status": None if ev is None else ev.status.value,
+        "evaluated_gross": None if ev is None else str(ev.gross_output),
+        "detail": detail,
+    }
+
+
 def prepare_ig(bundle: SnapshotBundle, params: Mapping[str, int]) -> Any:
     return incremental_graph.prepare(bundle, AlgorithmConfig(incremental_graph.NAME, dict(params)))
 
@@ -554,6 +614,20 @@ def repair_solve(
     latest first) is a probe-only ablation of the registered structural rule, not an
     option."""
     opts = validate_options(options)
+    with EvaluationCounter() as counter:
+        return _repair_solve(case, context, budget, opts, counter, restore_fn, quote_hook, rule)
+
+
+def _repair_solve(
+    case: Case,
+    context: SolveContext,
+    budget: Budget,
+    opts: Mapping[str, Any],
+    counter: EvaluationCounter,
+    restore_fn: Callable[[Checkpoint], Checkpoint] | None,
+    quote_hook: Callable[[int], None] | None,
+    rule: str,
+) -> RepairResult:
     prepared = context.prepared
     bundle, objective = context.bundle, context.objective
     ps_prepared = prepared.path_split
@@ -574,6 +648,8 @@ def repair_solve(
             ps.score,
         )
         context.report_candidate(ps.plan)
+    fallback_evaluations = counter.total
+    consistency: dict[str, Any] | None = None
 
     truncated_by: str | None = None
 
@@ -610,17 +686,25 @@ def repair_solve(
                 incremental_status = run.status
             else:
                 plan = merged_plan(case, run.flows.values())
+                counter.own += 1
                 ev = evaluate(bundle, case, plan, objective, quote=guarded)
-                if ev.status is EvalStatus.OK:
+                accounted = accounted_gross(case, run.flows)
+                if ev.status is EvalStatus.OK and ev.gross_output == accounted:
                     incremental_status = "ok"
                     incremental = (plan, ev, objective.score(ev))
                 else:
-                    incremental_status = "invalid_plan"
-                    inc.failures["invalid_plan"] = inc.failures.get("invalid_plan", 0) + 1
+                    # Never replace or publish: the replay contradicts the accounting (T1).
+                    if ev.status is EvalStatus.OK:
+                        incremental_status = "consistency_failure"
+                    else:
+                        incremental_status = "invalid_plan"
+                        inc.failures["invalid_plan"] = inc.failures.get("invalid_plan", 0) + 1
+                    consistency = consistency_record("incumbent", 1, accounted, ev)
     except BudgetExhausted:
         incremental_status = "truncated"
         own_truncated_budget = 1
     allocated = len(engine.live)  # committed incumbent chunks (also after a budget cut)
+    incumbent_evaluations = counter.own
     if engine.cap_hit:
         truncated_by = truncated_by or "max_candidates"
     if incremental is not None and (best is None or incremental[2] > best[3]):
@@ -635,7 +719,7 @@ def repair_solve(
         ledger.stop = "disabled"
     elif incremental_status == "truncated":
         ledger.stop = "quote_budget"
-    elif incremental_status == "invalid_plan":  # accounting disagrees with replay: a defect
+    elif consistency is not None:  # the incumbent's replay disagrees with its accounting
         ledger.consistency_failures += 1
         ledger.stop = "consistency_failure"
     elif run is None or not run.decisions:
@@ -666,6 +750,13 @@ def repair_solve(
                 ):
                     ledger.consistency_failures += 1
                     ledger.stop = "consistency_failure"
+                    consistency = consistency_record(
+                        "repair_restore",
+                        ledger.checkpoint_restores,
+                        accounted_gross(case, run.flows),
+                        None,
+                        f"checkpoint {i} rescored to {None if top is None else top.index}",
+                    )
                     break
                 for alt in alternatives(decision, scored, opts["alternatives_per_checkpoint"]):
                     if ledger.repair_attempts >= opts["max_repair_attempts"]:
@@ -692,9 +783,17 @@ def repair_solve(
                         record["outcome"] = f"consistency_failure: {exc}"
                         ledger.consistency_failures += 1
                         ledger.stop = "consistency_failure"
+                        consistency = consistency_record(
+                            "repair",
+                            ledger.repair_evaluations + 1,
+                            accounted_gross(case, cand.flows),
+                            None,
+                            str(exc),
+                        )
                         break
+                    counter.own += 1
+                    ledger.repair_evaluations += 1
                     ev = evaluate(bundle, case, plan, objective, quote=guarded)
-                    ledger.internal_evaluations += 1
                     accounted = accounted_gross(case, cand.flows)
                     record["accounted"] = accounted
                     record["evaluated"] = ev.gross_output if ev.status is EvalStatus.OK else None
@@ -702,6 +801,9 @@ def repair_solve(
                         record["outcome"] = "consistency_failure"
                         ledger.consistency_failures += 1
                         ledger.stop = "consistency_failure"
+                        consistency = consistency_record(
+                            "repair", ledger.repair_evaluations, accounted, ev
+                        )
                         break
                     score = objective.score(ev)
                     record["score"] = score
@@ -755,13 +857,22 @@ def repair_solve(
             "ties": ledger.ties,
             "accepted": ledger.accepted,
             "consistency_failures": ledger.consistency_failures,
-            "internal_evaluations": ledger.internal_evaluations,
+            "repair_evaluations": ledger.repair_evaluations,
             "paths_scored": rep.scored,
             "paths_rejected_cycle": rep.rejected_cycle,
             "paths_truncated": rep.truncated,
             "marginal_failures": dict(sorted(rep.failures.items())),
             "accepted_log": ledger.accepted_log,
         },
+        # Every complete-plan evaluate call inside this solve, by stage (§8.1): the R021
+        # `internal_evaluations` unit is `total`; the stage values are search_stats extras.
+        "evaluations": {
+            "fallback": fallback_evaluations,
+            "incumbent": incumbent_evaluations,
+            "repair": ledger.repair_evaluations,
+            "total": counter.total,
+        },
+        "consistency_failure": consistency,
     }
     common: dict[str, Any] = {
         "case_id": case.case_id,
@@ -777,6 +888,16 @@ def repair_solve(
         source, plan, ev, score = best
         stats["chosen_source"] = source
         result = SolveResult(status=SolveStatus.OK, plan=plan, evaluation=ev, score=score, **common)
+    elif consistency is not None:  # no earlier validated plan to fall back to
+        result = SolveResult(
+            status=SolveStatus.ALGORITHM_ERROR,
+            error=(
+                f"consistency_failure in {consistency['stage']} replay "
+                f"{consistency['replay_index']}: evaluated {consistency['evaluated_gross']} "
+                f"!= accounted {consistency['accounted_gross']}; no validated plan"
+            ),
+            **common,
+        )
     elif truncated_by is not None or ps.status is SolveStatus.TIMEOUT:
         result = SolveResult(
             status=SolveStatus.TIMEOUT, error="declared budget truncated the search", **common
@@ -1523,7 +1644,7 @@ def test_no_improvement_keeps_the_incumbent_and_its_publications() -> None:
     assert on.result.search_stats["chosen_source"] == spec["specification"]["chosen_source"]
     assert on_sink == off_sink  # nothing new published
     r = on.result.search_stats["repair"]
-    assert (r["duplicates"], r["rejected_worse"], r["accepted"], r["internal_evaluations"]) == (
+    assert (r["duplicates"], r["rejected_worse"], r["accepted"], r["repair_evaluations"]) == (
         1,
         1,
         0,
@@ -1794,7 +1915,6 @@ def diagnostics_record(
     r = s["repair"]
     domain = domain_record(bundle, params)
     source = s["chosen_source"]
-    evaluated_incumbent = int(s["incremental_status"] in ("ok", "invalid_plan"))
     return {
         "schema": "r021.diagnostics/1",
         "contract": "R021-C/1",
@@ -1809,7 +1929,7 @@ def diagnostics_record(
         "work": {
             "quotes_executed": s["quotes_executed"],
             "quotes_memoized": s["quotes_memoized"],
-            "internal_evaluations": evaluated_incumbent + r["internal_evaluations"],
+            "internal_evaluations": s["evaluations"]["total"],  # every in-solve replay
             "paths_scored": s["paths_scored"] + r["paths_scored"],
             "admission_checks": s["paths_scored"]
             + s["paths_rejected_cycle"]
@@ -1861,13 +1981,29 @@ def test_diagnostics_record_satisfies_the_unchanged_r021_validator() -> None:
     assert domain_record(bundle, spec["settings"]) == domain_record(bundle, spec["settings"])
 
 
+R1_PROBE_SPEC_SHA256 = "f90afb2e6415d0e983c97e3dd6a544fc4619eedb813b72c90ea018c0a6ee26dd"
+
+
 def test_memo_pins_the_preset_fixtures_and_probe_evidence() -> None:
     for key, value in PRESET.items():
         assert f"`{key}: {str(value).lower()}`" in MEMO, key
     for number in ("111,178,819", "90,545,314", "12,757,712", "111,193,897"):
         assert number in MEMO, number
     probe = FIX.get("probe")
-    assert probe is not None and probe["spec_sha256"] == spec_sha256()
+    assert probe is not None
+    # The r1 runs stay bound to the specification that produced them (never rebound) ...
+    assert probe["spec_sha256"] == R1_PROBE_SPEC_SHA256 != spec_sha256()
+    assert probe["produced_by_source"]["spec_sha256"] == R1_PROBE_SPEC_SHA256
+    # ... and the r2 focused rerun, produced by this specification, reproduces them exactly.
+    r2 = probe["r2_revision"]
+    assert r2["current_spec_sha256"] == spec_sha256()
+    for name, rerun in r2["focused_rerun"].items():
+        assert rerun["new_spec_sha256"] == spec_sha256(), name
+        assert rerun["old_spec_sha256"] == R1_PROBE_SPEC_SHA256 and rerun["settings_equal"]
+        assert rerun["differences"] == [] and rerun["cases"] == 96
+        assert rerun["consistency_failures_off"] == rerun["consistency_failures_on"] == 0
+        assert rerun["repair_evaluations_sum"] == rerun["r1_reported_repair_only_sum"]
+        assert rerun["internal_evaluations_total_on"]["sum"] > rerun["repair_evaluations_sum"]
     for name, run in probe["runs"].items():
         assert run["worse"] == 0 and run["consistency_failures"] == 0, name
         assert run["improved"] + run["equal"] == run["cases"]
@@ -1876,6 +2012,185 @@ def test_memo_pins_the_preset_fixtures_and_probe_evidence() -> None:
     assert preset["settings"]["options"] == PRESET and preset["settings"]["rule"] == "structural"
     assert (preset["improved"], preset["cases_gain_ge_0_1_bps"]) == (23, 1)
     assert "23 / 73 / **0**" in MEMO and "9.776 bps" in MEMO
+
+
+# ================================ 12. checks: evaluation total and consistency faults
+
+
+def _independent_counts(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
+    """Independent counting wrappers on every module alias of `evaluate` that a solve can
+    reach (the specification module and every loaded `routing.algorithms` module)."""
+    import routing.algorithms as package
+
+    counts: dict[str, int] = {}
+    modules = [sys.modules[__name__]] + [
+        m
+        for n, m in sorted(sys.modules.items())
+        if m is not None and n.startswith(package.__name__ + ".") and hasattr(m, "evaluate")
+    ]
+    for module in modules:
+        inner = module.evaluate
+
+        def wrapper(*a: Any, _n: str = module.__name__, _f: Any = inner, **k: Any) -> Any:
+            counts[_n] = counts.get(_n, 0) + 1
+            return _f(*a, **k)
+
+        monkeypatch.setattr(module, "evaluate", wrapper)
+    return counts
+
+
+def test_internal_evaluations_is_the_total_of_every_in_solve_replay(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The R021 `internal_evaluations` unit counts every complete-plan replay inside the
+    solve, fallback stage included; the repair-only count is a separately named extra.
+    structural_trap: 6 single_path + 1 path_split + 1 incumbent + 4 repair = 12."""
+    counts = _independent_counts(monkeypatch)
+    bundle, case, spec = fixture_case("structural_trap")
+    got = repair_solve(case, context(bundle, spec["settings"]), Budget(), PRESET)
+    e = got.result.search_stats["evaluations"]
+    assert counts == {
+        "routing.algorithms.single_path": 6,
+        "routing.algorithms.path_split": 1,
+        __name__: 5,
+    }
+    assert e == {"fallback": 7, "incumbent": 1, "repair": 4, "total": 12}
+    assert got.result.search_stats["repair"]["repair_evaluations"] == 4
+    assert diagnostics_record(got, bundle, spec["settings"])["work"]["internal_evaluations"] == 12
+    runs: list[tuple[SnapshotBundle, Case, Mapping[str, int], Budget]] = []
+    for name in ("twin_pools", "carry_and_zero_flow", "order_metadata"):
+        b, c, sp = fixture_case(name)
+        runs.append((b, c, sp["settings"], Budget()))
+    real = mixed()
+    runs += [
+        (real, c, {"max_hops": 2, "max_splits": 4, "percent_step": 5, "chunks": 10}, Budget())
+        for c in real.cases
+    ]
+    rng = random.Random(20261004)
+    for _ in range(40):
+        pools, c, params, budget = random_instance(rng)
+        runs.append((cp_bundle(pools), c, params, budget))
+    for b, c, settings, limits in runs:
+        for options in (PRESET, REPAIR_OFF):
+            counts.clear()
+            res = repair_solve(c, context(b, settings), limits, options).result
+            e = res.search_stats["evaluations"]
+            assert (
+                e["total"] == sum(counts.values()) == e["fallback"] + e["incumbent"] + e["repair"]
+            )
+            assert e["repair"] == res.search_stats["repair"]["repair_evaluations"]
+            if options is REPAIR_OFF:
+                assert e["repair"] == 0
+    # The emulated seam restores every alias (outputs are covered by the fidelity check).
+    import routing.algorithms.single_path as sp_module
+
+    assert getattr(sp_module, "evaluate").__name__ == "wrapper"  # noqa: B009
+
+
+def _corrupting(mode: str, at: int, calls: list[int]) -> Callable[..., Evaluation]:
+    real = evaluate
+
+    def corrupted(*a: Any, **k: Any) -> Evaluation:
+        calls[0] += 1
+        ev = real(*a, **k)
+        if calls[0] != at:
+            return ev
+        if mode == "invalid":
+            return dataclasses.replace(ev, status=EvalStatus.INVALID_PLAN)
+        return dataclasses.replace(ev, gross_output=ev.gross_output + (1 if mode == "+1" else -1))
+
+    return corrupted
+
+
+def _true_gross(bundle: SnapshotBundle, case: Case, plan: RoutePlan) -> int:
+    import routing.evaluator as reference
+
+    ev = reference.evaluate(bundle, case, plan, gross_only())
+    assert ev.status is EvalStatus.OK
+    return ev.gross_output
+
+
+@pytest.mark.parametrize("mode", ["+1", "-1", "invalid"])
+@pytest.mark.parametrize("at", [1, 2, 3, 4, 5])
+def test_a_corrupted_in_solve_replay_is_never_accepted_or_published(
+    monkeypatch: pytest.MonkeyPatch, mode: str, at: int
+) -> None:
+    """Fault injection at the specification's `at`-th own replay on structural_trap (1 =
+    the stage-2 incumbent, 2..5 = the four repair replays): the corrupted evaluation never
+    replaces the incumbent, is never published and never becomes the returned score. The
+    result is the best candidate validated before the fault, with `consistency_failure`
+    provenance; the publications are a prefix of the uncorrupted ones."""
+    bundle, case, spec = fixture_case("structural_trap")
+    clean_sink: list[RoutePlan] = []
+    clean = repair_solve(case, context(bundle, spec["settings"], clean_sink), Budget(), PRESET)
+    sink: list[RoutePlan] = []
+    calls = [0]
+    monkeypatch.setattr(sys.modules[__name__], "evaluate", _corrupting(mode, at, calls))
+    got = repair_solve(case, context(bundle, spec["settings"], sink), Budget(), PRESET)
+    monkeypatch.undo()
+    res = got.result
+    assert res.status is SolveStatus.OK and res.plan is not None
+    assert res.score == _true_gross(bundle, case, res.plan)  # never a false claimed score
+    assert sink == clean_sink[: len(sink)] and sink[-1] == res.plan
+    assert [_true_gross(bundle, case, p) for p in sink] == [
+        _true_gross(bundle, case, p) for p in clean_sink[: len(sink)]
+    ]
+    s = res.search_stats
+    assert s["repair"]["stop"] == "consistency_failure"
+    cf = s["consistency_failure"]
+    assert cf["stage"] == ("incumbent" if at == 1 else "repair")
+    assert cf["replay_index"] == (1 if at == 1 else at - 1)
+    if at == 1:
+        assert res.plan == clean_sink[0]  # the retained path_split plan, validated by itself
+        assert res.score == spec["repository"]["path_split_score"]
+        assert s["chosen_source"] != incremental_graph.NAME
+        assert s["incremental_status"] == (
+            "invalid_plan" if mode == "invalid" else "consistency_failure"
+        )
+        assert s["repair"]["repair_attempts"] == 0
+    else:
+        # the best of the incumbent and the acceptances validated before the fault
+        before = [c for c in clean.candidates if "evaluated" in c][: at - 2]
+        scores = [spec["oracle"]["incumbent_gross"]] + [
+            c["score"] for c in before if c["outcome"] == "accepted"
+        ]
+        assert res.score == max(scores)
+    assert s["evaluations"]["total"] == s["evaluations"]["fallback"] + at
+
+
+def _no_simpler_candidate(
+    case: Case, context_: SolveContext, budget: Budget, cache: QuoteCache
+) -> SolveResult:
+    return SolveResult(case_id=case.case_id, algorithm="path_split", status=SolveStatus.NO_ROUTE)
+
+
+def test_without_a_validated_plan_a_consistency_failure_is_an_algorithm_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With no retained simpler candidate (stage 1 stubbed to `no_route`), a corrupted
+    stage-2 replay leaves no validated plan: `algorithm_error` with the provenance in the
+    error, nothing published, no plan and no score. Uncorrupted, the incumbent is the
+    first valid candidate; a fault at the first repair replay then keeps it."""
+    bundle, case, spec = fixture_case("structural_trap")
+    monkeypatch.setattr(path_split, "solve", _no_simpler_candidate)
+    for mode in ("+1", "invalid"):
+        sink: list[RoutePlan] = []
+        with monkeypatch.context() as m:
+            m.setattr(sys.modules[__name__], "evaluate", _corrupting(mode, 1, [0]))
+            got = repair_solve(case, context(bundle, spec["settings"], sink), Budget(), PRESET)
+        res = got.result
+        assert res.status is SolveStatus.ALGORITHM_ERROR
+        assert res.plan is None and res.score is None and sink == []
+        assert res.error is not None and "consistency_failure in incumbent replay 1" in res.error
+        assert res.search_stats["consistency_failure"]["accounted_gross"] == "90545314"
+    sink = []
+    with monkeypatch.context() as m:
+        m.setattr(sys.modules[__name__], "evaluate", _corrupting("+1", 2, [0]))
+        got = repair_solve(case, context(bundle, spec["settings"], sink), Budget(), PRESET)
+    res = got.result
+    assert res.status is SolveStatus.OK and res.plan is not None and len(sink) == 1
+    assert res.score == _true_gross(bundle, case, res.plan) == spec["oracle"]["incumbent_gross"]
+    assert res.search_stats["chosen_source"] == incremental_graph.NAME
 
 
 # ================================================================ bounded tuning probe (not a test)
@@ -1940,6 +2255,10 @@ def _probe(argv: Sequence[str]) -> None:
             "repair": {k: v for k, v in r.items() if k != "accepted_log"},
             "accepted_log": r["accepted_log"],
             "outcomes": [c.get("outcome", c.get("run_status")) for c in on.candidates],
+            "evaluations_off": so["evaluations"],
+            "evaluations_on": sn["evaluations"],
+            "consistency_off": so["consistency_failure"],
+            "consistency_on": sn["consistency_failure"],
         }
         rows.append(row)
         print(

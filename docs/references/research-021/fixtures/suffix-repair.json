@@ -356,7 +356,7 @@
   "bundle": "data/corpus/mantle-5src-101082044/bundle_tuning",
   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
   "spec_sha256": "f90afb2e6415d0e983c97e3dd6a544fc4619eedb813b72c90ea018c0a6ee26dd",
-  "source": "tests/routing/test_suffix_repair_contract.py at base 1ce5076 (uncommitted during the probe); the specification section hash equals this file's spec_sha256()",
+  "source": "tests/routing/test_suffix_repair_contract.py r1 specification (uncommitted at base 1ce5076 during the probe, committed unchanged in 3d0afbd); every run below was produced by specification hash spec_sha256 and is NOT rebound to the r2 specification",
   "gain_bps": "(score_on - score_off) * 10000 / score_off per case, gross_only; descriptive tuning facts, not a verdict",
   "work_ratios": "quotes_executed(on)/quotes_executed(off); (incumbent + repair paths_scored)/incumbent paths_scored",
   "stress_subset": "h3c50_structural_stress_subset = every 4th case of cases.jsonl in file order (24 cases)",
@@ -826,6 +826,78 @@
      "found_at": "decision 0 = structural checkpoint 5 of 5"
     }
    }
+  },
+  "produced_by_source": {
+   "spec_sha256": "f90afb2e6415d0e983c97e3dd6a544fc4619eedb813b72c90ea018c0a6ee26dd",
+   "file_sha256": "a1115206573fe6f4b4330063ce3d4e9eaa1238b38596a9d0f8913bb0e3087255",
+   "commit": "3d0afbd2c4499afabc843bbe61ad9a2fa2344352",
+   "archived_copy": "router-algorithms-optimizer-artifacts/research-021/whi-1553/3d0afbd2c4499afabc843bbe61ad9a2fa2344352/probe/probe-start-source-test_suffix_repair_contract.py"
+  },
+  "r2_revision": {
+   "current_spec_sha256": "fe824058194e7a10514027b1bc634b4378b6011f875ea1484ce2bbee90e87c6d",
+   "change": "r2 adds the stage-2 replay/accounting guard (fail closed), consistency provenance and the algorithm_error branch, the all-stage evaluation counter and renames repair.internal_evaluations to repair.repair_evaluations; the specification-section diff is archived as spec-section-r1-to-r2.diff",
+   "why_r1_numbers_stand": "the guards change results only when a replay disagrees with its accounting; the r1 runs recorded 0 repair consistency failures, and the focused rerun shows the new stage-2 guard never fires on any of the 96 tuning cases at either setting; the ablation and stress runs share their per-case stage 1-2 computation with the preset runs (identical score_off, quotes_off and incremental_status in every case), so the same holds for them",
+   "focused_rerun": {
+    "h2c200_structural_preset": {
+     "cases": 96,
+     "consistency_failures_off": 0,
+     "consistency_failures_on": 0,
+     "differences": [],
+     "fallback_evaluations_sum": 14335,
+     "files_sha256": {
+      "f3-h2c200-structural-0.json": "5814635c4e304c2f3801b2da6aa5feb2eb0d062e1dcf78d80cb7df48a288f282",
+      "f3-h2c200-structural-1.json": "50efff253e179c5f5a5ecbeb1c81df33562d78bdccf130e6dcd400ab683e90e5",
+      "f3-h2c200-structural-2.json": "74caaebfef8890d2aeb5feddaa5912d86a732f2d1daabc6ae6931b4b70da4493",
+      "f3-h2c200-structural-3.json": "89dccb8f03572fb8f55d3352f275d8611167af746f931589e7fef7dd4caf707f"
+     },
+     "incumbent_replays_equal_accounting": true,
+     "internal_evaluations_total_off": {
+      "max": 347,
+      "min": 6,
+      "sum": 14431
+     },
+     "internal_evaluations_total_on": {
+      "max": 351,
+      "min": 6,
+      "sum": 14699
+     },
+     "new_spec_sha256": "fe824058194e7a10514027b1bc634b4378b6011f875ea1484ce2bbee90e87c6d",
+     "old_spec_sha256": "f90afb2e6415d0e983c97e3dd6a544fc4619eedb813b72c90ea018c0a6ee26dd",
+     "r1_reported_repair_only_sum": 268,
+     "repair_evaluations_sum": 268,
+     "settings_equal": true
+    },
+    "h3c50_structural_preset": {
+     "cases": 96,
+     "consistency_failures_off": 0,
+     "consistency_failures_on": 0,
+     "differences": [],
+     "fallback_evaluations_sum": 241915,
+     "files_sha256": {
+      "f1-h3c50-structural-0.json": "abab44fea24cafecbe9a71e8a7ad943879ebaea091f2c1051997647f7f4f92b2",
+      "f1-h3c50-structural-1.json": "42ce8d6c38056e80583c02ba9add4c6e8f25d25184ea962b86cfc50adf136774",
+      "f1-h3c50-structural-2.json": "37b4fd68b05c488a6be69befa15973d7ebba425da205bfec9f9e36e2c7d00f43",
+      "f1-h3c50-structural-3.json": "fb1b5e3463235d0e850c6ce4a8ea19f598079d9ba68a6bf2e6fab95a60eb26c4"
+     },
+     "incumbent_replays_equal_accounting": true,
+     "internal_evaluations_total_off": {
+      "max": 5896,
+      "min": 6,
+      "sum": 242011
+     },
+     "internal_evaluations_total_on": {
+      "max": 5900,
+      "min": 6,
+      "sum": 242432
+     },
+     "new_spec_sha256": "fe824058194e7a10514027b1bc634b4378b6011f875ea1484ce2bbee90e87c6d",
+     "old_spec_sha256": "f90afb2e6415d0e983c97e3dd6a544fc4619eedb813b72c90ea018c0a6ee26dd",
+     "r1_reported_repair_only_sum": 421,
+     "repair_evaluations_sum": 421,
+     "settings_equal": true
+    }
+   },
+   "focused_rerun_note": "preset runs only (h3c50 and h2c200, all 96 cases, same settings and shards); differences lists every per-case mismatch of the compared r1 fields (none); the internal_evaluations totals are the first correct all-stage counts; r1_reported_repair_only_sum shows what the r1 counter measured"
   }
  }
 }
