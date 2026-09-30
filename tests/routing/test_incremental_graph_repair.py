@@ -129,7 +129,7 @@ def _true_gross(bundle: SnapshotBundle, case: Case, plan: RoutePlan) -> int:
 
 
 def _search(
-    bundle: SnapshotBundle, case: Case, params: Mapping[str, int]
+    bundle: SnapshotBundle, case: Case, params: Mapping[str, int], budget: Budget | None = None
 ) -> tuple[igr._Search, QuoteCache]:
     """The module's own reference loop on a fresh cache, built as its stage 2."""
     prepared = FACTORY.prepare(bundle, AlgorithmConfig(NAME, dict(params), PRESET))  # type: ignore[misc]
@@ -137,7 +137,31 @@ def _search(
     cache = QuoteCache(bundle)
     paths = list(enumerate_paths(index, case.token_in, case.token_out, params["max_hops"]))
     amounts = incremental_graph.chunk_amounts(case.amount_in, params["chunks"])
-    return igr._Search(bundle, paths, amounts, cache, Budget()), cache
+    return igr._Search(bundle, paths, amounts, cache, budget or Budget()), cache
+
+
+def _registered_neighborhood(
+    bundle: SnapshotBundle, case: Case, params: Mapping[str, int], budget: Budget
+) -> tuple[list[tuple[int, int]], int]:
+    """The §5.2 neighborhood restated here (not the module's helpers): structural decisions
+    latest first, at most `max_checkpoints`; per checkpoint the rescored non-incumbent paths
+    with a POSITIVE marginal by marginal then index, at most `alternatives_per_checkpoint`;
+    at most `max_repair_attempts` in total. Returns the (checkpoint, path index) order and
+    how many admissible zero-marginal alternatives the rule excluded."""
+    search, _ = _search(bundle, case, params, budget)
+    run = search.run(igr.EMPTY, igr.Counters(), trace=True)
+    structural = [i for i, d in enumerate(run.decisions) if d.new_edges][::-1]
+    order: list[tuple[int, int]] = []
+    zero = 0
+    for i in structural[: PRESET["max_checkpoints"]]:
+        flows, edges, _ = igr.restore(run.checkpoints[i])
+        d = run.decisions[i]
+        scored = search.score(flows, edges, d.amount, igr.Counters())
+        others = [s for s in scored if s.index != d.path_index]
+        zero += sum(s.marginal == 0 for s in others)
+        ranked = sorted((s for s in others if s.marginal > 0), key=lambda s: (-s.marginal, s.index))
+        order += [(i, s.index) for s in ranked[: PRESET["alternatives_per_checkpoint"]]]
+    return order[: PRESET["max_repair_attempts"]], zero
 
 
 def _rebuild(
@@ -882,7 +906,8 @@ def test_candidate_cap_applies_to_every_rebuilt_chunk() -> None:
 
 def test_repair_on_real_state_and_random_graphs_keeps_every_invariant() -> None:
     """Never below the control, no consistency failure, full fill, one ledger, statuses as
-    the control's, and every accepted candidate valued identically by the oracle."""
+    the control's, the attempt order is exactly the registered neighborhood (zero-marginal
+    alternatives excluded) and every accepted candidate is valued identically by the oracle."""
     runs: list[tuple[SnapshotBundle, Case, Mapping[str, int], Budget, Any]] = [
         (research.mixed(), c, MIXED_PARAMS, Budget(), None) for c in research.mixed().cases
     ]
@@ -890,12 +915,16 @@ def test_repair_on_real_state_and_random_graphs_keeps_every_invariant() -> None:
     for _ in range(200):
         pools, rcase, rparams, rbudget = research.random_instance(rng)
         runs.append((research.cp_bundle(pools), rcase, rparams, rbudget, pools))
-    accepted = 0
+    accepted = zero_excluded = 0
     for bundle, case, params, budget, pools in runs:
         off = _solve(bundle, case, params, OFF, budget)
         with metered_quotes(None) as meter:
             on = _solve(bundle, case, params, PRESET, budget)
         r = on.search_stats["repair"]
+        if r["stop"] in ("complete", "attempt_cap"):  # the whole registered neighborhood ran
+            order, zero = _registered_neighborhood(bundle, case, params, budget)
+            assert [(a["checkpoint"], a["alternative"]) for a in r["attempts"]] == order
+            zero_excluded += zero
         assert r["consistency_failures"] == 0 and on.search_stats["consistency_failure"] is None
         assert on.search_stats["quotes_executed"] == meter.counted
         assert on.status is off.status
@@ -911,7 +940,7 @@ def test_repair_on_real_state_and_random_graphs_keeps_every_invariant() -> None:
             )
             assert value == int(a["score"])
             accepted += 1
-    assert accepted > 0
+    assert accepted > 0 and zero_excluded > 0
 
 
 def test_objective_is_the_references_and_nothing_is_unsupported() -> None:
