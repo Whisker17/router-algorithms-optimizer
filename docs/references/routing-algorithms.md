@@ -10,7 +10,12 @@ ordinary CLI compares. It covers:
   core ([`strategy-groups.md`](strategy-groups.md));
 - the **experimental** `metis_inspired` (WHI-1449), a Metis-inspired Python variant of
   `incremental_graph` (**NOT Jupiter Metis**). The CLI runs it in the *Experimental and other
-  strategies* group.
+  strategies* group;
+- the five **0.2.1 experimental identities** of that same group: `metis_history`,
+  `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`
+  (§§14–18, shared vocabulary in §1.8). With them, `--strategies all` compares **14**
+  strategies. They are separately named experiments, not defaults, not adopted, and not
+  Jupiter Metis or Uniswap SOR parity.
 
 For each strategy it describes the mathematical foundations, search mechanics, state management
 and practical trade-offs against frozen Mantle liquidity snapshots. To compare them on a single
@@ -23,10 +28,17 @@ Inspected source commits:
 - Sections 8–9: `c5b56369155b4beddef8de4df64e63dd0118662c`.
 - Section 10 and the nine-strategy rows of Sections 11–13:
   `391f5e380f151a0ad23cb9d90c23dd12e5d9a639` (WHI-1540 merged).
+- §1.8, Sections 14–18 and the five 0.2.1 rows of Sections 11–13: routing, pool, benchmark and
+  config sources at `e455c7de5266304ce92945fa7addb54ffd9942ba` (WHI-1559 merged; unchanged on the
+  WHI-1561 branch). Their worked examples are `docs/examples/routing-algorithms/r021_examples.py`,
+  added at `972d19caaa2fd9f3050a704a409d5b4f2591523e`. Line numbers in Sections 14–18 are those of
+  `e455c7d`; function names are the stable anchors when lines drift.
 
 All numeric traces and intermediate transitions are verified offline by
-`tests/docs/test_routing_algorithm_examples.py` and can be run via
-`docs/examples/routing-algorithms/run_examples.py`.
+`tests/docs/test_routing_algorithm_examples.py` and `tests/docs/test_r021_examples.py`, and can be
+run via `docs/examples/routing-algorithms/run_examples.py` (sections 1–11: the nine original
+strategies; sections 12–17: the five 0.2.1 identities and the 14-row fixed-block walkthrough).
+No example requires RPC, Dune or credentials.
 
 ---
 
@@ -62,9 +74,18 @@ subject to:
 - **Section 8:** `uni_sor_adaptive` (optimized, recipe H3) — Coarse-to-fine percentage sampling over the unchanged SOR core, validated anytime incumbent.
 - **Section 9:** `uni_sor_optimized` (optimized, recipe H4) — Amount-aware 5 % / 100 % route shortlist, the same sampling, and the exact L02–L04 quote controls.
 - **Section 10:** `metis_inspired` (experimental, NOT Jupiter Metis) — Hop-layered, quote-driven label search replacing `incremental_graph`'s per-chunk path enumeration.
-- **Section 11:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044).
-- **Section 12:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map.
+- **Section 11:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044) — all 14 `--strategies all` rows, including the visible `unsupported` row, plus the quote/details/replay commands.
+- **Section 12:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map — for all 14 strategies.
 - **Section 13:** Operational Boundaries, Limitations, and Known Debt.
+- **Section 14:** `metis_history` (0.2.1, experimental, NOT Jupiter Metis) — History-signature labels with proven dominance, retained unknowns and visible caps.
+- **Section 15:** `direct_split_certified` (0.2.1, experimental) — Exact-rational branch and bound over `direct_split`'s grid, with a certified lower/upper interval.
+- **Section 16:** `incremental_graph_repair` (0.2.1, experimental) — Complete checkpoints, suffix rebuilds and full-plan replay against greedy admission lock-in.
+- **Section 17:** `uni_sor_cycle_safe` (0.2.1, experimental, not SOR parity) — Plan-token-DAG admission at SOR's single combination point.
+- **Section 18:** `cfmm_dual` (0.2.1, experimental) — Dual prices, closed-form pool oracles and optimizer on CPMM and CL markets, then exact integer recovery.
+
+The five 0.2.1 chapters follow Section 13 so that every earlier section number and anchor stays
+unchanged; Sections 11–13 already cover the whole 14-strategy roster. §1.8 introduces the
+vocabulary they share.
 
 ### 1.3 Terminology and Symbol Table
 
@@ -146,6 +167,81 @@ the reserve of token $T_{\text{out}}$. When an input $\Delta x$ is provided:
 *Note:* This integer formula governs Uniswap V2 and Merchant Moe Classic (`moe_classic_v1`).
 Concentrated Liquidity (CL) and Liquidity Book (LB) use tick bitmaps and bin discrete trees,
 which are evaluated in Section 11 via their exact protocol simulators.
+
+### 1.8 Shared Vocabulary of the Five 0.2.1 Experimental Identities
+
+Sections 14–18 explain the five strategies that Release 0.2.1 added: `metis_history`,
+`direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`. They
+share the plumbing of §1.6 and a small common vocabulary from the research contract
+[`research-021/contract.md`](research-021/contract.md) (R021-C/1).
+
+- **Group and status.** All five are in the *Experimental and other strategies* (`custom`)
+  group. None is a base reference, an SOR optimization, a default router or Jupiter Metis.
+  `--strategies all` appends each of them once, after `metis_inspired`, in this order, so a
+  six-algorithm source profile runs **14** strategies. Inclusion is not adoption.
+- **Options and presets.** Each identity reads its own `algorithm_options.<name>` section. Under
+  `all`, a source that does not configure it receives the identity's pinned bounded preset. The
+  saved record names the source of every option set:
+  - `{kind: preset, path, sha256, key, version}`: the options equal a registered preset file,
+    whose bytes are verified;
+  - a verified historical pin, recorded in the same `{kind: preset, …}` form with its own path
+    and version: only `cfmm_dual` has one, its WHI-1558 preset `cfmm_dual/1`, kept so that saved
+    v1 options keep their identity;
+  - `{kind: override}`: any other valid values, such as a stress profile or a forced cap.
+
+  `settings_sha256` hashes the normalized options.
+- **Actual domain versus capability ceiling.** A factory's `Capabilities` state the widest plan
+  shape it may ever produce. The **domain** of a run is narrower and is recorded per result
+  (`r021.domain/1`: pools, protocols, hops, splits, amount grid, pool reuse, admission,
+  full fill) together with its `candidate_domain_hash`. Examples:
+  - `direct_split_certified` declares `direct_split`'s ceiling but certifies only all-CPMM
+    direct pool sets;
+  - `cfmm_dual` declares CPMM + CL, but a run uses only its preset's `market_protocols` stage;
+  - `metis_history` accepts every admitted protocol but prunes strictly only on certified CPMM
+    regions.
+
+  A result is compared only with a result of the same domain as a mechanism test; other
+  comparisons are labelled `expanded_domain`, `expanded_protocol` or `incomparable_domain`.
+- **Certificates and bound kinds** (`r021.certificate/1`):
+
+  | `bound_kind` | Meaning | Who emits it |
+  |---|---|---|
+  | `certified` | exact-rational upper bound over the declared domain; gap = upper − lower | `direct_split_certified` |
+  | `estimate` | a numerical value (for example a dual value) with its residual and tolerance; **never** an upper bound or gap | `cfmm_dual` (only after a converged initial solve without fallback) |
+  | `unknown` | no bound claimed; null, never zero | the others, and every fallback or capped numerical case |
+
+  No identity claims a global, full-network or integer certificate beyond this table.
+- **Fallbacks are labelled.** When an identity returns a simpler retained candidate
+  (`path_split`, `direct_split`, or `cfmm_dual`'s `single_path` fallback), the record says so
+  (`fallback: {used, source, reason}`), and the plan is never counted as the mechanism's result.
+- **One attempt ledger and charged stages.** A single-request or batch attempt has four
+  separately recorded stages:
+  1. **preparation** in the worker (`prepare`: graph indexes, `metis_history`'s certified-edge
+     set, `cfmm_dual`'s CL indexes);
+  2. worker start-up;
+  3. the **solve**: search, bounds, repair, recovery **and every internal validation replay**
+     (`internal_evaluations`) happen here, on one quote meter and one wall clock, with no free
+     external baseline, no fresh budget per retry and no reset;
+  4. the runner's **final independent evaluation** of the returned plan, outside the solve.
+- **Work units are named, never divided.** Each identity reports its own units
+  (`label_relaxations`, `bb_nodes_expanded`, `repair_attempts`, `admission_checks`,
+  `market_oracle_calls`, …). The only cross-strategy unit is `quotes_executed`, beside time and
+  memory.
+- **How the worked examples are checked.** Sections 14–18 publish only values that
+  `docs/examples/routing-algorithms/r021_examples.py` (runner sections 12–17) asserts against an
+  expectation from outside the code under test:
+  - the module's own integer `getAmountOut` (with the Moe Classic `uint112` revert) and fund
+    ledger;
+  - its own exhaustive oracles (paths, label layers, chunk trajectories and sequences, grid and
+    raw allocations, closed-form CPMM arbitrage, share projection);
+  - the pinned research fixtures in `docs/references/research-021/fixtures/`;
+  - the pinned CFMMRouter.jl author run and the pre-implementation WHI-1557 contract model;
+  - exact protocol quotes (`pools.quote.quote_exact_in`) for concentrated-liquidity legs.
+
+  Every emitted plan is also replayed by a fresh `routing.evaluator.evaluate`. Counters that no
+  independent source derives (quotes executed, nodes expanded, …) are called *factory counters*
+  in the text: they are regression-pinned outputs of the factory, not independently derived
+  teaching numbers. No timing is asserted.
 
 ---
 
@@ -1735,8 +1831,9 @@ $1\,000$, `search.max_hops` 3, `label_hops` 3, `label_pruning` true.
 
 ## 11. Real-State Fixed-Block Walkthrough (Block 101082044)
 
-To demonstrate how these strategies behave on real blockchain liquidity, we execute all nine
-strategies (six base, two optimized, one experimental) against the verified frozen Mantle snapshot
+To demonstrate how these strategies behave on real blockchain liquidity, we execute all fourteen
+`--strategies all` strategies (six base, two optimized, `metis_inspired` and the five 0.2.1
+experimental identities) against the verified frozen Mantle snapshot
 `mantle-5src-101082044-091b0759-fixture`:
 - **Parent Bundle:** `mantle-5src-101082044-091b0759-fixture`
 - **Bundle Hash:** `5401b1de8c83a3527e5f9b5afae4510a760f171f2b306d49dbb5c830256c9ad0`
@@ -1755,15 +1852,35 @@ strategies (six base, two optimized, one experimental) against the verified froz
     --token-in USDC --token-out USDT0 --amount 10000 --details
   ```
   `--strategies all` is the default. It runs the profile's six base strategies, then
-  `uni_sor_adaptive` and `uni_sor_optimized`, then `metis_inspired`, each in its own isolated
-  worker. `--strategies base` reproduces the six-row table.
+  `uni_sor_adaptive` and `uni_sor_optimized`, then `metis_inspired`, then `metis_history`,
+  `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`,
+  one after the other, each in its own isolated worker and with exactly one solve attempt.
+  `--strategies base` reproduces the six-row table.
 - **`metis_inspired` settings:** the profile's `search.*`, budget and `graph.chunks: 200`, plus
   `label_hops: 4` and `label_pruning: true` from the pinned arm `config/metis_challenge/m4.yaml`.
   Its chunk search therefore reaches 4 hops while the others search at most 2. This is a
-  different hop domain, and it is not the frozen WHI-1449 M4 arm.
+  different hop domain, and it is not the frozen WHI-1449 M4 arm. `metis_history` receives the
+  same `chunks` and `label_hops` (it does not read `label_pruning`).
+- **0.2.1 settings:** the source configures none of the five, so `all` writes each identity's
+  pinned current preset into the effective profile:
+
+  | Identity | Options source | `settings_sha256` |
+  |---|---|---|
+  | `metis_history` | `config/metis_history/preset_v1.yaml` v1 (`history`, 1 label per signature, 1,024 frontier labels) | `183bb1ff…` |
+  | `direct_split_certified` | `config/direct_split_certified/preset_v1.yaml` v1 (`repository_grid`, 100,000 / 100,000 nodes) | `03cfe301…` |
+  | `incremental_graph_repair` | `config/incremental_graph_repair/preset_v1.yaml` v1 (`repair: true`, 4, 2, 8) | `89af5028…` |
+  | `uni_sor_cycle_safe` | `config/uni_sor_cycle_safe/preset_v1.yaml` v1 (`{}`) | `44136fa3…` |
+  | `cfmm_dual` | `config/cfmm_dual/preset_v2.yaml` v2, the current CL stage (`constant_product+concentrated`) | `aa6eea57…` |
+
+  The historical `cfmm_dual/1` CPMM-only preset is not one of the 14 rows; it runs only through
+  the explicit profile `config/cfmm_dual/cpmm.yaml` (§11.3 item 10).
 
 *Classification:* This is an **exploratory single request** evaluated on a checked-in 19-pool fixture
-subset, not a held-out corpus result.
+subset, not a held-out corpus result. The fixture is not the full frozen corpus (whose tuning
+bundle alone has 143 pools). The `quote` command solves on a derived single-case request bundle of
+the same 19 pools (it records that bundle's own hash); `r021_examples.py` section 17 re-runs the
+same 14 rows in process on the fixture itself and checks each gross against the exact protocol
+quotes below.
 
 ### 11.1 Summary Comparison Table
 
@@ -1778,10 +1895,23 @@ subset, not a held-out corpus result.
 | `uni_sor_adaptive` | `ok` | 10000.660449 | 10000660449 | **12** | 100% Agni V3 (6 of 20 percents sampled) |
 | `uni_sor_optimized` | `ok` | 10000.660449 | 10000660449 | **12** | 100% Agni V3 (L02–L04 installed; result unchanged) |
 | `metis_inspired` | `ok` | **10000.663447** | **10000663447** | 264 | **99.5% Agni V3 + 0.5% Moe LB** (same plan as `incremental_graph`) |
+| `metis_history` | `ok` | **10000.663447** | **10000663447** | 264 | Same plan as `incremental_graph`; `termination: complete` (no label dropped) |
+| `direct_split_certified` | `unsupported` | N/A | N/A | 0 | Direct pools are CL + CPMM + LB: `non_constant_product_direct_pool`, no plan, no certificate |
+| `incremental_graph_repair` | `ok` | **10000.663447** | **10000663447** | 265 | Incumbent kept: one `duplicate` and one `rejected_worse` repair attempt |
+| `uni_sor_cycle_safe` | `ok` | 10000.660449 | 10000660449 | 40 | 100% Agni V3; 0 cycle rejections, `reference_trajectory: identical` |
+| `cfmm_dual` | `ok` | 10000.660449 | 10000660449 | 1 | 100% Agni V3; CL stage `cfmm_dual/2`, markets Agni V3 + one Moe Classic pool, `converged`, bound `estimate` |
+
+The gross values are checked by `r021_examples.py` section 17 against independent exact protocol
+quotes: Agni V3 at the full input gives 10000660449, and Agni V3 at 9950000000 plus the Moe LB
+pool at 50000000 give $9950659893 + 50003554 = 10000663447$. The quote counts are the runner's
+per-row counters of this run (factory-reported, not independently derived); they are not a
+performance comparison.
 
 ### 11.2 Execution Order and Fund Ledger Trace
 
 #### The Baseline Plan (`direct`, `single_path`, `direct_split`, `path_split`, `uni_sor_port`, `uni_sor_adaptive`, `uni_sor_optimized`)
+The 0.2.1 rows `uni_sor_cycle_safe` and `cfmm_dual` return this same one-step plan
+(`cfmm_dual` names its output fund `F1` instead of `OUT`).
 ```
 Step 0: agni_v3 pool 0x36f66548cda219c6fc037037cee063b9f28b13ef
   Token In:  USDC (0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9)
@@ -1793,6 +1923,9 @@ Residuals: None. Reconciled exactly.
 ```
 
 #### The Incremental Split Plan (`incremental_graph`, `metis_inspired`)
+The 0.2.1 rows `metis_history` and `incremental_graph_repair` return this same two-step plan. The
+fresh replay's fund ledger: `REQUEST` produced 10000000000 and consumed 10000000000; `F1` and
+`F2` are terminal USDT0 funds of 9950659893 and 50003554.
 ```
 Step 0: agni_v3 pool 0x36f66548cda219c6fc037037cee063b9f28b13ef
   Input:     REQUEST 9950000000 raw (99.5% = 9,950 USDC)
@@ -1803,6 +1936,16 @@ Step 1: moe_lb_v2_2 pool 0x368b148052a1a775dbe70e56d04474e54c694cac
 Terminal Total: 9950659893 + 50003554 = 10000663447 raw
 Residuals: None. Reconciled exactly.
 ```
+
+#### The Unsupported Row (`direct_split_certified`)
+```
+Status:  unsupported (scope reason non_constant_product_direct_pool)
+Direct pools USDC/USDT0: agni_v3 (concentrated), moe_classic_v1 (constant product),
+                         2 x moe_lb_v2_2 (liquidity book)
+Plan: none. Quotes: 0. Certificate: null (not_produced).
+```
+The row stays in the table. Certifying only the constant-product subset would prove a different,
+smaller domain next to `direct_split` rows that use all four pools (§15.1).
 
 ### 11.3 Analysis of Real-World Behavior
 1. **Marginal Exploitation:** `incremental_graph` identified that Merchant Moe Liquidity Book pool
@@ -1843,6 +1986,75 @@ Residuals: None. Reconciled exactly.
      beats the retained `path_split` candidate (10000660449).
    - The 4-hop label depth has nothing to reach on this request, so it neither helps nor costs
      here.
+6. **`metis_history` has nothing to disambiguate here.** Every chunk's edges lead straight to the
+   target, so no label is ever stored at an intermediate token: 800 label relaxations and 800
+   admission checks over 200 chunks, no state comparison, no dominance discard, no cap drop
+   (factory counters). The row is `termination: complete` with `metis_inspired`'s plan. A
+   history signature matters only where two prefixes meet at one token (§14.5).
+7. **`direct_split_certified` is a visible `unsupported` row.** Its scope is all-CPMM direct pool
+   sets. This pair's direct pools include the Agni V3 and two Liquidity Book pools, so the whole
+   case is `unsupported (non_constant_product_direct_pool)` before any quote. It is not a failure
+   of the search and not a zero.
+8. **`incremental_graph_repair` keeps the incumbent.** The incumbent equals `incremental_graph`'s
+   plan. Its one structural checkpoint is restored once; one forced alternative reconverges to the
+   same flows (`duplicate`, not replayed), and one replays at 9950677267 (`rejected_worse`). The
+   repair stops `complete`, and the published plan is the incumbent. The extra work (265 vs 264
+   quotes executed, 9 in-solve evaluations) is charged to the same attempt.
+9. **`uni_sor_cycle_safe` equals `uni_sor_port`.** At `search.max_hops` 2 a two-route union can
+   never be cyclic (§17.2). The factory reports 200 admission checks and 0 rejections, so
+   `reference_trajectory` is `identical`: the same 40-quote table, the same plan and gross.
+10. **`cfmm_dual` sees only its stage's markets.**
+    - The `cfmm_dual/2` universe is the Agni V3 pool and one Moe Classic pool (`0x69a707d8…`).
+      The Liquidity Book pools are outside every `cfmm_dual` stage, so the 0.5 % LB leg of the
+      incremental plans is not in its domain. That difference is `expanded_protocol` coverage,
+      not search quality.
+    - The initial solve ends `converged` (residual $5.73 \times 10^{-6}$ below the tolerance
+      $10^{-5}$). The recovered plan is the whole input on Agni V3, **10000660449**, the exact
+      quote.
+    - The research diagnostic prints `estimate 10000660450.063116 (not a bound)`: a numerical dual
+      value, 1.06 raw units above the exact plan, not an upper bound on anything.
+    - **CPMM-stage ablation** (historical `cfmm_dual/1`, only through
+      `--profile config/cfmm_dual/cpmm.yaml --strategies profile`, never one of the 14 rows): the
+      only market is the Moe Classic pool, whose USDT0 reserve in the fixture's `pools.json` is
+      only 14410 raw units. The row is
+      **14409**, equal to the best exact CPMM single path by hand. This is the limitation of the
+      CPMM stage on a CL-dominated pair, not a search result.
+
+### 11.4 Reproducing the Walkthrough: `quote --details`, the Saved Replay and Explicit Profiles
+
+1. **The comparison** (above). `--details` prints, for every row, the replayed plan and fund
+   ledger, and the stages of this one execution: preparation, worker start-up, solve (which
+   includes every internal validation replay) and the final independent evaluation, with the
+   quote and candidate counters. The 0.2.1 rows add a *research diagnostics* block: bound kind,
+   domain hash, `max_candidates` unit, named work units, fallback/repair, scope, and observed
+   per-stage seconds (for `cfmm_dual`: `prepare_cl_indexes`, `initial_solve`, `recovery`).
+2. **Timing.** Each latency is one observation of one solve. There is no sample list, no p95 and
+   no distribution statistic, and nothing here is a performance or latency claim.
+3. **The replay.** The quote prints `saved: <quote dir>` and `replay: …`. The replay command is
+   also stored as `replay_command` in `<quote dir>/quote.json` and in the run's `manifest.json`;
+   copy it from there instead of reconstructing paths. It has the form
+   ```bash
+   uv run python main.py run --bundle <quote dir>/bundle --profile <quote dir>/profile.yaml \
+     --results-dir <quote dir>/runs --strategies profile
+   ```
+   `--strategies profile` runs the saved effective profile **literally**: the same 14 algorithms,
+   preset identities and settings, never a re-expansion under a later default.
+4. **Explicit comparison profiles** (each runs literally with `--strategies profile`):
+
+   | Profile | Runs | Options source |
+   |---|---|---|
+   | `config/cfmm_dual/cl.yaml` | `path_split`, `incremental_graph`, `cfmm_dual` | preset `cfmm_dual/2` (CL stage) |
+   | `config/cfmm_dual/cpmm.yaml` | same | historical preset `cfmm_dual/1` (CPMM-only ablation) |
+   | `config/direct_split_certified/grid.yaml` / `raw_stress.yaml` | `direct_split`, `direct_split_certified` | preset / `override` (raw domain) |
+   | `config/incremental_graph_repair/repair_on.yaml` / `repair_off.yaml` / `stress.yaml` | `incremental_graph`, `incremental_graph_repair` | preset / `override` |
+   | `config/metis_history/history_on.yaml` / `history_off.yaml` | `metis_inspired`, `metis_history` | preset / `override` |
+   | `config/uni_sor_cycle_safe/matched.yaml` | `uni_sor_port`, `uni_sor_cycle_safe` (3 hops) | preset `{}` |
+
+   On this request, `cfmm_dual` returns 10000660449 under `cl.yaml` and 14409 under `cpmm.yaml`.
+
+[`single-request.md`](single-request.md) documents the inputs, the saved files and the report,
+and [`strategy-groups.md`](strategy-groups.md) the selection modes and the literal replay of
+older saved profiles.
 
 ---
 
@@ -1866,6 +2078,23 @@ Its chunk search uses its own depth $H_L$ (`graph.label_hops`).
 | **Group / Default** | Base | Base | Base | Base | Base | Base (parity reference) | Optimized, experimental, opt-in | Optimized, experimental, opt-in | Experimental (NOT Jupiter Metis), opt-in |
 | **Quote Controls** | Reference | Reference | Reference | Reference | Reference | Reference | Reference | Exact L02–L04, per solve | Reference |
 
+The five 0.2.1 identities (§§14–18) are all in the *Experimental and other strategies* group and
+opt-in. "Ceiling" is the factory's declared capability; "actual domain" is what a run of the
+current preset searches and records.
+
+| Property | `metis_history` | `direct_split_certified` | `incremental_graph_repair` | `uni_sor_cycle_safe` | `cfmm_dual` |
+|---|---|---|---|---|---|
+| **Reference control** | `metis_inspired`, `incremental_graph` | `direct_split` (same grid) | `incremental_graph` (repair off) | `uni_sor_port` (same table) | `path_split`, `incremental_graph` (matched cohort) |
+| **Multi-Hop Support** | Yes ($\le H_L$ per chunk) | No | Yes ($\le H$) | Yes ($\le H$) | Market universe on paths $\le H$; merged DAG may be longer |
+| **Split Support** | Yes ($\le K$) | Yes ($\le S$, grid) | Yes ($\le K$) | Yes ($\le S$) | Yes (one merged step per market; no split bound) |
+| **Shared Intermediate Pools** | **Yes** | No | **Yes** | No | **Yes** (merged) |
+| **Ceiling (declared)** | All 5 | `direct_split`'s (all 5) | All 5 | CPMM + CL (no LB) | CPMM + CL (no LB) |
+| **Actual domain** | All 5; strict pruning only on certified CPMM regions | All-CPMM direct pools, `gross_only`; otherwise `unsupported` | All 5, same as `incremental_graph` | V2/V3 cohort, same as `uni_sor_port` | Stage of the preset: `cfmm_dual/2` CPMM + CL; historical `cfmm_dual/1` CPMM only; `gross_only` |
+| **Search Mechanism** | Greedy chunks; history-signature labels | Best-first branch and bound, exact-rational bounds | Greedy incumbent + checkpoint/suffix repair | SOR core with plan-token-DAG admission | L-BFGS-B on the dual + exact share projection |
+| **Optimality Scope** | Per-chunk same-depth maximum when uncapped (T1); no whole-plan claim | Proven in its grid domain (gap 0) or certified gap | None (never below repair off) | None (safety only) | None (heuristic recovery) |
+| **Bound kind** | `unknown` | `certified` | `unknown` | `unknown` | `estimate` (converged, no fallback) or `unknown` |
+| **Bounded preset** | `metis_history/1` | `direct_split_certified/1` (`repository_grid`) | `incremental_graph_repair/1` | `uni_sor_cycle_safe/1` (`{}`) | `cfmm_dual/2` (current); `cfmm_dual/1` historical |
+
 ### 12.2 Asymptotic Search Complexity
 
 Let:
@@ -1879,6 +2108,8 @@ Let:
 - $L$: Routes searched after probing ($L = $ all ranked routes for `uni_sor_adaptive`; $\lvert L \rvert \le 16$ for `uni_sor_optimized`).
 - $\lvert S_f \rvert$: Percents sampled when refinement stops ($\le G$); $R \le G$ refinement rounds; $V$ validation replays.
 - $H_L$: Label-layer depth (`graph.label_hops`); $\lvert T \rvert$: tokens; $\deg_{\max}$: largest pool degree of a token.
+- $F$: `max_frontier_labels`; $n$: direct pools; $N_b$, $N_o$: `max_bound_nodes`, `max_open_nodes`; $C$, $R_a$: `max_checkpoints`, `max_repair_attempts`.
+- $\lvert M \rvert$: `cfmm_dual` markets; $E_f$: `max_function_evaluations`; $c_o$: one market oracle call; $A_r$: `max_recovery_attempts`.
 
 *Table Notation:* `\lvert \Pi_H \rvert` denotes the count of cycle-free candidate paths.
 
@@ -1893,6 +2124,17 @@ Let:
 | `uni_sor_adaptive` | $\mathcal{O}(\sum_{\pi \in L} \text{hops}(\pi) \cdot \lvert S_f \rvert \cdot c_q + R \cdot \text{Core}(\lvert L \rvert \cdot \lvert S_f \rvert) + V \cdot \text{Eval})$ | $\le \sum_{\pi} \text{hops}(\pi) \cdot G + \text{replay quotes}$ (grid completion); typically $\sum_{\pi \in L} \text{hops}(\pi) \cdot \lvert S_f \rvert$ | $\mathcal{O}(\lvert L \rvert \cdot \lvert S_f \rvert + \lvert Q \rvert)$ |
 | `uni_sor_optimized` | $\mathcal{O}(\sum_{\pi \in \Pi_H} \text{hops}(\pi) \cdot 2 \cdot c_q' + \text{Cost}(\text{adaptive over } L))$, $c_q' \le c_q$ under L02–L04 | $\le \sum_{\pi} 2\,\text{hops}(\pi) + \sum_{\pi \in L} \text{hops}(\pi) \cdot G$ + replay quotes, plus the full table on fallback | $\mathcal{O}(16 \cdot G + \lvert Q \rvert)$ + bounded per-solve memos |
 | `metis_inspired` | $\mathcal{O}(K \cdot H_L \cdot \lvert T \rvert \cdot \deg_{\max} \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot H_L \cdot \lvert T \rvert \cdot \deg_{\max} + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K + H_L^2 \cdot \lvert T \rvert)$ + cache |
+| `metis_history` | $\mathcal{O}(K \cdot H_L \cdot F \cdot \deg_{\max} \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le K \cdot H_L \cdot F \cdot \deg_{\max} + \text{Quotes}(\text{path\_split})$ | $\mathcal{O}(P + K + F \cdot H_L)$ + region memo + cache |
+| `direct_split_certified` | $\mathcal{O}(N_b \cdot (\text{bound} + c_q))$, bound $= \mathcal{O}(n \log n)$ exact-rational operations | $\le n + $ one per resolved leaf leg | $\mathcal{O}(N_o)$ open nodes |
+| `incremental_graph_repair` | $\mathcal{O}((1 + C + R_a) \cdot K \cdot \sum_{\pi} \text{hops}(\pi) \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le (1 + C + R_a) \cdot K \cdot \sum_{\pi} \text{hops}(\pi) + \text{Quotes}(\text{path\_split})$ (restores are memo hits) | $\mathcal{O}(K \cdot (P + K) + \lvert \Pi_H \rvert)$ + cache |
+| `uni_sor_cycle_safe` | $\text{Cost}(\text{uni\_sor\_port}) + \text{checks} \cdot \mathcal{O}(S \cdot H)$ | $=$ `uni_sor_port`'s | as `uni_sor_port` |
+| `cfmm_dual` | $\mathcal{O}(E_f \cdot \lvert M \rvert \cdot c_o + \text{L-BFGS-B} + A_r \cdot \lvert M \rvert \cdot c_q)$, plus the charged CL index build in `prepare` | $\le A_r \cdot \lvert M \rvert$ recovery legs + fallback paths | $\mathcal{O}(\text{index segments} + \text{lbfgs\_memory} \cdot \lvert \text{tokens} \rvert)$ |
+
+For `cfmm_dual`, a CL oracle call locates the target price in its precomputed index by binary
+search, but that does not make the solve logarithmic: the evaluation count, not the lookup,
+dominates the numerical work, and every exact quote and the final replay still step tick by tick
+in `pools.concentrated`. The bounds above are budget-shaped: each 0.2.1 identity stops at its
+declared caps, and a cap is reported, never hidden.
 
 ### 12.3 Source Reading Map
 
@@ -1911,11 +2153,17 @@ When navigating the codebase, consult these authoritative entry points:
   - `routing/algorithms/uni_sor_strategies.py`: `registered_settings` (line 84), `check_recipe` (line 122), `STRATEGIES` (line 166), `_prepare` (line 260), `_solve` (line 290), `ADAPTIVE_FACTORY` / `OPTIMIZED_FACTORY` (lines 348–349)
   - `pools/exact_controls.py`: `QUOTE_CONTROL_KEYS` (line 32), `QuoteControls` (line 44), `installed` (line 74)
   - `routing/algorithms/metis_inspired.py`: `prepare` (line 206), `hops_to_target` (line 229), `_Allocator.step` (line 312), `choose_enumeration` (line 356), `choose_labels` (lines 382–427), `solve` (lines 446–658), `diagnose_case` (line 721)
-  - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the base and optimized comparison groups; `metis_inspired` is added by `benchmark/strategies.py` under `--strategies all`)
+  - `routing/algorithms/metis_history.py`: `upward_safe_edges` (line 180), `prepare` (line 233), `region_certified` (line 280), `choose_history` (lines 316–418), `solve` (lines 430–665), `diagnose_history` (line 758)
+  - `routing/algorithms/direct_split_certified.py`: `tangent_hint` / `tangent_bound` (lines 231–266), `final_bound` / `state_bound` / `interval_bound` (lines 267–289), `certify` (lines 403–781), `solve` (line 782)
+  - `routing/algorithms/incremental_graph_repair.py`: `freeze` / `restore` (lines 214–241), `flow_key` (line 242), `_Search` (lines 309–452), `structural_checkpoints` / `alternatives` (lines 458–468), `solve` (lines 488–716), `_repair` (lines 763–860)
+  - `routing/algorithms/uni_sor_cycle_safe.py`: `union_has_cycle` (line 204), `Admission` (lines 233–278), `solve` (lines 379–460)
+  - `routing/algorithms/cfmm_dual.py`: `CAPABILITIES` / `STAGES` / `PRESET` / `PRESET_V1` (lines 132–176), `prepare` (line 329), `solve` (lines 457–815); `routing/cfmm/model.py` (`market_universe`, `cpmm_arb`, `cl_arb`, `dual_value`), `routing/cfmm/cl.py` (`build_cl_index`, `prepare_cl_indexes`), `routing/cfmm/optimizer.py` (`GuardedObjective`, `solve`), `routing/cfmm/recovery.py` (`recover`)
+  - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the base and optimized comparison groups; `metis_inspired` and the five 0.2.1 identities (`R021_ADDITIONS`, contract order) are added by `benchmark/strategies.py` under `--strategies all`)
 - **Contract Verification:**
   - Uniswap SOR: [`uni-sor-port-contract.md`](uni-sor-port-contract.md) and `tests/routing/test_uni_sor_parity.py`.
   - Optimized strategies: [`strategy-groups.md`](strategy-groups.md), [`latency-optimization-results.md`](latency-optimization-results.md) (L08), `tests/routing/test_uni_sor_strategies.py` and `tests/routing/test_uni_sor_fast.py`.
   - Metis-inspired: [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md), [`metis-challenge-results.md`](metis-challenge-results.md) and `tests/routing/test_metis_inspired.py` (fixtures X1–X7, X4b).
+  - 0.2.1 identities: the shared contract [`research-021/contract.md`](research-021/contract.md) and one memo each: [`history-labels.md`](research-021/history-labels.md), [`integer-allocation.md`](research-021/integer-allocation.md), [`suffix-repair.md`](research-021/suffix-repair.md), [`cycle-safe-sor.md`](research-021/cycle-safe-sor.md), [`cfmm-dual.md`](research-021/cfmm-dual.md). Worked examples: `docs/examples/routing-algorithms/r021_examples.py` and `tests/docs/test_r021_examples.py`.
   - Cost Model: [`cost-model.md`](cost-model.md) and `benchmark/costs.py`.
 
 ---
@@ -1945,6 +2193,9 @@ When navigating the codebase, consult these authoritative entry points:
 6. **Execution Latency Measurements:**
    Single-quote CLI latencies represent one isolated process observation. They do not constitute
    a statistically valid latency distribution and must not be used for production performance claims.
+   One request is one solve and one sample: no p95 or other percentile exists for it. The 0.2.1
+   per-stage seconds (for example `cfmm_dual`'s `prepare_cl_indexes`) are observations too, not
+   budgets.
 7. **Per-Solver Missing-State & Budget Policies:**
    - `direct`: Fails closed; any candidate requiring uncollected state returns `INCOMPLETE_SNAPSHOT`
      for the whole solve.
@@ -1991,3 +2242,1416 @@ When navigating the codebase, consult these authoritative entry points:
    - Under `--strategies all`, its chunk search can use more hops than the other strategies'
      shared `search.max_hops`. The CLI and reports print the recorded `graph.label_hops`, so
      that row is not an identical-search comparison.
+10. **The 0.2.1 Identities Are Experiments, Not Defaults:**
+    - `metis_history`, `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe`
+      and `cfmm_dual` run under `--strategies all` with pinned bounded presets. Nothing adopts
+      them, and no loss tolerance, runtime ceiling or SLA exists for them.
+    - This guide contains principles, checked toy examples and bounded real-state walkthroughs
+      only. The frozen WHI-1562 comparison campaign, and any disposition, are separate and not
+      reported here.
+11. **Certificates Stay in Their Domain:**
+    - Only `direct_split_certified` emits `certified` bounds, and only for all-CPMM direct pools
+      under `gross_only`, for its exact request, grid, pool order and cardinality.
+    - `cfmm_dual`'s `estimate` is a numerical dual value, never an upper bound or a gap; the
+      others report `unknown`.
+    - There is no full-network, global or integer certificate, and no production Metis or
+      Uniswap SOR equivalence.
+12. **Visible Unsupported and Capped Rows:**
+    - `direct_split_certified`: a mixed direct-pool pair or a net objective is `unsupported`
+      with its scope reason, never a CPMM-subset result.
+    - `cfmm_dual`: net objectives are `unsupported`; a request whose only paths use Liquidity
+      Book or other non-stage pools is `unsupported (protocol_ceiling)`.
+    - `metis_history`: a dropped label marks the chunk `state_cap`; a capped search without a
+      valid plan is `timeout`, never `no_route`.
+    - `incremental_graph_repair`: a quote cut stops the repair (`quote_budget`) with the best plan
+      validated so far; a replay that contradicts its accounting fails closed.
+    - `uni_sor_cycle_safe`: `no_route` with `no_admissible_selection: true` means the SOR search
+      ended by its own rules under admission, not that no valid plan exists.
+13. **CFMM Numerical Caveats:**
+    - `converged` is only the residual criterion. The CL stage converges rarely on real states,
+      and its recovered plans, while exact and fully funded, can be poor against the best exact
+      single path (§18.9).
+    - The 5e-14 author-probe agreement and the synthetic fixture's 1e-9 exact/continuous
+      closeness do not transfer to real states. Missing `TickInfo` at a model endpoint is pruned
+      by the exact replay.
+    - The CPMM-only ablation (`config/cfmm_dual/cpmm.yaml`) shows a stage limitation, not search
+      quality.
+14. **Literal Replay:** Saved effective profiles, including the pre-0.2.1 eight- and nine-strategy
+    ones, replay literally with `--strategies profile` and never gain a 0.2.1 identity; use each
+    manifest's `replay_command` (§11.4, [`strategy-groups.md`](strategy-groups.md)).
+
+---
+
+## 14. Algorithm 10: `metis_history` (Experimental History/Admission-Aware Label Search; NOT Jupiter Metis)
+
+### 14.1 Problem and Inclusion Rationale
+`metis_inspired` (§10) keeps **one label per (layer, token)**: at every token it remembers only
+the largest chunk amount found in exactly $k$ hops. That rule is cheap, but it compares labels
+whose futures are different. Two prefixes that reach the same token $v$ can have visited
+different tokens, and a later hop may be legal for one and illegal for the other:
+
+- the continuation may need a token that the dominant prefix already visited
+  (**token revisit**, fixtures X4 and R1);
+- the dominant prefix's token edges, together with the chunks already committed, may close a
+  token cycle on a continuation that the dominated prefix could take (**prefix admission**,
+  fixture X4b).
+
+`metis_history` (WHI-1550, research memo
+[`research-021/history-labels.md`](research-021/history-labels.md), WHI-1549) keeps
+`metis_inspired`'s chunk allocation unchanged and replaces only the per-chunk selector. A
+label is compared only with labels that have the **same history signature**
+$(k, v, \text{visited set})$, and it is discarded only when a proof says its futures are no
+better. Where no proof exists (concentrated liquidity, Liquidity Book, a sourced CPMM near its
+`uint112` limit), both labels are kept, and resource caps make any remaining approximation
+visible.
+
+- **Identity:** an experimental Python variant in the *Experimental and other strategies*
+  (`custom`) group. It is **NOT Jupiter Metis**, carries no production-equivalence claim and is
+  not a default.
+- **Reference controls:** `metis_inspired` (the amount-only label rule) and
+  `incremental_graph` (exhaustive per-chunk enumeration at `search.max_hops`).
+- **What is claimed:** a same-depth, per-chunk statement only (Theorem T1 of the memo): for one
+  chunk, on one committed state, with no cap or budget truncation in that chunk, the chosen
+  marginal equals the maximum over every admissible simple path of at most
+  `graph.label_hops` pools. Nothing is claimed about whole plans, ties, trajectories or speed.
+
+### 14.2 Mathematical Model and Assumptions
+Everything outside the chunk choice is §10.2 unchanged: integer chunks $\Delta_k$ with carry,
+aggregate accounting $f_p(x_p + d) - f_p(x_p)$ on original states, atomic `creates_cycle`
+admission against the committed token edges $E$, one merged step per pool, the in-solve
+evaluator replay and the retained `path_split` candidate.
+
+**Signature.** A label is a successful prefix $P$ from the source $S$ to a token $v \ne D$ with
+chunk amount $a_P$ and visited set $V_P$. Its signature is $(k, v, V_P)$, compared by exact
+set equality.
+
+- **L0.** A continuation $Q$ of $P$ enters only tokens outside $V_P$, so it touches no pool of
+  $P$. Its quotes see only the committed state, never the prefix's own tentative flows.
+- **L2.** Whether $E \cup \text{edges}(P) \cup \text{edges}(Q)$ is acyclic depends only on
+  $E$, $Q$ and the **set** $V_P$. So two labels with the same signature have exactly the same
+  admissible continuations. No finer "reachability" signature is needed in this model.
+
+**When a larger amount provably dominates (L3).** A directed pool edge is *certified upward
+safe* when it is constant product and a larger input can never fail where a smaller one
+succeeded:
+
+- the pool has no overflow rule (no source key), or its failure is independent of the input;
+- or it is a sourced pair whose `token_in` reserves, summed over every pool that holds the
+  token, stay below $2^{112}$ (and every other holder is constant product).
+
+The *continuation region* of $(v, r)$ is every directed edge on a walk of at most $r$ pools
+from $v$. If the whole region is certified, two same-signature labels with $a_A \ge a_B$ give
+$A \cdot Q \ge B \cdot Q$ on every continuation $Q$ that yields at least 1 unit. CL and LB
+edges are never certified: their exact quotes can fail upward (`incomplete_snapshot`,
+`insufficient_liquidity`).
+
+**Rules R1–R8** (applied per group of equal signature):
+
+| Rule | Condition | Action |
+|---|---|---|
+| R2 | an equal amount already exists in the group | discard the new label (equal futures, any protocol) |
+| R3 | non-final chunk **and** the region is certified | keep only the larger amount |
+| R4 | otherwise | keep both (`labels_retained_unknown`) |
+| R5 | final non-empty chunk | never apply R3 (only R2) |
+| R6 | the group already holds `max_labels_per_signature` labels | drop the lowest amount (`labels_dropped_signature_cap`) |
+| R7 | the layer already holds `max_frontier_labels` labels | drop the new label (`labels_dropped_frontier_cap`) |
+| R8 | any R6/R7 drop | the chunk is **capped**: T1 does not apply, the solve records `state_cap` |
+
+`dominance: "off"` gives every label a unique key (no R2/R3; the caps still apply). It is the
+disabled-mechanism control.
+
+### 14.3 Concise Pseudocode
+```python
+def choose_history(alloc, amount, H, dist, budget, opts, final, safe):
+    layer, best = [Label(amount, path=(), visited={S})], None
+    for k in range(1, H + 1):
+        groups = {}                                   # signature -> {amount: label}
+        for lab in layer:                             # generation order
+            for e in index.edges_from(lab.token):     # adjacency order
+                v = e.token_out
+                if v == S or (v != D and dist[v] > H - k) or v in lab.visited:
+                    continue                          # as metis_inspired (exact prunes)
+                if creates_cycle(alloc.token_edges, lab.path + (e,)):
+                    continue                          # admission on the committed edges
+                if budget.max_candidates is not None and relaxed >= budget.max_candidates:
+                    return best                       # declared truncation
+                r = alloc.step(e, lab.amount)         # f(x + m) - f(x); failure -> no label
+                if v == D:
+                    best = r if best is None or r.m > best.m else best   # strict
+                    continue
+                key = (v, lab.visited | {v})          # the history signature
+                strict = not final and region_certified(safe, v, H - k)
+                insert(groups[key], Label(r), strict, opts)              # R1..R8
+        layer = retained labels in generation order
+    return best
+```
+The solve around it is `metis_inspired.solve` (§10.3) with `choose_history` as the chunk
+chooser: `path_split` first, then the chunk loop with carry, `merged_plan`, the in-solve
+`evaluate`, and strict replacement of the retained candidate.
+
+### 14.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart TD
+    L0(["Layer 0: A, visited {A}, 10000"]) --> AB["A-ab-B"]
+    L0 --> AD["A-ad-D"]
+    AB --> C1["C via ab, bc1<br>signature C, {A,B,C}<br>11926"]
+    AB --> C2["C via ab, cb2<br>signature C, {A,B,C}<br>4969"]
+    AD --> C3["C via ad, dc<br>signature C, {A,C,D}<br>9840"]
+    C1 -. "same signature: compared" .- C2
+    C1 -. "C to B revisits B" .-> X1["no continuation to T"]
+    C2 -. "C to B revisits B" .-> X1
+    C3 -->|"C-cb2-B, then B-bt-T"| T1(["T: 19560<br>A-D-C-B-T"])
+    C3 -. "different signature: never compared with C1" .- C1
+```
+
+The diagram is the R1 fixture of §14.5. `metis_inspired` keeps one label at C (11926, via B),
+whose only continuations revisit B. `metis_history` keeps the via-D label in its own signature
+group, and that label reaches T.
+
+### 14.5 Hand-Worked Numeric Example
+All values below are checked by `r021_examples.py` section 12 (`example_metis_history`) against
+its own hand `getAmountOut`, exhaustive path enumeration and the pinned research fixtures
+(`reconstructions.json` R1/R8, `history-labels.json`). The factory runs with the pinned preset
+`config/metis_history/preset_v1.yaml` (version 1, `dominance: history`,
+`max_labels_per_signature: 1`, `max_frontier_labels: 1024`, settings sha256 `183bb1ff…`) unless a
+step says otherwise.
+
+1. **Competing prefixes (fixture R1).** Six CPMM pools with 30 bps fees: `ab`, `bc1`, `ad`,
+   `dc`, `cb2`, `bt` (reserves in `reconstructions.json`). The request is $10\,000$ A $\to$ T,
+   one chunk, `label_hops` 4, `search.max_hops` 2.
+   - Three layer-2 prefixes reach C:
+
+     | Prefix | Visited set | Amount at C |
+     |---|---|---|
+     | `ab`, `bc1` | {A, B, C} | 11926 |
+     | `ab`, `cb2` | {A, B, C} | 4969 |
+     | `ad`, `dc` | {A, C, D} | 9840 |
+
+   - The first two share a signature and are compared with each other. The third has another
+     visited set and is compared with neither.
+   - From C, the only way to T is C $\to$ B $\to$ T. Both {A, B, C} labels have visited B, so
+     they cannot continue. The {A, C, D} label can: `ad, dc, cb2, bt` gives **19560**, which is
+     the exhaustive best simple path.
+   - The larger walk A–B–C–B–T (`ab, bc1, cb2, bt`) would give 23708, but it repeats B. The
+     independent evaluator rejects it as `invalid_plan` (`economic token cycle: B -> C -> B`).
+     It is outside the domain, not a lost optimum.
+   - `metis_inspired` keeps only 11926 at C, loses the 4-hop path and returns 9938 (A–B–T).
+   - `metis_history` returns **19560** on A–D–C–B–T. The fresh evaluator replay and the
+     independent hand ledger both give 19560.
+   - The row is still labelled `termination: state_cap`. The single chunk is also the final
+     chunk, so R5 forbids strict pruning, and the preset's one-label-per-signature cap drops the
+     lower same-signature labels (`labels_dropped_signature_cap` 2, a factory counter). The value
+     happens to equal the exhaustive best, but T1 is not claimed for a capped chunk.
+2. **Prefix admission (fixture X4b, 2 chunks, 5 bps pools).** Request $2 \times 10^9$ S $\to$ D.
+   - Chunk 1 ($10^9$) takes `sx, xa, ad` (marginal 3550412675). It commits the token edges
+     S→X, X→A and A→D.
+   - In chunk 2, the dominant label at V is S–A–V. Its continuation `sa, av, vx, xd` would add
+     V→X, which closes X→A→V→X with the committed edges, so it is inadmissible.
+   - The dominated label S–B–V has another visited set, so it survives in its own group. It
+     continues `sb, bv, vx, xd` (marginal 2993986559).
+   - `metis_history` returns $3550412675 + 2993986559 = \mathbf{6544399234}$, equal to the
+     independent per-chunk trajectory. `metis_inspired` puts both chunks on `sx, xa, ad` and
+     returns 6391013260.
+3. **Unsafe deletion (fixture `overflow`, sourced `moe_classic_v1` pools).** Request $10^7$ S $\to$ D,
+   one chunk, `label_hops` 3.
+   - Two S→X labels share a signature: 9871580 X (via `small`) and 9969900600 X (via `big`).
+   - Pool `xd` holds almost $2^{112}$ X. The X reserves of all pools sum to
+     5192296858534827629530492329220096, which is at least $2^{112}$, so the region is **not**
+     certified.
+   - The larger label reverts in `xd` (the Moe Classic `uint112` balance check); the smaller one
+     continues to 4920982 D. A "larger amount wins" rule would therefore be wrong here.
+   - With wide caps (every label kept), `metis_history` returns **4920982** with
+     `termination: complete`.
+   - With the preset's one label per signature, R6 keeps the larger, reverting label. The
+     incremental plan falls back to the weak direct pool: 9871, `termination: state_cap`,
+     fallback `retained_simpler_candidate`. This is the visible, declared approximation of the
+     bounded preset, not a silent loss. `metis_inspired` also returns 9871.
+4. **Safe deletion (R1, 3 chunks, wide caps).** Every R1 pool is constant product without a
+   source key, so every edge is certified upward safe.
+   - The two non-final chunks may apply R3: the factory reports 11 certified strict insertions
+     (a factory counter).
+   - Each chunk (3333, 3333, 3334) takes `ad, dc, cb2, bt`, exactly the independent per-chunk
+     maxima (marginals 6518, 6520, 6522 from the independent oracle), and the merged plan gives
+     **19560**, `termination: complete`.
+5. **Tie with different state (`tie_state`, 2 chunks).** Pools `p1`, `p3` (S→X, `p3` slightly
+   deeper) and a thin `q` (X→D). Request 20000 S $\to$ D.
+   - Chunk 1 ($10\,000$): `p1` gives 996 X and `p3` gives 1006 X, but `q` rounds both to the same
+     output. That is a tie of the chunk value.
+   - Certified strict dominance keeps `p3`'s larger X label; enumeration keeps the first maximal
+     path via `p1`. The committed pools differ.
+   - The incremental plans end at 9 (history, `p3, q` twice) and 8 (enumeration, `p1, q` twice).
+     Both published rows are 9 because the retained `path_split` candidate also scores 9 and an
+     incremental plan must be strictly better to replace it.
+6. **Per-chunk exact is not whole-plan better (`greedy_trap`, 2 chunks, 4 hops).**
+   - `metis_history` takes each chunk's exhaustive maximum: `p11, p7, p6, p8` (9894172), then
+     `p11, p3, p8` (49757), for **9943929**.
+   - `metis_inspired` misses chunk 1's maximum (a token revisit) and commits `p11, p3, p8`. That
+     leaves `p11, p3, p2, p5` admissible for chunk 2, and its plan ends at **12757712**.
+   - A better chunk choice changed the committed edges and lowered the whole plan. No
+     whole-plan claim is made.
+7. **Caps and full fill.**
+   - R1 with `max_frontier_labels: 1` drops two labels (`state_cap`). The incremental plan is
+     only 9938, which does not beat the retained candidate, so the row is the fallback
+     `single_path` plan A–B–T, 9938 (hand check), labelled `retained_simpler_candidate`.
+   - A 4-pool graph where S–B–D is dead (`bd` has no D reserve) and S–C–D is live, $10^6$ S:
+     uncapped the chunk takes S–C–D, **992032** (hand check).
+   - The same graph with `max_frontier_labels: 1` keeps only the first layer-1 label (via B).
+     Its continuation fails, the final chunk has no admissible path, and no `path_split`
+     candidate exists at `search.max_hops` 1. The status is **`timeout`** with
+     `truncated_by: state_cap`: a capped search is never evidence of `no_route`.
+
+### 14.6 Implementation Map
+Line numbers are those of `e455c7d` (unchanged on this branch); function names are the stable
+anchors.
+- File: `routing/algorithms/metis_history.py`.
+  - Options: `validate_options` (line 167); keys `dominance`, `max_labels_per_signature`,
+    `max_frontier_labels`.
+  - Certified edges: `upward_safe_edges(bundle)` (line 180), computed once in `prepare` (line 233).
+  - Region test: `region_certified(...)` (line 280), memoized per solve.
+  - Chunk selector: `choose_history(...)` (lines 316–418), rules R1–R8.
+  - Termination precedence: `_termination` (line 421).
+  - Solver: `solve` / `_solve` (lines 430–665), the `metis_inspired` loop with this chooser.
+  - Same-depth diagnostic: `diagnose_history` (line 758), a separate pass that `solve` never calls.
+  - Factory: `FACTORY` (line 872); the preset pin is `config/metis_history/preset_v1.yaml`.
+- Reused unchanged: `metis_inspired._Allocator` (`step`, `commit`), `hops_to_target`,
+  `incremental_graph.creates_cycle` / `merged_plan`, `routing.evaluator.evaluate`.
+- Contract: [`research-021/history-labels.md`](research-021/history-labels.md) §§3–8; tests
+  `tests/routing/test_metis_history.py` and `tests/routing/test_history_labels_contract.py`.
+- Worked examples: `docs/examples/routing-algorithms/r021_examples.py`,
+  `example_metis_history` (runner section 12).
+
+### 14.7 Parameters, Budgets, and Ties
+- **Shared parameters:** `search.max_hops`, `search.max_splits`, `search.percent_step` (the
+  retained `path_split` only), `graph.chunks` and `graph.label_hops`. `graph.label_pruning` is
+  **not read**: the label search is always on, and the control is `dominance: "off"`.
+- **Options** (`algorithm_options.metis_history`, all required after preset resolution):
+  `dominance` (`history` | `off`), `max_labels_per_signature` (1…10⁶),
+  `max_frontier_labels` (1…10⁷). The validator refuses unknown keys and every reserved
+  `search.*` / `graph.*` key.
+- **Preset (`--strategies all`):** version 1 above. With one label per signature it is a
+  declared approximation on uncertified regions (CL/LB, sourced CPMM near $2^{112}$), visibly
+  `state_cap` when it drops a label.
+- **Controls:** `config/metis_history/history_on.yaml` (preset next to `metis_inspired`),
+  `history_off.yaml` (`dominance: "off"` next to `metis_inspired` with `label_pruning: false`).
+  Both run only by explicit `--strategies profile`.
+- **Budgets:** `Budget.max_candidates` caps label relaxations per chunk (declared truncation);
+  `max_quotes` abandons the incremental plan. `truncated_by` precedence is `max_quotes`, then
+  `max_candidates`, then `state_cap`.
+- **Ties:** labels expand in generation order, which equals enumeration order; the target
+  choice is strict (the earlier path wins); R2 keeps the earlier label. An R3 discard can
+  change which path attains a tied value (§14.5 step 5).
+
+### 14.8 Computational and Memory Cost
+- **Per chunk:** at most $H_L$ layers, each holding at most `max_frontier_labels` labels
+  ($\le 1024$ in the preset). Relaxations are bounded by
+  $H_L \cdot \text{max\_frontier\_labels} \cdot \deg_{\max}$.
+- Without the caps the number of distinct signatures can grow with the number of visited
+  subsets. That growth is why the caps exist and why a capped chunk is labelled.
+- **Quotes:** at most one guarded quote per relaxation through the per-solve `QuoteCache`,
+  plus the retained `path_split`'s quotes. The history search can quote more than
+  `metis_inspired` because it keeps more labels.
+- **Extra CPU:** one region test per new label (memoized per $(v, r)$ and solve), one
+  signature lookup (a frozenset key) per insertion; `upward_safe_edges` is $\mathcal{O}(P)$
+  once per worker in `prepare`.
+- **Memory:** the layer's labels, each carrying its path and pool-flow updates
+  ($\mathcal{O}(H_L)$ each), plus the region memo ($\mathcal{O}(\lvert T \rvert \cdot H_L)$).
+- **Work units** (never divided by another strategy's units): `label_relaxations`,
+  `labels_discarded_dominance`, `labels_retained_unknown`, `state_comparisons`,
+  `peak_frontier_labels`, `admission_checks`, quotes and `internal_evaluations`.
+
+### 14.9 Guarantees and Limitations
+- **Guarantees:**
+  - Every plan is protocol-exact, merged per pool, fully funded and replayed by the independent
+    evaluator; the result is never below the retained `path_split` candidate on score.
+  - For one uncapped, untruncated chunk the selected marginal equals the same-depth enumeration
+    maximum in every admitted protocol (T1; certified pruning only on certified CPMM regions,
+    retention everywhere else).
+- **Limitations:**
+  - Per-chunk exactness is not whole-plan optimality and not an improvement guarantee over
+    `metis_inspired` or `incremental_graph` (§14.5 steps 5–6).
+  - The bounded preset drops labels on uncertified regions; such chunks are `state_cap` and
+    carry no T1 claim (§14.5 step 3). A capped search without a valid plan is `timeout`, never
+    `no_route`.
+  - There is no certificate: `bound_kind` is `unknown` (`certificate: null`, `not_produced`).
+  - A real CL/LB region where the retained-unknown rule matters (for example the pinned
+    `mantle_mixed` X2 state) is covered by the research tests, not by this guide's worked
+    examples.
+  - It is not Jupiter Metis; no latency or adoption claim is made.
+
+---
+
+## 15. Algorithm 11: `direct_split_certified` (Certified Integer Branch and Bound over the Direct-Split Grid)
+
+### 15.1 Problem and Inclusion Rationale
+`direct_split` (§4) finds the best allocation on its grid by exact dynamic programming, but it
+returns only a value. It says nothing about how far the result could be from the best
+allocation if the search were cut short, and nothing about a different domain such as another
+pool order or raw integer amounts.
+
+`direct_split_certified` (WHI-1552, research memo
+[`research-021/integer-allocation.md`](research-021/integer-allocation.md), WHI-1551) searches
+**exactly `direct_split`'s domain** with best-first branch and bound. Every open region carries
+an exact-rational upper bound. The result is an ordinary plan plus a certificate
+$[\text{lower}, \text{upper}]$ with gap $g$ that is valid after completion **and** after every
+cooperative stop.
+
+- **Identity:** experimental, `custom` group, not a default. The reference control is
+  `direct_split` on the same grid.
+- **Scope:** a request whose admitted direct pools are **all** constant product, under
+  `gross_only`. Any concentrated or Liquidity Book direct pool makes the whole case
+  `unsupported` (`non_constant_product_direct_pool`); there is no CPMM-subset approximation.
+- **Contribution:** the certificate, not a better value. Untruncated, the value equals
+  `direct_split`'s on the same grid (Proposition P1 of the memo).
+
+### 15.2 Mathematical Model and Assumptions
+**Domain `repository_grid`** (the preset). Let $A$ be the input, $N = 100 / \delta$ grid units,
+$K$ = `search.max_splits`, and $p_0, \dots, p_{n-1}$ the direct pools in admitted order. A leg
+vector uses $m \le \min(K, n)$ pools in strictly increasing admitted order with units
+$u_k \ge 1$, $\sum u_k = N$:
+$$a_k = \left\lfloor \frac{A u_k}{N} \right\rfloor \ (k < m), \qquad a_m = A - \sum_{k<m} a_k \ (\texttt{ALL\_REMAINING}).$$
+A non-final leg that floors to 0 is not a member. These are `direct_split.leg_amounts`, so the
+**last pool in admitted order receives the floor remainder**, and pool order is part of the
+domain.
+
+**Domain `raw_integer`** (stress only, explicit profile). $N := A$, so leg amounts are any
+positive integers summing to $A$. It is a separately identified expanded domain and is admitted
+only for $A \le$ `raw_max_amount_in`.
+
+**Value.** Direct legs use distinct pools on original state, so the gross is
+$\sum_k f_{i_k}(a_k)$ with the exact CPMM quote $f$. A leg is infeasible on dust (output floors
+to 0), a zero reserve, an unmigrated source or fee, or a sourced `uint112` overflow.
+
+**Bound.** For a live pool let $g_i(x) = \dfrac{k_i R_{\text{out}} x}{10^4 R_{\text{in}} + k_i x}$
+(the quote without its floor, $k_i = 10^4 - \text{fee\_bps}$). Then:
+
+- $f_i(x) = \lfloor g_i(x) \rfloor \le g_i(x)$ (floor);
+- $g_i$ is concave, so every tangent is an upper bound: $g_i(x) \le c_i(t) + s_i(t) x$;
+- relaxing integrality, the grid, the leg count, pool order and feasibility gives a superset.
+
+So the tangent sum plus a vertex term bounds every completion of a node, for **any** tangent
+points, and its floor is still a bound because values are integers. All arithmetic is Python
+`int` / `fractions.Fraction`; no float appears.
+
+**Certificate.** $L$ = the evaluator score of the best validated plan; $U = \max(L,
+\max_{\text{open}} ub)$. Theorem T1 (coverage) gives $\max_{\text{domain}} \le U$ at every point of
+the search, including after a stop, because a stopped node is pushed back. `optimality_proven`
+iff $U = L$.
+
+### 15.3 Concise Pseudocode
+```python
+def certify(case, pools, N, K, opts, budget):
+    if objective != gross_only:           return unsupported("objective_not_gross_only")
+    if any(not cpmm(p) for p in pools):   return unsupported("non_constant_product_direct_pool")
+    root = State(j=0, used=0, legs=())
+    root.ub = tangent_floor(pools, A, legs_left=K)      # first bound evaluation
+    L, best = None, None
+    for p in live(pools):                                # singles stage
+        consider(single_leg_plan(p))                     # replayed; strict improvement only
+    consider(rule_H_hint(pools))                         # efficiency only
+    heap = [root]                                        # key: (unknown first, -ub, seq)
+    while heap:
+        if top(heap).ub <= L:  return result(L, heap, "complete")        # U = L
+        if expanded == opts.max_bound_nodes:  return result(L, heap, "node_cap")
+        node = pop(heap)
+        children = expand(node)   # state -> final | interval | skip pool; interval -> halves
+        if any quote would exceed budget.max_quotes:
+            push(heap, node); return result(L, heap, "quote_budget")     # re-push: T1 holds
+        for c in children:
+            if c.ub > L: push(heap, c)                   # pruned at creation otherwise
+        if len(heap) > opts.max_open_nodes:
+            push(heap, node); return result(L, heap, "state_cap")
+    return result(L, heap, "complete")
+
+def result(L, heap, termination):
+    U = max([L] + [n.ub for n in heap])
+    return plan(best), certificate(lower=L, upper=U, gap=U - L, termination=termination)
+```
+Every candidate is a complete `direct_split.allocation_plan`. It becomes the incumbent only
+after the in-solve evaluator replays it `ok` with a score equal to its quoted additive value and
+strictly above $L$. A mismatch is a consistency failure: the search stops fail-closed and emits
+no certificate.
+
+### 15.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart TD
+    Scope{"all direct pools CPMM<br>and gross_only?"} -- no --> Uns(["unsupported, no certificate"])
+    Scope -- yes --> Root["root bound<br>tangent floor = 59"]
+    Root --> Singles["singles stage<br>incumbent L = 57"]
+    Singles --> Loop{"top ub <= L?"}
+    Loop -- yes --> Done(["complete: certified L, U, gap 0"])
+    Loop -- no --> Caps{"node, open-node or<br>quote cap reached?"}
+    Caps -- yes --> Stop(["stop: re-push node<br>certified L, U = max ub"])
+    Caps -- no --> Expand["expand best node:<br>final leg / unit interval / skip pool"]
+    Expand --> Quote["quote leaf leg<br>replay complete plan"]
+    Quote --> Better{"replayed score > L?"}
+    Better -- yes --> Inc["new incumbent L"]
+    Better -- no --> Loop
+    Inc --> Loop
+```
+
+The numbers are those of the R6 request in §15.5.
+
+### 15.5 Hand-Worked Numeric Example
+All values are checked by `r021_examples.py` section 13 (`example_direct_split_certified`)
+against its own enumeration of every grid and raw allocation (`grid_values`, `raw_values` with the
+hand quote) and the pinned records `reconstructions.json` R3/R6 and `integer-allocation.json`.
+The preset is `config/direct_split_certified/preset_v1.yaml` (version 1,
+`domain: repository_grid`, 100,000 expanded nodes, 100,000 open nodes, settings sha256
+`03cfe301…`).
+
+1. **Request (fixture R6).** Pools `p1` (134, 190) and `p2` (76, 172), 30 bps, in that admitted
+   order. Input 38 S $\to$ T, `percent_step` 5 ($N = 20$), `max_splits` 2.
+   - The independent enumeration of the grid gives an optimum of **58**, reached by 7 tied
+     allocations (`p1` with 2, 4, 5, 6, 7, 8 or 9 units).
+   - The best single pool gives 57. The raw-integer optimum is 59 (`p1` 10, `p2` 28). The
+     continuous optimum lies between 59.36 and 59.37.
+2. **Why the grid misses 59.** In the order (`p1`, `p2`), `p1` is a non-final leg and receives
+   $\lfloor 38 u / 20 \rfloor$. For $u = 5$ that is $\lfloor 9.5 \rfloor = 9$, and for $u = 6$ it
+   is $\lfloor 11.4 \rfloor = 11$; no $u$ gives 10. The raw optimum is simply not in this
+   domain.
+3. **Complete search.**
+   - The root bound is the floor of the tangent relaxation, **59** (equal to the pinned
+     `tangent_upper_floor`).
+   - The singles stage gives the first incumbent, 57 (`p2` alone). A later candidate raises it
+     to 58 with `p1` 5 units (9 raw) and `p2` 15 units (29 raw), one of the 7 tied allocations.
+   - Every open bound falls to at most 58, so the certificate is
+     `lower 58, upper 58, gap 0, termination complete`, `upper_source: exact_rational`,
+     `optimality_proven: true`.
+   - `direct_split` on the same grid also returns 58 (P1: the certified identity adds the
+     proof, not value).
+4. **The proof does not transfer to another domain.**
+   - Reordered pools (`p2`, `p1`): `p2` gets $\lfloor 38 \cdot 15 / 20 \rfloor = 28$ and `p1` the
+     remainder 10, so the certified value is **59**.
+   - `raw_integer` (the explicit stress options of `raw_stress.yaml`, resolved as an
+     `override`): certified **59** at `p1` 10 / `p2` 28.
+   - The three domains have three different `candidate_domain_hash` values (`e1afda09…`,
+     `f98ddef6…`, `5925efb2…`). The (`p1`, `p2`) proof with upper bound 58 lies below the raw
+     optimum, which is why a certificate is always bound to its domain and request.
+5. **Stopped searches still certify.**
+
+   | Run | Status | Certificate | Termination |
+   |---|---|---|---|
+   | complete (preset) | `ok` 58 | [58, 58], gap 0 | `complete` |
+   | `max_bound_nodes: 1` | `ok` 58 | [58, 59], gap **1** | `node_cap` |
+   | `Budget(max_quotes=2)` | `ok` 57 | [57, 59], gap **2** | `quote_budget` |
+   | `Budget(max_quotes=0)` | `timeout` | none (no incumbent) | — |
+
+   - Each interval contains the true grid optimum 58.
+   - The quote cut keeps the best single pool (57) as the incumbent; the open root bound 59
+     stays the upper end.
+   - Without any incumbent there is nothing to certify: `timeout`, never `no_route`.
+6. **Integer plateau (fixture R3, `raw_integer`).** Same pools, input 53. With
+   $G(x) = f_1(x) + f_2(53 - x)$:
+   $$G(0) = G(1) = G(2) = 70, \quad G(3) = 72, \quad G(15) = 76.$$
+   - A strict ±1 local search started at a plateau stops at 70.
+   - The root bound already lies above 70, so the plateau is never certified. The search
+     certifies **76** with gap 0 at `p1` 19 / `p2` 34, one of the independent argmax
+     allocations (`p1` 15…19).
+7. **Dust, a real pool and an unsupported case.**
+   - `cpmm_graph` `a_b_dust` (3 raw TKA): every split has a dust leg, so the certified optimum is
+     **2**, all on one pool (`P-IA-DUST`).
+   - Real Merchant Moe Classic state (`tests/fixtures/moe_classic/bundle`, case
+     `wmnt_usdt_large`, 150 WMNT): the single pool gives **73242137** raw USDT by hand, certified
+     with gap 0 (`P-IA-REAL-MOE`).
+   - `mantle_mixed` `usdc_usdt_small`: the direct pools are CPMM **and** Liquidity Book, so the
+     row is `unsupported` (`non_constant_product_direct_pool`) with no plan and no certificate.
+     The fixed-block request of §11 is unsupported for the same reason.
+
+### 15.6 Implementation Map
+Line numbers are those of `e455c7d`; function names are the stable anchors.
+- File: `routing/algorithms/direct_split_certified.py`.
+  - Options: `validate_options` (line 159); `prepare` (line 194).
+  - Exact bounds: `g` / `dg` (lines 220–227), `tangent_hint` (Rule T, line 231),
+    `tangent_bound` (line 252), `final_bound` / `state_bound` / `interval_bound`
+    (lines 267–289).
+  - Nodes and result: `Node` (line 315), `Certified` (line 333).
+  - Domain record: `domain_record` (line 374).
+  - Search: `certify` / `_certify` (lines 403–781), including `consider` (candidate replay and
+    publication), `expand`, the heap key and the stop handling.
+  - Solver: `solve` (line 782) calls `certify` unchanged; `FACTORY` (line 799).
+- Reused unchanged: `direct_split.leg_amounts` / `allocation_plan`, `routing.search.QuoteCache`,
+  `routing.evaluator.evaluate`.
+- Contract: [`research-021/integer-allocation.md`](research-021/integer-allocation.md) §§2–7;
+  tests `tests/routing/test_direct_split_certified.py`,
+  `tests/routing/test_integer_allocation_contract.py`.
+- Worked examples: `r021_examples.py`, `example_direct_split_certified` (runner section 13;
+  `_dsc_trace` exposes the root, first nodes and final frontier from the same `certify` call).
+
+### 15.7 Parameters, Budgets, and Ties
+- **Shared parameters:** `search.max_splits` and `search.percent_step`, exactly as
+  `direct_split`.
+- **Options:** `domain` (`repository_grid` | `raw_integer`), `max_bound_nodes`,
+  `max_open_nodes`, and `raw_max_amount_in` (raw only).
+- **Preset (`--strategies all`):** `repository_grid`, 100,000 / 100,000.
+  `config/direct_split_certified/grid.yaml` runs it next to `direct_split`;
+  `raw_stress.yaml` (raw domain, $A \le 100\,000$) runs only by explicit `--strategies profile`.
+- **Budgets:** `Budget.max_quotes` and `Budget.max_candidates` (finalist plans evaluated) are
+  cooperative stops before the next quote or evaluation; the node being expanded is re-pushed,
+  so the certificate stays valid. The runner's hard wall/quote kill returns no result
+  (`certificate_unavailable_reason: hard_timeout`).
+- **Ties:** the heap key is (unknown first, $-ub$, creation order). The certificate certifies
+  the **value**; among tied allocations the first found in this order is returned, which may
+  differ from `direct_split`'s choice.
+
+### 15.8 Computational and Memory Cost
+- **Nodes:** the tree has at most $n$ state levels, each with $\lceil \log_2 N \rceil$ interval
+  levels in the grid domain ($\lceil \log_2 A \rceil$ in the raw domain). Expansions are capped
+  by `max_bound_nodes`, and the open heap by `max_open_nodes`.
+- **Bound evaluations:** each is an exact-rational tangent sum with an integer square root in
+  Rule T: $\mathcal{O}(n \log n)$ big-integer operations.
+- **Quotes:** $n$ singles plus one quote per resolved leaf leg, all through the per-solve
+  `QuoteCache`; every accepted incumbent costs one internal replay (memo hits only).
+- **Memory:** the open heap, at most `max_open_nodes` nodes, each holding its fixed legs.
+- **Work units:** `bb_nodes_expanded`, `bound_evaluations`, `peak_open_nodes`, quotes and
+  `internal_evaluations`. On R6 the complete run reports 15 expansions and 26 bound
+  evaluations (factory counters, regression-pinned only, not independently derived).
+
+### 15.9 Guarantees and Limitations
+- **Guarantees:**
+  - `bound_kind: certified` means $\text{lower} \le \max_{\text{domain}} \le \text{upper}$ for
+    this request, domain, pool order and objective, after completion and after any cooperative
+    stop. Gap 0 proves optimality **in that domain**.
+  - Every returned plan is a replayed `direct_split` allocation.
+- **Limitations:**
+  - All-CPMM direct pools and `gross_only` only. Mixed direct pools are `unsupported`; the
+    frozen corpus contains only single-pool certifiable cases, and the multi-pool proofs are
+    synthetic (R3, R6).
+  - No multi-hop, no CL/LB and no net objectives.
+  - The certificate does not transfer to another pool order, grid, cardinality, request or
+    the raw domain (§15.5 step 4).
+  - An `unknown` bound never arises with the genuine CPMM bounds; it exists only as a guarded
+    hook (research tests) and is never reported as a zero gap. The examples show nonzero
+    certified gaps instead.
+  - No speed claim: the search can quote less or more than `direct_split`.
+
+---
+
+## 16. Algorithm 12: `incremental_graph_repair` (Checkpoint and Suffix Repair of the Greedy Chunk Trace)
+
+### 16.1 Problem and Inclusion Rationale
+`incremental_graph` (§6) commits chunks greedily. A committed chunk adds token edges, and the
+atomic cycle rule then forbids every later path that uses the reverse edge. An early greedy
+choice can therefore lock out a structure that a better whole plan needs (**admission
+lock-in**).
+
+`incremental_graph_repair` (WHI-1554, research memo
+[`research-021/suffix-repair.md`](research-021/suffix-repair.md), WHI-1553) builds the ordinary
+incumbent and records a **complete checkpoint** before every committed decision. It then:
+
+1. restores a bounded set of checkpoints (latest structural first);
+2. forces a different first suffix choice;
+3. rebuilds the rest of the suffix with the unchanged greedy rule;
+4. replays the complete candidate from the original snapshot;
+5. replaces the incumbent only by a strictly better valid plan.
+
+- **Identity:** experimental, `custom` group, not a default.
+- **Reference control:** `incremental_graph`; with `repair: false` the identity reproduces it
+  exactly (plan, statuses, counters).
+- **What is claimed:** exact checkpoint round trip, whole-input conservation and exact final
+  replay of every candidate, and "never below the repair-off control under the same budget
+  without a hard kill". It is not optimal, even in the chunk-sequence domain it searches.
+
+### 16.2 Mathematical Model and Assumptions
+The accounting is `incremental_graph`'s, pinned in the memo §2:
+
+- **Chunks are search allocations, not executed swaps.** A chunk of $a$ on a path is charged
+  edge by edge as $m_i = f_p(x_p + m_{i-1}) - f_p(x_p)$ on the pool's **original** state, and
+  the pool's aggregate $x_p$ grows. The final plan executes **one merged swap** of $x_p$ per
+  pool. Two chunks on one pool are never two sequential swaps.
+- **Aggregate flows are not additive.** A pool's aggregate output $f_p(x_p)$ is not the sum of
+  the per-chunk quotes. Removing a chunk by subtracting its recorded delta while later chunks
+  stay would leave stale aggregates.
+- **Checkpoint** (taken before each decision): `position`, `carry`, every `PoolFlow` as an
+  immutable record in insertion order (zero-input records included, which fixes `order`), the
+  committed `token_edges` and the decision prefix.
+- **Restore** builds **new** `PoolFlow` objects, a new edge set and a new decision list from the
+  record. Nothing is subtracted, and only whole suffixes are rolled back. The pure
+  `QuoteCache` memo is kept (rescoring is memo hits); the quote meter, wall clock and counters
+  are **never** reset.
+- **Identity of a candidate:** its flow key, the set of $(p, \text{token}_\text{in},
+  \text{token}_\text{out}, x_p)$ with $x_p > 0$. An equal key is a `duplicate` and is not
+  replayed.
+- **Acceptance:** `merged_plan`, in-solve `evaluate` (status `ok`, evaluated gross equal to the
+  accounted gross, else a fail-closed consistency failure), then strictly greater than the
+  current best → `accepted`; equal → `tie`; less → `rejected_worse`.
+
+### 16.3 Concise Pseudocode
+```python
+def solve_incremental_graph_repair(case, opts, budget):
+    best = path_split.solve(...)                          # stage 1: retained candidate
+    run = reference_chunk_loop(checkpoints=True)          # stage 2: the incremental_graph loop
+    if replay_ok_and_consistent(run): best = better(best, run)
+    if not opts.repair:  return best                      # stop: disabled
+    seen = {flow_key(run.flows)}
+    for i in structural_checkpoints(run, opts.max_checkpoints):      # latest first
+        flows, edges, _ = restore(run.checkpoints[i])      # rebuilt by copy, never subtracted
+        scored = score_chunk(flows, edges, run.decisions[i].amount)  # memo hits
+        assert first_max(scored) == run.decisions[i]       # round-trip guard
+        for alt in alternatives(scored, run.decisions[i], opts.alternatives_per_checkpoint):
+            if attempts == opts.max_repair_attempts:  return best    # stop: attempt_cap
+            cand = reference_chunk_loop(from_checkpoint=i, forced_first=alt)
+            if cand.failed:              continue
+            if flow_key(cand) in seen:   continue          # duplicate: not replayed
+            seen.add(flow_key(cand))
+            ev = evaluate(merged_plan(cand.flows))         # metered, same ledger
+            assert ev.ok and ev.gross == accounted_gross(cand.flows)
+            if ev.score > best.score:  best = cand; report_candidate(cand.plan)  # accepted
+    return best                                            # stop: complete
+```
+A declared quote cut anywhere stops the repair with `quote_budget` and returns the best plan so
+far; the cut candidate is abandoned and nothing is retried.
+
+### 16.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart TD
+    PS["stage 1: path_split<br>83270629"] --> Inc["stage 2: greedy chunk loop<br>checkpoint before each decision"]
+    Inc --> IncP["incumbent plan<br>90545314, replayed"]
+    IncP --> CP{"next structural checkpoint<br>latest first: 2, 1, 0"}
+    CP --> Restore["restore by copy:<br>flows, token_edges, carry, order"]
+    Restore --> Alt["force an alternative<br>first suffix choice"]
+    Alt --> Rebuild["rebuild suffix with the<br>unchanged greedy rule"]
+    Rebuild --> Key{"flow key already seen?"}
+    Key -- yes --> Dup["duplicate, not replayed"] --> CP
+    Key -- no --> Replay["merged_plan + evaluate<br>from the original snapshot"]
+    Replay --> Cmp{"score > best?"}
+    Cmp -- yes --> Acc["accepted, published"] --> CP
+    Cmp -- no --> Rej["rejected_worse or tie"] --> CP
+    CP -- "none left or attempt cap" --> Out(["best validated plan<br>111178819"])
+```
+
+### 16.5 Hand-Worked Numeric Example
+All values are checked by `r021_examples.py` section 14 (`example_incremental_graph_repair`)
+against its own greedy chunk oracle (`greedy_chunks`), an exhaustive enumeration of every
+complete chunk sequence (`chunk_sequences`) with the hand quote, and the pinned
+`suffix-repair.json` fixtures. The preset is `config/incremental_graph_repair/preset_v1.yaml`
+(version 1: `repair: true`, 4 checkpoints, 2 alternatives each, 8 attempts; settings sha256
+`89af5028…`).
+
+1. **The trap (`structural_trap`).** Six CPMM pools, 30 bps: `es` (E, S), `sb` (S, B), `bd`
+   (B, D), `eb` (E, B), `ed` (E, D) and `be` (B, E). Request $3 \times 10^6$ S $\to$ D,
+   `max_hops` 3, 3 chunks of $10^6$.
+2. **Greedy incumbent with its state after each commit.**
+
+   | Chunk | Path | Marginal | Aggregate flows after the commit | Token edges after the commit |
+   |---|---|---|---|---|
+   | 1 | `sb, eb, ed` (S→B→E→D) | 76816180 | `sb` 1000000 S, `eb` 4992488 B, `ed` 33233230 E | S→B, B→E, E→D |
+   | 2 | `es, ed` (S→E→D) | 8478457 | + `es` 1000000 S; `ed` 58176937 E | + S→E |
+   | 3 | `sb, bd` (S→B→D) | 5250677 | `sb` 2000000 S; + `bd` 1667498 B | + B→D |
+
+   - The incumbent is $76816180 + 8478457 + 5250677 = \mathbf{90545314}$. It equals
+     `incremental_graph`'s plan exactly, and `repair: false` returns the same plan.
+   - Chunk 1 commits **B→E**. Every later path that needs **E→B** (pool `be`) is then
+     inadmissible, because B→E plus E→B is a token cycle.
+   - The exhaustive enumeration of all **120** complete chunk sequences finds the best at
+     **111178819**: `es, be, bd`, then `es, ed` twice. It starts with E→B, so no greedy suffix
+     after chunk 1 can reach it.
+3. **Why restore rebuilds and never subtracts.** Pool `ed` receives chunk 1's 33233230 E and
+   chunk 2's 24943707 E, 58176937 E in total. One merged quote of 58176937 E gives 85294637 D,
+   while quoting the two chunk amounts separately on the original state would sum to
+   148137308. The chunk contributions are marginals on a growing aggregate, so the only correct
+   rollback is to rebuild the checkpoint's aggregates from their records.
+4. **Merged plan of the incumbent** (a search chunk is not an executed swap):
+   - `sb` executes once with 2000000 S (chunks 1 and 3 merged) into fund F1;
+   - `es` takes the remaining 1000000 S (`ALL_REMAINING`) into F2;
+   - `eb` takes 4992488 B of F1 into F3, and `bd` takes the rest of F1 into F4;
+   - `ed` drains F3 and F2 together (one merged swap) into F5.
+5. **Repair on (preset).** The structural checkpoints are 2, 1, 0 (latest first):
+
+   | Checkpoint | Alternative | Outcome | Replayed score |
+   |---|---|---|---|
+   | 2 | 0 | `rejected_worse` | 87943332 |
+   | 2 | 4 | `rejected_worse` | 86604696 |
+   | 1 | 1 | `duplicate` (flow key seen) | — |
+   | 1 | 4 | `duplicate` | — |
+   | 0 | 0 | `accepted` | 111176933 |
+   | 0 | 3 | `accepted` | **111178819** |
+
+   - At checkpoint 0 (the empty prefix) nothing is committed, so the alternative first choice
+     `es, be, bd` is admissible.
+   - Both accepted scores are values of feasible chunk sequences in the exhaustive enumeration;
+     the second equals its best.
+   - The accepted plan: `es` takes all 3000000 S into F1; `be` takes 24943707 E of F1 and `ed`
+     the rest; `bd` drains the B. The replay gives 111178819, `repair.stop: complete`,
+     `chosen_source: incremental_graph_repair`.
+   - All work is charged to one ledger. The factory reports 12 in-solve evaluations (7 in the
+     embedded `path_split` stage, 1 incumbent, 4 repair replays; duplicates are not replayed)
+     and 291 executed quotes against 263 for repair off (factory counters, not independently
+     derived).
+6. **Rejected: no improvement exists (`twin_pools`).** Three identical pools S→D, $10^8$ S,
+   2 chunks, `max_hops` 1.
+   - The incremental plan (50/50 over two pools) scores 94965946, below the retained
+     `direct_split` grid optimum **96478164** (30/35/35).
+   - The repair tries one forced first choice that reconverges to the same flows (`duplicate`)
+     and one that replays at 94965946 (`rejected_worse`). Repair on and off return the same
+     `direct_split` plan.
+7. **No budget.**
+   - `max_repair_attempts: 1`: the first attempt is `rejected_worse`, the second is refused,
+     `repair.stop: attempt_cap`, and the incumbent **90545314** stands.
+   - `Budget(max_quotes=262)`, one quote fewer than the repair-off solve used: the incumbent
+     itself is cut (`incremental_status: truncated`), no repair attempt runs
+     (`repair.stop: quote_budget`), and the published `path_split` plan (`es, ed`,
+     **83270629**) is returned with its fallback label.
+8. **Cross-reference (WHI-1549 `greedy_trap`, §14.5 step 6).** The repair turns the per-chunk
+   exact incumbent 9943929 into **12757712**, the label plan `metis_inspired` found.
+
+### 16.6 Implementation Map
+Line numbers are those of `e455c7d`; function names are the stable anchors.
+- File: `routing/algorithms/incremental_graph_repair.py`.
+  - Options: `validate_options` (line 138); `prepare` (line 163) wraps `incremental_graph`'s
+    prepared object.
+  - Checkpoint records: `FlowRecord` (line 176), `Decision` (line 188), `Checkpoint`
+    (line 201), `freeze` (line 214), `restore` (line 230).
+  - Candidate identity and value: `flow_key` (line 242), `accounted_gross` (line 251).
+  - Reference loop: `_Search.marginal` / `score` / `run` (lines 309–452), with the
+    per-chunk `max_candidates` cap and the guarded quote budget.
+  - Neighborhood: `first_max` (line 453), `structural_checkpoints` (line 458),
+    `alternatives` (line 463).
+  - Solver: `solve` / `_solve` (lines 488–716) for stages 1–2, `_repair` (lines 763–860)
+    for stage 3, `_Ledger` (line 717) for the one attempt ledger.
+  - Factory: `FACTORY` (line 931).
+- Reused unchanged: `incremental_graph.PoolFlow`, `chunk_amounts`, `creates_cycle`,
+  `merged_plan`, the embedded `path_split.solve`, `routing.evaluator.evaluate`.
+- Contract: [`research-021/suffix-repair.md`](research-021/suffix-repair.md) §§2–8; tests
+  `tests/routing/test_incremental_graph_repair.py`,
+  `tests/routing/test_suffix_repair_contract.py`.
+- Worked examples: `r021_examples.py`, `example_incremental_graph_repair` (runner section 14).
+
+### 16.7 Parameters, Budgets, and Ties
+- **Shared parameters:** `incremental_graph`'s `search.*` and `graph.chunks`.
+- **Options:** `repair` (bool), `max_checkpoints` (1…64), `alternatives_per_checkpoint`
+  (1…16), `max_repair_attempts` (1…256), all required after preset resolution.
+- **Preset (`--strategies all`):** `true`, 4, 2, 8. Explicit profiles:
+  `repair_on.yaml` (the preset next to `incremental_graph`), `repair_off.yaml`
+  (`repair: false`, resolved as `override`) and `stress.yaml` (16, 4, 64).
+- **Budgets:** `Budget.max_candidates` caps paths scored per chunk in the incumbent, every
+  checkpoint rescoring and every rebuilt suffix. `max_quotes` is one shared ledger; its cut
+  stops the repair with the best plan so far.
+- **Ties:** checkpoints latest structural first; alternatives by marginal, then enumeration
+  index; rebuild choices are the first maximum; duplicate detection by flow key; an equal score
+  is a `tie` and keeps the earlier incumbent. No randomness.
+
+### 16.8 Computational and Memory Cost
+- **Chunk scorings:** at most $(\text{max\_checkpoints} + \text{max\_repair\_attempts}) \cdot K$
+  ($12K$ with the preset) on top of the incumbent's $K$, each over at most $\lvert \Pi_H \rvert$
+  paths, plus the embedded `path_split`.
+- **Replays:** at most one per non-duplicate complete candidate (at most
+  `max_repair_attempts`), each an in-solve evaluator replay on the same metered cache.
+- **Memory:** one checkpoint per committed decision, each $\mathcal{O}(P + K)$ (flows, edges,
+  decision prefix), plus the set of seen flow keys.
+- **Work units:** `paths_scored`, `admission_checks`, `repair_attempts`,
+  `checkpoint_restores`, quotes and `internal_evaluations` (every in-solve replay of all
+  stages).
+
+### 16.9 Guarantees and Limitations
+- **Guarantees:**
+  - A restored checkpoint resumed without forcing reproduces the incumbent exactly, with no new
+    executed quote.
+  - Every candidate conserves the whole input, satisfies full fill and the plan-token DAG, and
+    replays to exactly its accounted gross; a contradiction is never accepted or published
+    (fail-closed, `algorithm_error` if nothing was validated before).
+  - Without a hard kill, the returned score is never below the repair-off control under the
+    same budget.
+- **Limitations:**
+  - No optimality claim, not even over chunk sequences: at 5 chunks the pinned trap gives
+    incumbent 92911795, repair 111172169 and sequence optimum 111193897 (memo §3.7).
+  - No guaranteed improvement (`twin_pools`), and more work than `incremental_graph`.
+  - No certificate (`bound_kind` unknown); no latency or same-budget-win claim.
+
+---
+
+## 17. Algorithm 13: `uni_sor_cycle_safe` (SOR Selection with Plan-Token-DAG Admission; Not SOR Parity)
+
+### 17.1 Problem and Inclusion Rationale
+Upstream Uniswap SOR combines routes only by **physical pool identity** (B-S9): two routes may be
+combined when they share no pool. At `search.max_hops` ≥ 3, two routes can each be a simple
+path, share no pool, and still form a **token cycle** together. The evaluator rejects such a
+plan (`economic token cycle`), so `uni_sor_port` keeps a known `invalid_plan` defect for parity
+(the recorded USDC→mETH→WETH→USDT plus USDC→WETH→mETH→USDT case).
+
+`uni_sor_cycle_safe` (WHI-1556, research memo
+[`research-021/cycle-safe-sor.md`](research-021/cycle-safe-sor.md), WHI-1555) is a separately
+named adaptation. It adds **one rule at SOR's only combination point**: a combination is
+admitted only if the union of its routes' token edges is acyclic. Everything else is the pinned
+reference: candidates, grid, quote table, V2/V3 coverage, ordering, ties, seeds, queue, pruning,
+split cap, final order, D-1 integer fill and D-3 replay.
+
+- **Identity:** experimental, `custom` group. It is **not** upstream parity; the 35 upstream
+  goldens stay authoritative for `uni_sor_port` only, which is retained unchanged.
+- **What is claimed:** safety (never a token-cycle plan) and reference-trajectory identity when
+  the selector completed and rejected nothing. It is not claimed to be better than, or no
+  worse than, the reference, nor to find the best admissible selection.
+
+### 17.2 Mathematical Model and Assumptions
+- $\text{edges}(r)$ = consecutive pairs of route $r$'s token path. A set $R$ of routes is
+  **admissible** iff $\bigcup_{r \in R} \text{edges}(r)$ has no directed cycle.
+- Three rules must be kept apart:
+
+  | Rule | Owner | Consequence |
+  |---|---|---|
+  | physical pool overlap | B-S9, upstream | skipped before any admission check |
+  | path-local token revisit | B-R4 (DFS `tokensVisited`), upstream | never enumerated |
+  | plan union cycle | the evaluator; SOR has no rule | port: `invalid_plan`; variant: rejected at admission |
+
+- **Chooser (replaces B-S7/B-S9 inside the variant only).** For a node with routes `cur` and a
+  percent $p$, scan the percent's sorted routes:
+  1. skip an entry sharing a pool with `cur` (not counted);
+  2. otherwise `admission_checks += 1`; choose it if `cur ∪ {entry}` is admissible;
+  3. otherwise `combinations_rejected_cycle += 1` and **continue the scan**.
+- **Lemmas.** A single simple route is acyclic, so the 100 % baseline and the seeds need no
+  check. With `search.max_hops` ≤ 2 admission can never reject anything. B-F1 and D-1
+  reorder and re-amount routes but keep the edge set.
+- **Deliberate deviation from SOR.** Because `best_swap` is now the best **admissible**
+  selection, the B-S5 pruning can differ, and the variant can lose to a *valid* reference
+  selection (fixture K5). The variant publishes its plan only **after** an `ok` replay (CS-2);
+  the reference publishes before its replay.
+
+### 17.3 Concise Pseudocode
+```python
+def solve_uni_sor_cycle_safe(case, bundle, max_hops, max_splits, percent_step):
+    routes = compute_all_routes(...)                      # unchanged, V2/V3 cohort (D-4)
+    table = build_route_quotes(routes, amount_distribution(...))   # unchanged, same quotes
+    best = best_100_percent_route(table)                  # B-S3: acyclic by L1
+    queue = seeds(table)                                  # B-S4: acyclic by L1
+    while queue and not pruned_or_capped(...):            # B-S5 unchanged
+        node = queue.popleft()
+        for p in remaining_percents(node):
+            for entry in sorted_group(table, p):          # B-S2 order
+                if shares_pool(entry, node.routes):  continue            # B-S9 first
+                admission_checks += 1
+                if acyclic(union_edges(node.routes + (entry,))):
+                    extend(node, entry); break            # admitted: first acceptable entry
+                combinations_rejected_cycle += 1          # rejected: keep scanning
+    plan = integer_fill(best)                             # D-1, unchanged
+    ev = evaluate(plan)                                   # D-3 replay
+    if ev.ok: report_candidate(plan)                      # CS-2: publish after the replay
+    return plan, ev
+```
+
+### 17.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart LR
+    s((s)) -->|a| x((x))
+    x -->|b| y((y))
+    y -->|c| t((t))
+    s -->|d| y
+    y -->|e| x
+    x -->|f| t
+```
+
+The two routes of §17.5 are `a, b, c` (s→x→y→t) and `d, e, f` (s→y→x→t). They share no pool
+and each is a simple path, but their union contains x→y (pool `b`) and y→x (pool `e`), a token
+cycle.
+
+```mermaid
+flowchart TD
+    Tab["unchanged SOR quote table<br>and seeds"] --> Node["expand queue node"]
+    Node --> Pool{"entry shares a pool?"}
+    Pool -- yes --> Skip["skip, not counted"] --> Node
+    Pool -- no --> DAG{"union of token edges acyclic?"}
+    DAG -- no --> Rej["combinations_rejected_cycle += 1<br>continue scan"] --> Node
+    DAG -- yes --> Keep["admit combination"]
+    Keep --> Sel["best admissible selection"]
+    Sel --> Fill["D-1 integer fill + replay"]
+    Fill --> Pub(["publish after ok replay"])
+```
+
+### 17.5 Hand-Worked Numeric Example
+All values are checked by `r021_examples.py` section 15 (`example_uni_sor_cycle_safe`) against
+its own hand quotes, an independent acyclicity test and the pinned `cycle-safe-sor.json`
+adapter fixtures. The options are the empty preset
+`config/uni_sor_cycle_safe/preset_v1.yaml` (`{}`).
+
+1. **Request (fixture A1).** Six CPMM pools, 30 bps: `a` (s, x), `b` (x, y), `c` (t, y),
+   `d` (s, y), `e` (x, y), `f` (t, x). Pool `b` gives about 2 y per x, and pool `e` about 2 x per
+   y. Input 2000000 s $\to$ t, `max_hops` 3, `max_splits` 2, `percent_step` 50.
+2. **Hand quotes of the two routes:**
+
+   | Route | 50 % (1000000 s) | 100 % (2000000 s) |
+   |---|---|---|
+   | `a, b, c` (s→x→y→t) | 1427742 | 2231431 |
+   | `d, e, f` (s→y→x→t) | 1418480 | 2208892 |
+
+3. **Each route is valid; the union is not.** Each route alone is acyclic, and the routes are
+   pool-disjoint. Their union has the edges s→x, x→y, y→t, s→y, y→x and x→t, which close
+   x→y→x.
+4. **The reference.** `uni_sor_port` selects `d, e, f` @ 50 % + `a, b, c` @ 50 %, whose quotes sum
+   to 2846222. Its replay is rejected: **`invalid_plan`**, `economic token cycle: x -> y -> x`.
+5. **The variant.** Each of the two 50 % seeds (`a, b, c` and `d, e, f`) looks for a 50 %
+   partner. Every other enumerated route shares a pool with the seed and is skipped by B-S9, so
+   the only partner checked is the other route, and the union is cyclic both times
+   (`admission_checks` 2, `combinations_rejected_cycle` 2, hand-traced in the fixture). The best
+   admissible selection is the 100 % baseline `a, b, c`.
+   - **Final integer fill:** the single route takes the whole request (`ALL_REMAINING`), and the
+     replay is `ok` with **2231431**, equal to the hand value.
+   - `reference_trajectory: diverged` records that admission changed the search.
+   - The independent oracle over the same table: best admissible 2231431; best if the cycle rule
+     is ignored 2846222.
+6. **No admissible selection (fixture A3).** Sourced Moe Classic pools near $2^{112}$: the
+   first hops `a`/`d` revert at 100 %, and the last-hop pools `c`/`f` revert on every 50 % entry
+   except the two 3-hop routes, whose union is cyclic.
+   `uni_sor_port` returns `invalid_plan`; the variant returns **`no_route`** with
+   `no_admissible_selection: true`. This `no_route` means the pinned SOR search ended by its
+   own rules under admission, not that the V2/V3 domain has no valid plan.
+7. **No difference where no cycle can form.** On the teaching graph of §7.5 (`max_hops` 2) the
+   variant returns exactly `uni_sor_port`'s plan, **12581**, with
+   `reference_trajectory: identical`.
+
+### 17.6 Implementation Map
+Line numbers are those of `e455c7d`; function names are the stable anchors.
+- File: `routing/algorithms/uni_sor_cycle_safe.py`.
+  - Options: `validate_options` (line 164), empty options only; `prepare` (line 185) is
+    `uni_sor_port.prepare`.
+  - Admission: `route_edges` (line 197), `union_has_cycle` (line 204), `Admission.choose` /
+    `select` (lines 233–278), the adapted chooser inside `getBestSwapRouteBy`.
+  - Solver: `solve` (lines 379–460): the port's enumeration, quote table, B-F1, D-1 and D-3
+    with this selector, then the CS-2 publication rule and diagnostics (`_diagnostics`,
+    line 312).
+  - Factory: `FACTORY` (line 461).
+- Reused unchanged (imported, not copied): `uni_sor_port.compute_all_routes`,
+  `build_route_quotes`, `amount_distribution`, `v8_small_array_sort`, `integer_fill`,
+  `path_split.split_path_plan`, `routing.evaluator.evaluate`.
+- Contract: [`research-021/cycle-safe-sor.md`](research-021/cycle-safe-sor.md) §§2–8; tests
+  `tests/routing/test_uni_sor_cycle_safe.py`, `tests/routing/test_cycle_safe_sor_contract.py`.
+- Worked examples: `r021_examples.py`, `example_uni_sor_cycle_safe` (runner section 15).
+
+### 17.7 Parameters, Budgets, and Ties
+- **Parameters:** `uni_sor_port`'s `search.max_hops`, `search.max_splits`,
+  `search.percent_step`. There are no options (`{}`), no fallback, no second search and no
+  seed.
+- **Explicit profile:** `config/uni_sor_cycle_safe/matched.yaml` runs it next to
+  `uni_sor_port` at 3 hops (`--strategies profile`); at the default 2 hops admission cannot
+  reject anything.
+- **Budgets:** the port's: `max_candidates` is the enumerated-routes threshold, and
+  `max_quotes` a quote cut while building the table or during the replay. Admission costs no
+  quote.
+- **Ties:** the port's B-Q1/B-S2 order and V8 sort emulation; the first admissible entry of a
+  percent group is chosen.
+- **Phase fields:** `selector.phase`, `replay.phase`, `reference_trajectory`
+  (`identical` | `diverged` | `unavailable`) and `publication.withheld_by_cs2` keep missing work
+  from being read as evidence.
+
+### 17.8 Computational and Memory Cost
+- **Quotes:** identical to `uni_sor_port` on the same inputs (same table, same replay).
+- **CPU:** one acyclicity test per admission check, linear in the union's edges
+  ($\mathcal{O}(S \cdot H)$); the checks are bounded by the scans of the queued nodes.
+- **Memory:** the port's table, plus nothing that grows with the input.
+- **Work units:** `admission_checks` and `combinations_rejected_cycle`, beside the port's
+  quote counts. Wall time can differ from the port's because admission costs CPU.
+
+### 17.9 Guarantees and Limitations
+- **Guarantees:**
+  - It never returns a plan whose token graph has a cycle.
+  - A completed selector run with zero rejections has the port's whole search and selection;
+    with an uninterrupted replay, also its plan, status and score.
+- **Limitations:**
+  - Not SOR parity, and it can lose to a valid reference selection (K5) or miss the best
+    admissible selection (K1).
+  - V2/V3 only: Liquidity Book pools are excluded (D-4), as for the port.
+  - A hard wall kill or an interrupted replay is not evidence of identity; CS-2 withholds the
+    candidate that the port would have published.
+  - No certificate (`bound_kind: unknown`) and no speed claim.
+
+---
+
+## 18. Algorithm 14: `cfmm_dual` (CFMM Dual Decomposition with Exact Integer Plan Recovery)
+
+### 18.1 Problem and Inclusion Rationale
+Every earlier strategy searches a discrete space of paths, chunks or grid allocations. The CFMM
+routing paper (Diamandis, Resnick, Chitra, Angeris, arXiv:2302.04938v1) treats routing as one
+**convex** problem over all markets at once. Its dual assigns a **price** to every token; given
+the prices, each pool solves its own tiny optimal-arbitrage problem in closed form, and an
+optimizer adjusts the prices until the pools' trades fit together.
+
+`cfmm_dual` (WHI-1558 CPMM stage, WHI-1559 CL stage; contract
+[`research-021/cfmm-dual.md`](research-021/cfmm-dual.md), WHI-1557) ports that method for a
+single-source exact-input gross request and adds what the paper does not have: an **exact integer
+recovery** that turns the continuous trades into one fully funded `RoutePlan`, quoted and replayed
+only by the repository's exact protocol code.
+
+- **Identity:** experimental, `custom` group, not a default. The matched controls are
+  `path_split` and `incremental_graph` (class `incomparable_domain`, side by side, never ranked
+  as a mechanism gain).
+- **Stages and presets (one identity `cfmm_dual`, one preset key `R021-P12-cfmm_dual`):**
+
+  | Preset | File | `market_protocols` | Role |
+  |---|---|---|---|
+  | `cfmm_dual/2` (current) | `config/cfmm_dual/preset_v2.yaml` (sha256 `865ad592…`) | `constant_product+concentrated` | written by `--strategies all`; `config/cfmm_dual/cl.yaml` |
+  | `cfmm_dual/1` (historical) | `config/cfmm_dual/preset_v1.yaml` (sha256 `1526133c…`) | `constant_product` | verified historical pin; the CPMM-only ablation `config/cfmm_dual/cpmm.yaml` |
+
+  Liquidity Book is outside both stages. The factory's capability ceiling is CPMM + CL; the stage
+  of a run is its recorded `market_protocols`, never the ceiling.
+- **What is claimed:** exact monetary output (every leg is an exact original-state quote and the
+  whole plan is independently replayed) and a numerical `estimate` that is not a bound. There is
+  no certified bound and no integer optimality claim.
+
+### 18.2 Mathematical Model and Assumptions
+**Units.** Every amount is in raw integer token units. A price $\nu_j$ is "raw units of the output
+token $t$ per raw unit of token $j$", with $\nu_t \equiv 1$.
+
+**Dual function.** For the request (source $s$, input $A$) over the market universe $M$:
+$$g(\nu) = A \nu_s + \sum_{p \in M} \text{arb}_p(\nu), \qquad
+\frac{\partial g}{\partial \nu_j} = A \cdot [j = s] + \sum_{p} (\text{received}_{pj} - \text{tendered}_{pj}).$$
+The gradient is the **imbalance**: for the source it is the part of $A$ not yet tendered; for an
+intermediate token it is its net flow. At a dual optimum both vanish: the markets tender exactly
+$A$ of $s$, and every intermediate token balances.
+
+**Market universe (`simple_path_union`).** The admitted pools of the stage's protocols that lie on
+at least one simple $s \to t$ path of at most `search.max_hops` pools, in bundle order.
+
+**CPMM oracle** (fee $\gamma = (10^4 - \text{fee\_bps})/10^4$, reserves $R_a, R_b$). Sell $a$ for $b$
+iff $r^2 = \gamma \nu_b R_b / (\nu_a R_a) > 1$; then
+$$\delta = \frac{R_a (r - 1)}{\gamma}, \qquad \lambda = R_b \left(1 - \frac{1}{r}\right).$$
+Inside the fee band neither direction trades. This is the migrated `getAmountOut` without its
+final floor.
+
+**CL oracle.** The known range of each pool and direction is precomputed once (the CL index):
+segments of constant liquidity $L$ between initialized ticks, up to the first of a missing
+`TickInfo`, the collected bitmap range, or MIN/MAX tick. Selling token0 down to
+$\sqrt{P^*} = \sqrt{\nu_0/(\gamma \nu_1)}$ gives net input $\sum L(1/\sqrt{P_b} - 1/\sqrt{P_a})$ and
+output $\sum L(\sqrt{P_a} - \sqrt{P_b})$ over the traversed segments (gross input = net / $\gamma$).
+Nothing beyond the known range is ever extrapolated; empty segments cost no input.
+
+**Optimizer.** $x_j = \log(\nu_j / \sigma_j)$ with a deterministic scale $\sigma$ (spot prices along a
+maximum-depth spanning tree), box $\lvert x_j \rvert \le$ `log_price_bound`, start $x_0 = 0$. The
+objective is $\Phi(x) = \log g(\nu(x))$, whose gradient is each token's imbalance valued at its own
+price as a fraction of the dual value (unit-free). SciPy L-BFGS-B minimizes it under **our** guarded
+budget: every evaluation is charged before it is made, one budget per solve attempt, shared with the
+re-solve.
+
+**Termination is a residual criterion only.** With the projected residual
+$r = \max_j \lvert P_{\text{box}}(x - \nabla\Phi) - x \rvert_j$:
+
+| Condition | `termination` |
+|---|---|
+| $r \le$ `residual_tolerance` | `converged` |
+| $r >$ tolerance and a cap stopped it | `iteration_cap` |
+| $r >$ tolerance otherwise | `not_converged` |
+
+`converged` means the continuous KKT residual is small. It is not an optimum, a feasibility
+proof or a certificate. A clamped warm start can meet the tolerance at a loose point.
+
+**Why the dual value is not an integer bound here.** Weak duality holds in exact arithmetic, but
+$g$ is evaluated in float64 without outward rounding, and the relaxation admits cycles and free
+disposal. `bound_kind` is therefore `estimate` (the **initial full-network** solve converged and
+no fallback was used) or `unknown`; never `certified`.
+
+**Integer recovery `cfmm_share_projection/1`.**
+1. **Support:** markets with $x_p > 0$ and $x_p \ge$ `min_split_share` of their token's outflow.
+2. **Relevance:** only markets on a directed $s \to t$ path of the support.
+3. **Cycles:** while the token digraph has a cycle, remove the cycle market with the smallest
+   input value $\nu_{\text{in}} x_p$; if any was removed, re-solve on the rest with directions
+   fixed, warm-started, on the **same** budget (skipped when nothing is left).
+4. **Projection (exact, integer):** tokens in topological order; a token's exact inflow $I$ is
+   split over its out-markets in admitted order: $\lfloor I x_p / \sum x \rfloor$ for all but the last
+   leg, the exact remainder for the last. Each leg is quoted once with
+   `pools.quote.quote_exact_in` on the pool's original state.
+5. **Prune and retry:** the first failing leg (`insufficient_output_amount`,
+   `insufficient_liquidity`, `incomplete_snapshot`, `reverted`, `unsupported`, zero output) is
+   removed and step 4 restarts, up to `max_recovery_attempts`.
+6. **Plan and replay:** `incremental_graph.merged_plan` (one merged step per market, the last
+   out-leg per token takes `ALL_REMAINING`), then the evaluator replay; evaluated gross must equal
+   the accounted gross.
+
+On a recovery failure (`empty_support`, `support_exhausted`, `attempts_exhausted`,
+`resolve_failed`, `numeric_failure`) and `fallback: single_path`, the best exact single path over
+the same markets is returned, visibly labelled; `fallback: none` returns `model_error`.
+
+### 18.3 Concise Pseudocode
+```python
+def solve_cfmm_dual(case, prepared, opts, budget):
+    if objective != gross_only:           return unsupported("objective")
+    M = market_universe(bundle, stage_protocols(opts.market_protocols), search.max_hops)
+    if not M:  return unsupported("protocol_ceiling") if any_path else no_route()
+    problem = dual_problem(M, prepared.cl_indexes)        # CL indexes built in prepare (charged)
+    ev_budget = SolveBudget(opts.max_function_evaluations, opts.max_iterations)
+    sol = lbfgsb(log_objective(problem), x0=0, box=opts.log_price_bound, budget=ev_budget)
+    trades = sol.trades                                   # one direction per market
+    rec = recover(trades, sol.prices, opts, budget, ev_budget)   # steps 1-6, exact quotes
+    if rec.failed:
+        if opts.fallback == "none":  return model_error(rec.code)
+        return best_exact_single_path(M, budget, label=rec.code)  # estimate withheld
+    certificate = estimate(sol.value, sol.residual) if sol.converged else unknown()
+    return rec.plan, certificate                           # replayed, fully funded
+```
+
+### 18.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart TD
+    Prep["prepare, charged:<br>CL indexes per pool and direction"] --> MU["market universe<br>stage protocols, simple paths up to max_hops"]
+    MU --> Prices["prices nu, nu_t = 1"]
+    Prices --> Oracle["per-market closed-form oracles<br>CPMM arb, CL segment walk"]
+    Oracle --> Grad["imbalance = gradient<br>source excess, intermediate net flows"]
+    Grad --> Opt{"L-BFGS-B step on log prices<br>guarded evaluation budget"}
+    Opt -- "continue" --> Prices
+    Opt -- "stop: residual test" --> Trades["continuous trades + termination"]
+    Trades --> Rec["support, relevance, cycle break,<br>optional restricted re-solve"]
+    Rec --> Proj["exact share projection<br>quote_exact_in per leg"]
+    Proj --> Fail{"leg fails?"}
+    Fail -- "yes, attempts left" --> Prune["prune leg"] --> Proj
+    Fail -- "no" --> Plan["merged_plan + evaluator replay"]
+    Fail -- "support or attempts exhausted" --> FB["labelled single_path fallback"]
+    Plan --> Out(["plan + estimate or unknown"])
+    FB --> Out2(["fallback plan, bound unknown"])
+```
+
+### 18.5 Hand-Worked Numeric Example
+All values are checked by `r021_examples.py` section 16 (`example_cfmm_dual`). The independent
+expectations are this module's own closed-form CPMM oracle and imbalance, its own share projection
+written from `cfmm-dual.md` §6, a brute-force integer optimum with the hand quote, the pinned
+CFMMRouter.jl author run (`tests/fixtures/cfmm/author_reference.json`, commit `5932e42`), the pinned
+WHI-1557 contract model (`model_reference.json`) and exact protocol quotes for CL legs. Numerical
+tolerances are pinned apart from money: CPMM oracle vs author $10^{-12}$ relative, final prices vs
+author $10^{-8}$, CL oracle vs author $5 \times 10^{-14}$; every monetary amount is exact.
+
+**(a) Pool-level oracle.** Author probe `o-grid38-p1-sell-t0`: reserves (134, 190), 30 bps,
+prices $\nu = (1, 1.5)$.
+$$r^2 = \frac{0.997 \cdot 1.5 \cdot 190}{1 \cdot 134} \approx 2.1205, \quad r \approx 1.4562, \quad
+\delta = \frac{134 \cdot 0.4562}{0.997} \approx 61.3132, \quad \lambda = 190 \left(1 - \frac{1}{1.4562}\right) \approx 59.5224.$$
+The author run gives $\delta = 61.313204\ldots$ and $\lambda = 59.522390\ldots$; the hand oracle
+and the factory's model oracle agree within $10^{-12}$ on all 7 pinned author CPMM probes.
+
+**(b) A small multi-hop CPMM network (`r-triangle`).** Pools `st` (S, T: 1000, 1000, 30 bps),
+`sm` (S, M: 1000, 2100, 30 bps), `mt` (M, T: 2000, 1000, 30 bps) and `mt2` (M, T: 500, 260,
+5 bps). Request 150 S $\to$ T, `max_hops` 3.
+
+1. **Spot start.** At the scale prices $\nu = (S\ 1.0,\ M\ 0.4762,\ T\ 1)$ only `mt` and `mt2`
+   trade (M→T). Nothing tenders S, so the source excess is **150**, and M's net flow is
+   **−68.83** (M is sold but not bought). Both gradient components are far from zero.
+2. **At the author's optimum** ($\nu_S = 0.8448187283$, $\nu_M = 0.4561283857$, normalized to
+   $\nu_T = 1$), every pool trades:
+
+   | Pool | Direction | Tendered | Received |
+   |---|---|---|---|
+   | `st` | S→T | 86.5999 | 79.4780 |
+   | `sm` | S→M | 63.4001 | 124.8491 |
+   | `mt` | M→T | 91.1048 | 43.4427 |
+   | `mt2` | M→T | 33.7443 | 16.4300 |
+
+   - S tendered $86.5999 + 63.4001 = 150.0000$: the source excess is $-1.7 \times 10^{-8}$.
+   - M received 124.8491 and tendered $91.1048 + 33.7443 = 124.8491$: net $-1.2 \times 10^{-8}$.
+   - T received **139.350699**, the continuous optimum.
+3. **The factory's optimizer.** The network is all-CPMM, so both stages see the same four
+   markets. With their different optimizer settings, both presets (`v1` CPMM stage and `v2` CL
+   stage) end `converged` with residual
+   $1.558 \times 10^{-9} < 10^{-5}$ and dual value 139.350699. Their prices match the author's
+   within $10^{-8}$, and the value within $10^{-6}$. The work equals the pinned contract model:
+   7 iterations, 15 evaluations, 60 oracle calls (15 evaluations × 4 markets). The factory
+   records no per-iteration trace; the spot and optimum points above show what the iterations move
+   between.
+4. **Exact integer recovery.**
+   - S (inflow 150, in topological order first) splits over `st` and `sm`:
+     $\lfloor 150 \cdot 86.5999 / 150.0000 \rfloor = 86$ to `st`, the remainder **64** to `sm`.
+     Exact quotes: `st` 86 → **78** T, `sm` 64 → **125** M.
+   - M (exact inflow 125) splits over `mt` and `mt2`:
+     $\lfloor 125 \cdot 91.1048 / 124.8491 \rfloor = \lfloor 91.2 \rfloor = 91$ to `mt`, the remainder
+     **34** to `mt2`. Exact quotes: 91 → **43** T and 34 → **16** T.
+   - The plan: `st` takes 86 of REQUEST into F1; `sm` takes the rest (`ALL_REMAINING`, 64) into F2;
+     `mt` takes 91 of F2 into F3; `mt2` drains F2 (34) into F4. Every fund is consumed or terminal,
+     with no residual and no dust donation.
+   - Gross $78 + 43 + 16 = \mathbf{137}$, equal to this module's independent projection of the
+     author trades and to the fresh evaluator replay.
+5. **Estimate versus integer optimum.**
+   - The certificate is `bound_kind: estimate`, value 139.3506988816383, residual
+     $1.558 \times 10^{-9}$. It is a numerical value, not an upper bound, and it is never
+     `upper_raw` or a gap.
+   - The brute-force integer optimum of this network is **138**. The projection is a heuristic and
+     is not optimal.
+   - With `max_iterations: 2` (an `override`) the initial solve stops at `iteration_cap`
+     (residual 0.1727), the estimate is withheld (`unknown`), and the recovery happens to give
+     **138** (flows equal to the contract model). A worse numerical point giving a better integer
+     plan is exactly why no integer claim is made.
+
+**(c) Cycle, surplus, nonconvergence and recovery failures.**
+
+1. **Cycle (`r-cycle`, 500 S → T).** Pools `ab1` and `ab2` price A/B apart, so the continuous
+   optimum trades a loop A→B→A.
+   - The loop's input values are `ab1` 961.879 and `ab2` 797.598 (author trades at author prices),
+     so `ab2` is removed.
+   - The restricted re-solve (`sa`, `ab1`, `bt`, `at`, directions fixed, warm-started) converges,
+     and the recovery gives **511** (equal to the contract model).
+   - The reported estimate stays the initial full-network value, 627.0112. It includes the loop's
+     arbitrage profit, which no acyclic plan can route. The restricted re-solve never supplies an
+     estimate.
+   - With `max_function_evaluations: 13`, the initial solve spends the whole budget, the re-solve
+     is `skipped` (no refund), and the projection of the cycle-broken author support gives
+     **509**: `sa` 500 → 474 A; `ab1` 349 → 403 B; `at` 125 → 123 T; `bt` 403 → 386 T.
+2. **Surplus.** The relaxation allows free disposal. Given continuous trades that sell 1000 S for
+   100 M but tender only 60 M onward (a 40 M surplus), the recovery (called directly as
+   `routing.cfmm.recovery.recover`, the internal the factory uses) routes the **whole** exact M
+   inflow: 1000 S → 996 M → **992** T. Surplus never becomes a dust donation. This is shown on the
+   recovery internal, not through a factory solve.
+3. **Nonconvergence (`r-tiny`, 2 S → T).** Pools `h1` (1000, 1000) and `h2` ($10^9$, $10^{11}$).
+   The continuous value is 198.41 (between the pinned 198.40 and 198.41), but the exact chain is
+   2 → 1 M → **99** T. The dust order meets the float noise floor: `not_converged`, residual
+   0.1073 > $10^{-5}$ after 101 evaluations, estimate withheld (`unknown`). The exact plan 99 is
+   still recovered and replayed.
+4. **Recovery failures** (pools `big` ($10^6$, $5 \times 10^5$) and `dust` (1, 1), 10 S):
+   - The continuous support uses both pools; the `dust` leg's exact quote is
+     `insufficient_output_amount`, so it is pruned and attempt 2 routes all 10 S through `big`:
+     **4**.
+   - `max_recovery_attempts: 1`: `attempts_exhausted`; the labelled `single_path` fallback gives
+     **4**, and the bound is `unknown` (`fallback_used`).
+   - The same with `fallback: none`: **`model_error`**.
+   - A 1-unit order on a (1000, 1000) pool: every leg has zero output, `support_exhausted`, and
+     the fallback's complete search finds nothing: **`no_route`**.
+
+**(d) The CL stage: interval index, boundaries and exact money.** A synthetic Uniswap v3 state
+(the one the pinned author UniV3 inputs were built from): fee 3000 pips ($\gamma = 0.997$), tick
+spacing 60, current tick 100, positions $[-1800, -1200)$ with $L = 4 \times 10^{15}$ and
+$[-600, 1200)$ with $L = 10^{16}$, collected bitmap words $(-1, 0)$.
+
+1. **Index.** Going down from tick 100, the segment liquidities are
+   $[10^{16},\ 0,\ 4 \times 10^{15},\ 0]$: the upper position, the empty range $[-1200, -600)$, the
+   lower position, then nothing, up to the collected bottom $-1 \cdot 256 \cdot 60 = -15360$
+   (`collected_range`). Going up: $[10^{16},\ 0]$ up to $(0 \cdot 256 + 255) \cdot 60 = 15300$.
+   If tick $-1800$ has no `TickInfo`, the down range ends there (`missing_tick_data`).
+2. **Author agreement.** On the 6 synthetic author probes (no-trade band, near, across the empty
+   range, drain, both directions) the model oracle matches CFMMRouter.jl within
+   $1.75 \times 10^{-14}$ relative, under the pinned $5 \times 10^{-14}$ (all 13 probes, including a
+   real Uniswap v3 state, are in `tests/routing/test_cfmm_cl.py`).
+3. **Single CL market, three sizes** (T0 → T1):
+
+   | Input (raw T0) | Exact quote | `cfmm_dual` row |
+   |---|---|---|
+   | 1000000 | `ok` 1007019 (1 swap step) | `ok` **1007019**; the dual solve is `not_converged` (residual 1.0) with empty support, so this is the labelled `single_path` fallback (`empty_support`) |
+   | 356469011501122 | `ok` 346536862482825 (2 initialized ticks crossed) | `ok` **346536862482825**, `converged`, recovered across the empty range without fallback |
+   | 970404414235056 | `incomplete_snapshot` (beyond the collected range) | **`incomplete_snapshot`**: the leg is pruned and the fallback also meets uncollected state |
+
+   The recovered output is always the exact quote. In the second row the factory-reported
+   estimate is 346536862482828.06, a numerical value slightly above the exact output; this
+   synthetic-fixture closeness does not transfer to real states (§18.9).
+4. **Missing `TickInfo` at the model's endpoint.** In the missing-tick variant the continuous range
+   is closed at tick $-1800$. The smallest input whose exact quote fails is 485202207117532: the
+   exact swap must cross that tick and cannot, so the quote is `incomplete_snapshot`. The model
+   accepts that input; the recovery prunes the leg, and the row is `incomplete_snapshot`. One raw
+   unit less recovers exactly **456981049010253**.
+5. **Mixed CL/CPMM cycle.** CPMM `s0` (S, T0), the synthetic CL pool, CPMM `x01` (T0, T1, priced
+   away from the CL pool) and CPMM `t1` (T1, T); $10^{13}$ S. The continuous solution trades a loop
+   through `x01`; the recovery removes `x01`, re-solves `s0`, CL, `t1` on the shared budget, and the
+   replayed plan gives **9979954889780** (`s0` → 9960069810399 T0, CL → 10019984743887 T1,
+   `t1` → 9979954889780 T).
+
+**(e) Real admitted CPMM + CL states (`mantle_mixed`).** The checked-in fixture
+`tests/fixtures/routing/mantle_mixed` holds 8 real pools at Mantle block 101,057,678 (bundle hash
+`e03e3c9b…`). It is neither the 19-pool fixture of §11 nor the 143-pool corpus. Case
+`usdc_usdt_small`: 1000000 raw USDC $\to$ USDT, `max_hops` 3.
+
+- **CL stage (`cfmm_dual/2`).** Markets: 2 concentrated and 3 constant-product pools (the LB pools
+  are never markets). `converged`, residual $1.77 \times 10^{-8}$. The plan:
+
+  | Leg | Pool (protocol) | Input | Output |
+  |---|---|---|---|
+  | USDC→WMNT | `0x086f…` (CL) | 22538 | 33707181338863903 |
+  | USDC→WMNT | `0x1a4d…` (CPMM) | 782918 | 1172547370719607160 |
+  | USDC→USDT | `0x8e3a…` (CPMM) | 194544 | 192818 |
+  | WMNT→USDT | `0x4cdf…` (CL) | 460785201979270533 | 306840 |
+  | WMNT→USDT | `0x4e76…` (CPMM) | 745469350079200530 | 493811 |
+
+  - Each leg equals the exact original-state quote of its merged input; the WMNT legs drain the
+    whole WMNT inflow.
+  - Gross $192818 + 306840 + 493811 = \mathbf{993469}$.
+- **CPMM stage (`cfmm_dual/1`, the historical ablation):** 3 CPMM markets, **990975** (flows equal
+  to the pinned contract model).
+- **Best exact single path over the CL-stage markets:** **989291** (`0x1a4d…` → `0x4e76…`).
+- The CL-stage split is factory output checked for exact feasibility and against every exact
+  single path, not against an independent optimum. It is one request, not a performance result.
+
+### 18.6 Implementation Map
+Line numbers are those of `e455c7d`; function names are the stable anchors.
+- Strategy: `routing/algorithms/cfmm_dual.py`.
+  - Ceiling, stages and pins: `CAPABILITIES` (line 132), `STAGES` (line 140), `PRESET` (v2,
+    line 162) and `PRESET_V1` (the historical pin, line 171, registered as
+    `FACTORY.historical_presets`), `WORK_UNITS` (line 177).
+  - Options: `validate_options` (line 264).
+  - Preparation: `prepare` (line 329) builds the CL indexes (`prepare_cl_indexes`) inside the
+    charged worker preparation.
+  - Records: `domain_record` (line 374), `_solve_view` (line 408).
+  - Solver: `solve` / `_solve` (lines 457–815), with `_fallback` (line 465); `FACTORY`
+    (line 816).
+- Model: `routing/cfmm/model.py` — `market_universe` (line 82), `cpmm_arb` (line 119),
+  `cl_arb` (line 140), `dual_problem` (line 198), `restricted` (line 234), `dual_value`
+  (line 260), `scales` (line 301), `log_objective` (line 349), `projected_residual` (line 366).
+- CL index: `routing/cfmm/cl.py` — `ClSide` (line 90), `ClIndex` (line 154), `build_cl_index`
+  (line 281), `prepare_cl_indexes` (line 303).
+- Optimizer: `routing/cfmm/optimizer.py` — `SolverSettings` (line 90), `SolveBudget` (line 129),
+  `GuardedObjective` (line 159), `solve` (line 376), `resolve_restricted` (line 534).
+- Recovery: `routing/cfmm/recovery.py` — `_support` (line 113), `_relevant` (line 125),
+  `_find_cycle` / `_break_cycles` (lines 149–197), `_topological` (line 205), `_project`
+  (line 228), `_replay` (line 274), `recover` (line 304).
+- Contract and notices: [`research-021/cfmm-dual.md`](research-021/cfmm-dual.md) §§4–9;
+  `routing/cfmm/NOTICE.md`; author reference harness `tools/upstream/cfmm/`.
+- Tests: `tests/routing/test_cfmm_dual.py`, `test_cfmm_dual_cl.py`, `test_cfmm_cl.py`,
+  `test_cfmm_model.py`, `test_cfmm_optimizer.py`, `test_cfmm_contract.py`.
+- Worked examples: `r021_examples.py`, `example_cfmm_dual` (runner section 16).
+
+### 18.7 Parameters, Budgets, and Ties
+- **Shared parameter:** only `search.max_hops`, which bounds the market universe. The merged plan
+  may contain longer composite paths. `search.max_splits` and `search.percent_step` are unused.
+- **Options** (ranges in `cfmm-dual.md` §9.3): `market_protocols`, `max_iterations`,
+  `max_function_evaluations`, `lbfgs_memory`, `pgtol`, `ftol`, `residual_tolerance`,
+  `log_price_bound`, `min_split_share`, `max_recovery_attempts`, `cycle_resolve`, `fallback`.
+- **Current preset `cfmm_dual/2`:** the `cfmm_dual/1` values except `market_protocols:
+  constant_product+concentrated`, `lbfgs_memory` 30, `log_price_bound` 10 and
+  `min_split_share` $10^{-3}$. It was chosen on the `sor_cohort_tuning` split only, by a rule
+  fixed in advance. Tuning exposure only: no performance or quality claim.
+- **Budgets:**
+  - numerical: `max_function_evaluations` and `max_iterations` per solve attempt, shared by the
+    one restricted re-solve; oracle calls ≤ evaluations × $\lvert M \rvert$;
+  - exact: every recovery quote uses the run's quote budget (`quote_budget` → `timeout` without a
+    plan);
+  - `Budget.max_candidates` counts only fallback paths evaluated.
+- **Ties:** admitted market order everywhere; cycle victims by (value, later market); topological
+  ties by first use; leg order by admitted order with the remainder last; the fallback keeps the
+  first best path. Deterministic for the pinned SciPy/NumPy wheels and platform; bitwise float
+  identity across platforms is not claimed.
+
+### 18.8 Computational and Memory Cost
+- **Numerical work:** at most `max_function_evaluations` evaluations per solve attempt, each
+  $\lvert M \rvert$ oracle calls. A CPMM oracle is $\mathcal{O}(1)$. A CL oracle locates the target
+  price in its index by binary search and then sums the traversed segments.
+- **CL index:** built once per worker inside the **charged** `prepare`, linear in the pool's
+  collected initialized ticks, and kept in memory as float segment arrays. Logarithmic lookup in
+  the oracle does **not** make the solve or the exact swap logarithmic: the exact replay still steps
+  tick by tick in `pools.concentrated`, and the optimizer still needs many evaluations.
+- **L-BFGS-B:** $\mathcal{O}(\text{lbfgs\_memory} \cdot \lvert \text{tokens} \rvert)$ memory and time per
+  iteration.
+- **Exact work:** at most one quote per leg per recovery attempt (at most `max_recovery_attempts`
+  attempts), one in-solve replay (memo hits), plus the fallback's path quotes when used.
+- **Work units** (different units are never divided): `market_oracle_calls`,
+  `objective_evaluations`, `gradient_evaluations`, `optimizer_iterations`, `recovery_attempts`,
+  `admission_checks`, `combinations_rejected_cycle`, `quotes_executed`, `quotes_memoized`,
+  `exact_replay_quotes`, `internal_evaluations`, `paths_scored`.
+
+### 18.9 Guarantees and Limitations
+- **Guarantees:**
+  - Every returned plan is fully funded, uses one merged step per market, has no token cycle, no
+    residual and no borrowed fund, and every leg's amount is an exact original-state quote. The
+    independent evaluator replays it to the reported score.
+  - An estimate is reported only when the initial full-network solve met the residual criterion
+    and no fallback was used.
+- **Limitations:**
+  - **No certified bound, no integer optimality.** The estimate is float and uncertified; the
+    projection is a heuristic (137 vs brute force 138 in §18.5).
+  - **`converged` is only the residual criterion.** It says nothing about optimality or
+    feasibility, and a clamped warm start can satisfy it at a loose point.
+  - **The CL stage rarely converges on real states.** In the WHI-1559 tuning evidence on the
+    `sor_cohort_tuning` split, the frozen `cfmm_dual/2` preset converged on 9 of 96 cases, used 21 labelled fallbacks, and its worst case
+    was about −4557 bp against the best exact single path over the same markets (all exact and
+    fully funded, some poor). Earlier enormous relative "gains" in that tuning came from tiny
+    bad-baseline denominators, not useful gains. None of this is a performance or adoption claim.
+  - **Synthetic numerical agreement does not transfer.** The 13 pinned author probes agree within
+    $5 \times 10^{-14}$, and the registered synthetic fixture's exact-vs-continuous closeness
+    ($10^{-9}$) is a property of that fixture. On real states the exact swap's per-step rounding,
+    fee rounding on dust and float cancellation put the exact output further below the continuous
+    value (`cfmm-dual.md` §8.4 records up to about $5 \times 10^{-4}$ on dust inputs, and the WHI-1559
+    integration observed $2.4 \times 10^{-5}$ on one small-output drain); these are numerical
+    observations, not integer bounds. Exact money is never affected.
+  - **Stage, not search quality.** The CPMM-only ablation can be extremely poor where CL liquidity
+    matters (14409 on the §11 request, §11.3); always read `cfmm_dual` beside its stage and markets.
+  - **Scope:** gross-only, single-source exact input, LB excluded, markets limited to simple paths
+    of at most `search.max_hops` pools. No latency claim.
