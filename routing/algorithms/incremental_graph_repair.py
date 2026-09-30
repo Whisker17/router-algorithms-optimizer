@@ -597,11 +597,8 @@ def _solve(
         ledger.stop = "no_trace"
     else:
         search.cap_hit = False
-        try:
-            best, consistency = _repair(case, context, search, run, ledger, best, guarded)
-        except _BudgetExhausted:  # the cut candidate is abandoned; no retry
-            ledger.stop = "quote_budget"
-            repair_truncated = True
+        best, consistency = _repair(case, context, search, run, ledger, best, guarded)
+        repair_truncated = ledger.stop == "quote_budget"
         if search.cap_hit:
             repair_truncated = True
             truncated_by = truncated_by or "max_candidates"
@@ -773,82 +770,88 @@ def _repair(
     guarded: Callable[[PoolState, str, int], SwapResult[PoolState]],
 ) -> tuple[_Best | None, dict[str, Any] | None]:
     """Stage 3 (§5.2-§5.5). Returns the (possibly replaced) best and the consistency
-    provenance, if a fault stopped it. `_BudgetExhausted` propagates (`quote_budget`)."""
+    provenance, if a fault stopped it. The declared quote budget (`_BudgetExhausted`) stops it
+    with `quote_budget` and still returns the best so far, including a candidate accepted
+    (and published) before the cut. The worker's hard meter (`QuoteLimitExceeded`) is not
+    caught: a hard kill keeps only the runner's `last_valid_candidate`."""
     bundle, objective, opts = context.bundle, context.objective, ledger.opts
     rep = ledger.counters
     seen = {flow_key(run.flows)} if run.status == "complete" else set()
     ledger.stop = "complete"
-    for i in structural_checkpoints(run, opts["max_checkpoints"]):
-        cp = run.checkpoints[i]
-        ledger.checkpoint_restores += 1
-        decision = run.decisions[i]
-        flows, edges, _ = restore(cp)
-        scored = search.score(flows, edges, decision.amount, rep)
-        top = first_max(scored)
-        if top is None or (top.index, top.marginal) != (decision.path_index, decision.marginal):
-            ledger.consistency_failures += 1
-            ledger.stop = "consistency_failure"
-            detail = f"checkpoint {i} rescored to {None if top is None else top.index}"
-            return best, _consistency(
-                "repair_restore",
-                ledger.checkpoint_restores,
-                accounted_gross(case, run.flows),
-                None,
-                detail,
-            )
-        for alt in alternatives(decision, scored, opts["alternatives_per_checkpoint"]):
-            if ledger.repair_attempts >= opts["max_repair_attempts"]:
-                ledger.stop = "attempt_cap"
-                return best, None
-            ledger.repair_attempts += 1
-            record: dict[str, Any] = {"checkpoint": i, "alternative": alt.index}
-            ledger.attempts.append(record)
-            record["outcome"] = "budget_cut"  # replaced below unless the quote budget ends it
-            cand = search.run(cp, rep, forced=alt)
-            if cand.status != "complete":
-                record["outcome"] = "failed"
-                ledger.candidates_failed += 1
-                continue
-            ledger.candidates_complete += 1
-            key = flow_key(cand.flows)
-            if key in seen:
-                record["outcome"] = "duplicate"
-                ledger.duplicates += 1
-                continue
-            seen.add(key)
-            accounted = accounted_gross(case, cand.flows)
-            try:
-                plan = merged_plan(case, cand.flows.values())
-            except ValueError as exc:
-                record["outcome"] = "consistency_failure"
+    try:  # a declared quote cut keeps the best so far (it may be an accepted candidate)
+        for i in structural_checkpoints(run, opts["max_checkpoints"]):
+            cp = run.checkpoints[i]
+            ledger.checkpoint_restores += 1
+            decision = run.decisions[i]
+            flows, edges, _ = restore(cp)
+            scored = search.score(flows, edges, decision.amount, rep)
+            top = first_max(scored)
+            if top is None or (top.index, top.marginal) != (decision.path_index, decision.marginal):
                 ledger.consistency_failures += 1
                 ledger.stop = "consistency_failure"
+                detail = f"checkpoint {i} rescored to {None if top is None else top.index}"
                 return best, _consistency(
-                    "repair", ledger.repair_evaluations + 1, accounted, None, str(exc)
+                    "repair_restore",
+                    ledger.checkpoint_restores,
+                    accounted_gross(case, run.flows),
+                    None,
+                    detail,
                 )
-            ledger.repair_evaluations += 1
-            ev = evaluate(bundle, case, plan, objective, quote=guarded)
-            if ev.status is not EvalStatus.OK or ev.gross_output != accounted:
-                record["outcome"] = "consistency_failure"
-                ledger.consistency_failures += 1
-                ledger.stop = "consistency_failure"
-                return best, _consistency("repair", ledger.repair_evaluations, accounted, ev)
-            score = objective.score(ev)
-            record["score"] = str(score)
-            if best is not None and score < best[3]:
-                record["outcome"] = "rejected_worse"
-                ledger.rejected_worse += 1
-            elif best is not None and score == best[3]:
-                record["outcome"] = "tie"
-                ledger.ties += 1
-            else:
-                record["outcome"] = "accepted"
-                ledger.accepted += 1
-                best = (NAME, plan, ev, score, [d.path for d in cand.decisions])
-                ledger.accepted_log.append(
-                    {"checkpoint": i, "alternative": alt.index, "score": str(score)}
-                )
-                context.report_candidate(plan)
+            for alt in alternatives(decision, scored, opts["alternatives_per_checkpoint"]):
+                if ledger.repair_attempts >= opts["max_repair_attempts"]:
+                    ledger.stop = "attempt_cap"
+                    return best, None
+                ledger.repair_attempts += 1
+                record: dict[str, Any] = {"checkpoint": i, "alternative": alt.index}
+                ledger.attempts.append(record)
+                record["outcome"] = "budget_cut"  # replaced below unless the quote budget ends it
+                cand = search.run(cp, rep, forced=alt)
+                if cand.status != "complete":
+                    record["outcome"] = "failed"
+                    ledger.candidates_failed += 1
+                    continue
+                ledger.candidates_complete += 1
+                key = flow_key(cand.flows)
+                if key in seen:
+                    record["outcome"] = "duplicate"
+                    ledger.duplicates += 1
+                    continue
+                seen.add(key)
+                accounted = accounted_gross(case, cand.flows)
+                try:
+                    plan = merged_plan(case, cand.flows.values())
+                except ValueError as exc:
+                    record["outcome"] = "consistency_failure"
+                    ledger.consistency_failures += 1
+                    ledger.stop = "consistency_failure"
+                    return best, _consistency(
+                        "repair", ledger.repair_evaluations + 1, accounted, None, str(exc)
+                    )
+                ledger.repair_evaluations += 1
+                ev = evaluate(bundle, case, plan, objective, quote=guarded)
+                if ev.status is not EvalStatus.OK or ev.gross_output != accounted:
+                    record["outcome"] = "consistency_failure"
+                    ledger.consistency_failures += 1
+                    ledger.stop = "consistency_failure"
+                    return best, _consistency("repair", ledger.repair_evaluations, accounted, ev)
+                score = objective.score(ev)
+                record["score"] = str(score)
+                if best is not None and score < best[3]:
+                    record["outcome"] = "rejected_worse"
+                    ledger.rejected_worse += 1
+                elif best is not None and score == best[3]:
+                    record["outcome"] = "tie"
+                    ledger.ties += 1
+                else:
+                    record["outcome"] = "accepted"
+                    ledger.accepted += 1
+                    best = (NAME, plan, ev, score, [d.path for d in cand.decisions])
+                    ledger.accepted_log.append(
+                        {"checkpoint": i, "alternative": alt.index, "score": str(score)}
+                    )
+                    context.report_candidate(plan)
+    except _BudgetExhausted:  # the cut candidate is abandoned; no retry, nothing reset
+        ledger.stop = "quote_budget"
     return best, None
 
 

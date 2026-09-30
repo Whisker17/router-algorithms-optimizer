@@ -844,24 +844,78 @@ def test_one_quote_ledger_covers_every_stage() -> None:
     assert on.candidates_considered == off.candidates_considered + r["paths_scored"]
 
 
-def test_the_budget_is_never_reset_for_the_repair() -> None:
-    bundle, case, spec = research.fixture_case("structural_trap")
-    off = _solve(bundle, case, spec["settings"], OFF)
-    full = _solve(bundle, case, spec["settings"])
+def _budget_sweep(
+    bundle: SnapshotBundle, case: Case, params: Mapping[str, int], options: Mapping[str, Any]
+) -> dict[int, list[int]]:
+    """Every declared `max_quotes` from the repair-off solve's executed quotes to the full
+    repair-on solve's: the meter never exceeds the limit (no reset), and the returned plan is
+    the best so far -- the last publication, scored as its independent replay, equal to the
+    best of the control and every accepted candidate, with consistent provenance (an accepted
+    candidate names the repair; otherwise the control's source and fallback label stand).
+    Returns {number of acceptances before the cut: limits}."""
+    off = _solve(bundle, case, params, OFF)
+    full_sink: list[RoutePlan] = []
+    full = _solve(bundle, case, params, options, sink=full_sink)
     n_off, n_on = off.search_stats["quotes_executed"], full.search_stats["quotes_executed"]
-    assert off.score is not None and n_on > n_off
+    assert off.score is not None and n_on >= n_off
+    levels: dict[int, list[int]] = {}
     for limit in range(n_off, n_on + 1):
+        sink: list[RoutePlan] = []
         with metered_quotes(limit) as meter:
-            res = _solve(bundle, case, spec["settings"], budget=Budget(max_quotes=limit))
-        assert not meter.exceeded and meter.counted == res.search_stats["quotes_executed"] <= limit
-        assert res.status is SolveStatus.OK and res.score is not None and res.score >= off.score
-        assert res.plan is not None and res.score == _true_gross(bundle, case, res.plan)
-        if limit < n_on:
-            assert res.search_stats["repair"]["stop"] == "quote_budget"
-            assert res.search_stats["truncated_by"] == "max_quotes"
-            assert NAME in res.search_stats["truncated_stages"]
-        if limit == n_off:
+            res = _solve(bundle, case, params, options, Budget(max_quotes=limit), sink)
+        s, r = res.search_stats, res.search_stats["repair"]
+        assert not meter.exceeded and meter.counted == s["quotes_executed"] <= limit
+        assert res.status is SolveStatus.OK and res.plan is not None and res.score is not None
+        assert sink == full_sink[: len(sink)] and res.plan == sink[-1], limit
+        assert res.score == _true_gross(bundle, case, res.plan)
+        accepted = [int(a["score"]) for a in r["accepted_log"]]
+        assert r["accepted"] == len(accepted) and accepted == sorted(set(accepted))
+        assert res.score == max([off.score, *accepted]), limit
+        if accepted:
+            assert s["chosen_source"] == NAME, limit
+            assert s["r021"]["fallback"] == {"used": False, "source": NAME, "reason": None}
+        else:
+            assert s["chosen_source"] == off.search_stats["chosen_source"]
+            assert s["r021"]["fallback"] == off.search_stats["r021"]["fallback"]
             assert res.plan == off.plan
+        if limit < n_on:
+            assert r["stop"] == "quote_budget" and s["truncated_by"] == "max_quotes", limit
+            assert NAME in s["truncated_stages"]
+        else:
+            assert (res.plan, res.score, r["stop"]) == (
+                full.plan,
+                full.score,
+                full.search_stats["repair"]["stop"],
+            )
+        levels.setdefault(len(accepted), []).append(limit)
+    return levels
+
+
+def test_the_budget_is_never_reset_and_a_quote_cut_keeps_the_best_so_far() -> None:
+    """Cuts before any acceptance, after one and after several (suffix-repair.md §5.7
+    `quote_budget`: "best so far"). On structural_trap the limits 282..290 cut the repair
+    after its first acceptance: the returned plan is that accepted, published 111,176,933."""
+    bundle, case, spec = research.fixture_case("structural_trap")
+    levels = _budget_sweep(bundle, case, spec["settings"], PRESET)
+    assert levels == {0: list(range(263, 282)), 1: list(range(282, 291)), 2: [291]}
+    for limit in range(282, 291):
+        res = _solve(bundle, case, spec["settings"], budget=Budget(max_quotes=limit))
+        assert res.score == 111_176_933 and res.search_stats["chosen_source"] == NAME
+    for chunks in (3, 5):  # the stress caps try further alternatives after two acceptances
+        levels = _budget_sweep(bundle, case, {**spec["settings"], "chunks": chunks}, STRESS)
+        assert {0, 1, 2} <= set(levels) and len(levels[2]) > 1
+    rng = random.Random(20261559)
+    swept = 0
+    while swept < 6:
+        pools, rcase, rparams, _ = research.random_instance(rng)
+        rbundle = research.cp_bundle(pools)
+        if not _solve(rbundle, rcase, rparams).search_stats["repair"]["accepted"]:
+            continue
+        levels = _budget_sweep(rbundle, rcase, rparams, PRESET)
+        assert 0 in levels and max(levels) >= 1
+        swept += 1
+    off = _solve(bundle, case, spec["settings"], OFF)
+    n_off = off.search_stats["quotes_executed"]
     with metered_quotes(n_off - 1) as meter:  # the incumbent itself is cut: no repair
         cut = _solve(bundle, case, spec["settings"], budget=Budget(max_quotes=n_off - 1))
     assert cut.search_stats["repair"]["stop"] == "quote_budget" and not meter.exceeded
