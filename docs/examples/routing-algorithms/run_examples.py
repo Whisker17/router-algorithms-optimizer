@@ -12,7 +12,11 @@ and the two named optimized strategies (recipes of uni_sor_fast):
 8. uni_sor_optimized (L08 arm H4)
 and the experimental Metis-inspired (NOT Jupiter Metis) strategy:
 9. metis_inspired (WHI-1449)
-along with the real-state fixed-block snapshot case.
+along with the real-state fixed-block snapshot case, then (sections 12-17, WHI-1561,
+`r021_examples.py`) the five 0.2.1 experimental strategies -- metis_history,
+direct_split_certified, incremental_graph_repair, uni_sor_cycle_safe and cfmm_dual (CPMM and
+CL stages) -- through their registered factories, and all fourteen `--strategies all` rows on
+the same fixed-block fixture.
 
 Run with:
     uv run python docs/examples/routing-algorithms/run_examples.py
@@ -24,8 +28,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+HERE = Path(__file__).resolve().parent
+for _path in (ROOT, HERE):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
+
+import r021_examples  # noqa: E402  (sections 12-17: the 0.2.1 strategies, WHI-1561)
 
 from benchmark.objective import gross_only  # noqa: E402
 from benchmark.profile import load_profile  # noqa: E402
@@ -625,7 +633,12 @@ def run_all() -> None:
 
     print("=================================================================")
     print("All 11 verification suites passed with 100% deterministic equality.")
-    print("=================================================================")
+    print("=================================================================\n")
+
+    # -------------------------------------------------------------
+    # 12-17. The 0.2.1 experimental strategies (WHI-1561): r021_examples.py
+    # -------------------------------------------------------------
+    r021_examples.run_all()
 
 
 if __name__ == "__main__":
