@@ -264,6 +264,22 @@ def test_order_check_covers_diagnostics_and_old_views_stay_identical(tmp_path: P
     assert view["diagnostics"]["state"] == "certified"
 
 
+def test_observational_stage_seconds_never_count_as_nondeterminism(tmp_path: Path) -> None:
+    import copy
+
+    manifest = _run(tmp_path, [FX + "unknown"])
+    record = _records(manifest.run_dir)[(FX + "unknown", "c1")]
+    assert set(record["diagnostics"]["stages"]) == {"incumbent"}  # measured, attempt-varying
+    assert record["measurement"]["attempts_consistent"] is True  # warmup 1 + repeats 2
+    slower = copy.deepcopy(record)
+    slower["diagnostics"]["stages"] = {"incumbent": 9.5}
+    slower["search"]["r021"]["stages"] = {"incumbent": 9.5}
+    view = runner_module._deterministic_view
+    assert view(slower) == view(record)
+    slower["diagnostics"]["state"] = "certified"
+    assert view(slower) != view(record)
+
+
 # ------------------------------------------------------------------ offline report
 
 
@@ -382,7 +398,7 @@ def test_quote_details_report_and_literal_replay(
     assert f"bound: estimate {score}.25 (not a bound;" in details
     assert "bound: unknown (no bound; termination complete)" in details
     assert "fallback/repair: fallback used (source direct; reason fixture fallback)" in details
-    assert "stages (observed seconds, not budgets): incumbent 0.001000 s" in details
+    assert re.search(r"stages \(observed seconds, not budgets\): incumbent \d\.\d{6} s", details)
     wrong = details.split(f"[{FX}wrong_request]", 1)[1].split(f"[{FX}hang]", 1)[0]
     assert "bound: invalid certificate (C_REQUEST) -- counted as unknown (no bound)" in wrong
     assert "C_REQUEST: certificate.request.case_id" in wrong

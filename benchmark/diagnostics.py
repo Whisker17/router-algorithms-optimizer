@@ -193,7 +193,10 @@ _SHOWN = 60
 
 
 def _shown(value: Any) -> str:
-    """A bounded, printable rendering of an untrusted value for a detail message."""
+    """A bounded, printable, deterministic rendering of an untrusted value for a detail
+    message (a set's repr depends on the process's hash seed, so only its size is shown)."""
+    if isinstance(value, set | frozenset):
+        return f"<{type(value).__name__} of {len(value)} item(s)>"
     try:
         text = repr(value)
     except Exception:  # noqa: BLE001 - a hostile __repr__ must not escape

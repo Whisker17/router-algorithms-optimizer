@@ -155,6 +155,7 @@ def _certificate(
 def _diagnostics(
     mode: str, name: str, case: Case, context: SolveContext, result: SolveResult
 ) -> Any:
+    started = time.perf_counter()
     meter = _ACTIVE_METER.get()
     executed = meter.counted if meter is not None else 0
     domain = _domain(context.bundle, case)
@@ -201,7 +202,7 @@ def _diagnostics(
         rec.update(
             fallback={"used": True, "source": "direct", "reason": "fixture fallback"},
             repair={"attempts": 0, "enabled": False},
-            stages={"incumbent": 0.001},
+            stages={"incumbent": time.perf_counter() - started},  # varies between attempts
         )
     elif mode == "not_produced":
         rec["certificate_unavailable_reason"] = "not_produced"

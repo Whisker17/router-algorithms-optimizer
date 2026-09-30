@@ -214,6 +214,17 @@ def _candidate_record(
     }
 
 
+def _without_stage_seconds(stats: Any) -> Any:
+    """`stats` without the observational `r021.stages` seconds (R021-C/1 §9.4): timing is
+    never part of the deterministic outcome that attempt and order checks compare."""
+    if not isinstance(stats, Mapping):
+        return stats
+    inner = stats.get(DIAGNOSTICS_KEY)
+    if not isinstance(inner, Mapping) or "stages" not in inner:
+        return dict(stats)
+    return {**stats, DIAGNOSTICS_KEY: {k: v for k, v in inner.items() if k != "stages"}}
+
+
 def _fingerprint(result: SolveResult | None) -> Any:
     if result is None:
         return None
@@ -226,7 +237,7 @@ def _fingerprint(result: SolveResult | None) -> Any:
         result.candidates_considered,
         result.candidates_truncated,
         result.error,
-        dict(result.search_stats),
+        _without_stage_seconds(result.search_stats),
     )
 
 
@@ -776,14 +787,15 @@ def _deterministic_view(record: Mapping[str, Any]) -> Any:
         "error": record["error"],
         "candidates_considered": record["candidates_considered"],
         "candidates_truncated": record["candidates_truncated"],
-        "search": record.get("search"),
+        "search": _without_stage_seconds(record.get("search")),
         "quotes_counted": record["quotes"]["counted"],
         "solver_reported": record["solver_reported"],
         "seed": record["measurement"].get("seed"),
         "attempts_consistent": record["measurement"].get("attempts_consistent"),
     }
-    if record.get("diagnostics") is not None:  # WHI-1548; absent from every older record
-        view["diagnostics"] = record["diagnostics"]
+    diagnostics = record.get("diagnostics")
+    if isinstance(diagnostics, Mapping):  # WHI-1548; absent from every older record
+        view["diagnostics"] = {k: v for k, v in diagnostics.items() if k != "stages"}
     return view
 
 

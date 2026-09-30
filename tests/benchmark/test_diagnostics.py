@@ -366,6 +366,31 @@ def test_malformed_fields_are_invalid_views_not_crashes(path: str, value: Any, c
     assert "certified [" not in dx.bound_text(shown)
 
 
+def test_detail_messages_are_deterministic_across_hash_seeds() -> None:
+    import subprocess
+    import sys
+
+    code = (
+        "from benchmark import diagnostics as dx;"
+        "from benchmark.diagnostics import CheckContext as C;"
+        "ctx = C(run={}, request={}, status='ok', score='1', objective='gross_only',"
+        " quotes_counted=0);"
+        "print(dx.diagnostics_view({'x', 'y', 'z', 'w'}, ctx)['details'])"
+    )
+    seen = {
+        subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=REPO,
+            env={"PYTHONHASHSEED": seed, "PYTHONPATH": str(REPO)},
+        ).stdout
+        for seed in ("1", "2", "3", "4")
+    }
+    assert len(seen) == 1 and "set of 4 item(s)" in seen.pop()
+
+
 def test_unserializable_objects_get_a_visible_marker_instead_of_crashing_the_writer() -> None:
     assert dx.unserializable_marker({"a": 1}) is None
     assert dx.unserializable_marker(float("nan")) is None  # the writer tolerates NaN tokens
