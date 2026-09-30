@@ -344,16 +344,33 @@ class NumericSolution:
 def _start(
     problem: DualProblem, sigma: Mapping[str, float], bound: float, warm: Mapping[str, float] | None
 ) -> list[float]:
+    """x0: 0 (spot) for a variable without a warm price, else log(warm/sigma) clamped into
+    the box. A warm price must be a finite positive real number (not a bool)."""
     x0 = []
     for v in problem.variables:
         if warm is None or v not in warm:
             x0.append(0.0)
             continue
         w = warm[v]
-        if not (math.isfinite(w) and w > 0):
+        try:
+            ok = not isinstance(w, bool) and isinstance(w, int | float) and 0 < float(w) < math.inf
+        except OverflowError:  # an int beyond float range
+            ok = False
+        if not ok:
             raise ValueError(f"warm price of {v!r} must be finite and > 0, got {w!r}")
-        x0.append(min(max(math.log(w / sigma[v]), -bound), bound))
+        x0.append(min(max(_log_ratio(float(w), sigma[v]), -bound), bound))
     return x0
+
+
+def _log_ratio(w: float, s: float) -> float:
+    """log(w/s) for finite w, s > 0. The ordinary quotient is used whenever it is a finite
+    positive float (the path the pinned reference points took); when it under- or
+    overflows (e.g. a subnormal warm price over a scale > 1) the difference of logs is
+    exact enough and always finite."""
+    ratio = w / s
+    if 0.0 < ratio < math.inf:
+        return math.log(ratio)
+    return math.log(w) - math.log(s)
 
 
 def solve(

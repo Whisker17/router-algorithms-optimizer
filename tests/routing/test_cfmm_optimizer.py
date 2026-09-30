@@ -27,6 +27,7 @@ from test_cfmm_model import author_network, bundle_of, cp, rel
 import routing.cfmm.model as cm
 import routing.cfmm.optimizer as co
 from snapshot.bundle import load_bundle
+from snapshot.models import Case, ConstantProductPoolState
 
 ROOT = Path(__file__).resolve().parents[2]
 FIX = ROOT / "tests" / "fixtures" / "cfmm"
@@ -522,3 +523,88 @@ def test_restricted_problem_is_built_only_from_the_initial_markets() -> None:
     problem = cm.dual_problem(bundle, case, ["st"])
     with pytest.raises(ValueError):
         co.resolve_restricted(problem, {"xx": "S"}, SETTINGS, co.SolveBudget(5, 5), {"S": 1.0})
+
+
+# ------------------------------------------------------------------ warm-start extremes
+
+
+def _warm_edge() -> tuple[cm.DualProblem, co.SolverSettings]:
+    """The parent gate repro (comment f98cd911): sigma_S = 4000/1000 = 4."""
+    pool = ConstantProductPoolState("p", "S", "T", 1000, 4000, 30)
+    problem = cm.DualProblem(Case("warm-edge", "S", "T", 100), (pool,), ("S",), (None,))
+    return problem, co.SolverSettings(10, 20, 10, 1e-9, 1e-15, 1e-5, 50.0)
+
+
+@pytest.mark.parametrize("warm", [5e-324, 1e-320, 2.2250738585072014e-308, 1e-200, 1e300])
+def test_extreme_finite_warm_prices_start_at_the_clamped_box_edge(
+    warm: float, counters: Counters
+) -> None:
+    """A finite positive warm price whose ratio to sigma under/overflows starts at the box
+    edge (no ValueError). The solve is then an ordinary guarded solve: every evaluation
+    charged, oracle calls independently counted, termination re-derived from our own
+    residual at the reported point, and its g is never below the spot-started optimum
+    (weak duality: any nu gives an upper estimate; an edge start manufactures nothing).
+    Observed, not endorsed: at the lower edge Phi saturates (dPhi/dx ~ 1e-11), so the §5.4
+    residual rule itself classifies that far point `converged` with g = 4000 vs 362.6 at
+    the optimum -- a loose upper estimate, reported to the gate as a contract limitation."""
+    problem, s = _warm_edge()
+    budget = co.SolveBudget.for_settings(s)
+    sol = co.solve(problem, s, budget, warm={"S": warm})
+    assert sol.failure is None and sol.point is not None and sol.warm_started
+    assert budget.evaluations == sol.evaluations >= 1 and budget.iterations == sol.iterations
+    assert counters.oracle == sol.oracle_calls == sol.evaluations
+    assert_consistent(sol, s.residual_tolerance, s.log_price_bound)
+    spot = co.solve(problem, s, co.SolveBudget.for_settings(s))
+    assert spot.termination == "converged" and spot.point is not None
+    assert sol.point.value >= spot.point.value * (1 - 1e-12)
+    edge = co._start(problem, cm.scales(problem), 50.0, {"S": warm})
+    assert edge == [-50.0 if warm < 1 else 50.0]
+
+
+def test_warm_log_ratio_keeps_the_ordinary_quotient_and_handles_extremes() -> None:
+    """Ordinary quotients use log(w/sigma) bit for bit (the pinned reference path); a
+    subnormal warm price over a tiny sigma is exact and unclamped; an overflowing ratio is
+    clamped to the upper edge."""
+    problem, _ = _warm_edge()
+    assert co._start(problem, {"S": 4.0, "T": 1.0}, 50.0, {"S": 2.0}) == [math.log(0.5)]
+    tiny = {"S": 1e-300, "T": 1.0}
+    got = co._start(problem, tiny, 50.0, {"S": 1e-310})
+    assert got == [math.log(1e-310 / 1e-300)] and -50.0 < got[0] < 0.0
+    assert co._start(problem, tiny, 50.0, {"S": 1e300}) == [50.0]  # 1e300/1e-300 = inf
+    assert co._log_ratio(5e-324, 4.0) == math.log(5e-324) - math.log(4.0)
+    assert math.isfinite(co._log_ratio(1.7976931348623157e308, 5e-324))
+
+
+@pytest.mark.parametrize(
+    "warm", [0.0, -0.0, -1.0, -5e-324, math.nan, math.inf, -math.inf, True, "1", 10**400, None]
+)
+def test_invalid_warm_prices_are_refused_before_any_work(warm: Any) -> None:
+    problem, s = _warm_edge()
+    budget = co.SolveBudget.for_settings(s)
+    with pytest.raises(ValueError, match="finite and > 0"):
+        co.solve(problem, s, budget, warm={"S": warm})
+    assert (budget.evaluations, budget.oracle_calls, budget.iterations) == (0, 0, 0)
+
+
+@pytest.mark.parametrize("warm", [5e-324, 1e300])
+def test_extreme_warm_restricted_resolve_draws_on_the_same_budget(
+    warm: float, counters: Counters
+) -> None:
+    """The restricted re-solve warm-started from extreme finite prices: no error, no reset;
+    total work = initial + re-solve, the re-solve limited to the remainder."""
+    problem, allowed, _ = _cycle()
+    full = co.solve(problem, SETTINGS, co.SolveBudget.for_settings(SETTINGS))
+    for left in (1, PRESET["max_function_evaluations"] - full.evaluations):
+        s = settings(max_function_evaluations=full.evaluations + left)
+        budget = co.SolveBudget.for_settings(s)
+        first = co.solve(problem, s, budget)
+        counters.oracle = 0
+        extreme = dict.fromkeys(problem.variables, warm)
+        second = co.resolve_restricted(problem, allowed, s, budget, extreme)
+        assert second is not None and second.failure is None and second.point is not None
+        assert budget.evaluations == first.evaluations + second.evaluations
+        assert budget.evaluations <= s.max_function_evaluations
+        assert budget.iterations == first.iterations + second.iterations <= s.max_iterations
+        assert counters.oracle == second.oracle_calls == second.evaluations * len(allowed)
+        assert all(abs(x) <= s.log_price_bound for x in second.point.x)
+        assert_consistent(second, s.residual_tolerance, s.log_price_bound)
