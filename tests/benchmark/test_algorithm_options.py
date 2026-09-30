@@ -1,7 +1,7 @@
 """WHI-1548 Stage A: validated per-strategy `algorithm_options` (contract R021-C/1 §9.1-§9.3).
 
 Exercised with the test-only factories of `option_solvers` (inserted into the registry by
-`monkeypatch`; the ordinary roster stays nine) and the existing strategies:
+`monkeypatch`; they never join the roster) and the registered strategies:
 
 - invalid, unknown, reserved, boolean-as-integer, non-finite and out-of-range options are
   refused by profile loading AND by the factory's public `prepare` (same strict checks),
@@ -14,8 +14,10 @@ Exercised with the test-only factories of `option_solvers` (inserted into the re
 - batch and quote persist the resolved options, transport them into the worker and replay
   them literally with `--strategies profile` (one solve per quote);
 - without the section every legacy resolved profile, derived effective document and their
-  hashes equal the pins computed at the pre-WHI-1548 base, the `--strategies all` roster is
-  the nine, and the SOR recipe checks are not weakened.
+  hashes equal the pins computed at the pre-WHI-1548 base (under `all`, after removing the
+  implemented 0.2.1 identities it now appends with their pinned presets, WHI-1554), the
+  `--strategies all` roster is the nine plus exactly those identities, and the SOR recipe
+  checks are not weakened.
 """
 
 from __future__ import annotations
@@ -41,10 +43,16 @@ import benchmark.profile as profile_module
 import benchmark.strategies as strategies_module
 import main
 import routing.algorithms.registry as registry
-from benchmark.profile import ProfileError, load_profile, parse_profile, read_profile_document
+from benchmark.profile import (
+    ProfileError,
+    load_profile,
+    parse_profile,
+    preset_options,
+    read_profile_document,
+)
 from benchmark.results import load_case_records, load_manifest
 from benchmark.runner import compare_runs
-from benchmark.strategies import METIS, MODES, derive
+from benchmark.strategies import METIS, MODES, R021_ADDITIONS, derive
 from routing.algorithms import direct
 from routing.algorithms.base import (
     RESERVED_OPTION_KEYS,
@@ -66,6 +74,11 @@ A, B = option_solvers.A, option_solvers.B
 PRESET = {"width": 3, "ratio": 0.5, "label": "bounded"}  # the fixture preset file's values
 NON_STRING_KEY: dict[Any, Any] = {1: 2, **PRESET}
 NINE = [*BASE_STRATEGIES, *OPTIMIZED_STRATEGIES, METIS]
+# The implemented 0.2.1 identities (R021-C/1 §2), in contract order, and the profiles they added.
+IMPLEMENTED = ("incremental_graph_repair",)
+NEW_PROFILES = {
+    f"config/incremental_graph_repair/{name}.yaml" for name in ("repair_on", "repair_off", "stress")
+}
 TEST_ALARM_SECONDS = 240
 
 
@@ -231,9 +244,10 @@ def test_factories_without_a_validator_refuse_direct_options() -> None:
 def test_every_options_factory_refuses_reserved_and_unknown_keys_in_prepare(
     fixtures: None,
 ) -> None:
-    """Applies to every registered options factory (none of the nine yet) and the fixtures."""
+    """Applies to every registered options factory (the implemented 0.2.1 identities; none of
+    the nine) and the fixtures."""
     factories = [f for f in ALGORITHMS.values() if f.options_validator is not None]
-    assert {f.name for f in factories} == {A, B}  # the ordinary roster has none yet
+    assert {f.name for f in factories} == {A, B, *IMPLEMENTED}
     for factory in factories:
         assert factory.prepare is not None
         for bad in ({"max_hops": 1}, {"__unknown__": 1}):
@@ -379,15 +393,38 @@ def test_options_do_not_weaken_sor_recipe_pins(added_a: None) -> None:
 # ------------------------------------------------------------------ legacy identity
 
 
+def _legacy_projection(effective: dict[str, Any]) -> dict[str, Any]:
+    """An `all` document without the implemented 0.2.1 identities `all` now appends (WHI-1554:
+    `incremental_graph_repair` after `metis_inspired`, with exactly its pinned preset): the
+    document the pre-WHI-1548 base derived. Anything else that changed stays visible."""
+    doc: dict[str, Any] = json.loads(json.dumps(effective))
+    added = list(IMPLEMENTED)
+    assert doc["algorithms"][-len(added) :] == added  # appended once, last, in contract order
+    doc["algorithms"] = doc["algorithms"][: -len(added)]
+    assert doc["selection"]["groups"]["custom"][-len(added) :] == added
+    doc["selection"]["groups"]["custom"] = doc["selection"]["groups"]["custom"][: -len(added)]
+    assert doc.pop("algorithm_options") == {
+        name: preset_options(ALGORITHMS[name]) for name in added
+    }
+    return doc
+
+
 def test_legacy_profiles_derivations_and_hashes_match_the_pre_whi_1548_pins(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Every parseable `config/**/*.yaml`, every `--strategies` mode: resolved profile,
-    effective document bytes and their literal replay hash exactly as at base 42cbf59."""
+    """Every parseable legacy `config/**/*.yaml`, every `--strategies` mode: resolved profile,
+    effective document bytes and their literal replay hash exactly as at base 42cbf59. Under
+    `all` the only change is the appended implemented 0.2.1 identity with its pinned preset
+    (WHI-1554): its legacy projection keeps the pinned bytes and hashes. The profiles WHI-1554
+    added (`NEW_PROFILES`) are not legacy and carry options by design."""
     monkeypatch.chdir(REPO)  # empirical-cost profiles name their artifact repo-relatively
     pins = json.loads(PINS.read_text())["pins"]
     observed: dict[str, str] = {}
+    new_seen: set[str] = set()
     for path in sorted(glob.glob("config/**/*.yaml", recursive=True)):
+        if path in NEW_PROFILES:
+            new_seen.add(path)
+            continue
         try:
             doc = read_profile_document(path)
             profile = parse_profile(doc, path)
@@ -400,25 +437,41 @@ def test_legacy_profiles_derivations_and_hashes_match_the_pre_whi_1548_pins(
             except ProfileError:
                 continue
             text = yaml.safe_dump(effective, sort_keys=False)
-            observed[f"{path}|{mode}|document"] = hashlib.sha256(text.encode()).hexdigest()
-            observed[f"{path}|{mode}|resolved"] = _sha(derived.resolved())
             # literal replay of the saved document: the same resolved identity
             replayed = parse_profile(yaml.safe_load(text), path)
-            assert _sha(replayed.resolved()) == pins[f"{path}|{mode}|resolved"], (path, mode)
+            assert _sha(replayed.resolved()) == _sha(derived.resolved()), (path, mode)
+            if mode == "all":
+                effective = _legacy_projection(effective)
+                derived = parse_profile(effective, path)
+                text = yaml.safe_dump(effective, sort_keys=False)
+            observed[f"{path}|{mode}|document"] = hashlib.sha256(text.encode()).hexdigest()
+            observed[f"{path}|{mode}|resolved"] = _sha(derived.resolved())
             assert "algorithm_options" not in effective
             assert "algorithm_options" not in derived.resolved()
     assert observed == pins
     assert len(pins) == 289
+    assert new_seen == NEW_PROFILES
 
 
-def test_the_ordinary_roster_is_still_nine_without_option_factories() -> None:
+def test_the_all_roster_is_the_nine_plus_the_implemented_0_2_1_identities() -> None:
+    """The contract-stage snapshot "nine, no new ID" (WHI-1548) with the roster as implemented
+    so far: `--strategies all` appends exactly `IMPLEMENTED` after the nine (R021-C/1 §2), each
+    with its pinned preset; every other factory still accepts no options."""
     document, profile = _derive(read_profile_document(REPO / "config" / "daily_gross.yaml"), "all")
-    assert list(profile.algorithms) == NINE == document["algorithms"]
-    assert len(ALGORITHMS) == 10  # the nine + the profile-selected uni_sor_fast, no new ID
-    assert all(f.options_validator is None and f.options_preset is None
-               for f in ALGORITHMS.values())  # fmt: skip
+    assert R021_ADDITIONS == IMPLEMENTED
+    assert list(profile.algorithms) == [*NINE, *IMPLEMENTED] == document["algorithms"]
+    assert len(ALGORITHMS) == 11  # the nine + profile-selected uni_sor_fast + IMPLEMENTED
+    with_options = {n for n, f in ALGORITHMS.items() if f.options_validator is not None}
+    assert with_options == set(IMPLEMENTED)
+    assert all(ALGORITHMS[n].options_preset is not None for n in IMPLEMENTED)
+    assert all(f.options_preset is None for n, f in ALGORITHMS.items() if n not in IMPLEMENTED)
     for name in NINE:
         assert dict(profile.algorithm_config(ALGORITHMS[name]).options) == {}
+    for name in IMPLEMENTED:
+        assert profile.algorithm_options[name]["source"]["kind"] == "preset"
+        assert dict(profile.algorithm_config(ALGORITHMS[name]).options) == preset_options(
+            ALGORITHMS[name]
+        )
 
 
 # ------------------------------------------------------------------ CLI: refused before any write
@@ -593,7 +646,7 @@ def test_existing_prepares_refuse_explicit_options_and_keep_absent_parity() -> N
     bundle = load_bundle(MIXED)
     _, profile = _derive(read_profile_document(REPO / "config" / "daily_gross.yaml"), "all")
     guarded = [f for f in ALGORITHMS.values() if f.options_validator is None]
-    assert {f.name for f in guarded} == set(ALGORITHMS)  # no registered options factory yet
+    assert {f.name for f in guarded} == set(ALGORITHMS) - set(IMPLEMENTED)
     for factory in guarded:
         if factory.prepare is None:  # `direct`: no public prepare, nothing to bypass
             assert factory.name == "direct"

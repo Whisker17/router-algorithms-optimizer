@@ -1,0 +1,16 @@
+# Bounded comparison preset v1 of `incremental_graph_repair` (WHI-1554, R021-P08;
+# docs/references/research-021/suffix-repair.md §7, §10; contract R021-C/1 §7.1).
+# Frozen: its sha256 is pinned in routing/algorithms/incremental_graph_repair.py
+# (`PRESET`) and a changed file is refused. It holds only this identity's
+# algorithm_options; search/graph/budget values come from the run profile.
+# `--strategies all` writes these values out for an identity the source does not
+# configure. The repair-off control is the same values with `repair: false`
+# (repair_off.yaml); the stress values run only by explicit profile (stress.yaml).
+key: R021-P08-incremental_graph_repair
+version: 1
+algorithm: incremental_graph_repair
+options:
+  repair: true
+  max_checkpoints: 4
+  alternatives_per_checkpoint: 2
+  max_repair_attempts: 8

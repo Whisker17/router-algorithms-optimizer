@@ -56,11 +56,23 @@ richer status vocabulary in docs/DESIGN.md §2.10 (`no_route`, `unsupported`,
 `timeout`, ...) belongs to `solve()` (see `routing.algorithms`), which decides
 *whether* to submit a plan at all; a plan that *is* submitted either evaluates
 cleanly or is invalid.
+
+Evaluation counting (WHI-1554, docs/references/research-021/suffix-repair.md §8.1):
+inside a `counted_evaluations()` block every `evaluate` call -- whichever module alias
+makes it, whatever its outcome (`ok`, `invalid_plan`, or an exception raised during the
+replay) -- adds one to the active `EvaluationCounter`, so a solver can report an exact
+total of its internal complete-plan replays. It is modelled on
+`pools.quote.metered_quotes`: context-local (a `ContextVar`), a nested block replaces the
+outer counter until it exits, and the previous counter is restored on exit and on
+exception. Outside a block (every existing caller, the runner's independent evaluation)
+nothing is counted and `evaluate` is unchanged.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
@@ -90,6 +102,29 @@ QuoteFn = Callable[[PoolState, str, int], SwapResult[PoolState]]
 class EvalStatus(StrEnum):
     OK = "ok"
     INVALID_PLAN = "invalid_plan"
+
+
+@dataclass
+class EvaluationCounter:
+    """`count`: the `evaluate` calls made while this counter was the active one."""
+
+    count: int = 0
+
+
+_ACTIVE_EVALUATION_COUNTER: ContextVar[EvaluationCounter | None] = ContextVar(
+    "active_evaluation_counter", default=None
+)
+
+
+@contextmanager
+def counted_evaluations() -> Iterator[EvaluationCounter]:
+    """Count every `evaluate` call in this context (see the module docstring)."""
+    counter = EvaluationCounter()
+    token = _ACTIVE_EVALUATION_COUNTER.set(counter)
+    try:
+        yield counter
+    finally:
+        _ACTIVE_EVALUATION_COUNTER.reset(token)
 
 
 # Per-family pool-call counts in `route_features` (`pool_calls_<family>`): the swap
@@ -375,6 +410,9 @@ def evaluate(
     and exists only so a solver scoring many candidates that share prefixes can
     memoize identical calls (WHI-1438). The runner's independent evaluation always
     uses the default."""
+    counter = _ACTIVE_EVALUATION_COUNTER.get()
+    if counter is not None:
+        counter.count += 1
     route_features: dict[str, int] = {"hops": len(plan.steps)}
     ledger: dict[str, FundRecord] = {}
     next_states: dict[str, PoolState] = {}

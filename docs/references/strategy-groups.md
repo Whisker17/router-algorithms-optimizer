@@ -40,18 +40,31 @@ evidence.
 
 | mode | runs |
 | --- | --- |
-| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired` |
+| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired`, then each implemented 0.2.1 identity (so far `incremental_graph_repair`) |
 | `base` | only the profile's base algorithms (an intentional subset stays a subset) |
 | `optimized` | only the two optimized strategies |
 | `profile` | the profile's exact algorithm selection: the pre-WHI-1528 behaviour, used for replays |
 
-A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs nine
-strategies: six base, two optimized, then `metis_inspired`. They run one after the other,
+A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs ten
+strategies: six base, two optimized, then `metis_inspired` and `incremental_graph_repair`.
+They run one after the other,
 each in its own isolated worker, under the profile's own objective, budget, measurement
 (`run`), worker and `search.*` values. Every registry entry is not added automatically, and
 a name the profile already lists is not repeated. `uni_sor_fast` keeps working with its own
 `shortlist` / `sampling` sections when a profile names it; it never replaces a named
 strategy and never receives a named strategy's settings.
+
+### 0.2.1 experimental identities under `all`
+
+`incremental_graph_repair` (WHI-1554) is `incremental_graph`'s complete incumbent plus a
+bounded checkpoint-and-suffix repair (`docs/references/research-021/suffix-repair.md`). It is
+in the `custom` group, receives the shared `search.*` / `graph.chunks` values like
+`incremental_graph`, and under `all` (when the source does not configure it) the sha256-pinned
+bounded preset `config/incremental_graph_repair/preset_v1.yaml` as its `algorithm_options`.
+The repair-off control and the stress caps are the explicit profiles
+`config/incremental_graph_repair/repair_off.yaml` and `stress.yaml` (`--strategies profile`);
+`repair_on.yaml` runs the preset next to `incremental_graph`. Saved effective profiles,
+including the earlier eight- and nine-strategy ones, replay literally and never gain it.
 
 ### Metis-inspired settings under `all`
 
