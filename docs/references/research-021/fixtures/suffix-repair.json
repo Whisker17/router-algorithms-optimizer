@@ -1,0 +1,831 @@
+{
+ "_comment": "WHI-1553 (R021-P07) suffix-repair fixtures. NEW reconstructions. Pools are {id: [token0, token1, reserve0, reserve1]} in insertion (adjacency) order, constant product, fee_bps 30 unless stated. `oracle` values come from the independent oracle of tests/routing/test_suffix_repair_contract.py (own paths, own cycle test, hand CPMM formula, exhaustive chunk-sequence enumeration); `repository` values are the actual incremental_graph/path_split solvers and the unchanged evaluator; `specification` values are the executable repair specification and are asserted against the oracle, never taken as their own expectation.",
+ "fixtures": {
+  "structural_trap": {
+   "purpose": "admission lock-in: chunk 1's greedy maximum S-B-E-D commits B->E, which makes S-E-B-D (E->B) inadmissible for every later chunk; the independently known better plan starts S-E-B-D",
+   "pools": {
+    "es": [
+     "E",
+     "S",
+     100000000,
+     3000000
+    ],
+    "sb": [
+     "S",
+     "B",
+     1000000,
+     10000000
+    ],
+    "bd": [
+     "B",
+     "D",
+     30000000,
+     100000000
+    ],
+    "eb": [
+     "E",
+     "B",
+     100000000,
+     10000000
+    ],
+    "ed": [
+     "E",
+     "D",
+     10000000,
+     100000000
+    ],
+    "be": [
+     "B",
+     "E",
+     100000000,
+     100000000
+    ]
+   },
+   "case": {
+    "token_in": "S",
+    "token_out": "D",
+    "amount_in": 3000000
+   },
+   "settings": {
+    "max_hops": 3,
+    "max_splits": 4,
+    "percent_step": 5,
+    "chunks": 3
+   },
+   "oracle": {
+    "incumbent_sequence": [
+     [
+      "sb",
+      "eb",
+      "ed"
+     ],
+     [
+      "es",
+      "ed"
+     ],
+     [
+      "sb",
+      "bd"
+     ]
+    ],
+    "incumbent_gross": 90545314,
+    "best_gross": 111178819,
+    "best_sequences": [
+     [
+      [
+       "es",
+       "be",
+       "bd"
+      ],
+      [
+       "es",
+       "ed"
+      ],
+      [
+       "es",
+       "ed"
+      ]
+     ]
+    ],
+    "complete_sequences": 120,
+    "blocking_edge": [
+     "B",
+     "E"
+    ],
+    "fix_edge": [
+     "E",
+     "B"
+    ]
+   },
+   "repository": {
+    "path_split_score": 83270629,
+    "incremental_graph_score": 90545314,
+    "incremental_graph_source": "incremental_graph"
+   },
+   "specification": {
+    "repair_score": 111178819,
+    "outcomes": [
+     "rejected_worse",
+     "rejected_worse",
+     "duplicate",
+     "duplicate",
+     "accepted",
+     "accepted"
+    ],
+    "checkpoints_visited": [
+     2,
+     1,
+     0
+    ],
+    "accepted_scores": [
+     111176933,
+     111178819
+    ]
+   },
+   "chunk_variants": {
+    "4": {
+     "incremental_graph_score": 91687734,
+     "repair_score": 111109071,
+     "oracle_best_gross": 111109071
+    },
+    "5": {
+     "incremental_graph_score": 92911795,
+     "repair_score": 111172169,
+     "oracle_best_gross": 111193897
+    }
+   }
+  },
+  "twin_pools": {
+   "purpose": "no improvement: a forced alternative first choice reconverges to the incumbent's aggregate flows (duplicate, not replayed) or replays below the retained direct_split incumbent (rejected_worse)",
+   "pools": {
+    "a1": [
+     "S",
+     "D",
+     1000000000,
+     1000000000
+    ],
+    "a2": [
+     "S",
+     "D",
+     1000000000,
+     1000000000
+    ],
+    "a3": [
+     "S",
+     "D",
+     1000000000,
+     1000000000
+    ]
+   },
+   "case": {
+    "token_in": "S",
+    "token_out": "D",
+    "amount_in": 100000000
+   },
+   "settings": {
+    "max_hops": 1,
+    "max_splits": 4,
+    "percent_step": 5,
+    "chunks": 2
+   },
+   "specification": {
+    "outcomes": [
+     "duplicate",
+     "rejected_worse"
+    ],
+    "chosen_source": "direct_split"
+   }
+  },
+  "carry_and_zero_flow": {
+   "purpose": "checkpoint completeness: carried dust chunks (carry 62 and 63 at the checkpoints) and a zero-input PoolFlow (p1, order 3) that still contributes its token edge and its order slot",
+   "pools": {
+    "p0": [
+     "S",
+     "A",
+     100000,
+     1000
+    ],
+    "p1": [
+     "D",
+     "A",
+     10000000,
+     10000000
+    ],
+    "p2": [
+     "A",
+     "B",
+     100000,
+     10000000
+    ],
+    "p3": [
+     "B",
+     "D",
+     100000,
+     100000
+    ]
+   },
+   "case": {
+    "token_in": "S",
+    "token_out": "D",
+    "amount_in": 500
+   },
+   "settings": {
+    "max_hops": 3,
+    "max_splits": 2,
+    "percent_step": 25,
+    "chunks": 8
+   },
+   "repository": {
+    "final_flows": [
+     [
+      "p0",
+      500,
+      4,
+      0
+     ],
+     [
+      "p2",
+      4,
+      398,
+      0
+     ],
+     [
+      "p3",
+      398,
+      395,
+      0
+     ],
+     [
+      "p1",
+      0,
+      0,
+      3
+     ]
+    ],
+    "checkpoint_positions_and_carry": [
+     [
+      1,
+      62
+     ],
+     [
+      3,
+      62
+     ],
+     [
+      4,
+      0
+     ],
+     [
+      6,
+      63
+     ],
+     [
+      7,
+      0
+     ]
+    ]
+   }
+  },
+  "order_metadata": {
+   "purpose": "PoolFlow.order is part of the plan identity: resuming from checkpoint 2 with renumbered order values gives a different merged plan with the same gross",
+   "pools": {
+    "p0": [
+     "A",
+     "D",
+     10000000,
+     1000000
+    ],
+    "p1": [
+     "A",
+     "S",
+     10000000,
+     100000
+    ],
+    "p2": [
+     "S",
+     "A",
+     1000000,
+     100000
+    ],
+    "p3": [
+     "A",
+     "S",
+     10000000,
+     100000
+    ]
+   },
+   "case": {
+    "token_in": "S",
+    "token_out": "D",
+    "amount_in": 10000
+   },
+   "settings": {
+    "max_hops": 3,
+    "max_splits": 2,
+    "percent_step": 25,
+    "chunks": 4
+   },
+   "checkpoint": 2,
+   "repository": {
+    "gross": 86491
+   }
+  }
+ },
+ "cross_references": {
+  "history_labels_greedy_trap": {
+   "source": "fixtures/history-labels.json fixtures.greedy_trap (WHI-1549)",
+   "settings": {
+    "max_hops": 4,
+    "max_splits": 4,
+    "percent_step": 5,
+    "chunks": 2
+   },
+   "independent_value": "label_gross 12757712 (WHI-1549's metis_inspired L4 plan, evaluator-replayed)",
+   "repository": {
+    "incremental_graph_score": 10020569,
+    "incremental_graph_source": "path_split",
+    "incremental_score": 9943929
+   },
+   "specification": {
+    "repair_score": 12757712
+   }
+  },
+  "history_labels_tie_state": {
+   "source": "fixtures/history-labels.json fixtures.tie_state (WHI-1549)",
+   "settings": {
+    "max_hops": 2,
+    "max_splits": 4,
+    "percent_step": 5,
+    "chunks": 2
+   },
+   "independent_value": "history_gross 9 (WHI-1549's p3 trajectory)",
+   "repository": {
+    "incremental_score": 8,
+    "incremental_graph_score": 9,
+    "incremental_graph_source": "single_path"
+   },
+   "specification": {
+    "outcomes": [
+     "tie"
+    ]
+   }
+  }
+ },
+ "probe": {
+  "pass": "WHI-1553 bounded tuning probe (separate diagnostic pass on bundle_tuning only; per case the repair-off control and the repair-on specification on the same settings and budget; no timing recorded or claimed; shared loaded host)",
+  "bundle": "data/corpus/mantle-5src-101082044/bundle_tuning",
+  "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+  "spec_sha256": "f90afb2e6415d0e983c97e3dd6a544fc4619eedb813b72c90ea018c0a6ee26dd",
+  "source": "tests/routing/test_suffix_repair_contract.py at base 1ce5076 (uncommitted during the probe); the specification section hash equals this file's spec_sha256()",
+  "gain_bps": "(score_on - score_off) * 10000 / score_off per case, gross_only; descriptive tuning facts, not a verdict",
+  "work_ratios": "quotes_executed(on)/quotes_executed(off); (incumbent + repair paths_scored)/incumbent paths_scored",
+  "stress_subset": "h3c50_structural_stress_subset = every 4th case of cases.jsonl in file order (24 cases)",
+  "runs": {
+   "h2c200_structural_preset": {
+    "settings": {
+     "budget": {
+      "max_candidates": null,
+      "max_quotes": 50000,
+      "time_limit_seconds": null
+     },
+     "chunks": 200,
+     "max_hops": 2,
+     "max_splits": 4,
+     "options": {
+      "alternatives_per_checkpoint": 2,
+      "max_checkpoints": 4,
+      "max_repair_attempts": 8,
+      "repair": true
+     },
+     "percent_step": 5,
+     "rule": "structural"
+    },
+    "cases": 96,
+    "status_on": {
+     "ok": 96
+    },
+    "improved": 13,
+    "worse": 0,
+    "equal": 83,
+    "gain_bps_mean_all": 0.000203,
+    "gain_bps_improved_median": 0.000848,
+    "gain_bps_max": 0.006081,
+    "cases_gain_ge_0_1_bps": 0,
+    "quotes_ratio_median": 1.194,
+    "quotes_ratio_max": 2.562,
+    "quotes_on_max": 14227,
+    "paths_scored_ratio_median": 4.338,
+    "paths_scored_ratio_max": 8.84,
+    "stop": {
+     "complete": 96
+    },
+    "outcomes": {
+     "accepted": 13,
+     "duplicate": 123,
+     "rejected_worse": 198,
+     "tie": 57
+    },
+    "consistency_failures": 0,
+    "structural_decisions_max": 5,
+    "chosen_source_on": {
+     "incremental_graph": 49,
+     "incremental_graph_repair": 13,
+     "single_path": 34
+    },
+    "improved_cases": [
+     "emp-09bc4e-201eba-low-2",
+     "emp-09bc4e-78c1b0-large-1",
+     "emp-09bc4e-78c1b0-low-1",
+     "emp-09bc4e-78c1b0-medium-3",
+     "emp-201eba-09bc4e-medium-3",
+     "emp-201eba-779ded-low-1",
+     "emp-201eba-cda86a-large-1",
+     "emp-201eba-cda86a-low-2",
+     "emp-78c1b0-201eba-low-3",
+     "emp-78c1b0-deadde-low-2",
+     "nod-09bc4e-1bdd88-large-2",
+     "nod-09bc4e-1bdd88-medium-2",
+     "nod-1bdd88-779ded-low-1"
+    ],
+    "files_sha256": {
+     "r3-h2c200-structural-0.json": "c34125888f9fd76965e463f7c6c4b8dc6dca811ef3156f3498a6c9cbbf5e34ff",
+     "r3-h2c200-structural-1.json": "6558fcc243f2ab385744cd26a92386c3e65d53faf6d4a5eb8680e96506303fcf",
+     "r3-h2c200-structural-2.json": "0a28495f2c93476185e7c93bbc8508551c14d21c2389ee5802b79e875b2738c2",
+     "r3-h2c200-structural-3.json": "893859557a25d9bb6946988387a659b89285e67758c5745045713e5c8ca93cde"
+    }
+   },
+   "h2c200_structural_stress": {
+    "settings": {
+     "budget": {
+      "max_candidates": null,
+      "max_quotes": 50000,
+      "time_limit_seconds": null
+     },
+     "chunks": 200,
+     "max_hops": 2,
+     "max_splits": 4,
+     "options": {
+      "alternatives_per_checkpoint": 4,
+      "max_checkpoints": 16,
+      "max_repair_attempts": 64,
+      "repair": true
+     },
+     "percent_step": 5,
+     "rule": "structural"
+    },
+    "cases": 96,
+    "status_on": {
+     "ok": 96
+    },
+    "improved": 22,
+    "worse": 0,
+    "equal": 74,
+    "gain_bps_mean_all": 0.000472,
+    "gain_bps_improved_median": 0.000361,
+    "gain_bps_max": 0.018242,
+    "cases_gain_ge_0_1_bps": 0,
+    "quotes_ratio_median": 1.409,
+    "quotes_ratio_max": 3.678,
+    "quotes_on_max": 19020,
+    "paths_scored_ratio_median": 7.85,
+    "paths_scored_ratio_max": 16.66,
+    "stop": {
+     "complete": 96
+    },
+    "outcomes": {
+     "accepted": 32,
+     "duplicate": 215,
+     "rejected_worse": 441,
+     "tie": 89
+    },
+    "consistency_failures": 0,
+    "structural_decisions_max": 5,
+    "chosen_source_on": {
+     "incremental_graph": 40,
+     "incremental_graph_repair": 22,
+     "single_path": 34
+    },
+    "improved_cases": [
+     "emp-09bc4e-201eba-low-2",
+     "emp-09bc4e-78c1b0-large-1",
+     "emp-09bc4e-78c1b0-low-1",
+     "emp-09bc4e-78c1b0-medium-3",
+     "emp-201eba-09bc4e-medium-3",
+     "emp-201eba-779ded-low-1",
+     "emp-201eba-78c1b0-large-1",
+     "emp-201eba-cda86a-large-1",
+     "emp-201eba-cda86a-low-2",
+     "emp-201eba-cda86a-medium-1",
+     "emp-78c1b0-201eba-large-4",
+     "emp-78c1b0-201eba-low-3",
+     "emp-78c1b0-779ded-low-1",
+     "emp-78c1b0-deadde-large-4",
+     "emp-78c1b0-deadde-low-2",
+     "emp-cda86a-201eba-low-3",
+     "emp-deadde-cda86a-low-1",
+     "nod-09bc4e-1bdd88-large-2",
+     "nod-09bc4e-1bdd88-low-2",
+     "nod-09bc4e-1bdd88-medium-2",
+     "nod-1bdd88-09bc4e-low-1",
+     "nod-1bdd88-779ded-low-1"
+    ],
+    "files_sha256": {
+     "r4-h2c200-wide-0.json": "8657745e55a2ce679b29fa518e421a06b4e82ba5ed1c81aa77715c3c948138ce",
+     "r4-h2c200-wide-1.json": "4c4499271a7a94b833f613f18ae6d9627767f63a7326cc9bb93917f516e72534",
+     "r4-h2c200-wide-2.json": "f4ac8e1b7b230b8352372761f8eaba7c059a26b5a8311902d7a3fec8a3ecc578",
+     "r4-h2c200-wide-3.json": "40cfded355044b7f9b10cbdf0055ffba0367e8e9860120021d6d8d8785e07ac3"
+    }
+   },
+   "h2c200_trailing_ablation": {
+    "settings": {
+     "budget": {
+      "max_candidates": null,
+      "max_quotes": 50000,
+      "time_limit_seconds": null
+     },
+     "chunks": 200,
+     "max_hops": 2,
+     "max_splits": 4,
+     "options": {
+      "alternatives_per_checkpoint": 2,
+      "max_checkpoints": 4,
+      "max_repair_attempts": 8,
+      "repair": true
+     },
+     "percent_step": 5,
+     "rule": "trailing"
+    },
+    "cases": 96,
+    "status_on": {
+     "ok": 96
+    },
+    "improved": 9,
+    "worse": 0,
+    "equal": 87,
+    "gain_bps_mean_all": 0.000511,
+    "gain_bps_improved_median": 0.004702,
+    "gain_bps_max": 0.013105,
+    "cases_gain_ge_0_1_bps": 0,
+    "quotes_ratio_median": 1.011,
+    "quotes_ratio_max": 1.063,
+    "quotes_on_max": 7857,
+    "paths_scored_ratio_median": 1.08,
+    "paths_scored_ratio_max": 1.08,
+    "stop": {
+     "complete": 96
+    },
+    "outcomes": {
+     "accepted": 11,
+     "duplicate": 343,
+     "rejected_worse": 327,
+     "tie": 51
+    },
+    "consistency_failures": 0,
+    "structural_decisions_max": 5,
+    "chosen_source_on": {
+     "incremental_graph": 53,
+     "incremental_graph_repair": 9,
+     "single_path": 34
+    },
+    "improved_cases": [
+     "emp-09bc4e-201eba-low-2",
+     "emp-09bc4e-201eba-medium-2",
+     "emp-09bc4e-78c1b0-low-1",
+     "emp-09bc4e-78c1b0-medium-3",
+     "emp-201eba-09bc4e-medium-3",
+     "emp-201eba-cda86a-low-2",
+     "emp-78c1b0-09bc4e-low-2",
+     "emp-78c1b0-201eba-medium-1",
+     "emp-78c1b0-779ded-low-1"
+    ],
+    "files_sha256": {
+     "r2-h2c200-trailing-0.json": "121b781b85d17325d2ed1e6bfb7a9341e894e09a113616323a8b0571f8bc5166",
+     "r2-h2c200-trailing-1.json": "ce958a66af3ad69bc6d70bc06122134404e940efdde05d0ac97d8ed9d41c3447",
+     "r2-h2c200-trailing-2.json": "ab475a45778c273447509f91dbc7d8d49ec9e23300ae4dc4a7c6330322910870",
+     "r2-h2c200-trailing-3.json": "d39e0811a02675be5b0ac3002f0d8d93e3c0160be6296f8c146cfc90a8087700"
+    }
+   },
+   "h3c50_structural_preset": {
+    "settings": {
+     "budget": {
+      "max_candidates": null,
+      "max_quotes": 300000,
+      "time_limit_seconds": null
+     },
+     "chunks": 50,
+     "max_hops": 3,
+     "max_splits": 4,
+     "options": {
+      "alternatives_per_checkpoint": 2,
+      "max_checkpoints": 4,
+      "max_repair_attempts": 8,
+      "repair": true
+     },
+     "percent_step": 5,
+     "rule": "structural"
+    },
+    "cases": 96,
+    "status_on": {
+     "ok": 96
+    },
+    "improved": 23,
+    "worse": 0,
+    "equal": 73,
+    "gain_bps_mean_all": 0.103203,
+    "gain_bps_improved_median": 0.001193,
+    "gain_bps_max": 9.775899,
+    "cases_gain_ge_0_1_bps": 1,
+    "quotes_ratio_median": 1.193,
+    "quotes_ratio_max": 2.372,
+    "quotes_on_max": 99412,
+    "paths_scored_ratio_median": 5.07,
+    "paths_scored_ratio_max": 8.475,
+    "stop": {
+     "complete": 96
+    },
+    "outcomes": {
+     "accepted": 27,
+     "duplicate": 74,
+     "rejected_worse": 304,
+     "tie": 90
+    },
+    "consistency_failures": 0,
+    "structural_decisions_max": 7,
+    "chosen_source_on": {
+     "incremental_graph": 49,
+     "incremental_graph_repair": 23,
+     "path_split": 2,
+     "single_path": 22
+    },
+    "improved_cases": [
+     "emp-09bc4e-201eba-low-2",
+     "emp-09bc4e-78c1b0-large-1",
+     "emp-09bc4e-78c1b0-low-1",
+     "emp-201eba-09bc4e-large-3",
+     "emp-201eba-09bc4e-low-4",
+     "emp-201eba-09bc4e-medium-3",
+     "emp-201eba-779ded-low-1",
+     "emp-201eba-78c1b0-low-3",
+     "emp-201eba-cda86a-large-1",
+     "emp-201eba-cda86a-medium-1",
+     "emp-779ded-09bc4e-low-3",
+     "emp-779ded-78c1b0-low-2",
+     "emp-78c1b0-09bc4e-large-1",
+     "emp-78c1b0-deadde-large-4",
+     "emp-78c1b0-deadde-low-2",
+     "emp-78c1b0-deadde-medium-4",
+     "nod-09bc4e-1bdd88-low-2",
+     "nod-09bc4e-1bdd88-medium-2",
+     "nod-1bdd88-09bc4e-large-1",
+     "nod-1bdd88-09bc4e-low-1",
+     "nod-1bdd88-09bc4e-medium-1",
+     "nod-1bdd88-779ded-medium-2",
+     "nod-779ded-1bdd88-low-2"
+    ],
+    "files_sha256": {
+     "r1-h3c50-structural-0.json": "f1457839bc771a69257e81e3a7a9fc24cbd25b3d09443c28fe10f7772b925e08",
+     "r1-h3c50-structural-1.json": "12c02e652b12ae0419ca67312d3b3a6505d0c58ac5454f54ffb2a725b2c20186",
+     "r1-h3c50-structural-2.json": "73492bef3b388437cd9e04040f3176fbf4d7d3ae403adcd384659fc05bb63cf5",
+     "r1-h3c50-structural-3.json": "cddfcf7a84019b5f3d56be2f05bd8a71ed5a9076d7b6bd151a3121751618f533"
+    }
+   },
+   "h3c50_structural_stress_subset": {
+    "settings": {
+     "budget": {
+      "max_candidates": null,
+      "max_quotes": 300000,
+      "time_limit_seconds": null
+     },
+     "chunks": 50,
+     "max_hops": 3,
+     "max_splits": 4,
+     "options": {
+      "alternatives_per_checkpoint": 4,
+      "max_checkpoints": 16,
+      "max_repair_attempts": 64,
+      "repair": true
+     },
+     "percent_step": 5,
+     "rule": "structural"
+    },
+    "cases": 24,
+    "status_on": {
+     "ok": 24
+    },
+    "improved": 7,
+    "worse": 0,
+    "equal": 17,
+    "gain_bps_mean_all": 0.443209,
+    "gain_bps_improved_median": 0.00159,
+    "gain_bps_max": 10.111789,
+    "cases_gain_ge_0_1_bps": 2,
+    "quotes_ratio_median": 1.372,
+    "quotes_ratio_max": 2.275,
+    "quotes_on_max": 116832,
+    "paths_scored_ratio_median": 9.516,
+    "paths_scored_ratio_max": 19.772,
+    "stop": {
+     "complete": 24
+    },
+    "outcomes": {
+     "accepted": 10,
+     "duplicate": 39,
+     "rejected_worse": 180,
+     "tie": 36
+    },
+    "consistency_failures": 0,
+    "structural_decisions_max": 6,
+    "chosen_source_on": {
+     "incremental_graph": 12,
+     "incremental_graph_repair": 7,
+     "single_path": 5
+    },
+    "improved_cases": [
+     "emp-09bc4e-201eba-large-3",
+     "emp-201eba-09bc4e-large-3",
+     "emp-201eba-779ded-low-1",
+     "emp-78c1b0-09bc4e-low-2",
+     "emp-78c1b0-deadde-low-2",
+     "nod-1bdd88-09bc4e-low-1",
+     "nod-1bdd88-779ded-medium-2"
+    ],
+    "files_sha256": {
+     "r6-h3c50-stress-0.json": "1b80903e6819e37dc9294185b8d647d98e2d40c02d2b0673400d2cb6e435f33f",
+     "r6-h3c50-stress-1.json": "5de409cfd88e801ea1112c0a5e50498afe8b0ae4cfd0a1d2491f50edbe54bead",
+     "r6-h3c50-stress-2.json": "aa4264f890cec89a12dbd05a5dad982a45e43e84602b5e9a7e576073c04aee58",
+     "r6-h3c50-stress-3.json": "9794578d489a20b32b23d75f9ac76e91223d3cb5f7fded458cbfd74cb623bc3b"
+    }
+   },
+   "h3c50_trailing_ablation": {
+    "settings": {
+     "budget": {
+      "max_candidates": null,
+      "max_quotes": 300000,
+      "time_limit_seconds": null
+     },
+     "chunks": 50,
+     "max_hops": 3,
+     "max_splits": 4,
+     "options": {
+      "alternatives_per_checkpoint": 2,
+      "max_checkpoints": 4,
+      "max_repair_attempts": 8,
+      "repair": true
+     },
+     "percent_step": 5,
+     "rule": "trailing"
+    },
+    "cases": 96,
+    "status_on": {
+     "ok": 96
+    },
+    "improved": 7,
+    "worse": 0,
+    "equal": 89,
+    "gain_bps_mean_all": 0.000144,
+    "gain_bps_improved_median": 0.000326,
+    "gain_bps_max": 0.010386,
+    "cases_gain_ge_0_1_bps": 0,
+    "quotes_ratio_median": 1.018,
+    "quotes_ratio_max": 1.082,
+    "quotes_on_max": 61994,
+    "paths_scored_ratio_median": 1.316,
+    "paths_scored_ratio_max": 1.32,
+    "stop": {
+     "complete": 96
+    },
+    "outcomes": {
+     "accepted": 7,
+     "duplicate": 318,
+     "rejected_worse": 361,
+     "tie": 46
+    },
+    "consistency_failures": 0,
+    "structural_decisions_max": 7,
+    "chosen_source_on": {
+     "incremental_graph": 64,
+     "incremental_graph_repair": 7,
+     "path_split": 3,
+     "single_path": 22
+    },
+    "improved_cases": [
+     "emp-09bc4e-78c1b0-low-1",
+     "emp-201eba-09bc4e-medium-3",
+     "emp-201eba-779ded-low-1",
+     "emp-201eba-78c1b0-large-1",
+     "emp-201eba-78c1b0-low-3",
+     "emp-78c1b0-deadde-low-2",
+     "nod-1bdd88-09bc4e-medium-1"
+    ],
+    "files_sha256": {
+     "r5-h3c50-trailing-0.json": "510c9743f059d7b5242cc68656c8ca99242154aa4f67bba937c87b79e0267b0a",
+     "r5-h3c50-trailing-1.json": "6a104537d793f196f4f1079ea210fbc0f13f45e8a693ef264b06455bf87b72f1",
+     "r5-h3c50-trailing-2.json": "e7f8e7eb4fb93242e696776f4fc0bb634df09f72e123be6d6d841be5f29284c6",
+     "r5-h3c50-trailing-3.json": "ffbf9036ca80da2a65df7b10878ee7b3dc558ed1368d1c08bb730741446a924e"
+    }
+   }
+  },
+  "stress_vs_preset_on_subset": {
+   "stress_better": 3,
+   "stress_worse": 0,
+   "equal": 21,
+   "cases": {
+    "emp-78c1b0-09bc4e-low-2": {
+     "preset_bps": 0.0,
+     "stress_bps": 10.11179,
+     "found_at": "decision 0, alternative rank 3"
+    },
+    "emp-09bc4e-201eba-large-3": {
+     "preset_bps": 0.0,
+     "stress_bps": 0.5162,
+     "found_at": "decisions 1 and 0 = structural checkpoints 5 and 6 of 6 (latest first)"
+    },
+    "emp-78c1b0-deadde-low-2": {
+     "preset_bps": 0.0012,
+     "stress_bps": 0.00625,
+     "found_at": "decision 0 = structural checkpoint 5 of 5"
+    }
+   }
+  }
+ }
+}
