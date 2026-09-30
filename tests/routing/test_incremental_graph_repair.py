@@ -230,7 +230,8 @@ def test_registered_as_a_custom_options_identity_appended_by_all() -> None:
     assert ALGORITHMS[NAME] is igr.FACTORY is FACTORY
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES
     assert profile_module.strategy_group(NAME) == "custom"
-    assert R021_ADDITIONS == ("metis_history", NAME)  # contract order (WHI-1550 first)
+    # contract order (WHI-1550, WHI-1552 first)
+    assert R021_ADDITIONS == ("metis_history", "direct_split_certified", NAME)
     assert FACTORY.options_validator is igr.validate_options  # module-level (picklable)
     assert FACTORY.capabilities == incremental_graph.CAPABILITIES
     assert (FACTORY.search_params, FACTORY.graph_params) == (

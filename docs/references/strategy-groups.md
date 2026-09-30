@@ -40,14 +40,14 @@ evidence.
 
 | mode | runs |
 | --- | --- |
-| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired`, then each implemented 0.2.1 identity in contract order (so far `metis_history`, `incremental_graph_repair`) |
+| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired`, then each implemented 0.2.1 identity in contract order (so far `metis_history`, `direct_split_certified`, `incremental_graph_repair`) |
 | `base` | only the profile's base algorithms (an intentional subset stays a subset) |
 | `optimized` | only the two optimized strategies |
 | `profile` | the profile's exact algorithm selection: the pre-WHI-1528 behaviour, used for replays |
 
-A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs eleven
-strategies: six base, two optimized, then `metis_inspired`, `metis_history` and
-`incremental_graph_repair`. They run one after the other,
+A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs twelve
+strategies: six base, two optimized, then `metis_inspired`, `metis_history`,
+`direct_split_certified` and `incremental_graph_repair`. They run one after the other,
 each in its own isolated worker, under the profile's own objective, budget, measurement
 (`run`), worker and `search.*` values. Every registry entry is not added automatically, and
 a name the profile already lists is not repeated. `uni_sor_fast` keeps working with its own
@@ -77,6 +77,22 @@ The disabled-mechanism control is `config/metis_history/history_off.yaml` (`domi
 next to `metis_inspired` with `label_pruning: false`); `history_on.yaml` runs the preset next
 to `metis_inspired`'s label search (`--strategies profile`). Saved effective profiles,
 including the earlier eight-, nine- and ten-strategy ones, replay literally and never gain it.
+
+`direct_split_certified` (WHI-1552) is a certified integer branch and bound over
+`direct_split`'s own allocation grid (`docs/references/research-021/integer-allocation.md`): an
+ordinary plan plus a validated same-domain value bound (`certified [lower, upper] gap g` with its
+termination). It is in the `custom` group, runs after `metis_history`, receives the shared
+`search.max_splits` / `search.percent_step`, and under `all` (when the source does not configure
+it) the sha256-pinned bounded preset `config/direct_split_certified/preset_v1.yaml`
+(`domain: repository_grid`, 100,000 expanded nodes, 100,000 open nodes). Its scope is a request
+whose admitted direct pools are ALL constant product under `gross_only`; every other case
+(concentrated/liquidity-book direct pools, net objectives) is a visible `unsupported` row with
+its reason, never a CPMM-subset approximation, so in the frozen corpus it proves only
+single-pool CPMM cases. Untruncated, its value equals `direct_split`'s on the same grid (the
+contribution is the certificate, not a better value). `config/direct_split_certified/grid.yaml`
+runs the preset next to `direct_split`; the `raw_integer` expanded stress domain
+(`raw_stress.yaml`) runs only by explicit `--strategies profile`. Saved effective profiles,
+including the earlier eight- to eleven-strategy ones, replay literally and never gain it.
 
 ### Metis-inspired settings under `all`
 
