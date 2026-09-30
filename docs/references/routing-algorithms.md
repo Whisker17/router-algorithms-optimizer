@@ -1996,10 +1996,12 @@ smaller domain next to `direct_split` rows that use all four pools (§15.1).
    case is `unsupported (non_constant_product_direct_pool)` before any quote. It is not a failure
    of the search and not a zero.
 8. **`incremental_graph_repair` keeps the incumbent.** The incumbent equals `incremental_graph`'s
-   plan. Its one structural checkpoint is restored once; one forced alternative reconverges to the
-   same flows (`duplicate`, not replayed), and one replays at 9950677267 (`rejected_worse`). The
-   repair stops `complete`, and the published plan is the incumbent. The extra work (265 vs 264
-   quotes executed, 9 in-solve evaluations) is charged to the same attempt.
+   plan. According to the factory's repair record (observed, not independently derived), its one
+   structural checkpoint is restored once; one forced alternative reconverges to the same flows
+   (`duplicate`, not replayed), and one replays below the incumbent (`rejected_worse`). The repair
+   stops `complete`, and the published plan is the incumbent, whose gross is checked above. The
+   extra work (265 vs 264 quotes executed, 9 in-solve evaluations; factory counters) is charged to
+   the same attempt.
 9. **`uni_sor_cycle_safe` equals `uni_sor_port`.** At `search.max_hops` 2 a two-route union can
    never be cyclic (§17.2). The factory reports 200 admission checks and 0 rejections, so
    `reference_trajectory` is `identical`: the same 40-quote table, the same plan and gross.
@@ -2439,9 +2441,9 @@ step says otherwise.
    - `metis_inspired` keeps only 11926 at C, loses the 4-hop path and returns 9938 (A–B–T).
    - `metis_history` returns **19560** on A–D–C–B–T. The fresh evaluator replay and the
      independent hand ledger both give 19560.
-   - The row is still labelled `termination: state_cap`. The single chunk is also the final
-     chunk, so R5 forbids strict pruning, and the preset's one-label-per-signature cap drops the
-     lower same-signature labels (`labels_dropped_signature_cap` 2, a factory counter). The value
+   - The factory reports this row as `termination: state_cap` (an observed factory record, not
+     an asserted value). The single chunk is also the final chunk, so R5 forbids strict pruning,
+     and the preset's one-label-per-signature cap drops the lower same-signature labels (`labels_dropped_signature_cap` 2, a factory counter). The value
      happens to equal the exhaustive best, but T1 is not claimed for a capped chunk.
 2. **Prefix admission (fixture X4b, 2 chunks, 5 bps pools).** Request $2 \times 10^9$ S $\to$ D.
    - Chunk 1 ($10^9$) takes `sx, xa, ad` (marginal 3550412675). It commits the token edges
@@ -3404,9 +3406,12 @@ All values are checked by `r021_examples.py` section 16 (`example_cfmm_dual`). T
 expectations are this module's own closed-form CPMM oracle and imbalance, its own share projection
 written from `cfmm-dual.md` §6, a brute-force integer optimum with the hand quote, the pinned
 CFMMRouter.jl author run (`tests/fixtures/cfmm/author_reference.json`, commit `5932e42`), the pinned
-WHI-1557 contract model (`model_reference.json`) and exact protocol quotes for CL legs. Numerical
-tolerances are pinned apart from money: CPMM oracle vs author $10^{-12}$ relative, final prices vs
-author $10^{-8}$, CL oracle vs author $5 \times 10^{-14}$; every monetary amount is exact.
+WHI-1557 contract model (`model_reference.json`) and exact protocol quotes for CL legs. The
+numerical dependencies are pinned separately from money: the port's optimizer is SciPy 1.18.1
+L-BFGS-B with NumPy 2.5.3 ([`pyproject.toml`](../../pyproject.toml);
+[`research-021/cfmm-dual.md`](research-021/cfmm-dual.md) §2), and the numerical tolerances
+are: CPMM oracle vs author $10^{-12}$ relative, final prices vs author $10^{-8}$, CL oracle vs
+author $5 \times 10^{-14}$. Every monetary amount is exact.
 
 **(a) Pool-level oracle.** Author probe `o-grid38-p1-sell-t0`: reserves (134, 190), 30 bps,
 prices $\nu = (1, 1.5)$.
@@ -3487,9 +3492,10 @@ and the factory's model oracle agree within $10^{-12}$ on all 7 pinned author CP
    recovery internal, not through a factory solve.
 3. **Nonconvergence (`r-tiny`, 2 S → T).** Pools `h1` (1000, 1000) and `h2` ($10^9$, $10^{11}$).
    The continuous value is 198.41 (between the pinned 198.40 and 198.41), but the exact chain is
-   2 → 1 M → **99** T. The dust order meets the float noise floor: `not_converged`, residual
-   0.1073 > $10^{-5}$ after 101 evaluations, estimate withheld (`unknown`). The exact plan 99 is
-   still recovered and replayed.
+   2 → 1 M → **99** T. The dust order meets the float noise floor: the initial solve is
+   `not_converged` with its residual above the $10^{-5}$ tolerance, and the estimate is withheld
+   (`unknown`); the factory reports a residual of 0.1073 (observed, not independently derived).
+   The exact plan 99 is still recovered and replayed.
 4. **Recovery failures** (pools `big` ($10^6$, $5 \times 10^5$) and `dust` (1, 1), 10 S):
    - The continuous support uses both pools; the `dust` leg's exact quote is
      `insufficient_output_amount`, so it is pruned and attempt 2 routes all 10 S through `big`:
@@ -3518,13 +3524,14 @@ $[-600, 1200)$ with $L = 10^{16}$, collected bitmap words $(-1, 0)$.
 
    | Input (raw T0) | Exact quote | `cfmm_dual` row |
    |---|---|---|
-   | 1000000 | `ok` 1007019 (1 swap step) | `ok` **1007019**; the dual solve is `not_converged` (residual 1.0) with empty support, so this is the labelled `single_path` fallback (`empty_support`) |
+   | 1000000 | `ok` 1007019 (1 swap step) | `ok` **1007019**, equal to the exact quote; the factory reports this row as the labelled `single_path` fallback after an empty continuous support (`empty_support`, initial solve `not_converged`; observed diagnostics) |
    | 356469011501122 | `ok` 346536862482825 (2 initialized ticks crossed) | `ok` **346536862482825**, `converged`, recovered across the empty range without fallback |
    | 970404414235056 | `incomplete_snapshot` (beyond the collected range) | **`incomplete_snapshot`**: the leg is pruned and the fallback also meets uncollected state |
 
-   The recovered output is always the exact quote. In the second row the factory-reported
-   estimate is 346536862482828.06, a numerical value slightly above the exact output; this
-   synthetic-fixture closeness does not transfer to real states (§18.9).
+   The recovered output (or fallback output) is always the exact quote; only these outputs and
+   statuses are asserted, the termination and fallback labels are the factory's own records. In
+   the second row the factory-reported estimate is 346536862482828.06, a numerical value slightly
+   above the exact output; this synthetic-fixture closeness does not transfer to real states (§18.9).
 4. **Missing `TickInfo` at the model's endpoint.** In the missing-tick variant the continuous range
    is closed at tick $-1800$. The smallest input whose exact quote fails is 485202207117532: the
    exact swap must cross that tick and cannot, so the quote is `incomplete_snapshot`. The model
@@ -3541,8 +3548,11 @@ $[-600, 1200)$ with $L = 10^{16}$, collected bitmap words $(-1, 0)$.
 `e03e3c9b…`). It is neither the 19-pool fixture of §11 nor the 143-pool corpus. Case
 `usdc_usdt_small`: 1000000 raw USDC $\to$ USDT, `max_hops` 3.
 
-- **CL stage (`cfmm_dual/2`).** Markets: 2 concentrated and 3 constant-product pools (the LB pools
-  are never markets). `converged`, residual $1.77 \times 10^{-8}$. The plan:
+- **CL stage (`cfmm_dual/2`).** The asserted facts are that the plan routes both CL and CPMM legs
+  and that no Liquidity Book pool is ever a market. The factory reports its market list (2
+  concentrated and 3 constant-product pools) and an initial solve that ended `converged` with
+  residual $1.77 \times 10^{-8}$; these are observed diagnostics, not independently derived. The
+  plan:
 
   | Leg | Pool (protocol) | Input | Output |
   |---|---|---|---|
@@ -3555,8 +3565,8 @@ $[-600, 1200)$ with $L = 10^{16}$, collected bitmap words $(-1, 0)$.
   - Each leg equals the exact original-state quote of its merged input; the WMNT legs drain the
     whole WMNT inflow.
   - Gross $192818 + 306840 + 493811 = \mathbf{993469}$.
-- **CPMM stage (`cfmm_dual/1`, the historical ablation):** 3 CPMM markets, **990975** (flows equal
-  to the pinned contract model).
+- **CPMM stage (`cfmm_dual/1`, the historical ablation):** **990975** over the CPMM markets (flows
+  equal to the pinned contract model).
 - **Best exact single path over the CL-stage markets:** **989291** (`0x1a4d…` → `0x4e76…`).
 - The CL-stage split is factory output checked for exact feasibility and against every exact
   single path, not against an independent optimum. It is one request, not a performance result.
@@ -3607,8 +3617,9 @@ Line numbers are those of `e455c7d`; function names are the stable anchors.
   - `Budget.max_candidates` counts only fallback paths evaluated.
 - **Ties:** admitted market order everywhere; cycle victims by (value, later market); topological
   ties by first use; leg order by admitted order with the remainder last; the fallback keeps the
-  first best path. Deterministic for the pinned SciPy/NumPy wheels and platform; bitwise float
-  identity across platforms is not claimed.
+  first best path. Deterministic for the pinned SciPy 1.18.1 / NumPy 2.5.3 wheels
+  ([`pyproject.toml`](../../pyproject.toml); [`research-021/cfmm-dual.md`](research-021/cfmm-dual.md)
+  §2) and platform; bitwise float identity across platforms is not claimed.
 
 ### 18.8 Computational and Memory Cost
 - **Numerical work:** at most `max_function_evaluations` evaluations per solve attempt, each
