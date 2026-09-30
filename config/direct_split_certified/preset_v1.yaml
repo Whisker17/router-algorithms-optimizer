@@ -1,0 +1,17 @@
+# Bounded comparison preset v1 of `direct_split_certified` (WHI-1552, R021-P06;
+# docs/references/research-021/integer-allocation.md §6, §9.2; contract R021-C/1 §7.1).
+# Frozen: its sha256 is pinned in routing/algorithms/direct_split_certified.py (`PRESET`)
+# and a changed file is refused. It holds only this identity's algorithm_options;
+# search.max_splits / search.percent_step and the wall/quote/candidate budget come from the
+# run profile. `--strategies all` writes these values out for an identity the source does
+# not configure: the repository_grid domain only (direct_split's own grid, pool order and
+# remainder rule). Settings sha256 03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406
+# (integer-allocation.json `preset`). The raw_integer stress configuration is a separately
+# identified domain and runs only by explicit profile (raw_stress.yaml).
+key: R021-P06-direct_split_certified
+version: 1
+algorithm: direct_split_certified
+options:
+  domain: repository_grid
+  max_bound_nodes: 100000
+  max_open_nodes: 100000

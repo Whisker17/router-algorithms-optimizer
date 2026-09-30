@@ -1,0 +1,39 @@
+# direct_split_certified RAW-INTEGER STRESS profile (WHI-1552, R021-P06;
+# docs/references/research-021/integer-allocation.md §2.3, §6, §9.3; contract R021-C/1 §7.2).
+# A separately identified EXPANDED domain: any positive integer legs summing to the input
+# over at most search.max_splits admitted direct pools (percent_step is not read by it), up
+# to raw_max_amount_in raw units; larger inputs are visible `unsupported` rows. Its values
+# are domain gains versus the repository grid, never a same-domain or speed claim. Runs
+# ONLY by explicit `main.py run|quote --strategies profile`; it is in no `--strategies all`
+# comparison (`all` adds the repository_grid preset v1 instead). Settings sha256
+# 7bf42a24601dfc68f62908b791d9c0127376d708cb70de5f89d4dfc9736f9961
+# (integer-allocation.json `stress_raw`). SMOKE-SCALE, UNVALIDATED shared values.
+schema_version: 2
+algorithms:
+  - direct_split
+  - direct_split_certified
+objective:
+  mode: gross_only
+search:
+  max_splits: 4
+  percent_step: 5
+budget:
+  time_limit_seconds: 600
+  max_quotes: 1000000
+  max_candidates: null      # explicitly no cap (it would cap finalist_plans_evaluated)
+algorithm_options:
+  direct_split_certified:            # stress: resolves as {kind: override}
+    domain: raw_integer
+    max_bound_nodes: 1000000
+    max_open_nodes: 250000
+    raw_max_amount_in: 100000
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1552
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

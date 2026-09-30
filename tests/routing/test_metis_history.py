@@ -275,7 +275,11 @@ def test_registered_once_as_a_custom_identity_right_after_metis_inspired() -> No
     assert ALGORITHMS[NAME] is mh.FACTORY is FACTORY
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES
     assert profile_module.strategy_group(NAME) == "custom"
-    assert R021_ADDITIONS == (NAME, incremental_graph_repair.NAME)  # R021-C/1 §2 order
+    assert R021_ADDITIONS == (  # R021-C/1 §2 order
+        NAME,
+        "direct_split_certified",
+        incremental_graph_repair.NAME,
+    )
     assert FACTORY.options_validator is mh.validate_options  # module-level (picklable)
     assert FACTORY.capabilities == metis_inspired.CAPABILITIES
     assert FACTORY.search_params == metis_inspired.SEARCH_PARAMS
@@ -293,8 +297,10 @@ def test_registered_once_as_a_custom_identity_right_after_metis_inspired() -> No
         source_path="config/daily_gross.yaml",
         source_sha256="x",
     )
-    assert list(profile.algorithms)[-3:] == [metis_inspired.NAME, NAME, "incremental_graph_repair"]
-    assert len(profile.algorithms) == 11
+    assert list(profile.algorithms)[-4:] == [
+        metis_inspired.NAME, NAME, "direct_split_certified", "incremental_graph_repair"
+    ]  # fmt: skip
+    assert len(profile.algorithms) == 12
     assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
     assert dict(profile.algorithm_config(FACTORY).options) == PRESET
     assert profile.algorithm_config(FACTORY).params == {
@@ -1205,8 +1211,9 @@ def test_saved_eight_nine_and_ten_strategy_profiles_replay_literally() -> None:
     and `base` / `optimized` never select it."""
     source = yaml.safe_load((REPO / "config" / "daily_gross.yaml").read_text())
     document, _ = derive(source, "all", source_path="s", source_sha256="x")
-    for drop in ([NAME, "incremental_graph_repair", metis_inspired.NAME],
-                 [NAME, "incremental_graph_repair"], [NAME]):  # fmt: skip
+    dsc = "direct_split_certified"  # WHI-1552, added after this identity
+    for drop in ([NAME, dsc, "incremental_graph_repair", metis_inspired.NAME],
+                 [NAME, dsc, "incremental_graph_repair"], [NAME, dsc]):  # fmt: skip
         saved = json.loads(json.dumps(document))
         saved["algorithms"] = [a for a in saved["algorithms"] if a not in drop]
         saved["selection"]["groups"]["custom"] = [
@@ -1218,6 +1225,6 @@ def test_saved_eight_nine_and_ten_strategy_profiles_replay_literally() -> None:
             saved["algorithm_options"] = options
         literal, profile = derive(saved, "profile", source_path="s", source_sha256="x")
         assert literal == saved and NAME not in profile.algorithms
-        assert len(profile.algorithms) == 11 - len(drop)
+        assert len(profile.algorithms) == 12 - len(drop)
     for mode in ("base", "optimized"):
         assert NAME not in derive(source, mode, source_path="s", source_sha256="x")[1].algorithms

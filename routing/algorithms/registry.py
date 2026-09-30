@@ -41,6 +41,14 @@ history/admission-aware label search (docs/references/research-021/history-label
 Jupiter Metis), configured by validated `algorithm_options` (sha256-pinned preset). It is
 `custom`; `--strategies all` appends it right after `metis_inspired`, before
 `incremental_graph_repair` (contract order).
+
+`direct_split_certified` (WHI-1552, R021-C/1 §2 row 2) is a certified integer branch and
+bound over `direct_split`'s own allocation grid (docs/references/research-021/
+integer-allocation.md): an ordinary plan plus a validated same-domain value bound, all-CPMM
+direct pools under `gross_only` only (everything else a visible `unsupported` row). It is
+`custom`, configured by validated `algorithm_options` (sha256-pinned `repository_grid`
+preset); `--strategies all` appends it after `metis_history`, before
+`incremental_graph_repair`. Its `raw_integer` domain runs only by explicit profile.
 """
 
 from __future__ import annotations
@@ -48,6 +56,7 @@ from __future__ import annotations
 from routing.algorithms import (
     direct,
     direct_split,
+    direct_split_certified,
     incremental_graph,
     incremental_graph_repair,
     metis_history,
@@ -76,6 +85,7 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     uni_sor_strategies.OPTIMIZED: uni_sor_strategies.OPTIMIZED_FACTORY,
     # 0.2.1 experimental identities (R021-C/1 §2), each once implemented (`custom` group).
     metis_history.NAME: metis_history.FACTORY,  # WHI-1550
+    direct_split_certified.NAME: direct_split_certified.FACTORY,  # WHI-1552
     incremental_graph_repair.NAME: incremental_graph_repair.FACTORY,  # WHI-1554
 }
 

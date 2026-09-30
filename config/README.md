@@ -91,6 +91,12 @@ No loader code ships with the template — write it when the first config file l
   values: `history_on.yaml` (the preset beside the label search) and `history_off.yaml` (the
   `dominance: "off"` control beside the exhaustive enumeration; `off` is quoted because YAML
   reads a bare `off` as false).
+- `direct_split_certified/` (WHI-1552) — `preset_v1.yaml`, the sha256-pinned bounded
+  `algorithm_options` preset of the experimental `direct_split_certified` (`repository_grid`,
+  100,000 nodes / 100,000 open nodes; not a run profile, `--strategies all` writes it out), and
+  two smoke-scale, unvalidated run profiles next to `direct_split` with its 4-split 5% grid:
+  `grid.yaml` (the preset) and `raw_stress.yaml` (the separately identified `raw_integer`
+  expanded stress domain up to 100,000 raw units; explicit `--strategies profile` only).
 - `cost_calibration.yaml` — the empirical execution-cost calibration definition (WHI-1445,
   `snapshot/cost_evidence.py`): the snapshot, the absolute Dune window (ending at the
   snapshot timestamp), the pool-family label map, sampling seed/modulus, the train/holdout
