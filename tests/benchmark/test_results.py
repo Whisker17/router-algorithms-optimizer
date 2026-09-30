@@ -306,4 +306,5 @@ def test_environment_record_names_machine_and_software() -> None:
     assert env["worker"] == {"scope": "algorithm"}
     assert env["clock"]["monotonic"] is True
     assert env["python_version"] == sys.version.split()[0]
-    assert set(env["dependencies"]) == {"pycryptodome", "pyyaml"}
+    # numpy/scipy: the pinned cfmm_dual optimizer (WHI-1558); recorded from metadata only
+    assert set(env["dependencies"]) == {"numpy", "pycryptodome", "pyyaml", "scipy"}

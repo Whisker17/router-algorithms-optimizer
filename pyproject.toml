@@ -4,8 +4,10 @@ version = "0.1.0"
 description = "Offline benchmark for Mantle swap-routing algorithms"
 requires-python = ">=3.12"
 dependencies = [
+    "numpy==2.5.3",
     "pycryptodome>=3.23.0",
     "pyyaml>=6.0.3",
+    "scipy==1.18.1",
 ]
 
 [dependency-groups]

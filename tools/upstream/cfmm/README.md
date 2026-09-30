@@ -15,8 +15,10 @@ tests read the checked-in fixtures in `tests/fixtures/cfmm/`. Contract:
 
 Requires Julia 1.10.10 (`JULIA=/path/to/julia`, default `julia`), `uv`, and package
 registry access for the first `Pkg.instantiate()` (a mirror may be set with
-`JULIA_PKG_SERVER`). SciPy is never added to the project: `uv run --with` layers it for
-one command.
+`JULIA_PKG_SERVER`). At WHI-1557 SciPy was not a project dependency and `uv run --with`
+layered it for one command; since WHI-1558 the runtime pins the same `scipy==1.18.1` /
+`numpy==2.5.3` in `pyproject.toml`/`uv.lock` (`routing/cfmm/optimizer.py`), so the
+`--with` pins below resolve to the locked versions.
 
 ```bash
 tools/upstream/cfmm/regen.sh
