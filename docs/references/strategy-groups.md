@@ -40,14 +40,15 @@ evidence.
 
 | mode | runs |
 | --- | --- |
-| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired`, then each implemented 0.2.1 identity in contract order (so far `metis_history`, `direct_split_certified`, `incremental_graph_repair`) |
+| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired`, then each implemented 0.2.1 identity in contract order (so far `metis_history`, `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe`) |
 | `base` | only the profile's base algorithms (an intentional subset stays a subset) |
 | `optimized` | only the two optimized strategies |
 | `profile` | the profile's exact algorithm selection: the pre-WHI-1528 behaviour, used for replays |
 
-A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs twelve
+A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs thirteen
 strategies: six base, two optimized, then `metis_inspired`, `metis_history`,
-`direct_split_certified` and `incremental_graph_repair`. They run one after the other,
+`direct_split_certified`, `incremental_graph_repair` and `uni_sor_cycle_safe`. They run one
+after the other,
 each in its own isolated worker, under the profile's own objective, budget, measurement
 (`run`), worker and `search.*` values. Every registry entry is not added automatically, and
 a name the profile already lists is not repeated. `uni_sor_fast` keeps working with its own
@@ -93,6 +94,17 @@ contribution is the certificate, not a better value). `config/direct_split_certi
 runs the preset next to `direct_split`; the `raw_integer` expanded stress domain
 (`raw_stress.yaml`) runs only by explicit `--strategies profile`. Saved effective profiles,
 including the earlier eight- to eleven-strategy ones, replay literally and never gain it.
+
+`uni_sor_cycle_safe` (WHI-1556) is `uni_sor_port`'s pipeline with one added rule at SOR's
+only combination point: a combination is admitted only if the union of its routes' token edges
+is acyclic (`docs/references/research-021/cycle-safe-sor.md`), so it never returns a
+token-cycle plan. It is in the `custom` group, runs after `incremental_graph_repair`, receives
+`uni_sor_port`'s shared `search.max_hops` / `search.max_splits` / `search.percent_step`, and
+has no `algorithm_options` (its pinned preset `config/uni_sor_cycle_safe/preset_v1.yaml` is
+`{}`). It is not upstream parity and can lose to `uni_sor_port` (the goldens stay the port's);
+its search record carries `cycle_safe` counters and phases. `config/uni_sor_cycle_safe/
+matched.yaml` runs it next to `uni_sor_port` at 3 hops. Saved effective profiles, including
+the earlier eight- to twelve-strategy ones, replay literally and never gain it.
 
 ### Metis-inspired settings under `all`
 

@@ -7,8 +7,8 @@ fixtures), plus the profile-derivation and validation rules behind it:
 - the default `all` runs the source profile's base strategies, then the two named
   optimized strategies, then the experimental `metis_inspired` (WHI-1540) and the implemented
   0.2.1 identities `metis_history` (WHI-1550), `direct_split_certified` (WHI-1552; a visible
-  `unsupported` row on a non-CPMM direct pair) and `incremental_graph_repair` (WHI-1554), each
-  with its pinned preset, sequentially;
+  `unsupported` row on a non-CPMM direct pair), `incremental_graph_repair` (WHI-1554) and
+  `uni_sor_cycle_safe` (WHI-1556), each with its pinned preset, sequentially;
   `base` / `optimized` / `profile` select as documented, intentional subsets and custom
   algorithms are kept, nothing is duplicated; a listed `metis_inspired` keeps its place and
   every declared graph setting, undeclared ones come from the pinned M4 profile, and an
@@ -62,7 +62,8 @@ EIGHT = [*SIX, *OPTIMIZED_STRATEGIES]
 HISTORY = "metis_history"  # WHI-1550, contract order 1
 CERTIFIED = "direct_split_certified"  # WHI-1552, contract order 2
 REPAIR = "incremental_graph_repair"
-ADDED = [METIS, HISTORY, CERTIFIED, REPAIR]
+CYCLE = "uni_sor_cycle_safe"  # WHI-1556, contract order 4
+ADDED = [METIS, HISTORY, CERTIFIED, REPAIR, CYCLE]
 ALL = [*EIGHT, *ADDED]
 M4_GRAPH = {"label_hops": 4, "label_pruning": True}  # config/metis_challenge/m4.yaml's
 STANDARD = ("daily_gross.yaml", "daily.yaml", "full_gross.yaml", "full.yaml")
@@ -215,14 +216,15 @@ def test_custom_subsets_are_kept_and_nothing_is_duplicated() -> None:
         # listed between others: keeps its place and every declared setting
         (["direct", METIS, "path_split"],
          {"chunks": 20, "label_hops": 3, "label_pruning": False},
-         ["direct", METIS, "path_split", *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR],
+         ["direct", METIS, "path_split", *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR,
+          CYCLE],
          {"chunks": 20, "label_hops": 3, "label_pruning": False}),
         # listed last among base/custom, no optimized entries: optimized appended AFTER it
         (["direct", METIS], {"chunks": 11, "label_hops": 3, "label_pruning": False},
-         ["direct", METIS, *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR],
+         ["direct", METIS, *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR, CYCLE],
          {"chunks": 11, "label_hops": 3, "label_pruning": False}),
         ([*SIX, METIS], {"chunks": 200, "label_hops": 5, "label_pruning": True},
-         [*SIX, METIS, *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR],
+         [*SIX, METIS, *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR, CYCLE],
          {"chunks": 200, "label_hops": 5, "label_pruning": True}),
         # not listed, no graph at all: every key from M4 (chunks 50 only because it is absent)
         (["direct", "path_split"], None,
@@ -570,7 +572,8 @@ def test_run_keeps_measurement_saves_the_selection_and_replays_it(
     assert "strategies: all -- Base strategies (6): direct" in out
     assert "Optimized strategies (2): uni_sor_adaptive, uni_sor_optimized; " in out
     assert (
-        f"Experimental and other strategies (4): {METIS}, {HISTORY}, {CERTIFIED}, {REPAIR}" in out
+        f"Experimental and other strategies (5): {METIS}, {HISTORY}, {CERTIFIED}, {REPAIR}, "
+        f"{CYCLE}" in out
     )
     (run_dir,) = results.iterdir()  # the effective profile lives inside the run directory
     manifest = load_manifest(run_dir)
@@ -630,7 +633,7 @@ def test_reports_group_strategies_with_failures_and_escape_text(
     assert "<h2>Strategy groups</h2>" in grouped_html and "Strategy groups" not in legacy_html
     assert "<h3>Base strategies (6)</h3>" in grouped_html
     assert "<h3>Optimized strategies (2)</h3>" in grouped_html
-    assert "<h3>Experimental and other strategies (4)</h3>" in grouped_html
+    assert "<h3>Experimental and other strategies (5)</h3>" in grouped_html
     assert "Optimized strategy — experimental heuristic" in grouped_html
     assert "Metis-inspired experimental Python variant — NOT Jupiter Metis" in grouped_html
     assert (
@@ -648,6 +651,7 @@ def test_reports_group_strategies_with_failures_and_escape_text(
         ("custom", HISTORY),
         ("custom", CERTIFIED),
         ("custom", REPAIR),
+        ("custom", CYCLE),
     ]
     by_name = {r["algorithm"]: r for r in rows}
     lb_cases = len(load_manifest(grouped).measurement["case_order"])
@@ -706,4 +710,4 @@ def test_custom_profile_reports_the_recorded_execution_order_not_the_group_order
     html = (tmp_path / "report" / "report.html").read_text()
     assert f"the recorded order <code>{', '.join(order)}</code>" in html
     assert "base strategies first" not in html
-    assert "<h3>Experimental and other strategies (5)</h3>" in html
+    assert "<h3>Experimental and other strategies (6)</h3>" in html

@@ -75,8 +75,13 @@ PRESET = {"width": 3, "ratio": 0.5, "label": "bounded"}  # the fixture preset fi
 NON_STRING_KEY: dict[Any, Any] = {1: 2, **PRESET}
 NINE = [*BASE_STRATEGIES, *OPTIMIZED_STRATEGIES, METIS]
 # The implemented 0.2.1 identities (R021-C/1 §2), in contract order, and the profiles they added.
-# WHI-1550, WHI-1552, WHI-1554
-IMPLEMENTED = ("metis_history", "direct_split_certified", "incremental_graph_repair")
+# WHI-1550, WHI-1552, WHI-1554, WHI-1556
+IMPLEMENTED = (
+    "metis_history",
+    "direct_split_certified",
+    "incremental_graph_repair",
+    "uni_sor_cycle_safe",
+)
 NEW_PROFILES = (
     {
         f"config/incremental_graph_repair/{name}.yaml"
@@ -84,6 +89,7 @@ NEW_PROFILES = (
     }
     | {f"config/metis_history/{name}.yaml" for name in ("history_on", "history_off")}
     | {f"config/direct_split_certified/{name}.yaml" for name in ("grid", "raw_stress")}
+    | {"config/uni_sor_cycle_safe/matched.yaml"}
 )
 TEST_ALARM_SECONDS = 240
 
@@ -402,8 +408,8 @@ def test_options_do_not_weaken_sor_recipe_pins(added_a: None) -> None:
 def _legacy_projection(effective: dict[str, Any]) -> dict[str, Any]:
     """An `all` document without the implemented 0.2.1 identities `all` now appends (WHI-1550
     `metis_history`, WHI-1552 `direct_split_certified`, WHI-1554 `incremental_graph_repair`,
-    after `metis_inspired`, with exactly their pinned presets): the document the pre-WHI-1548
-    base derived. Anything else that changed stays visible."""
+    WHI-1556 `uni_sor_cycle_safe`, after `metis_inspired`, with exactly their pinned presets):
+    the document the pre-WHI-1548 base derived. Anything else that changed stays visible."""
     doc: dict[str, Any] = json.loads(json.dumps(effective))
     added = list(IMPLEMENTED)
     assert doc["algorithms"][-len(added) :] == added  # appended once, last, in contract order
@@ -467,7 +473,7 @@ def test_the_all_roster_is_the_nine_plus_the_implemented_0_2_1_identities() -> N
     document, profile = _derive(read_profile_document(REPO / "config" / "daily_gross.yaml"), "all")
     assert R021_ADDITIONS == IMPLEMENTED
     assert list(profile.algorithms) == [*NINE, *IMPLEMENTED] == document["algorithms"]
-    assert len(ALGORITHMS) == 13  # the nine + profile-selected uni_sor_fast + IMPLEMENTED
+    assert len(ALGORITHMS) == 14  # the nine + profile-selected uni_sor_fast + IMPLEMENTED
     with_options = {n for n, f in ALGORITHMS.items() if f.options_validator is not None}
     assert with_options == set(IMPLEMENTED)
     assert all(ALGORITHMS[n].options_preset is not None for n in IMPLEMENTED)

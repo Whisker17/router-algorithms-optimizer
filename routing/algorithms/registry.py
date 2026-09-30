@@ -49,6 +49,12 @@ direct pools under `gross_only` only (everything else a visible `unsupported` ro
 `custom`, configured by validated `algorithm_options` (sha256-pinned `repository_grid`
 preset); `--strategies all` appends it after `metis_history`, before
 `incremental_graph_repair`. Its `raw_integer` domain runs only by explicit profile.
+
+`uni_sor_cycle_safe` (WHI-1556, R021-C/1 §2 row 4) is `uni_sor_port`'s pipeline with
+plan-token-DAG admission at the SOR combination chooser (docs/references/research-021/
+cycle-safe-sor.md): never a token-cycle plan, not upstream parity. It is `custom`, accepts
+no `algorithm_options` (its pinned preset is `{}`); `--strategies all` appends it after
+`incremental_graph_repair` (contract order 4). `uni_sor_port` stays the parity reference.
 """
 
 from __future__ import annotations
@@ -63,6 +69,7 @@ from routing.algorithms import (
     metis_inspired,
     path_split,
     single_path,
+    uni_sor_cycle_safe,
     uni_sor_fast,
     uni_sor_port,
     uni_sor_strategies,
@@ -87,6 +94,7 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     metis_history.NAME: metis_history.FACTORY,  # WHI-1550
     direct_split_certified.NAME: direct_split_certified.FACTORY,  # WHI-1552
     incremental_graph_repair.NAME: incremental_graph_repair.FACTORY,  # WHI-1554
+    uni_sor_cycle_safe.NAME: uni_sor_cycle_safe.FACTORY,  # WHI-1556
 }
 
 # The comparison groups, in their deterministic run order (base first, then optimized).
