@@ -36,7 +36,7 @@ import yaml
 
 import benchmark.profile as profile_module
 from benchmark.diagnostics import CheckContext, check_diagnostics, diagnostics_view
-from benchmark.objective import gross_only
+from benchmark.objective import gross_only, synthetic_fixed_cost
 from benchmark.profile import ProfileError, load_profile, parse_profile, preset_options
 from benchmark.strategies import R021_ADDITIONS, derive
 from pools.quote import QuoteLimitExceeded, metered_quotes
@@ -932,6 +932,53 @@ def test_metis_inspired_keeps_its_registered_behaviour() -> None:
     kept = set(mi_fixtures.METIS_KEYS) - {"label_pruning"}
     assert kept <= set(own) and "label_pruning" not in own
     assert set(own) - set(s) == OWN_KEYS
+
+
+def test_an_invalid_in_solve_replay_is_never_published(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A history plan the in-solve evaluator rejects is counted (`invalid_plan`), never
+    published or returned; the published fallback stands and the replay is still counted."""
+    bundle, case = spec._recon("R8_X4b")
+    params = _params(4, 2)
+    real = reference_evaluate
+
+    def rejecting(*a: Any, **k: Any) -> Any:
+        return dataclasses.replace(real(*a, **k), status=EvalStatus.INVALID_PLAN, error="test")
+
+    monkeypatch.setattr(mh, "evaluate", rejecting)
+    sink: list[RoutePlan] = []
+    res = _solve(bundle, case, params, sink=sink)
+    s = res.search_stats
+    assert s["incremental_status"] == "invalid_plan" and s["marginal_failures"]["invalid_plan"] == 1
+    assert s["chosen_source"] != NAME and len(sink) == 1 and res.plan == sink[0]
+    assert s["evaluations"]["incremental"] == 1
+    assert s["r021"]["fallback"]["reason"] == "incremental_status invalid_plan"
+    assert res.score == _gross(bundle, case, sink[0])
+
+
+def test_objective_is_metis_inspireds_and_nothing_is_unsupported() -> None:
+    """`metis_history` has `metis_inspired`'s objectives (R021-C/1 §2): under a per-call cost
+    it runs (no `unsupported` row), keeps the simpler plan unless the history plan's complete
+    objective score is strictly higher, and the disabled control stays `metis_inspired`'s
+    enumeration under the same objective."""
+    for fixed in (0, 10**6, 10**9):
+        objective = synthetic_fixed_cost(fixed)
+        for name, chunks in (("R8_X4b", 2), ("R1_prefix_merge_vs_cycle", 3)):
+            bundle, case = spec._recon(name)
+            params = _params(4, chunks)
+            prepared = _context(bundle, params).prepared
+            res = FACTORY.solve(case, SolveContext(bundle, objective, prepared), Budget())
+            assert res.status is SolveStatus.OK and res.plan is not None
+            ev = reference_evaluate(bundle, case, res.plan, objective)
+            assert res.score == objective.score(ev)
+            s = res.search_stats
+            if s["chosen_source"] == NAME:
+                assert int(s["incremental_score"]) > int(s["path_split_score"])
+            off_prep = _context(bundle, params, OFF).prepared
+            off = FACTORY.solve(case, SolveContext(bundle, objective, off_prep), Budget())
+            config = AlgorithmConfig(metis_inspired.NAME, {**params, "label_pruning": False})
+            ref_prep = metis_inspired.prepare(bundle, config)
+            ref = metis_inspired.solve(case, SolveContext(bundle, objective, ref_prep), Budget())
+            assert (off.plan, off.score, off.status) == (ref.plan, ref.score, ref.status)
 
 
 # ------------------------------------------------------------------ the diagnostic pass
