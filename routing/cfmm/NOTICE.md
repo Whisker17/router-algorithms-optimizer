@@ -18,7 +18,9 @@ code is ported from this repository's own validated WHI-1557 contract model.
   `7fb979394cbcba243058fe38ebdc37b56602735ab3887475c6386851006ac387`) and
   `tools/upstream/cfmm/python_reference.py` `solve` (sha256
   `d7657c561d194db6aaff4447745e2dd1c6c4a4d868c93586a5c1fd21049c9148`), both at WHI-1557
-  merge `91d7f4b056e04dbfe7de0a0b867618875c2efd27`. Neither is imported at runtime.
+  merge `91d7f4b056e04dbfe7de0a0b867618875c2efd27`. Neither is imported at runtime. The
+  integer recovery `recovery.py` (`cfmm_share_projection/1`) ports the same model's
+  `recover`; it is this repository's own procedure (cfmm-dual.md §6), not author code.
 - **Optimizer:** SciPy 1.18.1 `scipy.optimize.minimize(method="L-BFGS-B")` (BSD-3-Clause;
   L-BFGS-B 3.0 by Zhu, Byrd, Lu, Nocedal and Morales) with NumPy 2.5.3 (BSD-3-Clause),
   installed from the locked PyPI wheels; their licences ship inside the wheels.

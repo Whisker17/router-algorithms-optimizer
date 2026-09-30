@@ -40,15 +40,15 @@ evidence.
 
 | mode | runs |
 | --- | --- |
-| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired`, then each implemented 0.2.1 identity in contract order (so far `metis_history`, `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe`) |
+| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired`, then each implemented 0.2.1 identity in contract order (`metis_history`, `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe`, `cfmm_dual`) |
 | `base` | only the profile's base algorithms (an intentional subset stays a subset) |
 | `optimized` | only the two optimized strategies |
 | `profile` | the profile's exact algorithm selection: the pre-WHI-1528 behaviour, used for replays |
 
-A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs thirteen
+A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs fourteen
 strategies: six base, two optimized, then `metis_inspired`, `metis_history`,
-`direct_split_certified`, `incremental_graph_repair` and `uni_sor_cycle_safe`. They run one
-after the other,
+`direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`.
+They run one after the other,
 each in its own isolated worker, under the profile's own objective, budget, measurement
 (`run`), worker and `search.*` values. Every registry entry is not added automatically, and
 a name the profile already lists is not repeated. `uni_sor_fast` keeps working with its own
@@ -105,6 +105,19 @@ has no `algorithm_options` (its pinned preset `config/uni_sor_cycle_safe/preset_
 its search record carries `cycle_safe` counters and phases. `config/uni_sor_cycle_safe/
 matched.yaml` runs it next to `uni_sor_port` at 3 hops. Saved effective profiles, including
 the earlier eight- to twelve-strategy ones, replay literally and never gain it.
+
+`cfmm_dual` (WHI-1558) is the CFMM dual-decomposition router over the admitted
+constant-product markets on <= `search.max_hops` paths (CPMM stage; the concentrated stage is
+WHI-1559, Liquidity Book is excluded), recovered into one exact integer plan
+(`docs/references/research-021/cfmm-dual.md` §6). It is in the `custom` group, runs after
+`uni_sor_cycle_safe`, receives `search.max_hops` and its pinned `cfmm_dual/1` preset
+(`config/cfmm_dual/preset_v1.yaml`). It is gross-only (net objectives: every case a visible
+`unsupported` row) and estimate-only (never a certified bound); a case with only
+concentrated/LB paths is `unsupported` (`protocol_ceiling`). A recovery failure falls back to
+the best exact single path over the same markets, labeled in its diagnostics.
+`config/cfmm_dual/cpmm.yaml` runs it next to `path_split` and `incremental_graph` with
+full_gross's values. Saved effective profiles, including the earlier eight- to
+thirteen-strategy ones, replay literally and never gain it.
 
 ### Metis-inspired settings under `all`
 

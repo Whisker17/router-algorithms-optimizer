@@ -190,9 +190,10 @@ def test_registered_once_as_a_custom_identity_after_incremental_graph_repair() -
     names = list(ALGORITHMS)
     assert names.count(NAME) == 1
     assert names.index(incremental_graph_repair.NAME) + 1 == names.index(NAME)
+    assert names.index(NAME) + 1 == names.index("cfmm_dual")  # WHI-1558 after
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES
     assert profile_module.strategy_group(NAME) == "custom"
-    assert R021_ADDITIONS[-1] == NAME and R021_ADDITIONS.index(NAME) == 3  # contract order 4
+    assert R021_ADDITIONS[-2:] == (NAME, "cfmm_dual") and R021_ADDITIONS.index(NAME) == 3  # 4th
     assert FACTORY.options_validator is ucs.validate_options  # module-level (picklable)
     assert FACTORY.capabilities == sor.CAPABILITIES
     assert FACTORY.search_params == sor.SEARCH_PARAMS and FACTORY.graph_params == ()
@@ -210,8 +211,8 @@ def test_registered_once_as_a_custom_identity_after_incremental_graph_repair() -
             yaml.safe_load((REPO / "config" / name).read_text()),
             "all", source_path=f"config/{name}", source_sha256="x",
         )  # fmt: skip
-        assert list(profile.algorithms)[-2:] == [incremental_graph_repair.NAME, NAME]
-        assert len(profile.algorithms) == 13
+        assert list(profile.algorithms)[-3:] == [incremental_graph_repair.NAME, NAME, "cfmm_dual"]
+        assert len(profile.algorithms) == 14
         assert document["algorithm_options"][NAME] == {}
         assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
         assert profile.algorithm_options[NAME]["settings_sha256"] == EMPTY_SHA
@@ -885,7 +886,7 @@ def test_saved_pre_whi_1556_profiles_replay_literally() -> None:
     later = ["incremental_graph_repair", "direct_split_certified", "metis_history",
              "metis_inspired"]  # fmt: skip
     for k in range(len(later) + 1):
-        drop = [NAME, *later[:k]]
+        drop = [NAME, "cfmm_dual", *later[:k]]  # WHI-1558 was added after this identity
         saved = json.loads(json.dumps(document))
         saved["algorithms"] = [a for a in saved["algorithms"] if a not in drop]
         saved["selection"]["groups"]["custom"] = [

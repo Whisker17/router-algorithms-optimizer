@@ -40,9 +40,9 @@ re-expands against later defaults.
 
 `algorithm_options` (WHI-1548, R021-C/1 §2, §9.3): under `all`, every implemented 0.2.1
 identity of `R021_ADDITIONS` (contract order; so far `metis_history`, WHI-1550,
-`direct_split_certified`, WHI-1552, `incremental_graph_repair`, WHI-1554, then
-`uni_sor_cycle_safe`, WHI-1556) is appended once after `metis_inspired` unless the source lists
-it. A derived document keeps the source's declared
+`direct_split_certified`, WHI-1552, `incremental_graph_repair`, WHI-1554,
+`uni_sor_cycle_safe`, WHI-1556, then `cfmm_dual`, WHI-1558) is appended once after
+`metis_inspired` unless the source lists it. A derived document keeps the source's declared
 entry of every selected algorithm (a declared entry wins; a source that lists an options algorithm
 must itself declare its entry, like any other required setting), writes out the sha256-pinned
 preset (`benchmark.profile.preset_options`) of an added algorithm the source does not configure,
@@ -70,6 +70,7 @@ from benchmark.profile import (
     strategy_group,
 )
 from routing.algorithms import (
+    cfmm_dual,
     direct_split_certified,
     incremental_graph_repair,
     metis_history,
@@ -104,6 +105,7 @@ R021_ADDITIONS: tuple[str, ...] = (
     direct_split_certified.NAME,  # WHI-1552 (contract order 2; its repository_grid preset)
     incremental_graph_repair.NAME,  # WHI-1554 (contract order 3)
     uni_sor_cycle_safe.NAME,  # WHI-1556 (contract order 4; its empty-options preset)
+    cfmm_dual.NAME,  # WHI-1558 (contract order 5; its cfmm_dual/1 CPMM-stage preset)
 )
 DERIVATION_NOTE = (
     "`algorithms`, `strategies` and `selection` are derived from the source; under `all`, a "

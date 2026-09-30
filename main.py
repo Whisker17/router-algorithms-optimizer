@@ -296,7 +296,8 @@ def _strategies_argument(parser: argparse.ArgumentParser) -> None:
         "graph.label_hops/label_pruning/chunks from config/metis_challenge/m4.yaml), then "
         "the implemented 0.2.1 experimental identities (metis_history, "
         "direct_split_certified in its repository_grid mode, incremental_graph_repair, "
-        "uni_sor_cycle_safe, each with its pinned preset); base / optimized: one group; "
+        "uni_sor_cycle_safe, cfmm_dual (CPMM stage, gross-only), each with its pinned "
+        "preset); base / optimized: one group; "
         "profile: the profile's exact algorithm "
         "selection "
         "(the replay path)",

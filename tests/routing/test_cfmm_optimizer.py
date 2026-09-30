@@ -485,7 +485,7 @@ def test_backend_refuses_an_unpinned_version(monkeypatch: pytest.MonkeyPatch) ->
 def test_importing_the_helpers_and_the_registry_loads_no_numerical_library() -> None:
     """Legacy workers import the registry; neither it nor the cfmm helpers may pull in
     NumPy/SciPy. The first numeric solve loads them, records provenance and limits the
-    native BLAS pools; the ordinary roster is unchanged (no cfmm_dual yet)."""
+    native BLAS pools. Registering `cfmm_dual` (WHI-1558 B, contract order 5) keeps it so."""
     code = """
 import json, sys
 import main, benchmark.worker, benchmark.strategies as st
@@ -513,7 +513,7 @@ print(json.dumps({**before, "after": "scipy.optimize" in sys.modules,
         check=True,
     )
     got = json.loads(out.stdout.strip().splitlines()[-1])
-    assert got["loaded"] == [] and got["cfmm_registered"] is False and got["roster"] == 13
+    assert got["loaded"] == [] and got["cfmm_registered"] is True and got["roster"] == 14
     assert got["after"] is True and got["termination"] == "converged"
     assert got["set"] == list(co.THREAD_ENV) and got["already"] == []
 

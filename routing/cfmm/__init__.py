@@ -9,7 +9,10 @@
   termination, and the recorded numerical-backend provenance. NumPy/SciPy are imported
   only when a numeric solve actually needs them (`numeric_backend()`), never by importing
   this package or either module.
+- `routing.cfmm.recovery` -- the integer plan recovery `cfmm_share_projection/1` (§6):
+  support, relevance, cycle removal, exact share projection with prune-and-retry and the
+  in-solve replay of one merged `RoutePlan`.
 
-Numbers produced here are float64 continuous-model estimates, never money and never a
-certified bound; only exact integer quotes decide a plan (recovery is not in this package).
+Numbers produced by the model and optimizer are float64 continuous-model estimates, never
+money and never a certified bound; only exact integer quotes decide a plan (`recovery`).
 """
