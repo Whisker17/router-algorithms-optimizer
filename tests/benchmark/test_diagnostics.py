@@ -179,6 +179,68 @@ def test_every_diagnostics_code_of_the_examples_is_exercised() -> None:
     } <= codes
 
 
+# ------------------------------------------------------------------ WHI-1551 consumer evidence
+
+INTEGER_ALLOCATION = json.loads(
+    (R021 / "fixtures" / "integer-allocation.json").read_text(encoding="utf-8")
+)["examples"]
+
+
+def _ia_context(example: dict[str, Any]) -> CheckContext:
+    """The runner-side context of a WHI-1551 published record, built as its own check does:
+    the certificate's run identity and request (or placeholders without one), the example's
+    status and final score, `gross_only` and the worker meter = `work.quotes_executed`."""
+    rec = example["record"]
+    cert = rec["certificate"]
+    run = dict(cert["source"]) if cert else dict.fromkeys(dx.RUN_IDENTITY_KEYS, "x")
+    request = dict(cert["request"]) if cert else dict.fromkeys(dx.REQUEST_KEYS, "x")
+    return CheckContext(
+        run={**run, "algorithm": rec["algorithm"]},
+        request=request,
+        status=example["status"],
+        score=example["final_score"],
+        objective="gross_only",
+        quotes_counted=rec["work"].get("quotes_executed"),
+    )
+
+
+@pytest.mark.parametrize("example", INTEGER_ALLOCATION, ids=lambda e: e["id"])
+def test_whi1551_published_records_validate_at_runtime(example: dict[str, Any]) -> None:
+    rec, ctx = example["record"], _ia_context(example)
+    assert dx.check_diagnostics(rec, ctx) == set()
+    view = dx.diagnostics_view(rec, ctx)
+    cert = rec["certificate"]
+    if cert is None:
+        assert view["state"] == "unavailable" and view["reason"] == "not_produced"
+        return
+    assert view["state"] == cert["bound_kind"]
+    if cert["bound_kind"] == "certified":
+        assert (view["lower"], view["upper"], view["gap"]) == (
+            cert["lower_raw"],
+            cert["upper_raw"],
+            cert["gap_raw"],
+        )
+    # the same proof for another request with the same evaluated score does not transfer
+    other = {**ctx.request, "case_id": ctx.request["case_id"] + "-other"}
+    assert dx.check_diagnostics(rec, CheckContext(**{**ctx.__dict__, "request": other})) == {
+        "C_REQUEST"
+    }
+
+
+def test_whi1551_consistency_failure_is_unavailable_never_a_bound() -> None:
+    """WHI-1551 §5.6: an internal consistency failure keeps the earlier valid plan (`ok`) but
+    emits `certificate: null`, `not_produced`; absence of a certificate is never a proof."""
+    base = next(
+        e for e in INTEGER_ALLOCATION if (e["record"]["certificate"] or {}).get("optimality_proven")
+    )
+    rec = copy.deepcopy(base["record"])
+    rec.update(certificate=None, certificate_unavailable_reason="not_produced")
+    view = dx.diagnostics_view(rec, _ia_context(base))
+    assert view["state"] == "unavailable" and view["reason"] == "not_produced"
+    assert not {"lower", "upper", "gap", "termination"} & set(view)
+    assert dx.bound_text(view) == "unavailable (not_produced)"
+
+
 # ------------------------------------------------------------------ run identity / request
 
 
