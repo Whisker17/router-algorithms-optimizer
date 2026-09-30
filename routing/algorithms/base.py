@@ -28,6 +28,7 @@ import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any, Protocol
 
 from benchmark.objective import ObjectiveContext
@@ -77,6 +78,14 @@ class SolveContext:
     seed: int = 0
     candidate_sink: Callable[[RoutePlan], None] | None = field(
         default=None, compare=False, repr=False
+    )
+    # WHI-1548 (R021-C/1 §4.1 `source`): the runner's own identity of this run --
+    # `git_revision`, `bundle_hash`, `algorithm`, `effective_settings_sha256` -- so a solver
+    # that emits `search_stats["r021"]` can name the run its certificate belongs to. The
+    # runner validates a certificate against its own copy, never against this echo; empty
+    # for direct unit-level calls.
+    run_identity: Mapping[str, Any] = field(
+        default_factory=lambda: MappingProxyType({}), compare=False
     )
 
     def report_candidate(self, plan: RoutePlan) -> None:

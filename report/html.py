@@ -15,6 +15,7 @@ import math
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
+from benchmark import diagnostics as dx
 from report import aggregate as agg
 from report.aggregate import RunData
 
@@ -778,6 +779,90 @@ def _errors(run: RunData) -> str:
     )
 
 
+DIAGNOSTIC_STATES = ("certified", "estimate", "unknown", "invalid", "unavailable")
+
+
+def _diagnostics(run: RunData) -> str:
+    """WHI-1548 (R021-C/1 §9.5): only for runs with records carrying a diagnostics view; every
+    other run renders exactly as before (empty string)."""
+    views = [
+        (row, view)
+        for c in run.case_ids
+        for a in run.algorithms
+        for row in (run.row(c, a),)
+        if row.record is not None and (view := dx.read_view(row.record)) is not None
+    ]
+    if not views:
+        return ""
+    counts: dict[str, dict[str, int]] = {}
+    for row, view in views:
+        per = counts.setdefault(row.algorithm, dict.fromkeys(DIAGNOSTIC_STATES, 0))
+        per[view["state"]] += 1
+    summary = [
+        [
+            f"<code>{esc(a)}</code>",
+            esc(c["certified"]),
+            esc(c["estimate"]),
+            esc(c["unknown"] + c["invalid"]),
+            esc(c["invalid"]),
+            esc(c["unavailable"]),
+        ]
+        for a, c in counts.items()
+    ]
+    rows = [
+        [
+            f"<code>{esc(row.case_id)}</code>",
+            f"<code>{esc(row.algorithm)}</code>",
+            esc(row.status),
+            esc(dx.bound_text(view))
+            + "".join(f"<br><code>{esc(d)}</code>" for d in view.get("details") or []),
+            na(dx.domain_text(view)),
+            na(view.get("max_candidates_unit")),
+            na(dx.work_text(view)),
+            na(dx.fallback_text(view)),
+            na(dx.scope_text(view)),
+        ]
+        for row, view in views
+    ]
+    return (
+        "<h2>Research diagnostics (R021-C/1)</h2>"
+        "<p class='note'>Each view was checked by the runner against its own run identity "
+        "(source revision, bundle, algorithm, effective-settings hash), the exact request and "
+        "the independently evaluated score; the solver's claims are never trusted. Only "
+        "<b>certified</b> rows carry a bound and a gap. An <b>estimate</b> is a numerical value, "
+        "not a bound; an <b>invalid</b> certificate counts as an unknown bound; "
+        "<b>unavailable</b> means no certificate (a cut-off solve keeps only its labeled last "
+        "valid candidate). Work counters keep their unit names and are never divided by one "
+        "another. Record status, evaluation and score are unchanged by diagnostics.</p>"
+        + table(
+            [
+                "algorithm",
+                "certified",
+                "estimate",
+                "unknown (incl. invalid)",
+                "invalid",
+                "unavailable",
+            ],
+            summary,
+        )
+        + table(
+            [
+                "case",
+                "algorithm",
+                "status",
+                "bound",
+                "domain (grid)",
+                "max_candidates unit",
+                "work",
+                "fallback/repair",
+                "scope",
+            ],
+            rows,
+            left=9,
+        )
+    )
+
+
 def _provenance(run: RunData) -> str:
     p = agg.provenance(run)
     order = [
@@ -838,6 +923,7 @@ def _run_section(run: RunData, min_samples: int) -> str:
         + _latency(run, min_samples)
         + _traces(run)
         + _errors(run)
+        + _diagnostics(run)
         + _provenance(run)
         + "</section>"
     )

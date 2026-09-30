@@ -79,6 +79,8 @@ class WorkerSpec:
     bundle: SnapshotBundle
     objective: ObjectiveContext
     memory: bool = False
+    # WHI-1548: the runner's run identity, handed to every `SolveContext.run_identity`.
+    run_identity: Mapping[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -176,6 +178,7 @@ def _serve_attempt(  # pragma: no cover - child
         prepared=prepared,
         seed=request.seed,
         candidate_sink=sink,
+        run_identity=MappingProxyType(dict(spec.run_identity or {})),
     )
     instrumented = tracemalloc.is_tracing()
     baseline = 0
