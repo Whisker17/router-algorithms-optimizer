@@ -23,7 +23,13 @@ one `search_stats["r021"]` object according to its mode:
   of another request carrying THIS request's evaluated score), `wrong_revision`,
   `stale_settings`, `lying_score`, `estimate_gap`, `ledger`;
 - malformed objects: `malformed` (wrong types everywhere), `garbage` (not an object and not
-  JSON-serializable).
+  JSON-serializable), `huge_int` (a 5001-digit counter: `repr()` and JSON both refuse it),
+  `odd_mapping` (a non-dict Mapping whose default repr is a memory address);
+- `repair_log`: an honest `unknown` record carrying the WHI-1553 §8 `repair` object (counters,
+  `stop`, `enabled` and `accepted_log`).
+
+Every domain declares the three registered protocols (the direct-like search may route
+through any of them); its universe is exactly the case's admitted direct pools.
 """
 
 from __future__ import annotations
@@ -53,12 +59,7 @@ from routing.algorithms.base import (
     settings_sha256,
     validated_options,
 )
-from snapshot.models import (
-    Case,
-    ConcentratedPoolState,
-    ConstantProductPoolState,
-    SnapshotBundle,
-)
+from snapshot.models import Case, SnapshotBundle
 
 PREFIX = "r021_fx_"
 TAGS = ("a", "b")
@@ -79,6 +80,9 @@ MODES = (
     "ledger",
     "malformed",
     "garbage",
+    "huge_int",
+    "odd_mapping",
+    "repair_log",
 )
 
 
@@ -94,21 +98,13 @@ def _log_attempt(name: str) -> None:
             fh.write(f"{name}\n")
 
 
-def _protocol(pool: Any) -> str:
-    if isinstance(pool, ConstantProductPoolState):
-        return "constant_product"
-    if isinstance(pool, ConcentratedPoolState):
-        return "concentrated"
-    return "liquidity_book"
-
-
 def _domain(bundle: SnapshotBundle, case: Case) -> dict[str, Any]:
     pools = bundle.pools_for_pair(case.token_in, case.token_out)
     ids = [p.pool_id for p in pools]
     return {
         "schema": "r021.domain/1",
         "universe": {"bundle": bundle.bundle_hash, "cohort": "fixture", "pools": ids},
-        "protocols": sorted({_protocol(p) for p in pools}),
+        "protocols": ["constant_product", "concentrated", "liquidity_book"],
         "pool_order": ids,
         "hops": {"max": 1, "param": None},
         "splits": {"max": 1, "param": None, "governs": "none"},
@@ -256,7 +252,50 @@ def _diagnostics(
         rec["domain"] = "single_leg"
     elif mode == "garbage":
         return {"not", "a", "mapping"}
+    elif mode == "huge_int":
+        rec["certificate"] = _certificate(context, case, digest, score)
+        rec["work"]["paths_scored"] = 10**5000
+    elif mode == "odd_mapping":
+        return OddMapping(rec)
+    elif mode == "repair_log":
+        rec["certificate"] = _certificate(
+            context, case, digest, score, **_uncertified("unknown", "complete")
+        )
+        rec["repair"] = {  # suffix-repair.md §8 (WHI-1553, 3d0afbd): without path counters
+            "enabled": True,
+            "stop": "exhausted",
+            "checkpoint_restores": 2,
+            "repair_attempts": 3,
+            "candidates_complete": 3,
+            "candidates_failed": 0,
+            "duplicates": 0,
+            "rejected_worse": 1,
+            "ties": 0,
+            "accepted": 2,
+            "consistency_failures": 0,
+            "internal_evaluations": 3,
+            "accepted_log": [
+                {"checkpoint": 0, "alternative": 0, "score": str(score - 1)},
+                {"checkpoint": 1, "alternative": 1, "score": str(score)},
+            ],
+        }
     return rec
+
+
+class OddMapping(Mapping[str, Any]):
+    """A picklable non-dict Mapping: JSON refuses it and its repr is a memory address."""
+
+    def __init__(self, data: dict[str, Any]) -> None:
+        self._data = data
+
+    def __getitem__(self, key: str) -> Any:
+        return self._data[key]
+
+    def __iter__(self) -> Any:
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
 
 
 def _uncertified(kind: str, termination: str) -> dict[str, Any]:

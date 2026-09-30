@@ -528,11 +528,13 @@ def _diagnostics_lines(record: dict[str, Any]) -> list[str]:
     view = read_view(record)
     if view is None:
         return []
-    origin = (
-        " (observed by the runner: no certificate survives a cut-off or failed solve)"
-        if view.get("origin") == "runner"
-        else ""
-    )
+    origin = ""
+    if view.get("origin") == "runner":
+        origin = (
+            " (observed by the runner: the solve returned without diagnostics)"
+            if view.get("reason") == "not_produced"
+            else " (observed by the runner: no certificate survives a cut-off or failed solve)"
+        )
     lines = [
         "  research diagnostics (R021-C/1; checked by the runner against its own run identity, "
         "request and evaluated score, never the solver's claims):",

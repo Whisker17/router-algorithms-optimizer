@@ -75,6 +75,9 @@ EXPECTED: dict[str, tuple[str, str, list[str]]] = {
     "malformed": ("ok", "invalid", sorted(["C_AMOUNT_TYPE", "D_HASH", "D_MISSING_FIELD",
                                            "W_TYPE", "W_UNIT"])),
     "garbage": ("ok", "invalid", ["S_SHAPE"]),
+    "huge_int": ("ok", "invalid", ["S_SHAPE"]),
+    "odd_mapping": ("ok", "invalid", ["S_SHAPE"]),
+    "repair_log": ("ok", "unknown", []),
 }  # fmt: skip
 
 
@@ -218,7 +221,23 @@ def test_every_outcome_through_real_workers(tmp_path: Path) -> None:
         assert unsupported["scope"] == {"supported": False, "reason": "fixture: declared scope"}
         garbage = records[(FX + "garbage", case.case_id)]
         assert garbage["search"]["r021"].startswith("<r021 diagnostics not JSON-serializable")
+        # DEFECT-1 / OBS-2: a >4300-digit counter and an address-repr Mapping are invalid
+        # S_SHAPE views with a visible marker, their own attempts agree (warmup 1 + repeats
+        # 2), and no other record is touched
+        for mode in ("huge_int", "odd_mapping"):
+            record = records[(FX + mode, case.case_id)]
+            assert record["search"]["r021"].startswith("<r021 diagnostics not JSON-serializable")
+            assert record["measurement"]["attempts_consistent"] is True, mode
+            assert record["measurement"]["attempts_completed"] == 3, mode
+        repair = records[(FX + "repair_log", case.case_id)]["diagnostics"]["repair"]
+        assert repair["accepted_log"][-1] == {
+            "checkpoint": 1,
+            "alternative": 1,
+            "score": baseline["score"],
+        }
     assert manifest.complete and manifest.case_count == len(names) * len(BUNDLE.cases)
+    assert "cancelled" not in manifest.status_counts
+    assert all(r["status"] == "ok" for (a, _), r in records.items() if a == "direct")
 
 
 def test_declared_options_are_the_certificates_settings_identity(tmp_path: Path) -> None:
@@ -368,7 +387,18 @@ def test_quote_details_report_and_literal_replay(
 ) -> None:
     log = tmp_path / "solves.log"
     monkeypatch.setenv("FAKE_SOLVE_LOG", str(log))
-    modes = ["certified", "estimate", "unknown", "wrong_request", "hang", "no_diag", "garbage"]
+    modes = [
+        "certified",
+        "estimate",
+        "unknown",
+        "wrong_request",
+        "hang",
+        "no_diag",
+        "garbage",
+        "huge_int",
+        "odd_mapping",
+        "repair_log",
+    ]
     names = ["direct", *(FX + m for m in modes)]
     profile = _profile_yaml(tmp_path, names, options={FX + "certified": {"tag": "a"}})
 
@@ -405,7 +435,24 @@ def test_quote_details_report_and_literal_replay(
     hang = details.split(f"[{FX}hang]", 1)[1].split(f"[{FX}no_diag]", 1)[0]
     assert "PARTIAL DIAGNOSTIC" in hang
     assert "bound: unavailable (hard_timeout) (observed by the runner" in hang
-    assert "bound: unavailable (not_produced) (observed by the runner" in details
+    assert (
+        "bound: unavailable (not_produced) (observed by the runner: the solve returned without "
+        "diagnostics)" in details
+    )
+    assert "hard_timeout) (observed by the runner: no certificate survives a cut-off" in hang
+    # DEFECT-1: the >4300-digit claim is an invalid view; the healthy sibling is still ok
+    huge = details.split(f"[{FX}huge_int]", 1)[1].split(f"[{FX}odd_mapping]", 1)[0]
+    assert "bound: invalid certificate (S_SHAPE) -- counted as unknown" in huge
+    assert "S_SHAPE: not finite canonical JSON (ValueError)" in huge
+    assert records["direct"]["status"] == "ok"
+    assert all(r["status"] != "cancelled" for r in records.values())
+    # BLOCKER-3: the WHI-1553 repair object with its accepted_log renders, bounded and exact
+    logged = details.split(f"[{FX}repair_log]", 1)[1]
+    assert "bound: unknown (no bound; termination complete)" in logged
+    assert (
+        f"accepted_log [checkpoint 0 alternative 0 score {int(score) - 1}; checkpoint 1 "
+        f"alternative 1 score {score}]" in logged
+    )
     assert "bound: invalid diagnostics (S_SHAPE)" in details
     assert not STATISTICS.search(out), STATISTICS.search(out)
     assert not re.search(r"\bNone\b", out)

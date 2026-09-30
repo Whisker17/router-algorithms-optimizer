@@ -63,7 +63,9 @@ from typing import Any
 from benchmark.diagnostics import (
     DIAGNOSTICS_KEY,
     CheckContext,
+    canonical_r021,
     diagnostics_view,
+    pool_protocol,
     unavailable_view,
     unserializable_marker,
 )
@@ -214,15 +216,18 @@ def _candidate_record(
     }
 
 
-def _without_stage_seconds(stats: Any) -> Any:
-    """`stats` without the observational `r021.stages` seconds (R021-C/1 §9.4): timing is
-    never part of the deterministic outcome that attempt and order checks compare."""
+def _comparable_search(stats: Any) -> Any:
+    """`stats` with `r021` in a canonical, deterministic form for the attempt and order
+    checks (R021-C/1 §9.4; WHI-1548 integration DEFECT-1/OBS-2). The untrusted `r021` value
+    is never `repr()`ed: it becomes its canonical JSON text without the observational
+    `stages` seconds, or, when it is not serializable at all (a >4300-digit int, a set, a
+    non-dict Mapping whose repr is a memory address, a hostile object), the same visible
+    marker the record keeps. Everything else is compared exactly as before."""
     if not isinstance(stats, Mapping):
         return stats
-    inner = stats.get(DIAGNOSTICS_KEY)
-    if not isinstance(inner, Mapping) or "stages" not in inner:
+    if DIAGNOSTICS_KEY not in stats:
         return dict(stats)
-    return {**stats, DIAGNOSTICS_KEY: {k: v for k, v in inner.items() if k != "stages"}}
+    return {**stats, DIAGNOSTICS_KEY: canonical_r021(stats[DIAGNOSTICS_KEY])}
 
 
 def _fingerprint(result: SolveResult | None) -> Any:
@@ -237,7 +242,7 @@ def _fingerprint(result: SolveResult | None) -> Any:
         result.candidates_considered,
         result.candidates_truncated,
         result.error,
-        _without_stage_seconds(result.search_stats),
+        _comparable_search(result.search_stats),
     )
 
 
@@ -281,6 +286,8 @@ class _Run:
     profile: RunProfile
     writer: RunWriter
     git_revision: str | None = None  # the run's recorded source revision (environment)
+    # pool id -> §3.1 protocol of every pool of the run's bundle (a domain names only these)
+    pool_protocols: dict[str, str] = field(default_factory=dict)
     next_worker_id: int = 0
     event_count: int = 0
     totals: dict[str, _AlgorithmTotals] = field(default_factory=dict)
@@ -429,6 +436,7 @@ def _with_diagnostics(
             score=None if record.score is None else str(record.score),
             objective=run.profile.objective.mode,
             quotes_counted=record.quotes_counted,
+            pools=run.pool_protocols,
         )
         search = dict(record.search)
         marker = unserializable_marker(raw)
@@ -696,6 +704,7 @@ def run_experiment(
         profile=profile,
         writer=writer,
         git_revision=revision if isinstance(revision, str) and revision else None,
+        pool_protocols={pid: pool_protocol(state) for pid, state in bundle.pools.items()},
     )
     timing: dict[str, Any] = {"clock": "perf_counter_ns"}
     done = 0
@@ -787,7 +796,7 @@ def _deterministic_view(record: Mapping[str, Any]) -> Any:
         "error": record["error"],
         "candidates_considered": record["candidates_considered"],
         "candidates_truncated": record["candidates_truncated"],
-        "search": _without_stage_seconds(record.get("search")),
+        "search": _comparable_search(record.get("search")),
         "quotes_counted": record["quotes"]["counted"],
         "solver_reported": record["solver_reported"],
         "seed": record["measurement"].get("seed"),

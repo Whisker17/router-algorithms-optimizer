@@ -95,6 +95,15 @@ def test_vocabulary_is_contract_v1() -> None:
         objectives = row.get("objectives")
         expected = tuple(objectives) if isinstance(objectives, list) else None
         assert identity.objectives == expected, name
+        ceiling = row.get("protocols_ceiling")
+        assert identity.protocols == (None if ceiling is None else tuple(ceiling)), name
+    # §3.1 prose: the protocol families and universe cohorts a domain may name
+    prose = (R021 / "contract.md").read_text(encoding="utf-8")
+    assert "`constant_product`, `concentrated`, `liquidity_book`" in prose
+    assert "cohort (`full_source`, `sor_compatible`, fixture)" in prose
+    assert dx.PROTOCOLS == ("constant_product", "concentrated", "liquidity_book")
+    assert dx.COHORTS == ("full_source", "sor_compatible", "fixture")
+    assert {p for i in CONTRACT["identities"] for p in i["protocols_ceiling"]} == set(dx.PROTOCOLS)
     # the WHI-1557 row fill is what the runtime checks, not the WHI-1547 placeholder
     assert dx.IDENTITIES["cfmm_dual"].max_candidates_unit == "fallback_paths_evaluated"
 
@@ -192,7 +201,14 @@ def _ia_context(example: dict[str, Any]) -> CheckContext:
     status and final score, `gross_only` and the worker meter = `work.quotes_executed`."""
     rec = example["record"]
     cert = rec["certificate"]
-    run = dict(cert["source"]) if cert else dict.fromkeys(dx.RUN_IDENTITY_KEYS, "x")
+    run = (
+        dict(cert["source"])
+        if cert
+        else {  # the harness's own bundle; the other identity values are never compared
+            **dict.fromkeys(dx.RUN_IDENTITY_KEYS, "x"),
+            "bundle_hash": rec["domain"]["universe"]["bundle"],
+        }
+    )
     request = dict(cert["request"]) if cert else dict.fromkeys(dx.REQUEST_KEYS, "x")
     return CheckContext(
         run={**run, "algorithm": rec["algorithm"]},
@@ -241,6 +257,236 @@ def test_whi1551_consistency_failure_is_unavailable_never_a_bound() -> None:
     assert dx.bound_text(view) == "unavailable (not_produced)"
 
 
+# ------------------------------------------------------------------ domain identity (BLOCKER-2)
+
+
+def _rehashed(rec: dict[str, Any]) -> dict[str, Any]:
+    rec["candidate_domain_hash"] = dx.domain_hash(rec["domain"])
+    if rec.get("certificate"):
+        rec["certificate"]["candidate_domain_hash"] = rec["candidate_domain_hash"]
+    return rec
+
+
+DOMAIN_MUTATIONS: list[tuple[str, Any, str]] = [
+    ("domain.protocols", ["not_a_protocol"], "D_ENUM"),
+    ("domain.protocols", ["liquidity_book"], "D_ENUM"),  # beyond the CPMM-only ceiling
+    ("domain.protocols", ["constant_product", "concentrated"], "D_ENUM"),
+    ("domain.protocols", [], "D_ENUM"),
+    ("domain.protocols", ["constant_product", "constant_product"], "D_ENUM"),
+    ("domain.protocols", "constant_product", "D_MISSING_FIELD"),
+    ("domain.universe.bundle", "@delete", "D_MISSING_FIELD"),
+    ("domain.universe.cohort", "@delete", "D_MISSING_FIELD"),
+    ("domain.universe.bundle", "e" * 64, "D_UNIVERSE"),  # another bundle than the run's
+    ("domain.universe.bundle", 7, "D_MISSING_FIELD"),
+    ("domain.universe.bundle", "", "D_MISSING_FIELD"),
+    ("domain.universe.cohort", "not_a_cohort", "D_ENUM"),
+    ("domain.universe.cohort", None, "D_ENUM"),
+    ("domain.universe.pools", ["p1", "p1"], "D_UNIVERSE"),
+]
+
+
+@pytest.mark.parametrize(("path", "value", "code"), DOMAIN_MUTATIONS, ids=lambda v: str(v)[:24])
+def test_a_certificate_over_an_unregistered_or_foreign_domain_is_never_certified(
+    path: str, value: Any, code: str
+) -> None:
+    rec, ctx = _grid()
+    _set(rec, path, value)
+    if path == "domain.universe.bundle" and value == "@delete":
+        del rec["domain"]["universe"]["cohort"]  # the parent's repro deletes both
+    _rehashed(rec)
+    view = dx.diagnostics_view(rec, ctx)
+    assert view["state"] == "invalid" and code in view["codes"], view
+    assert "certified [" not in dx.bound_text(view)
+
+
+GRID_POOLS = {"p1": "constant_product", "p2": "constant_product", "q9": "concentrated"}
+
+
+def test_domain_pools_are_checked_against_the_runs_own_bundle() -> None:
+    rec, ctx = _grid()
+    with_pools = CheckContext(**{**ctx.__dict__, "pools": GRID_POOLS})
+    assert dx.check_diagnostics(rec, with_pools) == set()
+    assert "pools" not in dx.diagnostics_view(rec, with_pools)["checked_against"]
+    # a pool the run's bundle does not have
+    foreign = copy.deepcopy(rec)
+    foreign["domain"]["universe"]["pools"] = foreign["domain"]["pool_order"] = ["p1", "zz"]
+    assert dx.check_diagnostics(_rehashed(foreign), with_pools) == {"D_UNIVERSE"}
+    # a certificate over a pool whose protocol the domain does not declare
+    mixed = copy.deepcopy(rec)
+    mixed["domain"]["universe"]["pools"] = mixed["domain"]["pool_order"] = ["p1", "q9"]
+    assert dx.check_diagnostics(_rehashed(mixed), with_pools) == {"D_UNIVERSE"}
+    # ... but the same universe on an unsupported row without a certificate is its declared
+    # scope (WHI-1551 P-IA-UNSUPPORTED-MIXED: no CPMM-subset fallback), not a bound
+    mixed.update(
+        certificate=None,
+        certificate_unavailable_reason="not_produced",
+        scope={"supported": False, "reason": "non_constant_product_direct_pool"},
+    )
+    unsupported = CheckContext(**{**with_pools.__dict__, "status": "unsupported", "score": None})
+    assert dx.check_diagnostics(mixed, unsupported) == set()
+
+
+def test_legitimate_empty_and_narrowed_domains_stay_valid() -> None:
+    rec, ctx = _grid()
+    with_pools = CheckContext(**{**ctx.__dict__, "pools": GRID_POOLS})
+    # a narrowed pool set of the same bundle and a registered narrower cohort
+    narrow = copy.deepcopy(rec)
+    narrow["domain"]["universe"]["cohort"] = "sor_compatible"
+    assert dx.check_diagnostics(_rehashed(narrow), with_pools) == set()
+    one = copy.deepcopy(rec)
+    one["domain"]["universe"]["pools"] = one["domain"]["pool_order"] = ["p2"]
+    one["domain"]["splits"]["max"] = 1
+    assert dx.check_diagnostics(_rehashed(one), with_pools) == set()
+    # the complete empty domain of a no-route case (no admitted pool)
+    empty = copy.deepcopy(rec)
+    empty["domain"]["universe"]["pools"] = empty["domain"]["pool_order"] = []
+    empty.update(certificate=None, certificate_unavailable_reason="not_produced", work={})
+    no_route = CheckContext(**{**with_pools.__dict__, "status": "no_route", "score": None})
+    assert dx.check_diagnostics(_rehashed(empty), no_route) == set()
+
+
+def test_identity_ceilings_follow_the_contract() -> None:
+    rec, ctx = _grid()  # direct_split_certified: constant product only
+    for algorithm, allowed in (
+        ("cfmm_dual", True),  # constant product + concentrated
+        ("uni_sor_cycle_safe", True),
+        ("metis_history", True),
+    ):
+        other = copy.deepcopy(rec)
+        other["domain"]["protocols"] = ["constant_product", "concentrated"]
+        other["algorithm"] = algorithm
+        other["max_candidates_unit"] = dx.IDENTITIES[algorithm].max_candidates_unit
+        other["certificate"]["source"]["algorithm"] = algorithm
+        run = {**ctx.run, "algorithm": algorithm}
+        codes = dx.check_diagnostics(_rehashed(other), CheckContext(**{**ctx.__dict__, "run": run}))
+        assert (codes == set()) is allowed, (algorithm, codes)
+    lb = copy.deepcopy(rec)
+    lb["domain"]["protocols"] = ["constant_product", "liquidity_book"]
+    lb["algorithm"] = lb["certificate"]["source"]["algorithm"] = "cfmm_dual"
+    lb["max_candidates_unit"] = "fallback_paths_evaluated"
+    run = {**ctx.run, "algorithm": "cfmm_dual"}
+    assert dx.check_diagnostics(_rehashed(lb), CheckContext(**{**ctx.__dict__, "run": run})) == {
+        "D_ENUM"
+    }
+
+
+# ------------------------------------------------------------------ repair (BLOCKER-3)
+
+# suffix-repair.md §8 as committed by WHI-1553 (3d0afbd): the `search_stats["repair"]` object
+# without its path counters.
+WHI1553_REPAIR: dict[str, Any] = {
+    "enabled": True,
+    "stop": "exhausted",
+    "checkpoint_restores": 3,
+    "repair_attempts": 4,
+    "candidates_complete": 4,
+    "candidates_failed": 0,
+    "duplicates": 1,
+    "rejected_worse": 1,
+    "ties": 0,
+    "accepted": 2,
+    "consistency_failures": 0,
+    "internal_evaluations": 4,
+    "accepted_log": [
+        {"checkpoint": 0, "alternative": 0, "score": "111176933"},
+        {"checkpoint": 0, "alternative": 3, "score": "111178819"},
+    ],
+}
+
+
+@pytest.mark.parametrize(
+    "repair",
+    [
+        {"accepted": 1, "accepted_log": [{"checkpoint": 0, "score": "58"}]},  # parent's literal
+        WHI1553_REPAIR,
+        {**WHI1553_REPAIR, "enabled": False, "stop": "disabled", "accepted": 0, "accepted_log": []},
+    ],
+    ids=["parent-literal", "whi1553-preset", "whi1553-repair-off"],
+)
+def test_the_declared_repair_shape_validates_and_renders(repair: dict[str, Any]) -> None:
+    rec, ctx = _grid()
+    rec["repair"] = copy.deepcopy(repair)
+    view = dx.diagnostics_view(rec, ctx)
+    assert view["state"] == "certified" and view["repair"] == repair
+    text = dx.fallback_text(view)
+    assert text is not None and text.startswith("repair ")
+    log = repair["accepted_log"]
+    if log:
+        first = log[0]
+        assert f"accepted_log [checkpoint {first['checkpoint']}" in text
+        assert f"score {first['score']}" in text
+    else:
+        assert "accepted_log []" in text
+    # deterministic: the same fields in another insertion order render identically
+    reordered = {k: repair[k] for k in reversed(list(repair))}
+    rec["repair"] = reordered
+    assert dx.fallback_text(dx.diagnostics_view(rec, ctx)) == text
+    persisted = dx.read_view({"diagnostics": json.loads(json.dumps(view, sort_keys=True))})
+    assert persisted is not None and dx.fallback_text(persisted) == text
+
+
+def test_a_long_accepted_log_is_rendered_bounded() -> None:
+    rec, ctx = _grid()
+    log = [{"checkpoint": i, "alternative": 0, "score": str(58 + i)} for i in range(20)]
+    rec["repair"] = {"accepted": 20, "accepted_log": log}
+    text = dx.fallback_text(dx.diagnostics_view(rec, ctx))
+    assert text is not None and text.count("checkpoint ") == 8 and "; +12 more]" in text
+    rec["repair"] = {"accepted_log": log * 52}  # 1040 entries: over the bound
+    assert dx.check_diagnostics(rec, ctx) == {"S_SHAPE"}
+
+
+@pytest.mark.parametrize(
+    "repair",
+    [
+        {"accepted_log": [{"checkpoint": 0}]},  # no score
+        {"accepted_log": [{"checkpoint": 0, "score": 58}]},  # int score
+        {"accepted_log": [{"checkpoint": -1, "score": "58"}]},
+        {"accepted_log": [{"checkpoint": True, "score": "58"}]},
+        {"accepted_log": [{"checkpoint": 0, "score": "58", "plan": "x"}]},  # undeclared field
+        {"accepted_log": [{"checkpoint": 0, "score": "5" * 101}]},
+        {"accepted_log": {"checkpoint": 0, "score": "58"}},  # not a list
+        {"accepted_log": [[0, "58"]]},
+        {"windows": [{"inner": [1, 2]}]},  # deeper than flat entries
+        {"windows": [{"inner": {"a": 1}}]},
+        {"windows": [[{"a": 1}]]},
+        {"windows": {"a": 1}},
+        {"note": "line\nbreak"},
+        {"note": "x" * 201},
+        {"n": 10**19},
+        {"n": 1.5},
+        {"": 1},
+        {f"k{i}": i for i in range(33)},
+        {"windows": [{f"k{i}": i for i in range(9)}]},
+        [1, 2],
+    ],
+    ids=lambda r: json.dumps(r, default=str)[:40],
+)
+def test_arbitrary_or_unbounded_repair_objects_are_refused(repair: Any) -> None:
+    rec, ctx = _grid()
+    rec["repair"] = repair
+    view = dx.diagnostics_view(rec, ctx)
+    assert view["state"] == "invalid" and view["codes"] == ["S_SHAPE"], view
+    assert any(d.startswith("S_SHAPE: repair") for d in view["details"])
+
+
+# ------------------------------------------------------------------ canonical r021 (DEFECT-1)
+
+
+def test_canonical_r021_never_reprs_the_untrusted_value() -> None:
+    rec, _ = _grid()
+    text = dx.canonical_r021(rec)
+    assert text == json.dumps(rec, sort_keys=True)
+    staged = {**rec, "stages": {"bound": 1.5}}
+    assert dx.canonical_r021(staged) == text  # observational seconds are not compared
+    huge = copy.deepcopy(rec)
+    huge["work"]["paths_scored"] = 10**5000  # repr() and JSON both refuse it
+    with pytest.raises(ValueError, match="4300"):
+        repr(huge)
+    assert dx.canonical_r021(huge) == "<r021 diagnostics not JSON-serializable: ValueError>"
+    assert dx.canonical_r021(_Hostile()).startswith("<r021 diagnostics not JSON-serializable")
+    assert dx.canonical_r021({"a", "b"}).startswith("<r021 diagnostics not JSON-serializable")
+
+
 # ------------------------------------------------------------------ run identity / request
 
 
@@ -249,8 +495,13 @@ def test_a_certificate_of_another_run_identity_fails_c_identity(key: str) -> Non
     rec, ctx = _grid()
     # the runner's own value differs from the certificate's (nonempty, otherwise valid)
     run = {**ctx.run, key: "f" * 64}
+    extra = {  # another run bundle is also another domain universe; another algorithm has
+        # no §3.3 row to check its unit against
+        "bundle_hash": {"D_UNIVERSE"},
+        "algorithm": {"W_MAX_CANDIDATES"},
+    }.get(key, set())
     assert dx.check_diagnostics(rec, CheckContext(**{**ctx.__dict__, "run": run})) == (
-        {"C_IDENTITY"} if key != "algorithm" else {"C_IDENTITY", "W_MAX_CANDIDATES"}
+        {"C_IDENTITY"} | extra
     )
 
 
@@ -511,7 +762,7 @@ def test_valid_optional_parts_are_rendered_with_their_names() -> None:
     view = dx.diagnostics_view(rec, ctx)
     assert view["state"] == "certified", view
     assert dx.fallback_text(view) == (
-        "fallback used (source path_split; reason no graph route); repair windows 2, accepted False"
+        "fallback used (source path_split; reason no graph route); repair accepted False, windows 2"
     )
     assert dx.scope_text(view) == "UNSUPPORTED (objective outside ceiling)"
     assert dx.stages_text(view) == "incumbent 0.250000 s, bound 0.500000 s"

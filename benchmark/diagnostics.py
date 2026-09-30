@@ -28,8 +28,19 @@ View states: `certified` (a validated certified bound: `[lower, upper] gap g`), 
 (a numerical value, never a bound), `unknown` (no bound claimed), `unavailable` (no
 certificate: `hard_timeout`, `worker_error` or `not_produced`) and `invalid` (a violating or
 malformed diagnostics object; counted as an unknown bound). Codes are the §4.4 validator
-codes; `S_SHAPE` is this runtime's code for a structurally malformed object (not a mapping,
-wrong schema/contract string, unknown or missing top-level key, unserializable content).
+codes plus two runtime-only codes: `S_SHAPE` for a structurally malformed object (not a
+mapping, wrong schema/contract string, unknown or missing top-level key, unserializable
+content, an unbounded or undeclared optional part) and `D_UNIVERSE` for a domain that is not
+this run's: its `universe.bundle` is not the run's bundle hash, it names pools the run's
+bundle does not have, or a certificate covers a pool of a protocol the domain does not
+declare. The domain's `protocols` must be a non-empty set of registered families within the
+identity's contract ceiling, and its universe must name a bundle and a registered cohort
+(`D_ENUM` / `D_MISSING_FIELD`); an empty universe (a complete empty no-route domain) and a
+narrowed pool set of the run's bundle stay valid.
+
+The optional `repair` object is bounded JSON (WHI-1553 suffix-repair.md §8): scalar fields,
+or lists of flat objects of scalars; its declared `accepted_log` entries are
+`{checkpoint, alternative?, score}`. It is rendered deterministically and truncated.
 
 A hard-killed solve returns no `SolveResult`; its view is built by the runner from its own
 observation only (`unavailable_view("hard_timeout")`), never from partial worker output
@@ -79,6 +90,9 @@ ZERO_OUTPUT_LEG = ("infeasible",)
 DAG_ADMISSION = ("plan_token_dag",)
 FULL_FILL = ("v1_full_fill",)
 HOPS_PARAMS = (None, "search.max_hops", "graph.label_hops")
+# §3.1: the pool families a domain may name, and the cohorts of its universe.
+PROTOCOLS = ("constant_product", "concentrated", "liquidity_book")
+COHORTS = ("full_source", "sor_compatible", "fixture")
 SPLITS_GOVERNS = ("allocation", "fallback_only", "none")
 BOUND_KINDS = ("certified", "estimate", "unknown")
 TERMINATIONS = (
@@ -126,10 +140,12 @@ NUMERIC_UNITS = frozenset(u for u, c in WORK_UNITS.items() if c == "numeric")
 @dataclass(frozen=True)
 class Identity:
     """One §3.3 row: the `Budget.max_candidates` unit and, where the contract fixes a list,
-    the admitted objectives (`None`: "as <reference>", not checked beyond the run's own)."""
+    the admitted objectives (`None`: "as <reference>", not checked beyond the run's own) and
+    the protocol ceiling (`protocols_ceiling`; `None`: every registered protocol)."""
 
     max_candidates_unit: str
     objectives: tuple[str, ...] | None = None
+    protocols: tuple[str, ...] | None = None
 
 
 # The existing nine and the five 0.2.1 identities of contract-v1.json (the cfmm_dual row as
@@ -146,11 +162,17 @@ IDENTITIES: dict[str, Identity] = {
     "uni_sor_adaptive": Identity("enumerated_routes_threshold"),
     "uni_sor_optimized": Identity("enumerated_routes_threshold"),
     "metis_inspired": Identity("label_relaxations_per_chunk"),
-    "metis_history": Identity("label_relaxations_per_chunk"),
-    "direct_split_certified": Identity("finalist_plans_evaluated", ("gross_only",)),
-    "incremental_graph_repair": Identity("paths_scored_per_chunk"),
-    "uni_sor_cycle_safe": Identity("enumerated_routes_threshold"),
-    "cfmm_dual": Identity("fallback_paths_evaluated", ("gross_only",)),
+    "metis_history": Identity("label_relaxations_per_chunk", None, PROTOCOLS),
+    "direct_split_certified": Identity(
+        "finalist_plans_evaluated", ("gross_only",), ("constant_product",)
+    ),
+    "incremental_graph_repair": Identity("paths_scored_per_chunk", None, PROTOCOLS),
+    "uni_sor_cycle_safe": Identity(
+        "enumerated_routes_threshold", None, ("constant_product", "concentrated")
+    ),
+    "cfmm_dual": Identity(
+        "fallback_paths_evaluated", ("gross_only",), ("constant_product", "concentrated")
+    ),
 }
 
 RUN_IDENTITY_KEYS = ("git_revision", "bundle_hash", "algorithm", "effective_settings_sha256")
@@ -252,6 +274,9 @@ class CheckContext:
     objective: str  # the run's objective mode
     quotes_counted: int | None  # the worker meter's executed quotes of the attempt
     hard_killed: bool = False
+    # pool id -> protocol of every pool of the run's own bundle (`pool_protocols`), when the
+    # runner has it; a domain must name pools of this bundle. Not persisted in the view.
+    pools: Mapping[str, str] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -278,7 +303,82 @@ class _Findings:
 # ------------------------------------------------------------------ checks
 
 
-def _check_domain(domain: Any, found: _Findings) -> None:
+def _check_universe(
+    universe: Mapping[str, Any], pools: list[str] | None, ctx: CheckContext, found: _Findings
+) -> None:
+    """§3.1 `universe`: the run's own bundle, a registered cohort, and (when the runner
+    supplies its bundle's pools) only pools of that bundle. A narrowed pool set is allowed;
+    so is an empty one (a complete empty domain)."""
+    bundle, cohort = universe.get("bundle"), universe.get("cohort")
+    if not _text(bundle) or not bundle:
+        found.add("D_MISSING_FIELD", "domain.universe.bundle is missing or not a bundle hash")
+    elif bundle != ctx.run.get("bundle_hash"):
+        found.add(
+            "D_UNIVERSE",
+            f"domain.universe.bundle {_shown(bundle)} != the run's bundle "
+            f"{_shown(ctx.run.get('bundle_hash'))}",
+        )
+    if "cohort" not in universe:
+        found.add("D_MISSING_FIELD", "domain.universe.cohort is missing")
+    elif not isinstance(cohort, str) or cohort not in COHORTS:
+        found.add("D_ENUM", f"domain.universe.cohort {_shown(cohort)} not in {list(COHORTS)}")
+    if ctx.pools is not None and pools is not None:
+        foreign = sorted({p for p in pools if p not in ctx.pools})
+        if foreign:
+            found.add(
+                "D_UNIVERSE",
+                f"domain.universe.pools names {len(foreign)} pool(s) outside the run's bundle "
+                f"(first {_shown(foreign[0])})",
+            )
+    if pools is not None and len(set(pools)) != len(pools):
+        found.add("D_UNIVERSE", "domain.universe.pools repeats a pool")
+
+
+def _check_protocols(
+    protocols: Any,
+    pools: list[str] | None,
+    identity: Identity | None,
+    certified: bool,
+    ctx: CheckContext,
+    found: _Findings,
+) -> None:
+    """§3.1 `protocols`: a non-empty set of registered families within the identity's
+    ceiling (§2); a bound over the domain also needs every universe pool's own protocol."""
+    if not (isinstance(protocols, list) and all(isinstance(p, str) for p in protocols)):
+        found.add("D_MISSING_FIELD", "domain.protocols is not a list of protocol names")
+        return
+    unknown = sorted({p for p in protocols if p not in PROTOCOLS})
+    if not protocols or len(set(protocols)) != len(protocols) or unknown:
+        found.add(
+            "D_ENUM",
+            f"domain.protocols {_shown(protocols)} is not a non-empty set of {list(PROTOCOLS)}",
+        )
+        return
+    ceiling = identity.protocols if identity is not None else None
+    beyond = sorted(p for p in protocols if ceiling is not None and p not in ceiling)
+    if beyond:
+        found.add(
+            "D_ENUM",
+            f"domain.protocols {beyond} exceed the identity's ceiling {list(ceiling or ())}",
+        )
+    if certified and ctx.pools is not None and pools is not None:
+        outside = sorted({p for p in pools if p in ctx.pools and ctx.pools[p] not in protocols})
+        if outside:
+            found.add(
+                "D_UNIVERSE",
+                f"a bound over pools of an undeclared protocol ({len(outside)} pool(s), first "
+                f"{_shown(outside[0])} is {ctx.pools[outside[0]]})",
+            )
+
+
+def _check_domain(
+    domain: Any,
+    found: _Findings,
+    ctx: CheckContext,
+    identity: Identity | None,
+    certified: bool,
+) -> None:
+    """`certified`: the diagnostics carry a certificate (any bound kind) over this domain."""
     if not isinstance(domain, Mapping):
         found.add("D_MISSING_FIELD", f"domain is not an object ({_shown(domain)})")
         return
@@ -331,11 +431,11 @@ def _check_domain(domain: Any, found: _Findings) -> None:
     ):
         found.add("D_MISSING_FIELD", "domain.universe.pools is not a list of pool ids")
         pools = None
+    if isinstance(universe, Mapping):
+        _check_universe(universe, pools, ctx, found)
     protocols = domain.get("protocols")
-    if "protocols" in domain and not (
-        isinstance(protocols, list) and all(isinstance(p, str) for p in protocols)
-    ):
-        found.add("D_MISSING_FIELD", "domain.protocols is not a list of protocol names")
+    if "protocols" in domain:
+        _check_protocols(protocols, pools, identity, certified, ctx, found)
     order = domain.get("pool_order")
     if "pool_order" in domain and not (
         isinstance(order, list) and all(isinstance(p, str) for p in order)
@@ -483,6 +583,65 @@ def _check_certificate(
         found.add("C_LOWER_EVAL", f"lower_raw {lower} != the evaluated score {ctx.score}")
 
 
+# `repair` (WHI-1553 suffix-repair.md §8 declares it: scalar counters/flags plus
+# `accepted_log`, one `{checkpoint, alternative, score}` entry per accepted candidate) is
+# bounded JSON: scalar fields, or lists of flat objects of scalars. Nothing deeper is taken.
+_REPAIR_MAX_FIELDS = 32
+_REPAIR_MAX_ENTRIES = 1024
+_REPAIR_MAX_ENTRY_FIELDS = 8
+_ACCEPTED_LOG_FIELDS = ("checkpoint", "alternative", "score")
+
+
+def _scalar(value: Any) -> bool:
+    return (
+        value is None
+        or isinstance(value, bool)
+        or (type(value) is int and -(10**18) <= value <= 10**18)
+        or _text(value)
+    )
+
+
+def _repair(repair: Any) -> tuple[dict[str, Any] | None, str]:
+    """The sanitized `repair` object, or `None` and why it is refused."""
+    if not isinstance(repair, Mapping) or len(repair) > _REPAIR_MAX_FIELDS:
+        return None, f"not an object of at most {_REPAIR_MAX_FIELDS} fields"
+    out: dict[str, Any] = {}
+    for key, value in repair.items():
+        if not (_text(key) and key):
+            return None, f"field name {_shown(key)} is not short printable text"
+        if _scalar(value):
+            out[key] = value
+            continue
+        if not isinstance(value, list) or len(value) > _REPAIR_MAX_ENTRIES:
+            return None, f"{key} is neither a scalar nor a list of at most {_REPAIR_MAX_ENTRIES}"
+        entries: list[dict[str, Any]] = []
+        for entry in value:
+            if not (
+                isinstance(entry, Mapping)
+                and len(entry) <= _REPAIR_MAX_ENTRY_FIELDS
+                and all(_text(k) and k and _scalar(v) for k, v in entry.items())
+            ):
+                return None, f"{key} entries must be flat objects of scalar fields"
+            entries.append(dict(entry))
+        out[key] = entries
+    log = out.get("accepted_log", [])
+    if "accepted_log" in out and not isinstance(log, list):
+        return None, "accepted_log is not a list"
+    for entry in log:
+        if (
+            not set(entry) <= set(_ACCEPTED_LOG_FIELDS)
+            or not {"checkpoint", "score"} <= set(entry)
+            or not _is_count(entry["checkpoint"])
+            or ("alternative" in entry and not _is_count(entry["alternative"]))
+            or not _is_raw(entry["score"])
+        ):
+            return None, (
+                "accepted_log entries are {checkpoint: count, alternative: count (optional), "
+                "score: raw decimal string}"
+            )
+    return out, ""
+
+
 def _check_optional(rec: Mapping[str, Any], found: _Findings) -> dict[str, Any]:
     """Optional `fallback`/`repair`/`scope`/`stages`; returns their sanitized copies."""
     out: dict[str, Any] = {}
@@ -502,14 +661,11 @@ def _check_optional(rec: Mapping[str, Any], found: _Findings) -> dict[str, Any]:
         else:
             found.add("S_SHAPE", "fallback is not {used: bool, source, reason}")
     if "repair" in rec:
-        repair = rec["repair"]
-        if isinstance(repair, Mapping) and all(
-            _text(k) and (v is None or isinstance(v, bool) or type(v) is int or _text(v))
-            for k, v in repair.items()
-        ):
-            out["repair"] = dict(repair)
+        repair, problem = _repair(rec["repair"])
+        if repair is not None:
+            out["repair"] = repair
         else:
-            found.add("S_SHAPE", "repair is not an object of scalar fields")
+            found.add("S_SHAPE", f"repair: {problem}")
     if "scope" in rec:
         scope = rec["scope"]
         if (
@@ -566,7 +722,13 @@ def _findings(raw: Any, ctx: CheckContext) -> tuple[_Findings, dict[str, Any]]:
             "C_IDENTITY", f"diagnostics name {_shown(raw.get('algorithm'))}, not {algorithm!r}"
         )
     domain = raw.get("domain")
-    _check_domain(domain, found)
+    _check_domain(
+        domain,
+        found,
+        ctx,
+        IDENTITIES.get(algorithm or ""),
+        isinstance(raw.get("certificate"), Mapping),
+    )
     if "domain" in raw and raw.get("candidate_domain_hash") != domain_hash(domain):
         found.add("D_HASH", "candidate_domain_hash is not the §3.1 hash of the domain")
     identity = IDENTITIES.get(algorithm or "")
@@ -693,12 +855,35 @@ def unavailable_view(reason: str, *, origin: str = "runner") -> dict[str, Any]:
 def unserializable_marker(raw: Any) -> str | None:
     """`None` when `raw` can be persisted by the result writer (canonical JSON); otherwise the
     text that replaces it in the record's `search` so an unserializable claim cannot crash
-    the run (its view is `invalid`, `S_SHAPE`)."""
+    the run (its view is `invalid`, `S_SHAPE`). Never `repr()`s the value."""
     try:
         json.dumps(raw, sort_keys=True)
-    except (TypeError, ValueError, RecursionError) as exc:
+    except Exception as exc:  # noqa: BLE001 - untrusted: any failure is "not serializable"
         return f"<r021 diagnostics not JSON-serializable: {type(exc).__name__}>"
     return None
+
+
+def canonical_r021(raw: Any) -> str:
+    """A deterministic text form of an untrusted `r021` value for equality checks: its
+    canonical JSON without the observational `stages` seconds, or its unserializable marker.
+    Equal claims give equal text in every process (no hash-seed or address dependence)."""
+    marker = unserializable_marker(raw)
+    if marker is not None:
+        return marker
+    if isinstance(raw, Mapping):
+        raw = {k: v for k, v in raw.items() if k != "stages"}
+    return json.dumps(raw, sort_keys=True)
+
+
+def pool_protocol(pool: Any) -> str:
+    """The §3.1 protocol family of one bundle pool state (for `CheckContext.pools`)."""
+    from snapshot.models import ConcentratedPoolState, ConstantProductPoolState
+
+    if isinstance(pool, ConstantProductPoolState):
+        return "constant_product"
+    if isinstance(pool, ConcentratedPoolState):
+        return "concentrated"
+    return "liquidity_book"
 
 
 # ------------------------------------------------------------------ rendering support
@@ -815,10 +1000,35 @@ def fallback_text(view: Mapping[str, Any]) -> str | None:
             parts.append("fallback not used")
     repair = view.get("repair")
     if isinstance(repair, Mapping):
-        parts.append(
-            "repair " + (", ".join(f"{k} {v}" for k, v in repair.items()) or "(no fields)")
-        )
+        parts.append("repair " + (_repair_text(repair) or "(no fields)"))
     return "; ".join(parts) or None
+
+
+_SHOWN_ENTRIES = 8
+
+
+def _repair_text(repair: Mapping[str, Any]) -> str:
+    """Deterministic, bounded rendering: fields in key order, list entries in their own
+    order (at most `_SHOWN_ENTRIES` shown, the rest counted), entry fields in the declared
+    `accepted_log` order, else by name."""
+    shown: list[str] = []
+    for key in sorted(repair, key=str):
+        value = repair[key]
+        if not isinstance(value, list):
+            shown.append(f"{key} {value}")
+            continue
+        texts = []
+        for entry in value[:_SHOWN_ENTRIES]:
+            if not isinstance(entry, Mapping):
+                texts.append("?")
+                continue
+            order = [f for f in _ACCEPTED_LOG_FIELDS if f in entry] + sorted(
+                str(f) for f in entry if f not in _ACCEPTED_LOG_FIELDS
+            )
+            texts.append(" ".join(f"{f} {entry[f]}" for f in order))
+        more = f"; +{len(value) - _SHOWN_ENTRIES} more" if len(value) > _SHOWN_ENTRIES else ""
+        shown.append(f"{key} [{'; '.join(texts)}{more}]" if value else f"{key} []")
+    return ", ".join(shown)
 
 
 def scope_text(view: Mapping[str, Any]) -> str | None:
