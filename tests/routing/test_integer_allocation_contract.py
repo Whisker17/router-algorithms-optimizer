@@ -21,6 +21,7 @@ passes; no timing claim).
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import heapq
 import importlib.util
@@ -304,6 +305,7 @@ class Certified:
     open_nodes: list[Node] = field(default_factory=list)
     trace: list[Node] = field(default_factory=list)
     units: int = 0
+    error: str | None = None
 
 
 NO_BUDGET = Budget()
@@ -312,6 +314,14 @@ NO_BUDGET = Budget()
 class _Stop(Exception):
     def __init__(self, reason: str) -> None:
         self.reason = reason
+
+
+class _Inconsistent(Exception):
+    """A candidate's evaluator replay disagrees with its quoted additive value (memo
+    §5.6): the accounting every bound rests on is broken, so the search fails closed."""
+
+    def __init__(self, detail: dict[str, Any]) -> None:
+        self.detail = detail
 
 
 def certify(
@@ -388,7 +398,6 @@ def certify(
     heap: list[tuple[tuple[int, int, int], Node]] = []
     trace: list[Node] = []
     seq = itertools.count()
-    mismatches = 0
 
     def lower() -> int | None:
         return best[-1][0] if best else None
@@ -404,7 +413,6 @@ def certify(
         return outputs[key]
 
     def consider(legs: tuple[Leg, ...], value: int) -> None:
-        nonlocal mismatches
         current = lower()
         if current is not None and value <= current:
             return
@@ -416,11 +424,16 @@ def certify(
         plan = direct_split.allocation_plan(case, ids, legs)
         evaluation = evaluate(bundle, case, plan, objective, quote=cache)
         work["internal_evaluations"] += 1
-        if evaluation.status is not EvalStatus.OK:
-            mismatches += 1
-            return
-        score = objective.score(evaluation)
-        mismatches += score != value
+        score = objective.score(evaluation) if evaluation.status is EvalStatus.OK else None
+        if score != value:  # fail closed: never an incumbent, never published (memo §5.6)
+            raise _Inconsistent(
+                {
+                    "legs": [list(leg) for leg in legs],
+                    "quoted_value": str(value),
+                    "evaluation_status": evaluation.status.value,
+                    "evaluated_score": None if score is None else str(score),
+                }
+            )
         if current is None or score > current:
             best.append((score, plan, evaluation, legs))
             if sink is not None:
@@ -495,6 +508,7 @@ def certify(
         return current is not None and node.ub is not None and node.ub <= current
 
     termination: str | None = None
+    failure: dict[str, Any] | None = None
     if any(live):
         root = make("state", 0, 0, 0, 0, ())
         heap.append((key(root), root))
@@ -519,7 +533,9 @@ def certify(
                 consider(seed, sum(o for o in outs if o is not None))
     except _Stop as stop:
         termination = termination or stop.reason
-    while termination is None and heap:
+    except _Inconsistent as bad:
+        failure = bad.detail
+    while termination is None and failure is None and heap:
         entry = heap[0]
         if prunable(entry[1]):
             stats["nodes_pruned_bound"] += len(heap)
@@ -535,6 +551,9 @@ def certify(
         except _Stop as stop:
             heapq.heappush(heap, entry)
             termination = stop.reason
+            break
+        except _Inconsistent as bad:
+            failure = bad.detail
             break
         kept = [k for k in kids if not prunable(k)]
         stats["nodes_pruned_bound"] += len(kids) - len(kept)
@@ -554,11 +573,19 @@ def certify(
         grid_units=units,
         direct_pools=n,
         live_pools=sum(live),
-        evaluation_mismatches=mismatches,
+        consistency_failure=failure,
     )
     result = Certified(
         SolveStatus.OK, None, None, None, None, record, stats, frontier, trace, units
     )
+    if failure is not None:  # memo §5.6: no certificate, no completion or no_route claim
+        stats["truncated_by"] = "consistency_failure"
+        if lo_score is None:
+            result.status = SolveStatus.ALGORITHM_ERROR
+            result.error = f"evaluator replay disagrees with quoted accounting: {failure}"
+            return result
+        result.score, result.plan, result.evaluation, result.legs = best[-1]
+        return result
     if lo_score is None:
         result.status = SolveStatus.NO_ROUTE if termination is None else SolveStatus.TIMEOUT
         return result
@@ -958,7 +985,7 @@ def test_complete_grid_certificate_is_the_exhaustive_optimum(inst: Instance) -> 
     result = inst.run()
     opt = optimum(inst.values)
     assert result.stats["truncated_by"] is None
-    assert result.stats["evaluation_mismatches"] == 0
+    assert result.stats["consistency_failure"] is None
     assert certificate_errors(inst, result) == []
     assert node_bound_errors(inst, result) == []
     if opt is None:
@@ -1262,6 +1289,109 @@ def test_a_hard_killed_solve_leaves_only_the_last_reported_candidate() -> None:
     with pytest.raises(QuoteLimitExceeded), metered_quotes(needed - 1):
         inst.run(sink=reported.append)  # the hard meter cuts the solve off: no result at all
     assert reported  # the runner keeps this as last_valid_candidate, never a certificate
+
+
+REAL_EVALUATE = evaluate  # captured before any fault injection patches the module name
+
+
+def _faulty_evaluate(
+    fault: Callable[[Evaluation], Evaluation], from_call: int
+) -> tuple[Callable[..., Evaluation], list[int]]:
+    """The real evaluator, with `fault` applied from the `from_call`-th call (1-based)."""
+    calls = [0]
+
+    def fake(*args: Any, **kwargs: Any) -> Evaluation:
+        calls[0] += 1
+        real = REAL_EVALUATE(*args, **kwargs)
+        return fault(real) if calls[0] >= from_call else real
+
+    return fake, calls
+
+
+FAULTS: dict[str, Callable[[Evaluation], Evaluation]] = {
+    "gross_plus_one": lambda e: dataclasses.replace(e, gross_output=e.gross_output + 1),
+    "gross_minus_one": lambda e: dataclasses.replace(e, gross_output=e.gross_output - 1),
+    "invalid_plan": lambda e: dataclasses.replace(e, status=EvalStatus.INVALID_PLAN),
+}
+
+
+@pytest.mark.parametrize("fault", sorted(FAULTS))
+def test_an_inconsistent_first_candidate_fails_closed_as_algorithm_error(
+    fault: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Parent repro (issue comment 4c3bf7ef): one (1000, 1000) pool, input 100. A replay
+    that disagrees with the quoted value is never published or certified, and the solve
+    is neither `ok`, `no_route` nor `timeout`."""
+    inst = Instance((cp("p", 1000, 1000),), 100, 5, 1, False)
+    assert inst.run().score == optimum(inst.values) == 90
+    fake, calls = _faulty_evaluate(FAULTS[fault], 1)
+    monkeypatch.setitem(certify.__globals__, "evaluate", fake)
+    published: list[RoutePlan] = []
+    result = inst.run(sink=published.append)
+    assert calls[0] == 1 and published == []
+    assert result.status is SolveStatus.ALGORITHM_ERROR and result.error
+    assert result.plan is None and result.score is None
+    assert result.record["certificate"] is None
+    assert result.record["certificate_unavailable_reason"] == "not_produced"
+    failure = result.stats["consistency_failure"]
+    assert failure["quoted_value"] == "90" and failure["legs"] == [[0, 20]]
+    assert result.stats["truncated_by"] == "consistency_failure"
+
+
+@pytest.mark.parametrize("fault", sorted(FAULTS))
+def test_an_inconsistent_later_candidate_keeps_the_valid_incumbent_uncertified(
+    fault: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """R6 (p1, p2): the single pool 57 is evaluated first, then the improving split 58.
+    Corrupting the second replay stops the search: the earlier valid plan is returned
+    `ok` with no certificate (not 58, not [57, 57], not a gap), and it is the only
+    published candidate."""
+    inst = Instance(_pair(R6["pool1"], R6["pool2"]), R6["amount_in"], 5, 2, False)
+    clean = inst.run()
+    assert clean.record["work"]["internal_evaluations"] == 2 and clean.score == 58
+    fake, calls = _faulty_evaluate(FAULTS[fault], 2)
+    monkeypatch.setitem(certify.__globals__, "evaluate", fake)
+    published: list[RoutePlan] = []
+    result = inst.run(sink=published.append)
+    assert calls[0] == 2
+    assert result.status is SolveStatus.OK and result.score == R6["single_pool_incumbent"]
+    assert published == [result.plan] and result.evaluation is not None
+    assert result.plan is not None
+    replay = REAL_EVALUATE(bundle_of(inst.states), inst.case(), result.plan, gross_only())
+    assert replay.gross_output == 57
+    assert result.record["certificate"] is None
+    assert result.record["certificate_unavailable_reason"] == "not_produced"
+    assert result.stats["consistency_failure"]["evaluated_score"] != "58"
+    assert result.stats["truncated_by"] == "consistency_failure"
+
+
+def test_consistency_failures_never_yield_a_certificate_across_the_suite(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every fault at every evaluation index on multipool instances: no certificate,
+    every published plan is genuinely valid, and the returned plan (if any) is the last
+    one published."""
+    real, later = REAL_EVALUATE, 0
+    for inst in MUTATION_SUITE[:20]:
+        evaluations = inst.run().record["work"]["internal_evaluations"]
+        for fault in FAULTS.values():
+            for index in range(1, evaluations + 1):
+                fake, _ = _faulty_evaluate(fault, index)
+                monkeypatch.setitem(certify.__globals__, "evaluate", fake)
+                published: list[RoutePlan] = []
+                result = inst.run(sink=published.append)
+                monkeypatch.setitem(certify.__globals__, "evaluate", real)
+                assert result.record["certificate"] is None
+                assert result.stats["consistency_failure"] is not None
+                bundle, case = bundle_of(inst.states), inst.case()
+                for plan in published:
+                    assert real(bundle, case, plan, gross_only()).status is EvalStatus.OK
+                if index == 1:
+                    assert result.status is SolveStatus.ALGORITHM_ERROR and not published
+                else:
+                    assert result.status is SolveStatus.OK and published[-1] is result.plan
+                    later += 1
+    assert later > 0  # the preserved-incumbent branch is exercised, not vacuous
 
 
 def test_the_quote_ledger_is_the_worker_meter_and_bound_work_is_separate() -> None:

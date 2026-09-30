@@ -4,8 +4,8 @@
 | --- | --- |
 | Contract | `R021-C/1` ([`contract.md`](contract.md)); this memo narrows the `direct_split_certified` row (§11 obligations) and changes no shared schema, vocabulary, example or check |
 | Publication key | `R021-P05`, WHI-1551, Release 0.2.1 (`ed16e106-fa3e-4b8a-b022-e7208eb8ef41`) |
-| Repository base | `origin/dev` `b9e7310ea73b2cfa4a3388b80644199e5188e1d9` (B `81559ab` + WHI-1547 contract + WHI-1549 memo; `routing/`, `pools/`, `snapshot/` unchanged since B) |
-| Outcome | **`narrow_go`** (§10): implementable and proven on all-CPMM direct pool sets; **zero multi-pool cases in the frozen corpus** |
+| Repository base | `origin/dev` `b9e7310ea73b2cfa4a3388b80644199e5188e1d9` (B `81559ab` + WHI-1547 contract + WHI-1549 memo), then merged with `origin/dev` `91d7f4b056e04dbfe7de0a0b867618875c2efd27` (WHI-1557; no file overlap). `routing/`, `pools/`, `snapshot/` unchanged since B |
+| Outcome | **`narrow_go`** (§10): implementable and proven on all-CPMM direct pool sets under `gross_only`. **Zero multi-pool cases in the frozen corpus**, a disclosed limitation that is not an approval gate |
 | Records | [`fixtures/integer-allocation.json`](fixtures/integer-allocation.json): preset, stress profile, 11 regenerated domain/certificate records, grid-vs-raw summary, pinned probe and sweep summaries |
 | Executable check | `uv run pytest tests/routing/test_integer_allocation_contract.py -q` |
 | Downstream | WHI-1552 (`direct_split_certified` implementation); amendment text in §11 |
@@ -263,9 +263,11 @@ Children are created in the table's order, and each is pruned at creation if `ub
    interrupted raw searches (§9.3).
 4. A candidate becomes the incumbent only if it is a complete plan built by
    `direct_split.allocation_plan`, the evaluator replays it `ok` (through the same
-   `QuoteCache`, which costs no new quotes) and its score is **strictly** greater. Every new
-   incumbent is published with `report_candidate`. An evaluator failure or score mismatch is
-   counted (`evaluation_mismatches`, which must be 0) and never becomes the incumbent.
+   `QuoteCache`, which costs no new quotes) and its score equals the candidate's quoted
+   additive value and is **strictly** greater than `L`. Every new incumbent is published
+   with `report_candidate`. A replay that is not `ok` or whose score differs from the quoted
+   value is a consistency failure. It is never an incumbent and never published, and it
+   ends the search under §5.6.
 
 ### 5.3 Frontier order and ties
 
@@ -305,12 +307,38 @@ labeled with the actual stop reason.
 | no incumbent, search complete | `no_route` (every allocation infeasible, or no live pool) | null, `not_produced` |
 | no incumbent, stopped | `timeout` (never evidence of `no_route`) | null, `not_produced` |
 | §2.1 scope rule | `unsupported` / `no_route` | null, `not_produced`, `scope` set |
+| consistency failure, earlier valid incumbent (§5.6) | `ok` with that earlier plan (`truncated_by: consistency_failure`) | null, `not_produced` |
+| consistency failure, no incumbent (§5.6) | `algorithm_error` (never `no_route` or `timeout`) | null, `not_produced` |
 
 Certificate fields: `lower_raw = L`; `upper_raw = U` (null if unknown); `gap_raw = U − L`;
 `upper_source` (§4); `estimate: null`; `optimality_proven = (U = L)`; `termination`;
 `source` holds `{git_revision, bundle_hash, algorithm: "direct_split_certified",
 effective_settings_sha256 = SHA-256 of the canonical options JSON}`; `request` holds the
 exact case. The runner checks all of these against its own identities (R021-C/1 §9.4).
+
+### 5.6 Consistency failure (fail closed)
+
+Every bound carries the exact prefix output `gp`, which is a sum of leg quotes (lemma L1
+and additivity, §2.2). A candidate whose in-solve evaluator replay is not `ok`, or whose
+score differs from its quoted additive value in either direction, therefore shows that the
+accounting behind every bound and every earlier leaf is broken. For correct code this is
+unreachable: legs use distinct pools on the original state, through the same `QuoteCache`.
+It is a defect, and the search fails closed:
+
+1. The candidate is never the incumbent and is never published through `report_candidate`.
+2. The search stops at once. No further quote, expansion or evaluation happens, and the
+   frontier is not used for any claim.
+3. No certificate is emitted (`certificate: null`, `certificate_unavailable_reason:
+   "not_produced"`). There is no `complete`, no zero gap and no bound, because T1 no
+   longer holds.
+4. Suppose an earlier incumbent exists whose own replay matched its quoted value. The
+   status is `ok` with that plan (the last one published), marked
+   `search_stats.truncated_by: "consistency_failure"`. The runner's independent final
+   evaluation still decides its score. Otherwise the status is `algorithm_error`, with an
+   error naming the failure. It is never `no_route` (the domain was not shown infeasible)
+   and never `timeout` (no budget was hit).
+5. `search_stats.consistency_failure` records `{legs, quoted_value, evaluation_status,
+   evaluated_score}`; it is null in every clean solve. No counter-and-continue path exists.
 
 ## 6. Options, preset, stress profile and the §3.3 row
 
@@ -360,7 +388,8 @@ singles, Rule H and improving leaves). Separate caps: `max_bound_nodes` and
 
 Bound work and quote calls are separate units and are never divided by each other. Plain
 `search_stats` extras (not §5.2 units): `truncated_by`, `nodes_pruned_bound`, `grid_units`,
-`direct_pools`, `live_pools`, `evaluation_mismatches`, the returned allocation.
+`direct_pools`, `live_pools`, `consistency_failure` (§5.6; null when clean), the returned
+allocation.
 
 [`fixtures/integer-allocation.json`](fixtures/integer-allocation.json) holds 11 records.
 Each is regenerated byte-for-byte by `certify` and validated by the unchanged R021-C/1
@@ -411,7 +440,15 @@ with `certify`, `direct_split` or `pools/`.
 
    The genuine bounds are caught on 0 instances. The unknown-bound hook never certifies a
    truncated search.
-5. R2, R3, R6; a real Moe Classic smoke over all 62 cases of `moe_classic/bundle` (value =
+5. Consistency fault injection (§5.6). The real evaluator is wrapped so that from its
+   k-th call it returns a gross 1 higher, 1 lower, or `invalid_plan`. On the parent's
+   repro (one (1000, 1000) pool, input 100, quoted value 90, corrupted replay 91), the
+   result is `algorithm_error` with no plan, no publication and no certificate. On R6 with
+   the improving split's replay corrupted, the earlier single-pool plan (57) is returned
+   `ok` uncertified and is the only publication. Across every fault and every evaluation
+   index on 20 multipool instances, no certificate is emitted and every published plan is
+   genuinely valid.
+6. R2, R3, R6; a real Moe Classic smoke over all 62 cases of `moe_classic/bundle` (value =
    `direct_split`); unsupported CL/LB pairs and net objectives; the hard kill; the quote
    ledger equal to the worker meter; the option validator; the pinned preset, sweep and
    probe.
@@ -476,11 +513,17 @@ implementation-ready. All values fit R021-C/1 as is.
   certificate). A concave-bound proof for the migrated `pools/concentrated.py` /
   `pools/liquidity_book.py` is **blocked** pending its own proof. Net objectives are
   `unsupported`.
-- **Coverage:** the frozen corpus has no multi-pool case in scope (§9.1). The identity's
-  measurable contribution is fixture evidence, the SOR cohort's single-pool proofs and
-  visible `unsupported` rows. By P1, a `same_grid_allocation` value difference would signal
-  a defect, not a gain. The parent/owner should decide whether WHI-1552 is still wanted
-  with this coverage. This memo does not change that decision or the contract ceiling.
+- **Coverage (disclosed limitation, not an approval gate).** The frozen corpus has no
+  multi-pool case in scope (§9.1: 0 of 96 `bundle_tuning` cases supported; 6 of 96
+  `sor_cohort_tuning` cases, all single-pool). WHI-1552 proceeds under the owner's existing
+  authorization for the whole release, with this explicitly narrow all-CPMM/`gross_only`
+  domain. No performance win is required. Its measurable evidence is:
+  - the synthetic suites and sweeps (§8, §9.2);
+  - the admitted CPMM single-pool smoke on `moe_classic/bundle` and the SOR cohort;
+  - truthful `unsupported` rows everywhere else.
+
+  No new corpus is collected for it. By P1, a `same_grid_allocation` value difference would
+  signal a defect, not a gain. The contract ceiling is unchanged.
 - No latency, quote-saving adoption or tie-identity claim.
 
 ## 11. Amendment text for WHI-1552 (for the parent to apply)
@@ -500,6 +543,9 @@ implementation-ready. All values fit R021-C/1 as is.
 >   and the strict-improvement, evaluator-validated incumbent.
 > - Certificate, statuses and terminations follow §5.5, with `wall_budget` unused. A
 >   hard-killed solve has no certificate.
+> - A consistency failure fails closed exactly as §5.6 says: never an incumbent, never
+>   published, no certificate. The status is `ok` with the earlier valid incumbent, or
+>   `algorithm_error` without one. It is never `no_route` or `timeout`.
 >
 > **Options** (§6): `domain` {repository_grid, raw_integer}, `max_bound_nodes` 1…1e7,
 > `max_open_nodes` 1…1e7, `raw_max_amount_in` 1…1e6 (raw only). All are required and
@@ -512,14 +558,17 @@ implementation-ready. All values fit R021-C/1 as is.
 > all-allocation replay; complete random grid/raw suites with per-node bound dominance;
 > forced truncation with frontier coverage; the four mutations caught and genuine never;
 > R2/R3/R6; the published records regenerated exactly (same numbers with Rule T); the real
-> Moe smoke; unsupported mixed pairs and net objectives; the hard kill; the ledger; the
-> validator. Also add `run` and `quote --details` on a CPMM-only fixture profile and the
+> Moe smoke; unsupported mixed pairs and net objectives; the hard kill; the §5.6 fault
+> injections (+1, −1 and `invalid_plan` replays at every evaluation index, with the first-
+> candidate and preserved-incumbent cases); the ledger; the validator. Also add `run` and `quote --details` on a CPMM-only fixture profile and the
 > `sor_cohort_tuning` single-pool cases.
 > **Comparison:** `same_grid_allocation` against `direct_split` on one domain hash must show
 > equal values (P1). Report quotes, nodes, bound evaluations and peak open nodes side by
 > side. There is no speed claim without L01's host rule.
 > **Claims:** value certification within the declared domain only; no coverage beyond
 > all-CPMM direct pool sets, which the frozen corpus does not contain with ≥ 2 pools (§9.1).
+> That is a disclosed limitation, not a gate: proceed under the existing authorization,
+> with no new corpus and no performance-win requirement.
 
 ## 12. Shared-contract impact
 
