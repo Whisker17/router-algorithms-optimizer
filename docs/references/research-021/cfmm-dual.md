@@ -393,6 +393,16 @@ Factory: `search_params = ("max_hops",)`, capabilities multi-hop, split, shared 
 No key is reserved (R021 §9.1); booleans are refused for ints, non-finite floats and
 out-of-range values are refused before any worker starts.
 
+> **Current status (WHI-1561 clarification; the table above is unchanged).** The *Preset*
+> column is `cfmm_dual/1`, the WHI-1558 CPMM-stage preset. It stays a frozen, sha256-verified
+> **historical** pin (`config/cfmm_dual/preset_v1.yaml`, used by the CPMM-only ablation profile
+> `config/cfmm_dual/cpmm.yaml`). Since WHI-1559 the **current** preset, which
+> `--strategies all` writes, is `cfmm_dual/2` (`config/cfmm_dual/preset_v2.yaml`, same key
+> `R021-P12-cfmm_dual`, same identity `cfmm_dual`, used by `config/cfmm_dual/cl.yaml`). It
+> differs only in `market_protocols: constant_product+concentrated`, `lbfgs_memory` 30,
+> `log_price_bound` 10 and `min_split_share` 1e-3, all within the ranges above. The
+> machine-readable block of §14 keeps the `cfmm_dual/1` values as its `preset`.
+
 ### 9.4 Work units, ties, determinism
 
 Work (§5.2 units only): `market_oracle_calls`, `objective_evaluations`,
@@ -430,6 +440,20 @@ Ablations (same split): `ftol` at SciPy's default converges 34/96; `max_iteratio
 leaves 3 cases at `iteration_cap`, 25 leaves 51; `lbfgs_memory` 5 → 87, 20 → 90 at 1e-5; `min_split_share` 0
 beats 1e-6 on 3 cases, 1e-4 loses 6, 1e-3 loses 16, 1e-2 loses 30 (1e-6 kept as a
 float-noise guard ≥ 10⁴× the observed noise floor). The preset is finite everywhere.
+
+> **Current status (WHI-1561 clarification; the probe above and the recipe below are the
+> historical WHI-1557 text).** The probe covers CPMM markets only and was the evidence for
+> `cfmm_dual/1`. The CL stage was implemented afterwards (WHI-1559, §8, §11.2), with its own
+> bounded preset `cfmm_dual/2` chosen on `sor_cohort_tuning` only by a rule fixed in advance
+> (tuning exposure only). On that split the frozen `cfmm_dual/2` converged on 9 of 96 cases,
+> used 21 labelled fallbacks, and its worst recovered plan was about −4557 bp below the best
+> exact single path over the same markets. Enormous relative figures from earlier tuning arms
+> were tiny bad-baseline denominators, not useful gains; every tried arm stays recorded in the
+> WHI-1559 evidence. None of this is a performance or adoption claim. Read the recipe's
+> "preset `cfmm_dual/1` only" as the historical plan: the forthcoming WHI-1562 comparison runs
+> the current `cfmm_dual/2` CL stage (`config/cfmm_dual/cl.yaml`) and keeps `cfmm_dual/1`
+> (`config/cfmm_dual/cpmm.yaml`) as the preserved CPMM-only ablation for the
+> `cfmm_cpmm_vs_cl` stage comparison (`expanded_protocol`). No new tuning campaign is implied.
 
 **Bounded comparison recipe (WHI-1562).** Preset `cfmm_dual/1` only; profile values of
 `config/full_gross.yaml` (`max_hops` 3, budgets); objective `gross_only`. (1) cfmm_dual vs
@@ -492,6 +516,16 @@ capped point 138, which is the brute-force integer optimum); `not_converged` rem
 pools; the market universe can exclude a pool reachable only by a longer path; cross-
 platform float identity is not claimed; the CL stage is specified and oracle-verified but
 not tuned; only 14 CPMM pools exist in the frozen corpus.
+
+> **Current status (WHI-1561 clarification).** "Not tuned" described the CL stage at WHI-1557.
+> It is now implemented (WHI-1559) with the bounded tuning-split preset `cfmm_dual/2` (§9.3,
+> §10 notes). The limitations above still hold, and the CL stage adds its own: the initial CL
+> solve mostly ends `not_converged` on real states, so estimates are rare; `converged` remains
+> only the residual criterion; recovered plans are exact and fully funded but can be poor
+> against the best exact single path; the §8.3/§8.4 numerical agreements are fixture
+> properties, not bounds, and a missing `TickInfo` at a model endpoint is pruned by the exact
+> replay. [`../routing-algorithms.md`](../routing-algorithms.md) §18 explains both stages with
+> checked worked examples.
 
 ## 14. Machine-readable contract
 

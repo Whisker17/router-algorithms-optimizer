@@ -18,13 +18,18 @@ The ordinary CLI compares strategies in separate groups and, by default, runs th
   lists (such as a configured `uni_sor_fast`) and, since WHI-1540, the **Metis-inspired**
   `metis_inspired` of WHI-1449: an experimental Python variant, **NOT Jupiter Metis**, with no
   production-equivalence claim. It is neither a seventh base reference nor an SOR
-  optimization.
+  optimization. Since Release 0.2.1 the group also holds the five implemented experimental
+  identities `metis_history`, `direct_split_certified`, `incremental_graph_repair`,
+  `uni_sor_cycle_safe` and `cfmm_dual` (below). None of them is a base reference, a default,
+  Jupiter Metis or Uniswap SOR parity.
 
 How the two recipes search, with hand-worked and test-verified examples, is explained in
 [`routing-algorithms.md`](routing-algorithms.md) §8 (`uni_sor_adaptive`) and §9
 (`uni_sor_optimized`). `metis_inspired`'s label search is explained the same way in §10 of that
 guide. Its contract is [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md) §9.2, and the
 frozen WHI-1449 results are in [`metis-challenge-results.md`](metis-challenge-results.md).
+The five 0.2.1 identities are explained, with executable worked examples, in §§14–18 of the same
+guide (shared vocabulary in §1.8), and the 14-row fixed-block walkthrough is its §11.
 
 The owner asked for this layout: the optimized strategies are **not** default strategies
 and are kept apart from the base ones, but the CLI runs them all. The owner then asked
@@ -56,6 +61,34 @@ a name the profile already lists is not repeated. `uni_sor_fast` keeps working w
 strategy and never receives a named strategy's settings.
 
 ### 0.2.1 experimental identities under `all`
+
+Validated current presets. Each factory pins its preset file by path, sha256, key and version;
+the profile loader re-reads the file and refuses it if its bytes or options changed. A source that
+does not configure the identity receives exactly these options under `all`:
+
+| Identity | Current preset (file sha256) | Key, version | Options | `settings_sha256` |
+| --- | --- | --- | --- | --- |
+| `metis_history` | `config/metis_history/preset_v1.yaml` (`f4510b51…`) | `R021-P04-metis_history`, 1 | `dominance: history`, 1 label per signature, 1,024 frontier labels | `183bb1ff…` |
+| `direct_split_certified` | `config/direct_split_certified/preset_v1.yaml` (`d2653303…`) | `R021-P06-direct_split_certified`, 1 | `repository_grid`, 100,000 bound nodes, 100,000 open nodes | `03cfe301…` |
+| `incremental_graph_repair` | `config/incremental_graph_repair/preset_v1.yaml` (`13774bcd…`) | `R021-P08-incremental_graph_repair`, 1 | `repair: true`, 4 checkpoints, 2 alternatives, 8 attempts | `89af5028…` |
+| `uni_sor_cycle_safe` | `config/uni_sor_cycle_safe/preset_v1.yaml` (`668e9d42…`) | `uni_sor_cycle_safe`, 1 | `{}` | `44136fa3…` |
+| `cfmm_dual` | `config/cfmm_dual/preset_v2.yaml` (`865ad592…`) | `R021-P12-cfmm_dual`, 2 | CL stage `constant_product+concentrated` | `aa6eea57…` |
+
+`cfmm_dual` also keeps its WHI-1558 preset `cfmm_dual/1` (`config/cfmm_dual/preset_v1.yaml`,
+`1526133c…`, same key, version 1, CPMM-only, settings `63b62554…`) as a verified **historical
+pin**. Saved v1 options, such as `config/cfmm_dual/cpmm.yaml`, still resolve to that identity;
+`all` never writes it. Any other valid option set is recorded as `{kind: override}`.
+
+The actual domain of a row is narrower than its factory's declared capability ceiling, and the
+record says which applies:
+
+| Identity | Declared ceiling | Actual domain of the current preset |
+| --- | --- | --- |
+| `metis_history` | every admitted protocol | every admitted protocol; strict label pruning only on certified constant-product regions |
+| `direct_split_certified` | `direct_split`'s | requests whose direct pools are all constant product, `gross_only`; otherwise `unsupported` |
+| `incremental_graph_repair` | every admitted protocol | `incremental_graph`'s |
+| `uni_sor_cycle_safe` | V2/V3 | `uni_sor_port`'s V2/V3 cohort (no Liquidity Book) |
+| `cfmm_dual` | constant product + concentrated | the preset's `market_protocols` stage (v2: both; v1: constant product only), `gross_only`, markets on ≤ `search.max_hops` simple paths; never Liquidity Book |
 
 `incremental_graph_repair` (WHI-1554) is `incremental_graph`'s complete incumbent plus a
 bounded checkpoint-and-suffix repair (`docs/references/research-021/suffix-repair.md`). It is
@@ -102,8 +135,8 @@ token-cycle plan. It is in the `custom` group, runs after `incremental_graph_rep
 `uni_sor_port`'s shared `search.max_hops` / `search.max_splits` / `search.percent_step`, and
 has no `algorithm_options` (its pinned preset `config/uni_sor_cycle_safe/preset_v1.yaml` is
 `{}`). It is not upstream parity and can lose to `uni_sor_port` (the goldens stay the port's);
-its search record carries `cycle_safe` counters and phases. `config/uni_sor_cycle_safe/
-matched.yaml` runs it next to `uni_sor_port` at 3 hops. Saved effective profiles, including
+its search record carries `cycle_safe` counters and phases.
+`config/uni_sor_cycle_safe/matched.yaml` runs it next to `uni_sor_port` at 3 hops. Saved effective profiles, including
 the earlier eight- to twelve-strategy ones, replay literally and never gain it.
 
 `cfmm_dual` (WHI-1558, CL stage WHI-1559) is the CFMM dual-decomposition router over the
@@ -195,6 +228,12 @@ edited.
 - **L08 is unchanged.** Its arms keep their registered algorithms. The quote-CLI stage of
   arm R now passes `--strategies profile`, so it still measures the pinned six algorithms.
 
+The 0.2.1 presets follow the same principle: each factory
+(`routing/algorithms/<identity>.py`) pins only its preset identity (path, sha256, key, version),
+`benchmark/profile.py` verifies the file, and `benchmark/strategies.py` writes the options into
+the effective profile's `algorithm_options.<identity>` together with that source record and the
+`settings_sha256`. No checked-in profile or historical result was edited to add them.
+
 ## What is saved and how it replays
 
 The effective profile is the source profile plus the derived `algorithms`, every selected
@@ -213,10 +252,18 @@ The replay command in the manifest runs that saved file with `--strategies profi
 therefore reproduces the saved algorithms and settings, never whatever a later default
 would expand to. The replay's resolved profile equals the original. An effective profile
 saved before WHI-1540 (six base plus two optimized) replays as exactly those eight; only
-running a profile under `all` again would add `metis_inspired`. A profile-mode run
+running a profile under `all` again would add `metis_inspired`. Likewise, saved eight- to
+thirteen-strategy profiles never gain a 0.2.1 identity, and a saved profile that already holds
+the historical `cfmm_dual/1` options keeps them. A profile-mode run
 keeps its old form: no `selection` record, and the manifest names the source profile. A
 programmatic `run_experiment(bundle, profile)` runs the profile's algorithms exactly and
 never expands them.
+
+Because a `--strategies profile` run records the **source** profile path (it writes no
+`<run dir>/profile.yaml`), never guess the replay file: take the `replay_command` from the run's
+`manifest.json` (or from `quote.json` and the printed `replay:` line of a quote). `main.py
+order-check <run A> <run B>` compares two complete runs' deterministic outputs, for example a
+run and its replay; only timings may differ.
 
 ## Reports
 
@@ -230,7 +277,11 @@ registry:
   recipe and controls, and prints `metis_inspired` as the Metis-inspired variant (NOT
   Jupiter Metis) with its recorded `label_hops` / `chunks` / `label_pruning` next to the
   shared `search.max_hops`. It does not claim one shared search when the hop bounds differ. Groups are a presentation,
-  not the schedule: the header also prints the recorded execution order. With a custom
+  not the schedule: the header also prints the recorded execution order. The 0.2.1 rows add a
+  *research diagnostics* line (bound kind with its caveat, for example
+  `estimate … (not a bound; residual …)`, or `unavailable (not_produced)`), and `--details` adds
+  their domain hash, `max_candidates` unit, named work units, fallback/repair, scope and observed
+  stage seconds. With a custom
   profile such as `[direct, uni_sor_fast, path_split]`, the run order is `direct`,
   `uni_sor_fast`, `path_split`, then the optimized strategies and `metis_inspired`, while
   the blocks read base, optimized, then experimental and other.
