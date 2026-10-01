@@ -254,3 +254,22 @@ def test_reconcile_detects_every_inventory_mismatch() -> None:
                       expected_algorithms=["a", "b"], expected_case_ids=["x", "y"],
                       cells={("x", "a"): "missing"}, complete=False)  # fmt: skip
     assert len(bad) == 5
+
+
+def test_cfmm_estimate_only_from_the_initial_converged_solve_without_fallback() -> None:
+    def cf(termination: str, estimate: bool, fallback: bool) -> dict[str, Any]:
+        return {"cfmm": {"stage": "constant_product+concentrated", "termination": termination,
+                         "initial": {"termination": termination},
+                         "estimate": {"value": "100.0"} if estimate else None,
+                         "fallback": {"reason": "support_exhausted"} if fallback else None,
+                         "recovery_failure": "support_exhausted" if fallback else None,
+                         "estimate_withheld": None if estimate else "initial_not_converged"}}
+
+    good = A.cfmm_view(arm("cf", [cell("a", "ok", 99, search=cf("converged", True, False)),
+                                  cell("b", "ok", 50, search=cf("not_converged", False, True))]))
+    assert good["gate"] == "pass" and good["estimate_present"] == 1
+    assert good["recovered_over_estimate"]["median"] == pytest.approx(0.99)
+    assert good["fallbacks"] == {"support_exhausted": 1}
+    bad = A.cfmm_view(arm("cf", [cell("a", "ok", 99, search=cf("not_converged", True, False)),
+                                 cell("b", "ok", 50, search=cf("converged", True, True))]))
+    assert bad["gate"] == "fail" and bad["estimate_rule_violations"] == ["a", "b"]

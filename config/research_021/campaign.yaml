@@ -35,6 +35,7 @@ inputs:
     source: data/corpus/mantle-5src-101082044/bundle
     bundle_hash: 717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143
     cases_sha256: 75420a1d64faeabecde0c3cacb4f3e33e14963a8360736291e58ee446622a450
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
     cases: 398
     split: all
     cohort: full_source
@@ -42,6 +43,7 @@ inputs:
     source: data/corpus/mantle-5src-101082044/bundle_tuning
     bundle_hash: ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b
     cases_sha256: 8d2dc084f321ff2387c88fb568b545137530e0da1ee1b89e70579df6647c39b0
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
     cases: 96
     split: tuning
     cohort: full_source
@@ -49,6 +51,7 @@ inputs:
     source: data/corpus/mantle-5src-101082044/sor_cohort_tuning
     bundle_hash: b900b866d4a0ef6a3b33546f1d262ed3fc836847ef30da9e975c5bae75107ade
     cases_sha256: 8d2dc084f321ff2387c88fb568b545137530e0da1ee1b89e70579df6647c39b0
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
     cases: 96
     split: tuning
     cohort: sor_compatible
@@ -56,6 +59,7 @@ inputs:
     source: data/corpus/mantle-5src-101082044/bundle_report
     bundle_hash: 85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0
     cases_sha256: c687241a2980c97880b2c948fd12b63b23f1956f89a61e1f2bbda8bd55413aa7
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
     cases: 302
     split: report
     cohort: full_source
@@ -63,6 +67,7 @@ inputs:
     source: data/corpus/mantle-5src-101082044/sor_cohort_report
     bundle_hash: 8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640
     cases_sha256: c687241a2980c97880b2c948fd12b63b23f1956f89a61e1f2bbda8bd55413aa7
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
     cases: 302
     split: report
     cohort: sor_compatible
@@ -313,8 +318,8 @@ comparisons:
   - {id: repair.paired.full, stage: T, registered: repair_off_on, kind: paired, class: same_domain, baseline: T-repair-off-full/incremental_graph_repair, candidate: T-roster-full/incremental_graph_repair, units: [quotes_counted, paths_scored]}
   - {id: repair.paired.sor, stage: T, registered: repair_off_on, kind: paired, class: same_domain, baseline: T-repair-off-sor/incremental_graph_repair, candidate: T-roster-sor/incremental_graph_repair, units: [quotes_counted, paths_scored]}
   # matched_sor_cycle_safe (cycle-safe-sor.md §11)
-  - {id: cycle.sor, stage: T, registered: matched_sor_cycle_safe, kind: cycle_safe, class: same_domain, baseline: T-roster-sor/uni_sor_port, candidate: T-roster-sor/uni_sor_cycle_safe, units: [quotes_counted, admission_checks]}
-  - {id: cycle.full, stage: T, registered: matched_sor_cycle_safe, kind: cycle_safe, class: same_domain, baseline: T-roster-full/uni_sor_port, candidate: T-roster-full/uni_sor_cycle_safe, units: [quotes_counted, admission_checks]}
+  - {id: cycle.sor, stage: T, registered: matched_sor_cycle_safe, kind: cycle_safe, class: same_domain, baseline: T-roster-sor/uni_sor_port, candidate: T-roster-sor/uni_sor_cycle_safe, units: [quotes_counted]}
+  - {id: cycle.full, stage: T, registered: matched_sor_cycle_safe, kind: cycle_safe, class: same_domain, baseline: T-roster-full/uni_sor_port, candidate: T-roster-full/uni_sor_cycle_safe, units: [quotes_counted]}
   # cfmm_cpmm_vs_cl (cfmm-dual.md §10; current v2 CL stage vs historical v1 CPMM-only)
   - {id: cfmm.stage.full, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: expanded_protocol, baseline: T-cfmm-cpmm-full/cfmm_dual, candidate: T-roster-full/cfmm_dual}
   - {id: cfmm.stage.sor, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: expanded_protocol, baseline: T-cfmm-cpmm-sor/cfmm_dual, candidate: T-roster-sor/cfmm_dual}
@@ -322,6 +327,10 @@ comparisons:
   - {id: cfmm.vs_incremental_graph.sor, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: incomparable_domain, baseline: T-roster-sor/incremental_graph, candidate: T-roster-sor/cfmm_dual}
   - {id: cfmm.vs_path_split.full, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: expanded_protocol, baseline: T-roster-full/path_split, candidate: T-roster-full/cfmm_dual}
   - {id: cfmm.vs_incremental_graph.full, stage: T, registered: cfmm_cpmm_vs_cl, kind: paired, class: expanded_protocol, baseline: T-roster-full/incremental_graph, candidate: T-roster-full/cfmm_dual}
+  # protocol coverage of the restricted identities on the five-source bundle (lb-scope.md §11):
+  # side by side with an LB-capable reference, never ranked as the restricted row's failure
+  - {id: coverage.certified.full, stage: T, registered: expanded_protocol_coverage, kind: paired, class: expanded_protocol, baseline: T-roster-full/incremental_graph, candidate: T-roster-full/direct_split_certified}
+  - {id: coverage.cycle_safe.full, stage: T, registered: expanded_protocol_coverage, kind: paired, class: expanded_protocol, baseline: T-roster-full/incremental_graph, candidate: T-roster-full/uni_sor_cycle_safe}
   # E3/E4, L3/L4, S3/S4 same-depth (R021-C/1 §6.2; history-labels.md §9.1), tuning_full
   - id: depth.tuning
     stage: T

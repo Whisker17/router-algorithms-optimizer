@@ -31,6 +31,7 @@ Rules enforced here (each has a behavioural test in `tests/research_021/`):
 
 from __future__ import annotations
 
+import json
 import math
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping, Sequence
@@ -445,6 +446,13 @@ def timing(arm: Arm) -> dict[str, Any]:
         ev = measurement.get("evaluation_seconds") if isinstance(measurement, Mapping) else None
         if isinstance(ev, (int, float)):
             evaluation.append(float(ev))
+    stages: dict[str, list[float]] = defaultdict(list)
+    for case_id in arm.case_ids:
+        observed = arm.cell(case_id).r021.get("stages")
+        if isinstance(observed, Mapping):
+            for key, value in observed.items():
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    stages[str(key)].append(float(value))
     events = [e for e in arm.prepare_events if e.get("pass", "timing") == "timing"]
     prepare = [float(e["prepare_seconds"]) for e in events
                if isinstance(e.get("prepare_seconds"), (int, float))]  # fmt: skip
@@ -456,6 +464,8 @@ def timing(arm: Arm) -> dict[str, Any]:
         "evaluation_seconds": {**summary(evaluation), "sum": sum(evaluation)},
         "prepare_seconds": {**summary(prepare), "events": len(prepare)},
         "startup_including_prepare_seconds": {**summary(startup), "events": len(startup)},
+        # observed per-stage seconds inside the solve (R021-C/1 §9.4): observations, not budgets
+        "solver_stage_seconds": {k: summary(v) for k, v in sorted(stages.items())},
     }
 
 
@@ -539,6 +549,26 @@ def certificate_view(arm: Arm) -> dict[str, Any]:
     }
 
 
+def domain_view(arm: Arm) -> dict[str, Any]:
+    """The recorded `r021.domain/1` of an arm's cells: distinct domain hashes and the
+    grid / split / hop / reuse / zero-leg rules they name (a same-domain pair must agree)."""
+    hashes: set[str] = set()
+    rules: Counter[str] = Counter()
+    for case_id in arm.case_ids:
+        r021 = arm.cell(case_id).r021
+        domain = r021.get("domain")
+        if not isinstance(domain, Mapping):
+            continue
+        hashes.add(str(r021.get("candidate_domain_hash")))
+        grid = domain.get("amount_grid")
+        view = {k: domain.get(k) for k in ("hops", "splits", "pool_reuse", "zero_output_leg",
+                                            "token_reuse", "full_fill", "protocols")}  # fmt: skip
+        view["amount_grid"] = {k: v for k, v in grid.items()} if isinstance(grid, Mapping) else grid
+        rules[json.dumps(view, sort_keys=True)] += 1
+    return {"arm": arm.label, "distinct_domain_hashes": len(hashes),
+            "rules": {k: v for k, v in sorted(rules.items())}}  # fmt: skip
+
+
 def _counter(values: Iterable[Any]) -> dict[str, int]:
     return dict(sorted(Counter(str(v) for v in values).items()))
 
@@ -598,6 +628,7 @@ def cfmm_view(arm: Arm) -> dict[str, Any]:
     fallbacks, estimate coverage (initial full-network converged solve only) and the
     recovered/estimate ratio where an estimate exists. Never an integer bound."""
     terminations, failures, fallbacks, withheld, stages = [], [], [], [], []
+    violations: list[str] = []
     ratios: list[float] = []
     estimates = 0
     for case_id in arm.case_ids:
@@ -615,6 +646,12 @@ def cfmm_view(arm: Arm) -> dict[str, Any]:
         if block.get("estimate_withheld"):
             withheld.append(block.get("estimate_withheld"))
         estimate = block.get("estimate")
+        initial = block.get("initial")
+        initial_termination = initial.get("termination") if isinstance(initial, Mapping) else None
+        if isinstance(estimate, Mapping) and (
+            isinstance(fb, Mapping) or initial_termination != "converged"
+        ):
+            violations.append(case_id)  # an estimate outside the initial converged solve
         if isinstance(estimate, Mapping) and cell.gross is not None:
             estimates += 1
             value = float(str(estimate.get("value")))
@@ -629,6 +666,8 @@ def cfmm_view(arm: Arm) -> dict[str, Any]:
         "estimate_present": estimates,
         "estimate_withheld": _counter(withheld),
         "recovered_over_estimate": summary(ratios),
+        "estimate_rule_violations": violations,
+        "gate": "pass" if not violations else "fail",
     }
 
 
@@ -822,6 +861,7 @@ __all__ = [
     "cfmm_view",
     "cycle_safe_view",
     "depth_decomposition",
+    "domain_view",
     "equal_value",
     "history_view",
     "host_window",

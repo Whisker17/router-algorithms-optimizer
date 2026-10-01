@@ -60,6 +60,7 @@ from benchmark.profile import (  # noqa: E402
     parse_profile,
     preset_options,
     read_profile_document,
+    single_run_document,
     strategy_entry,
 )
 from benchmark.results import git_provenance, load_manifest  # noqa: E402
@@ -713,6 +714,109 @@ def _retry_plan(campaign: Campaign, stage: str, out: Path, inv_id: str) -> list[
     return [Invocation(retry_id, stage, original.kind, {**original.raw, "id": retry_id})]
 
 
+# ----------------------------------------------------------------------------- freeze
+
+
+def _canonical_sha256(value: Any) -> str:
+    return _sha256_bytes(json.dumps(value, sort_keys=True).encode())
+
+
+def resolved_identity(campaign: Campaign, inv: Invocation) -> dict[str, Any] | None:
+    """The resolved profile a registered run/quote must record (`manifest.resolved_profile`),
+    computed exactly as `main.py run|quote` derive it from the registered source path, with
+    each algorithm's prepare params and options identity. None for saved/refused inputs."""
+    if inv.kind not in ("run", "quote") or int(inv.get("expect_exit", 0)) != 0:
+        return None
+    key = str(inv.get("profile"))
+    if key.startswith("saved:"):
+        return None
+    path = profile_path(campaign, key)
+    source = read_profile_document(REPO / path)
+    mode = str(inv.get("strategies"))
+    document = source
+    if mode != "profile" or inv.kind == "quote":
+        document, _ = derive(source, mode, source_path=path,
+                             source_sha256=_sha256_bytes((REPO / path).read_bytes()))  # fmt: skip
+    if inv.kind == "quote":
+        document = single_run_document(document)
+    profile = parse_profile(json.loads(json.dumps(document)), path)
+    resolved = profile.resolved()
+    if resolved["objective"]["mode"] == "empirical_cost":
+        # the runner binds the objective to the bundle's frozen price context (its file hash)
+        bundle = campaign.raw["inputs"].get(str(inv.get("bundle")), {})
+        resolved["objective"]["price_context_sha256"] = bundle.get("prices_sha256")
+    algorithms = {}
+    for name in profile.algorithms:
+        entry = profile.algorithm_options.get(name)
+        algorithms[name] = {
+            "params": resolved["algorithm_config"][name]["params"],
+            "settings_sha256": None if entry is None else entry["settings_sha256"],
+            "options_source": None if entry is None else entry["source"],
+        }
+    return {"resolved_profile_sha256": _canonical_sha256(resolved), "algorithms": algorithms}
+
+
+def _file_pin(path: str) -> dict[str, str]:
+    return {"path": path, "sha256": _sha256_bytes((REPO / path).read_bytes())}
+
+
+def freeze_record(campaign: Campaign, *, inputs: Path | None,
+                  nominees: Mapping[str, Any] | None) -> dict[str, Any]:  # fmt: skip
+    """Everything R021-C/1 §6.3 freezes before the report comparison, from the code, the
+    manifest and (optionally) the durable inputs; `check_freeze` regenerates it."""
+    presets = {}
+    for name, factory in sorted(ALGORITHMS.items()):
+        pins = [p for p in (factory.options_preset, *factory.historical_presets) if p]
+        if pins:
+            presets[name] = [
+                {**{k: pin[k] for k in ("path", "sha256", "key", "version")},
+                 "file_sha256_now": _sha256_bytes((REPO / str(pin["path"])).read_bytes()),
+                 "current": pin is factory.options_preset}
+                for pin in pins
+            ]  # fmt: skip
+    inputs_view: dict[str, Any] = {}
+    for key, spec in campaign.raw["inputs"].items():
+        view = {k: spec[k] for k in ("bundle_hash", "cases_sha256", "cases", "split", "cohort")}
+        if inputs is not None:
+            cases = (inputs / key / "cases.jsonl").read_bytes()
+            if _sha256_bytes(cases) != spec["cases_sha256"]:
+                raise CampaignError(f"input {key}: cases.jsonl differs from the registered hash")
+            ids = [json.loads(x)["case_id"] for x in cases.decode().splitlines() if x.strip()]
+            if len(ids) != spec["cases"]:
+                raise CampaignError(f"input {key}: {len(ids)} cases, registered {spec['cases']}")
+            view["case_ids_sha256"] = _canonical_sha256(ids)
+        inputs_view[key] = view
+    return {
+        "schema": "r021.campaign-freeze/1",
+        "issue": campaign.raw.get("issue"),
+        "contract": campaign.raw.get("contract"),
+        "files": {
+            "manifest": _file_pin(str(campaign.path.relative_to(REPO))),
+            "campaign_py": _file_pin("tools/research_021/campaign.py"),
+            "analysis_py": _file_pin("tools/research_021/analysis.py"),
+            **{f"profile:{k}": _file_pin(profile_path(campaign, k))
+               for k in campaign.raw["profiles"]},
+            "l01": _file_pin(LATENCY_PROTOCOL),
+            "l01_sufficient": _file_pin(LATENCY_SUFFICIENT),
+            "l08": _file_pin(LATENCY_ARMS),
+            "metis_m4_settings": _file_pin("config/metis_challenge/m4.yaml"),
+            "cost_model": _file_pin("config/costs/mantle-101082044-cost-v1.json"),
+        },  # fmt: skip
+        "presets": presets,
+        "inputs": inputs_view,
+        "saved_quotes": campaign.raw.get("saved_quotes"),
+        "known_report_defects": campaign.raw.get("known_report_defects"),
+        "rules_sha256": _canonical_sha256(campaign.raw.get("rules")),
+        "rules": campaign.raw.get("rules"),
+        "effective_settings": {
+            inv.id: ident for inv in campaign.invocations
+            if (ident := resolved_identity(campaign, inv)) is not None
+        },  # fmt: skip
+        "inventory": {stage: schedule(campaign, stage) for stage in STAGES},
+        "nominees": nominees,
+    }
+
+
 # ----------------------------------------------------------------------------- analysis
 
 
@@ -734,8 +838,10 @@ class Loaded:
             entry = ctx.done.get(inv.id)
             if inv.kind not in PRODUCES_RUN or int(inv.get("expect_exit", 0)) != 0:
                 continue
-            if not entry or entry.get("result") != "ok" or not entry.get("run_dir"):
-                self.problems.append(f"{inv.id}: not completed ({(entry or {}).get('result')})")
+            if not entry:
+                continue  # reported once by `analyze` (never executed / still running)
+            if entry.get("result") != "ok" or not entry.get("run_dir"):
+                self.problems.append(f"{inv.id}: not completed ({entry.get('result')})")
                 continue
             bundle = inv.get("bundle")
             dirs = [ctx.inputs / str(bundle)] if bundle in ctx.campaign.raw["inputs"] else []
@@ -864,6 +970,8 @@ NEW_IDS = ("metis_history", "direct_split_certified", "incremental_graph_repair"
 def analyze(campaign: Campaign, stage: str, *, inputs: Path, out: Path) -> dict[str, Any]:
     """The registered analysis of a stage from its ledger and run records."""
     done = read_ledger(out)
+    started_ids = {e["id"] for e in Ledger(out / "ledger.jsonl").entries()
+                   if e.get("event") == "start"}  # fmt: skip
     ctx = Context(campaign, inputs, out, DEFAULT_LAUNCHER, done=done)
     loaded = Loaded(ctx, stage)
     samples = [json.loads(x) for x in (out / "load.jsonl").read_text().splitlines() if x] \
@@ -877,13 +985,21 @@ def analyze(campaign: Campaign, stage: str, *, inputs: Path, out: Path) -> dict[
         invocations[inv.id] = {k: (entry or {}).get(k) for k in
                                ("result", "exit_code", "expected_exit", "run_dir", "started", "t")}
         if entry is None:
-            reconciliation.append(f"{inv.id}: never executed")
+            state = "started, not ended (running or interrupted)" if inv.id in started_ids \
+                else "never executed"  # fmt: skip
+            invocations[inv.id]["result"] = state
+            reconciliation.append(f"{inv.id}: {state}")
             continue
         if inv.id not in loaded.runs:
             continue
         run = loaded.runs[inv.id]
         expected_algorithms = _expected_algorithms(campaign, inv)
         cases = _expected_case_ids(ctx, inv, run)
+        identity = resolved_identity(campaign, inv)
+        if identity is not None and identity["resolved_profile_sha256"] != _canonical_sha256(
+            run.manifest.resolved_profile
+        ):
+            reconciliation.append(f"{inv.id}: resolved profile differs from the registered one")
         registered_hash = _expected_bundle_hash(ctx, inv)
         if inv.kind != "quote" and registered_hash != run.manifest.bundle_hash:
             reconciliation.append(f"{inv.id}: bundle hash {run.manifest.bundle_hash} != "
@@ -905,6 +1021,7 @@ def analyze(campaign: Campaign, stage: str, *, inputs: Path, out: Path) -> dict[
             }
             if algorithm in NEW_IDS:
                 view["certificate"] = r021.certificate_view(arm)
+                view["domain"] = r021.domain_view(arm)
             if algorithm == "cfmm_dual":
                 view["cfmm"] = r021.cfmm_view(arm)
             if algorithm == "incremental_graph_repair":
@@ -917,7 +1034,10 @@ def analyze(campaign: Campaign, stage: str, *, inputs: Path, out: Path) -> dict[
             arms.append(view)
         if inv.kind == "quote":
             reconciliation += _quote_checks(inv.id, run)
+        started, ended = entry.get("started"), entry.get("t")
         invocations[inv.id].update(
+            # the whole subprocess (incl. `uv run` resolution); a quote's complete response
+            process_wall_seconds=None if started is None or ended is None else ended - started,
             host=window,
             timing_verdict=r021.timing_verdict([window], noise_floor_available=False),
             git_revision=run.manifest.git_revision, git_dirty=run.manifest.git_dirty,
@@ -1099,6 +1219,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--lanes", type=int)
     p.add_argument("--only", action="append", default=[])
     p.add_argument("--retry-infrastructure")
+    p = sub.add_parser("freeze")
+    p.add_argument("--inputs")
+    p.add_argument("--nominees", help="stage-T analysis.json whose applied nominees to record")
+    p.add_argument("--out", required=True)
     p = sub.add_parser("analyze")
     p.add_argument("--stage", required=True)
     p.add_argument("--inputs", required=True)
@@ -1139,6 +1263,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             return execute(campaign, args.stage, inputs=Path(args.inputs), out=Path(args.out),
                            lanes=args.lanes, only=args.only,
                            retry_infrastructure=args.retry_infrastructure)  # fmt: skip
+        if args.command == "freeze":
+            nominees = None
+            if args.nominees:
+                analysis = json.loads(Path(args.nominees).read_text())
+                nominees = {c["id"]: {"apply": c["apply"], "nominee": c["result"]["nominee"],
+                                      "canonical": 4, "reason": c["result"]["reason"],
+                                      "analysis_sha256": _sha256_bytes(
+                                          Path(args.nominees).read_bytes())}
+                            for c in analysis["comparisons"] if c.get("kind") == "nominee"}
+            record = freeze_record(campaign, inputs=Path(args.inputs) if args.inputs else None,
+                                   nominees=nominees)  # fmt: skip
+            Path(args.out).write_text(json.dumps(record, indent=1, sort_keys=True) + "\n")
+            print(f"freeze record written: {args.out}")
+            return 0
         if args.command == "analyze":
             result = analyze(campaign, args.stage, inputs=Path(args.inputs), out=Path(args.out))
             text = json.dumps(result, indent=1, sort_keys=True, default=str)

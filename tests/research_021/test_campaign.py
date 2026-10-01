@@ -180,6 +180,84 @@ def test_saved_replay_is_relocated_into_the_slot_never_the_input(
                     "--strategies", "profile"]  # fmt: skip
 
 
+EVIDENCE = REPO / "docs" / "references" / "research-021" / "campaign"
+
+
+def test_checked_in_case_lists_are_the_registered_bundles_cases(campaign: Any) -> None:
+    for split in ("tuning", "report"):
+        data = (EVIDENCE / f"cases-{split}.jsonl").read_bytes()
+        keys = [k for k, v in campaign.raw["inputs"].items() if v["split"] == split]
+        assert keys and all(C._sha256_bytes(data) == campaign.raw["inputs"][k]["cases_sha256"]
+                            for k in keys)  # fmt: skip
+        ids = [json.loads(x)["case_id"] for x in data.decode().splitlines() if x.strip()]
+        assert len(ids) == len(set(ids)) == campaign.raw["inputs"][keys[0]]["cases"]
+    report = {json.loads(x)["case_id"] for x in (EVIDENCE / "cases-report.jsonl").read_text()
+              .splitlines() if x.strip()}  # fmt: skip
+    assert set(campaign.raw["known_report_defects"]["cases"]) <= report
+
+
+def test_freeze_record_regenerates_from_code_and_manifest(campaign: Any) -> None:
+    record = C.freeze_record(campaign, inputs=None, nominees=None)
+    for name, pins in record["presets"].items():
+        for pin in pins:  # every preset file (current and historical) still matches its pin
+            assert pin["file_sha256_now"] == pin["sha256"], name
+    assert set(record["effective_settings"]) == {
+        i.id for i in campaign.invocations if i.kind in ("run", "quote")
+        and int(i.get("expect_exit", 0)) == 0 and not str(i.get("profile")).startswith("saved:")
+    }  # fmt: skip
+    roster = record["effective_settings"]["T-roster-full"]["algorithms"]
+    assert list(roster) == ALL14
+    assert roster["metis_inspired"]["params"]["label_hops"] == 4
+    assert roster["cfmm_dual"]["options_source"]["version"] == 2  # current CP+CL preset
+    cpmm = record["effective_settings"]["T-cfmm-cpmm-full"]["algorithms"]["cfmm_dual"]
+    assert cpmm["options_source"]["version"] == 1  # the historical CPMM-only pin
+    off = record["effective_settings"]["T-repair-off-full"]["algorithms"]
+    assert off["incremental_graph_repair"]["options_source"] == {"kind": "override"}
+    frozen_path = EVIDENCE / "freeze.json"
+    if frozen_path.is_file():  # after the freeze commit: nothing may drift from it
+        frozen = json.loads(frozen_path.read_text())
+        for key in ("files", "presets", "effective_settings", "inventory", "rules_sha256",
+                    "known_report_defects", "saved_quotes"):
+            assert frozen[key] == json.loads(json.dumps(record[key])), key
+        for key, view in record["inputs"].items():
+            assert {k: frozen["inputs"][key][k] for k in view} == view, key
+
+
+def test_registered_commands_are_the_real_cli_and_latency_commands(
+    tmp_path: Path, campaign: Any
+) -> None:
+    """Stage L uses the unchanged L08 arm commands (latency-optimization-results.md §7)
+    with a same-source sufficient-budget run per arm; R/I use the ordinary CLI."""
+    out, inputs = tmp_path / "out", tmp_path / "inputs"
+    ctx = C.Context(campaign, inputs, out, ("uv", "run", "python"))
+    exp = "20260101T000000000000Z-00000000"
+    for inv_id in ("L-R", "L-R-sb", "L-E1", "L-E1-sb"):
+        (out / inv_id / exp).mkdir(parents=True)
+    run = C.argv_for(campaign.by_id["L-E1"], ctx)
+    assert run == ["uv", "run", "python", "-m", "benchmark.latency", "run", "--protocol",
+                   "config/latency/l01.yaml", "--arms", "config/latency/l08.yaml", "--arm", "E1",
+                   "--bundle", str(inputs / "full"), "--out", str(out / "L-E1")]  # fmt: skip
+    sb = C.argv_for(campaign.by_id["L-E1-sb"], ctx)
+    assert sb[4:8] == ["benchmark.latency", "sufficient", "--sufficient",
+                       "config/latency/l01-sufficient-budget.yaml"]  # fmt: skip
+    cmp = C.argv_for(campaign.by_id["L-cmp-L02"], ctx)
+    assert cmp[3:12] == ["-m", "report.latency", "compare", str(out / "L-R" / exp),
+                         str(out / "L-E1" / exp), "--lane", "exact", "--sufficient",
+                         str(out / "L-R-sb" / exp)]  # fmt: skip
+    roster = C.argv_for(campaign.by_id["R-roster-full"], ctx)
+    assert roster == ["uv", "run", "python", "main.py", "run", "--bundle",
+                      str(inputs / "report_full"), "--profile", "config/full_gross.yaml",
+                      "--results-dir", str(out / "R-roster-full"),
+                      "--strategies", "all"]  # fmt: skip
+    quote = C.argv_for(campaign.by_id["I-all-details"], ctx)
+    assert quote[4:] == ["quote", "--bundle", str(inputs / "full"), "--profile",
+                         "config/full_gross.yaml", "--token-in", "USDC", "--token-out", "USDT",
+                         "--amount", "1000", "--quotes-dir", str(out / "I-all-details"),
+                         "--strategies", "all", "--details"]  # fmt: skip
+    compact = C.argv_for(campaign.by_id["I-all-compact"], ctx)
+    assert "--details" not in compact
+
+
 # ----------------------------------------------------------------------------- both CLI modes
 
 
@@ -361,6 +439,14 @@ def test_stage_executor_and_analysis_on_bounded_fixtures(tmp_path: Path) -> None
     assert result["invocations"]["X-quote.order"]["result"] == "ok"  # replay == original
     assert (out / "X-quote.report" / "report" / "single_request.txt").is_file()
     assert "p95" not in C.render_markdown(result)
+    # the analysis checks each run against the resolved profile it was registered with
+    ident = C.resolved_identity(campaign, campaign.by_id["X-mixed"])
+    recorded = load_manifest(ledger["X-mixed"]["run_dir"]).resolved_profile
+    assert ident["resolved_profile_sha256"] == C._canonical_sha256(recorded)
+    other = copy.deepcopy(campaign)
+    other.by_id["X-mixed"].raw["strategies"] = "base"
+    assert C.resolved_identity(other, other.by_id["X-mixed"])["resolved_profile_sha256"] != (
+        ident["resolved_profile_sha256"])  # fmt: skip
     # no silent rerun, no changed input, no second run of a completed run
     with pytest.raises(C.CampaignError, match="never re-run"):
         C.execute(campaign, "T", inputs=inputs, out=out, allow_dirty=True,
