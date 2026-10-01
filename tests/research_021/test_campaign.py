@@ -207,6 +207,26 @@ def test_checked_in_case_lists_are_the_registered_bundles_cases(campaign: Any) -
     assert set(campaign.raw["known_report_defects"]["cases"]) <= report
 
 
+def test_registered_nominees_are_the_rule_results_of_the_clean_tuning_analysis(
+    campaign: Any
+) -> None:
+    analysis = json.loads((EVIDENCE / "tuning-analysis.json").read_text())
+    assert analysis["reconciled"] is True and analysis["analysis_source"]["git_dirty"] is False
+    assert analysis["stage"] == "T" and len(analysis["invocations"]) == 26
+    assert all(v["result"] == "ok" for v in analysis["invocations"].values())
+    results = {c["id"]: c for c in analysis["comparisons"] if c["kind"] == "nominee"}
+    registered = {k: v for k, v in campaign.raw["nominees"].items() if k != "analysis"}
+    assert set(results) == set(registered)
+    for key, entry in registered.items():
+        got = results[key]
+        assert (got["apply"], got["result"]["nominee"]) == (entry["apply"], entry["nominee"]), key
+        assert {v: [t["failures"], t["shortfall"]] for v, t in got["result"]["values"].items()} \
+            == entry["failures_shortfall"], key  # fmt: skip
+    frozen = json.loads((EVIDENCE / "freeze.json").read_text())
+    assert {k: v["nominee"] for k, v in frozen["nominees"].items()} == {
+        k: v["nominee"] for k, v in registered.items()}  # fmt: skip
+
+
 def test_freeze_record_regenerates_from_code_and_manifest(campaign: Any) -> None:
     record = C.freeze_record(campaign, inputs=None, nominees=None)
     for name, pins in record["presets"].items():

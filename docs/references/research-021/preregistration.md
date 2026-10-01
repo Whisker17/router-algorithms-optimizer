@@ -9,7 +9,7 @@
 | Schedule (machine-readable) | [`config/research_021/campaign.yaml`](../../../config/research_021/campaign.yaml) |
 | Driver and analysis | [`tools/research_021/campaign.py`](../../../tools/research_021/campaign.py), [`tools/research_021/analysis.py`](../../../tools/research_021/analysis.py) |
 | Checks | `uv run pytest tests/research_021 -q`, `uv run python tools/research_021/campaign.py check` |
-| Status | **Component A — CHECKPOINT, NOT COMPLETE**: plumbing and tuning registration committed (`7524de2`); stage T 24/26 invocations complete; `T-alloc-ms8-full` / `T-alloc-ms8-sor` still running, so the applied `same_grid_allocation` nominee and the freeze record are **PENDING** (§4.3, §8). **Component B (not started)**: the frozen report-split campaign, results and dispositions — nothing here is a report-split result. |
+| Status | **Component A — pre-registration COMPLETE; parent freeze acceptance PENDING.** Stage T 26/26 invocations ended `ok` and reconcile; nominees applied by the predeclared rule; freeze record [`campaign/freeze.json`](campaign/freeze.json). **Component B (not started)** may begin only after the read-only verifier and the parent's freeze acceptance — nothing here is a report-split result. |
 
 The tuning registration (driver, manifest, every campaign profile, the nominee rule) was
 committed and pushed at `7524de2363928e9a10c9f91e6ce5bb5444575315` **before any tuning
@@ -17,8 +17,9 @@ observation**, and stage T was executed from a clean clone of exactly that commi
 change only analysis/reporting code, documentation and evidence (no solver, profile or
 measured-invocation change; `git diff 7524de2 -- routing pools benchmark snapshot report main.py
 config/research_021/profiles` is empty). No report-split solver was executed by component A, and
-none may run before every tuning invocation, the applied nominees and the freeze record are
-complete and the parent accepts the freeze.
+none may run before the parent accepts this freeze. The nominees, the nominee arms and the
+host-sleep controls (§3) were registered at `a3685e5` from the completed stage-T records; the
+final stage-T analysis and the freeze record are from a clean checkout of `a3685e5`.
 
 ## 1. What is compared, and what is not
 
@@ -71,10 +72,23 @@ as defect regressions (`known_report_defects`), never tuning or quality data.
 
 `campaign.py schedule --stage X` prints the exact invocation list with each invocation's
 algorithm order, case count and expected cell count (T: 26 invocations, 6,830 run cells;
-R: 30 / 12,382; M: 2 / 336; I: 87 / 101; L: 16). `execute` samples the 1-minute load every 30 s
+R: 34 / 13,590; M: 2 / 336; I: 91 / 103; L: 16). `execute` samples the 1-minute load every 30 s
 (`load.jsonl`), writes a start/end ledger (`ledger.jsonl`, argv, exit code, run directory), keeps
 each invocation's stdout/stderr, refuses a dirty tree, a changed input or an existing slot, and on
 SIGTERM/SIGINT stops its children and records them `interrupted`.
+
+**Host sleep (feed-forward from stage T, registered before any L/R/M/I execution).** The
+macOS host slept repeatedly during stage T (10 `Sleep` transitions inside both `T-alloc-ms8-*`
+windows; evidence `…/whi-1562/host-events/pmset-sleep-wake-2026-10-01.txt`, sha256
+`bf865433…2956`; Linear comment `83a314d4`). Monotonic solve clocks and hard-wall deadlines
+exclude sleep, so every stage-T timing is contaminated and descriptive only; statuses and
+outputs remain valid and the 900 s hard wall is unchanged (owner, Linear `4861b9d8`). For stages
+L, R, M and I the executor (`caffeinate: true`, `pmset_capture: true`) holds a
+`caffeinate -i -m -s -w <executor pid>` assertion for its whole lifetime, captures `pmset -g log`
+sleep/wake transitions of the stage window into `pmset-sleep-wake.txt` beside `load.jsonl`, and
+the analysis classifies a timing window with any `Sleep` transition as `slept`, one above the load
+threshold as `contaminated`, and one without load samples or without the registered sleep log as
+`unknown` — all inconclusive. This is a registered measurement rule, never a post-hoc filter.
 
 **Deviation rule (registered, the only re-execution).** An invocation whose process ends
 without a complete manifest because of infrastructure (host restart, OOM kill, disk full,
@@ -151,24 +165,31 @@ reported but not applied for `path_split` and the two pinned L08 recipes. A nomi
 report-stage invocation per bundle of that pair at the nominee (the roster rows remain at 4); a
 nominee = 4 adds nothing. Nominees never change a preset file.
 
-*Stage-T nominees (checkpoint 1):*
+*Stage-T nominees (final; the rule above applied unchanged to the complete, clean stage-T
+analysis [`campaign/tuning-analysis.json`](campaign/tuning-analysis.json), 384 cells per value
+for each pair):*
 
-| Comparison | Applied | Result | Basis |
+| Comparison | Applied | Nominee | failures / shortfall per value |
 | --- | --- | --- | --- |
-| `max_splits.matched_sor_cycle_safe` (`uni_sor_port` + `uni_sor_cycle_safe`, `tuning_sor`) | yes | **4** (canonical retained: no value saturates every cell) | failures / shortfall: v=1 0/104, v=2 0/64, v=4 2/32, v=8 4/4 (the failures are `uni_sor_port` token-cycle `invalid_plan`s: 2 at 4, 4 at 8) |
-| `max_splits.same_grid_allocation` (`direct_split` + `direct_split_certified`, both tuning bundles) | yes | **PENDING** | needs `T-alloc-ms8-*` (running) |
-| `max_splits.path_split` | informational | **PENDING** | needs `T-alloc-ms8-*`; `path_split` at max_splits 8 has so far hit the 900 s hard wall (`timeout`, `limit_hit: time`) on every completed case (1 per bundle at checkpoint) — recorded outcomes, never re-run |
-| `max_splits.optimized_recipes` | informational | 4 | v=1 0/103, v=2 0/54, v=4 0/19, v=8 0/4 |
+| `max_splits.same_grid_allocation` (`direct_split` + `direct_split_certified`, both tuning bundles) | yes | **8** (smallest value with zero shortfall and the fewest failures) | v=1 0/48, v=2 0/29, v=4 0/6, v=8 0/0 (at 4: `direct_split` below its scanned best on `emp-78c1b0-deadde-{large-4,low-2,medium-4}` in both bundles) |
+| `max_splits.matched_sor_cycle_safe` (`uni_sor_port` + `uni_sor_cycle_safe`, `tuning_sor`) | yes | **4** (canonical: no value saturates every cell) | v=1 0/104, v=2 0/64, v=4 2/32, v=8 4/4 (failures: `uni_sor_port` token-cycle `invalid_plan` 2 at 4, 4 at 8) |
+| `max_splits.path_split` | informational | 4 (canonical) | v=1 0/110, v=2 0/69, v=4 0/9, v=8 43/43 (`timeout`, `limit_hit: time`: 24 full + 19 SOR) |
+| `max_splits.optimized_recipes` | informational | 4 (canonical) | v=1 0/103, v=2 0/54, v=4 0/19, v=8 0/4 |
 
-The matched-SOR nominee equals the canonical value, so it adds no report invocation.
+Consequence (registered at `a3685e5`): the generated profile `same_grid_nominee`
+(`direct_split`, `direct_split_certified` at max_splits 8, everything else `full_gross`'s) runs
+on both report bundles (`R-same-grid-nominee-full`, `-sor`, each with a report) with the
+report-stage `equal_value` comparisons `same_grid.nominee.full/sor`, and is quoted in stage I
+(`I-same-grid-nominee`, both CLI modes). The roster rows stay at the canonical 4. The matched-SOR
+nominee is 4, so it adds nothing. The manifest records the nominees under `nominees:`.
 
 ## 5. The frozen report campaign (component B)
 
 ### 5.1 Stage R
 
 `R-roster-full`, `R-roster-sor` (the 14-ID roster on each report bundle), `R-e4`, `R-l3`,
-`R-s3`, `R-s3off`, `R-s4off` (report_full), `R-repair-off-*`, `R-cfmm-cpmm-*`, `R-net-*` (both),
-each with a report regeneration; the `R-net-*` runs also replay and order-check. The registered
+`R-s3`, `R-s3off`, `R-s4off` (report_full), `R-repair-off-*`, `R-cfmm-cpmm-*`, `R-net-*` and the
+nominee arms `R-same-grid-nominee-*` (both), each with a report regeneration; the `R-net-*` runs also replay and order-check. The registered
 comparisons are the stage-T comparisons with every `T-*` invocation mapped to its `R-*` twin
 (`report_mirror`), except the nominee rule; the two cycle-safe comparisons exclude the 12 known
 defects from quality and list their statuses apart.
@@ -183,7 +204,8 @@ their `n`.
 ### 5.3 Timing
 
 L01 labels and boundaries. A window with any sampled 1-minute load > 0.5 × logical CPUs (5.0 on the
-10-core host), or without a sample, is `inconclusive`. A batch run has one sample per case and no
+10-core host), with a host `Sleep` transition, or without a load sample or the registered sleep
+log, is `inconclusive` (§3). A batch run has one sample per case and no
 A/A noise floor, so its timing is **descriptive only**; speed verdicts exist only in stage L via
 `report.latency compare` (L01 rules verbatim). Complete-request timing is the quote CLI of stage I
 (one process per invocation); a controlled arm's complete response is its cold per-algorithm charge
@@ -210,17 +232,21 @@ the durable copy and a fresh results directory) with an order-check between the 
 must show exactly one solve attempt per selected algorithm, one worker per algorithm in order and
 no memory pass.
 
-## 6. Tuning evidence (stage T, exploration only — checkpoint 1)
+## 6. Tuning evidence (stage T, exploration only — final)
 
-Checkpoint 1 analysis (from the worktree's analysis code over the raw stage-T records):
-[`campaign/tuning-checkpoint-1.md`](campaign/tuning-checkpoint-1.md) /
-[`.json`](campaign/tuning-checkpoint-1.json). Raw records, ledger, load samples and per-invocation
-logs: `…/research-021/whi-1562/7524de2…/T/` (SHA256SUMS of the 24 completed slots in
-`…/T-checkpoint-1/`). Every one of the 24 completed runs reconciles to the registered inventory
-(algorithm order, case order, one record per cell) **and** to its registered resolved profile
-(sha256 of `resolved_profile`, with the empirical-cost objective bound to the registered price
-context). Tuning timing is **inconclusive** everywhere (host load up to 67.8 with 5 lanes and
-unrelated host work; T is not a timing stage). These are descriptive tuning facts, not dispositions.
+Final analysis from a clean checkout of `a3685e5` with the host sleep log:
+[`campaign/tuning-analysis.md`](campaign/tuning-analysis.md) /
+[`.json`](campaign/tuning-analysis.json) (sha256 `69e7308e…1c4e`; `reconciled: true`, 0
+problems). The earlier 24/26 view is kept as
+[`campaign/tuning-checkpoint-1.md`](campaign/tuning-checkpoint-1.md). Raw records, ledger, load
+samples, logs: `…/research-021/whi-1562/7524de2…/T/`; `…/7524de2…/T-final/SHA256SUMS-T-raw.txt`
+(111 files, sha256 `b30b6516…c7b666`) plus the analysis and a copy of the sleep log. All 26
+invocations (executed at `7524de2`, which differs from `a3685e5` only in analysis/reporting code,
+documentation, the manifest's report-stage registrations and evidence) reconcile to the
+registered inventory and to their registered resolved profiles. Timing is **inconclusive**
+everywhere: 18 windows over the load threshold (max 1-minute load 67.8), 2 `slept`
+(`T-alloc-ms8-*`, 10 sleep transitions each), 4 without load samples (seconds-long runs), plus the
+report/order children. These are descriptive tuning facts, not dispositions.
 
 - **Unconditional statuses** (both rosters, 14 IDs × 96): no `timeout`, `algorithm_error`,
   `model_error` or `incomplete_snapshot` anywhere; `direct`/`direct_split` 24 `no_route`
@@ -253,6 +279,10 @@ unrelated host work; T is not a timing stage). These are descriptive tuning fact
   `state_cap` (one label per signature) on 93/96 — the declared, visible approximation.
 - **Coverage** (full source): `uni_sor_cycle_safe` vs `incremental_graph` 1/22/73 —
   `expanded_protocol` (LB), never the restricted row's failure.
+- **max_splits 8 scan rows**: `direct_split` 72 `ok` / 24 `no_route` per bundle;
+  `direct_split_certified` full 72 `unsupported` / 24 `no_route`, SOR 66 `unsupported` / 6 `ok` /
+  24 `no_route`; `path_split` full 72 `ok` / 24 `timeout`, SOR 77 `ok` / 19 `timeout` (900 s hard
+  wall, recorded; never re-run).
 - **Quote smoke** (`USDC → USDT 4.322399`, the tuning case `emp-09bc4e-201eba-low-2`, all 14):
   one solve per algorithm in 14 workers in order; replay via its manifest command and order-check
   passed; report regenerated; `uni_sor_port` `invalid_plan` (the known tuning cycle),
@@ -294,18 +324,19 @@ done
 
 ## 8. Freeze record
 
-**PENDING** until `T-alloc-ms8-*` complete. Resume procedure (component A owner):
-
-1. Confirm both slots ended (`ledger.jsonl` `end` entries, result `ok`); never re-run them.
-2. `uv run python tools/research_021/campaign.py analyze --stage T --inputs $A/inputs --out
-   $A/7524de2…/T` from a **clean** checkout of the A head → `reconciled: true`.
-3. Apply the registered nominee rule result for `same_grid_allocation`: if ≠ 4, add the generated
-   profile (`direct_split`, `direct_split_certified` at the nominee) with its R invocations on both
-   report bundles, its stage-I quote, and its report comparisons; if = 4, add nothing. Record
-   `nominees:` in the manifest; `profiles --write`; `check`.
-4. Copy the final analysis to `campaign/tuning-analysis.{json,md}`, write SHA256SUMS of the raw
-   stage-T outputs, and `campaign.py freeze --inputs $A/inputs --nominees <analysis.json> --out
-   docs/references/research-021/campaign/freeze.json` (then `tests/research_021` checks it against
-   the code and manifest).
-5. Update §4.3/§6/§8, run Ruff, mypy, `tests/research_021`, `tests/docs`; commit, push; update the
-   draft PR. Only then may the read-only verifier and the parent's freeze acceptance proceed.
+[`campaign/freeze.json`](campaign/freeze.json) (`r021.campaign-freeze/1`, produced by
+`campaign.py freeze --inputs … --nominees campaign/tuning-analysis.json` at `a3685e5`) holds:
+sha256 of the manifest (`ec2bc3f5…`), `campaign.py` (`4de38232…`), `analysis.py`
+(`311a9298…`), every profile, L01 / L01-SB / L08, the M4 settings file and the cost model; every
+registered preset (current and historical) with its pin and the file's current hash; every input's
+bundle, cases and prices hashes plus the sha256 of its ordered case-ID list; the saved quotes; the
+known report defects; the rules and their hash (statuses, ties, tolerances, stops/fallback,
+timing, host sleep, infrastructure deviation, disposition); the resolved-profile identity and
+per-algorithm params / options source / settings hash of all 59 registered run and quote
+invocations; the exact inventory of every stage; and the nominees. `tests/research_021`
+regenerates it from the code and manifest and fails on any drift; the ordered case lists are
+checked in as [`campaign/cases-tuning.jsonl`](campaign/cases-tuning.jsonl) and
+[`campaign/cases-report.jsonl`](campaign/cases-report.jsonl) (hash-equal to the registered
+`cases.jsonl`). Implementation SHA for component B: the commit that adds this record (its
+runtime code is identical to `a3685e5`). Component B clones that SHA (§7); the parent's freeze
+acceptance and the read-only verifier are the remaining gates before any report-split solve.
