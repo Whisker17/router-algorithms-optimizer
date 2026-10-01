@@ -1,10 +1,10 @@
 {
  "analysis_source": {
   "analysis_py_sha256": "311a92988ffdc42901de65adc6199e16d5a0faa849447a12ed6accff562b2288",
-  "campaign_py_sha256": "4de3823219e5f8f702670c194ab3338701ef2cf2264736432c7af5be7597bc9b",
+  "campaign_py_sha256": "2307d801d5f25fdd742208cf7c8b16483853e5a3e80351187121574b797c65c4",
   "git_dirty": false,
-  "git_revision": "a3685e539438b40d72d1be279bd4118252efc9c4",
-  "manifest_sha256": "ec2bc3f53ace1d8d6a0c3c79e472682448d7968c42c77601e16d879bec7f20fd"
+  "git_revision": "534988c5a81c172d9b2bc819c983be7f91083e5b",
+  "manifest_sha256": "85b382b4d6f57febf0e69546af48983516b001257c4a52f2cd43ac2020786fdc"
  },
  "comparisons": [
   {
@@ -14534,6 +14534,7 @@
   "T-quote-smoke.order": {
    "exit_code": 0,
    "expected_exit": 0,
+   "holdout_exposure": "not_a_corpus_split",
    "result": "ok",
    "run_dir": null,
    "started": 1790822725.311837,
@@ -15990,6 +15991,7 @@
   "T-quote-smoke.report": {
    "exit_code": 0,
    "expected_exit": 0,
+   "holdout_exposure": "not_a_corpus_split",
    "result": "ok",
    "run_dir": null,
    "started": 1790822633.1386418,

@@ -28,7 +28,8 @@ saved-literal comparison, the report-mirror id rename, the recorded-CPU load thr
 L01-matrix exposure label. None of these touches a nominee input or a measured invocation. No report-split solver was executed by component A, and
 none may run before the parent accepts this freeze. The nominees, the nominee arms and the
 host-sleep controls (§3) were registered at `a3685e5` from the completed stage-T records; the
-final stage-T analysis and the freeze record are from a clean checkout of `a3685e5`.
+verifier findings F1–F11 were fixed at `534988c`; the final stage-T analysis and the freeze
+record are from a clean checkout of `534988c` (§6, §8).
 
 ## 1. What is compared, and what is not
 
@@ -272,15 +273,16 @@ no memory pass.
 
 ## 6. Tuning evidence (stage T, exploration only — final)
 
-Final analysis from a clean checkout of `a3685e5` with the host sleep log:
+Final analysis from a clean checkout of `534988c` with the host sleep log:
 [`campaign/tuning-analysis.md`](campaign/tuning-analysis.md) /
-[`.json`](campaign/tuning-analysis.json) (sha256 `69e7308e…1c4e`; `reconciled: true`, 0
-problems). The earlier 24/26 view is kept as
+[`.json`](campaign/tuning-analysis.json) (sha256 `913498ae…4870`; `reconciled: true`, 0
+problems; comparisons, inventory and every nominee identical to the earlier `a3685e5` analysis
+`69e7308e…1c4e` — only the analysis source and the added exposure labels differ). The earlier 24/26 view is kept as
 [`campaign/tuning-checkpoint-1.md`](campaign/tuning-checkpoint-1.md). Raw records, ledger, load
 samples, logs: `…/research-021/whi-1562/7524de2…/T/`; `…/7524de2…/T-final/SHA256SUMS-T-raw.txt`
-(111 files, sha256 `b30b6516…c7b666`) plus the analysis and a copy of the sleep log. All 26
-invocations (executed at `7524de2`, which differs from `a3685e5` only in analysis/reporting code,
-documentation, the manifest's report-stage registrations and evidence) reconcile to the
+(111 files, sha256 `b30b6516…c7b666`) plus the analysis and a copy of the sleep log (the
+`534988c` analysis is in `…/T-final-534988c/`). All 26 invocations (executed at `7524de2`; later
+commits differ only as listed at the top) reconcile to the
 registered inventory and to their registered resolved profiles. Timing is **inconclusive**
 everywhere: 18 windows over the load threshold (max 1-minute load 67.8), 2 `slept`
 (`T-alloc-ms8-*`, 10 sleep transitions each), 4 without load samples (seconds-long runs), plus the
@@ -369,18 +371,19 @@ done
 ## 8. Freeze record
 
 [`campaign/freeze.json`](campaign/freeze.json) (`r021.campaign-freeze/1`, produced by
-`campaign.py freeze --inputs … --nominees campaign/tuning-analysis.json` at `a3685e5`) holds:
-sha256 of the manifest (`ec2bc3f5…`), `campaign.py` (`4de38232…`), `analysis.py`
+`campaign.py freeze --inputs … --nominees campaign/tuning-analysis.json` at clean `534988c`)
+holds: sha256 of the manifest (`85b382b4…`), `campaign.py` (`2307d801…`), `analysis.py`
 (`311a9298…`), every profile, L01 / L01-SB / L08, the M4 settings file and the cost model; every
 registered preset (current and historical) with its pin and the file's current hash; every input's
 bundle, cases and prices hashes plus the sha256 of its ordered case-ID list; the saved quotes; the
-known report defects; the rules and their hash (statuses, ties, tolerances, stops/fallback,
-timing, host sleep, infrastructure deviation, disposition); the resolved-profile identity and
-per-algorithm params / options source / settings hash of all 59 registered run and quote
-invocations; the exact inventory of every stage; and the nominees. `tests/research_021`
-regenerates it from the code and manifest and fails on any drift; the ordered case lists are
-checked in as [`campaign/cases-tuning.jsonl`](campaign/cases-tuning.jsonl) and
-[`campaign/cases-report.jsonl`](campaign/cases-report.jsonl) (hash-equal to the registered
-`cases.jsonl`). Implementation SHA for component B: the commit that adds this record (its
-runtime code is identical to `a3685e5`). Component B clones that SHA (§7); the parent's freeze
-acceptance and the read-only verifier are the remaining gates before any report-split solve.
+known report defects; the rules and their hash (`250c739f…`: statuses, ties, tolerances,
+stops/fallback, timing, host sleep, cross-stage resolution, launch gate, infrastructure deviation
+with its analysis path, disposition); the resolved-profile identity and per-algorithm params /
+options source / settings hash of all 59 registered run and quote invocations; the exact inventory
+of every stage (T 26 / 6,830 cells, L 16, R 34 / 13,590, M 2 / 336, I 91 / 103); and the nominees.
+`tests/research_021` regenerates it from the code and manifest and fails on any drift; the
+ordered case lists are checked in as [`campaign/cases-tuning.jsonl`](campaign/cases-tuning.jsonl)
+and [`campaign/cases-report.jsonl`](campaign/cases-report.jsonl) (hash-equal to the registered
+`cases.jsonl`). Implementation SHA for component B: the commit that adds this record (its runtime
+code is identical to `534988c`). Component B clones that SHA (§7); the re-verification of that SHA
+and the parent's freeze acceptance are the remaining gates before any report-split solve.

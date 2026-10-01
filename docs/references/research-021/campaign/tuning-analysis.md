@@ -1,6 +1,6 @@
 # research-021 campaign analysis, stage T
 
-- analysis source `a3685e539438b40d72d1be279bd4118252efc9c4` dirty=False; manifest `ec2bc3f53ace`, analysis.py `311a92988ffd`
+- analysis source `534988c5a81c172d9b2bc819c983be7f91083e5b` dirty=False; manifest `85b382b4d6f5`, analysis.py `311a92988ffd`
 - reconciled: **True**
 
 ## Invocations

@@ -3402,7 +3402,7 @@
   },
   "campaign_py": {
    "path": "tools/research_021/campaign.py",
-   "sha256": "4de3823219e5f8f702670c194ab3338701ef2cf2264736432c7af5be7597bc9b"
+   "sha256": "2307d801d5f25fdd742208cf7c8b16483853e5a3e80351187121574b797c65c4"
   },
   "cost_model": {
    "path": "config/costs/mantle-101082044-cost-v1.json",
@@ -3422,7 +3422,7 @@
   },
   "manifest": {
    "path": "config/research_021/campaign.yaml",
-   "sha256": "ec2bc3f53ace1d8d6a0c3c79e472682448d7968c42c77601e16d879bec7f20fd"
+   "sha256": "85b382b4d6f57febf0e69546af48983516b001257c4a52f2cd43ac2020786fdc"
   },
   "metis_m4_settings": {
    "path": "config/metis_challenge/m4.yaml",
@@ -5839,28 +5839,28 @@
  },
  "nominees": {
   "max_splits.matched_sor_cycle_safe": {
-   "analysis_sha256": "69e7308e779fb495a0c7bcdad33c6f1cf584f1b46c7cc82c8511e73832c91c4e",
+   "analysis_sha256": "913498ae02cdbf3caa351cd356d1de88e96d8c5c1a0f6a2012a28e5ea0564870",
    "apply": true,
    "canonical": 4,
    "nominee": 4,
    "reason": "no value saturates every cell: canonical 4 retained"
   },
   "max_splits.optimized_recipes": {
-   "analysis_sha256": "69e7308e779fb495a0c7bcdad33c6f1cf584f1b46c7cc82c8511e73832c91c4e",
+   "analysis_sha256": "913498ae02cdbf3caa351cd356d1de88e96d8c5c1a0f6a2012a28e5ea0564870",
    "apply": false,
    "canonical": 4,
    "nominee": 4,
    "reason": "no value saturates every cell: canonical 4 retained"
   },
   "max_splits.path_split": {
-   "analysis_sha256": "69e7308e779fb495a0c7bcdad33c6f1cf584f1b46c7cc82c8511e73832c91c4e",
+   "analysis_sha256": "913498ae02cdbf3caa351cd356d1de88e96d8c5c1a0f6a2012a28e5ea0564870",
    "apply": false,
    "canonical": 4,
    "nominee": 4,
    "reason": "no value saturates every cell: canonical 4 retained"
   },
   "max_splits.same_grid_allocation": {
-   "analysis_sha256": "69e7308e779fb495a0c7bcdad33c6f1cf584f1b46c7cc82c8511e73832c91c4e",
+   "analysis_sha256": "913498ae02cdbf3caa351cd356d1de88e96d8c5c1a0f6a2012a28e5ea0564870",
    "apply": true,
    "canonical": 4,
    "nominee": 8,
@@ -5928,9 +5928,11 @@
   ]
  },
  "rules": {
+  "cross_stage": "Stage outputs are siblings `<root>/<stage>/` (\u00a77 layout). A dependency registered in another stage (M-roster's `{dir:L-R}`) is resolved from that stage's sibling ledger and slot; an invocation whose dependency never ended `ok` in any registered ledger is recorded `blocked` immediately (the executor never waits for it).",
   "disposition": "Per identity (R021-C/1 \u00a78): reject if a registered gate fails (correctness, determinism, accounting, identity/P1, certificate validity, unsupported-scope rule) or a pre-registered hypothesis is refuted; inconclusive if every gate passes but a primary question cannot be evaluated (zero eligible cells, missing/incomplete records, coverage); keep_experimental otherwise. A functional implementation needs no win; no adoption, no loss tolerance.",
   "host_sleep": "Registered after stage T (whose host slept; its timings are contaminated, statuses valid) and before any L/R/M/I execution, never as a post-hoc filter: those stages run under a `caffeinate -i -m -s -w <executor pid>` assertion started by the executor; the executor captures `pmset -g log` sleep/wake transitions for the stage window (`pmset-sleep-wake.txt`) beside the load samples; a timing window with any `Sleep` transition is `slept`, one over the load threshold `contaminated`, one without load samples or without the registered sleep log `unknown` -- all three are inconclusive timing. Monotonic solve clocks and hard-wall deadlines exclude sleep; statuses are unaffected.",
-  "infrastructure_deviation": "An invocation whose process ends without a complete manifest because of infrastructure (host restart, OOM kill, disk full, tool/auth failure; evidence recorded) may be re-executed ONCE into a fresh slot `<id>.retry1`; the failed attempt stays in the ledger and is reported as a deviation. A completed run is never re-executed, whatever its statuses or timings; solver timeouts/failures are outcomes, never retry reasons; host load is never a retry reason.",
+  "infrastructure_deviation": "An invocation whose process ends without a complete manifest because of infrastructure (host restart, OOM kill, disk full, tool/auth failure; evidence recorded) may be re-executed ONCE into a fresh slot `<id>.retry1`; the failed attempt stays in the ledger and is reported as a deviation. Its registered derived children (report / replay / order-check) are re-planned as `<child>.retry1` against the retried run, and the analysis then uses the `.retry1` entries in place of the registered ids, labelled `deviation: infrastructure_retry` with the original attempt attached; any other analysis change needs a documented amendment before analysis. A completed run is never re-executed, whatever its statuses or timings; solver timeouts/failures are outcomes, never retry reasons; host load is never a retry reason.",
+  "launch_gate": "A stage with `launch_gate` (L) first records `samples` 1-minute load samples `interval_seconds` apart in its ledger; if any exceeds `headroom_load1` the stage is not launched (exit 3, `stage_not_launched` recorded): no waiting loop, no retry. Only an orchestrator waiver (`--waive-launch-headroom REASON`) launches it anyway, recorded.",
   "nominee": "For each `kind: nominee` comparison, over every scheduled (case, algorithm) of its algorithms on its tuning bundles: failures(v) = cells with status timeout, invalid_plan, algorithm_error, model_error, incomplete_snapshot, cancelled or missing; shortfall(v) = cells ok at some scanned value but at v not ok, or ok with gross below that cell's best gross over all scanned values. Nominee = the smallest v with shortfall(v) = 0 and failures(v) = min over the scan; if none qualifies, the canonical value 4. No loss tolerance, no timing criterion; `apply: false` results are informational only. Registered before any tuning observation (tools/research_021/analysis.py `nominee`).",
   "numerical_tolerances": "None added. Protocol math and evaluation are exact integers. cfmm_dual's residual tolerance is its pinned preset value (a numerical residual criterion, never a bound); float ratios (recovered/estimate, geometric means) are reported, never thresholded.",
   "statuses": "Every scheduled cell keeps its status (ok, no_route, unsupported, timeout, invalid_plan, incomplete_snapshot, model_error, algorithm_error, cancelled, missing); unconditional counts use the full schedule. Paired quality uses common-OK cells only; a missing score is N/A, never 0; a zero baseline gross is N/A, counted apart.",
@@ -5938,7 +5940,7 @@
   "ties": "Exact integer gross comparison: equal gross is a tie (neither higher nor lower); no money tolerance. Solver-internal tie rules are each identity's research contract's.",
   "timing": "L01 labels (latency-baseline.md \u00a74). A batch window whose sampled 1-minute load exceeds 0.5 x logical CPUs, or has no sample, is `inconclusive`; one sample per case gives no A/A noise floor, so batch timing is descriptive only. Speed verdicts exist only in stage L via `report.latency compare` (L01 rules verbatim). No single-request percentile, no SLA, no total-campaign runtime ceiling."
  },
- "rules_sha256": "f105f9c3d6b0e57a76ffb719d40f67628cbabe65cc9c45e001ba9543f871cd4c",
+ "rules_sha256": "250c739f88ae19b6b626467266e6b9aa22a063d311760f6ae1b05edbca722ae3",
  "saved_quotes": {
   "saved8": {
    "algorithms": [
