@@ -123,6 +123,17 @@ def test_stage_inventories_are_exact(campaign: Any) -> None:
     t = C.schedule(campaign, "T")
     ids = [i["id"] for i in t["invocations"]]
     assert len(ids) == len(set(ids)) == 26
+    for stage in ("L", "R", "M", "I"):  # registered before any report-stage execution
+        rules = campaign.raw["stages"][stage]
+        assert rules["caffeinate"] is True and rules["pmset_capture"] is True, stage
+    nominees = campaign.raw["nominees"]
+    assert nominees["max_splits.same_grid_allocation"]["nominee"] == 8
+    assert nominees["max_splits.matched_sor_cycle_safe"]["nominee"] == 4
+    nominee_runs = [i for i in campaign.stage("R") if i.get("profile") == "same_grid_nominee"]
+    assert sorted(i.get("bundle") for i in nominee_runs) == ["report_full", "report_sor"]
+    doc = yaml.safe_load((REPO / C.profile_path(campaign, "same_grid_nominee")).read_text())
+    assert doc["search"]["max_splits"] == 8
+    assert doc["algorithms"] == ["direct_split", "direct_split_certified"]
     assert ids[-3:] == ["T-quote-smoke.report", "T-quote-smoke.replay", "T-quote-smoke.order"]
     runs = [i for i in t["invocations"] if i["kind"] == "run"]
     assert all(i["cells"] == 96 * len(i["algorithms"]) for i in runs)
@@ -375,7 +386,7 @@ def _fixture_campaign(tmp_path: Path) -> Any:
         "requests": {"one": {"token_in": "USDC", "token_out": "USDT0", "amount": "1500.25"}},
         "profiles": {"small": {"path": str(base), "sha256": sha(base.read_bytes())},
                      "scan1": {"path": str(scan_path), "sha256": sha(scan_path.read_bytes())}},
-        "stages": {"T": {"lanes": 2}},
+        "stages": {"T": {"lanes": 2, "caffeinate": True, "pmset_capture": True}},
         "known_report_defects": {"cases": []},
         "invocations": [
             {"id": "X-mixed", "stage": "T", "kind": "run", "bundle": "mixed", "profile": "small",
@@ -417,6 +428,11 @@ def test_stage_executor_and_analysis_on_bounded_fixtures(tmp_path: Path) -> None
     assert set(ledger) == {i.id for i in campaign.stage("T")}
     assert all(e["result"] == "ok" for e in ledger.values())
     assert (out / "load.jsonl").read_text().strip()
+    events = [e for e in C.Ledger(out / "ledger.jsonl").entries()]
+    caffeinate = [e for e in events if e.get("event") == "caffeinate"]
+    assert caffeinate and caffeinate[0]["argv"][:5] == ["caffeinate", "-i", "-m", "-s", "-w"]
+    capture = [e for e in events if e.get("event") == "pmset_capture"]
+    assert capture and capture[0]["ok"] is True and (out / "pmset-sleep-wake.txt").is_file()
     result = C.analyze(campaign, "T", inputs=inputs, out=out)
     assert result["reconciled"], result["reconciliation_problems"]
     by_arm = {a["status"]["arm"]: a for inv in result["invocations"].values()

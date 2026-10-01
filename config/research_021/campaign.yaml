@@ -163,6 +163,11 @@ profiles:
     generate: {base: canonical_net, algorithms: [direct_split_certified, cfmm_dual],
                options: {direct_split_certified: {preset: current}, cfmm_dual: {preset: current}}}
     purpose: "gross-only identities under the empirical-cost net objective: every row visible unsupported"
+  same_grid_nominee:
+    generate: {base: canonical_gross, search: {max_splits: 8},
+               algorithms: [direct_split, direct_split_certified],
+               options: {direct_split_certified: {preset: current}}}
+    purpose: "same_grid_allocation at its stage-T nominee max_splits 8 (applied nominee rule; report stage)"
   memory_gross:
     generate: {base: canonical_gross, measurement: {memory_pass: true}}
     purpose: "stage M: canonical_gross plus the separate tracemalloc memory pass (run with --strategies all)"
@@ -184,24 +189,37 @@ stages:
     owner: component A (before any report-split solve)
     lanes: 5                        # concurrent invocations; timing is descriptive/contaminated
     order: registered               # launch order below; longest first
+    # feed-forward (recorded after T, Linear 83a314d4): the macOS host slept repeatedly during
+    # T (evidence host-events/pmset-sleep-wake-2026-10-01.txt); monotonic solve clocks and
+    # deadlines exclude sleep, so every T timing is contaminated / descriptive only. Statuses
+    # and outputs stay valid. T ran without caffeinate/pmset capture (registered before L/R/M/I).
+    host_sleep_evidence: host-events/pmset-sleep-wake-2026-10-01.txt
   L:
     split: mixed (L01 matrix tuning + held-out twins, sentinel)
     owner: component B, first, alone on the host (no other stage runs concurrently)
     lanes: 1
+    caffeinate: true
+    pmset_capture: true
     launch_gate: {samples: 5, interval_seconds: 30, headroom_load1: 3.0, rule: "headroom only, never a validity rule; host busy -> not launched, blocker reported; no waiting loop, no retry"}
   R:
     split: report
     owner: component B, after L
     lanes: 3
+    caffeinate: true
+    pmset_capture: true
     order: registered
   M:
     split: mixed (L01 full-source matrix)
     owner: component B, after R
     lanes: 1
+    caffeinate: true
+    pmset_capture: true
   I:
     split: sentinel / saved quote requests (no corpus split)
     owner: component B, last, alone on the host
     lanes: 1
+    caffeinate: true
+    pmset_capture: true
 
 # kind: run | quote | report | replay | order_check | replay_saved | latency_run |
 #       latency_sufficient | latency_compare. `derive` adds report / replay / order_check
@@ -264,8 +282,10 @@ invocations:
   - {id: R-cfmm-cpmm-sor, stage: R, kind: run, bundle: report_sor, profile: cfmm_cpmm, strategies: profile, algorithms: [cfmm_dual], derive: [report]}
   - {id: R-net-full, stage: R, kind: run, bundle: report_full, profile: net_empirical, strategies: profile, algorithms: [direct_split_certified, cfmm_dual], derive: [report, replay, order_check]}
   - {id: R-net-sor, stage: R, kind: run, bundle: report_sor, profile: net_empirical, strategies: profile, algorithms: [direct_split_certified, cfmm_dual], derive: [report, replay, order_check]}
-  # nominee arms: resolved from the stage-T nominees (see `nominees` below); none when a
-  # nominee equals the canonical value 4 (the roster rows are then the nominee rows).
+  # nominee arms (stage-T applied nominees, `nominees` below): same_grid_allocation = 8, so
+  # one invocation per report bundle; matched_sor_cycle_safe = 4 (the roster rows), none.
+  - {id: R-same-grid-nominee-full, stage: R, kind: run, bundle: report_full, profile: same_grid_nominee, strategies: profile, algorithms: [direct_split, direct_split_certified], derive: [report]}
+  - {id: R-same-grid-nominee-sor, stage: R, kind: run, bundle: report_sor, profile: same_grid_nominee, strategies: profile, algorithms: [direct_split, direct_split_certified], derive: [report]}
 
   # ---- M: memory (separate tracemalloc pass) on the L01 full-source matrix (24 cases)
   - {id: M-roster, stage: M, kind: run, bundle: "{dir:L-R}/bundles/full_source-matrix", cases: 24, bundle_hash: 72f4f4e4c08d4c34e8480ee56ca8eebab005bb15eb3865349d7df12ba59cfb04, profile: memory_gross, strategies: all, algorithms: *all14, derive: [report]}
@@ -289,6 +309,7 @@ invocations:
   - {id: I-sor-ms1, stage: I, kind: quote, bundle: full, profile: sor_ms1, strategies: profile, details: true, request: sentinel, algorithms: *sor4, derive: [report, replay, order_check]}
   - {id: I-sor-ms2, stage: I, kind: quote, bundle: full, profile: sor_ms2, strategies: profile, details: true, request: sentinel, algorithms: *sor4, derive: [report, replay, order_check]}
   - {id: I-sor-ms8, stage: I, kind: quote, bundle: full, profile: sor_ms8, strategies: profile, details: true, request: sentinel, algorithms: *sor4, derive: [report, replay, order_check]}
+  - {id: I-same-grid-nominee, stage: I, kind: quote, bundle: full, profile: same_grid_nominee, strategies: profile, details: true, request: sentinel, algorithms: [direct_split, direct_split_certified], derive: [report, replay, order_check]}
   - {id: I-memory-gross, stage: I, kind: quote, bundle: full, profile: memory_gross, strategies: all, details: true, request: sentinel, algorithms: *all14, derive: [report, replay, order_check]}
   # quote refuses empirical_cost by design (WHI-1498): a registered refusal (exit 1, nothing written)
   - {id: I-net-refused, stage: I, kind: quote, bundle: full, profile: net_empirical, strategies: profile, details: true, request: sentinel, algorithms: [], expect_exit: 1, expect_stderr: "objective empirical_cost is not supported by quote"}
@@ -392,6 +413,9 @@ comparisons:
     canonical: 4
     algorithms: [uni_sor_adaptive, uni_sor_optimized]
     scan: {1: [T-sor-ms1], 2: [T-sor-ms2], 4: [T-roster-sor], 8: [T-sor-ms8]}
+  # report-stage nominee arms (same_grid_allocation applied nominee 8)
+  - {id: same_grid.nominee.full, stage: R, registered: same_grid_allocation, kind: equal_value, class: same_domain, baseline: R-same-grid-nominee-full/direct_split, candidate: R-same-grid-nominee-full/direct_split_certified}
+  - {id: same_grid.nominee.sor, stage: R, registered: same_grid_allocation, kind: equal_value, class: same_domain, baseline: R-same-grid-nominee-sor/direct_split, candidate: R-same-grid-nominee-sor/direct_split_certified}
   # gross-only identities under a net objective: every row unsupported
   - {id: net.full, stage: T, registered: unsupported_scope, kind: all_unsupported, arms: [T-net-full/direct_split_certified, T-net-full/cfmm_dual]}
   - {id: net.sor, stage: T, registered: unsupported_scope, kind: all_unsupported, arms: [T-net-sor/direct_split_certified, T-net-sor/cfmm_dual]}
@@ -420,7 +444,12 @@ report_mirror:
 
 # Filled by component A from the stage-T nominee comparisons (`apply: true`) BEFORE any
 # report-split solve; each non-canonical nominee adds one R-stage invocation pair.
-nominees: null
+nominees:
+  analysis: docs/references/research-021/campaign/tuning-analysis.json  # stage T, clean 4285a1b
+  max_splits.same_grid_allocation: {apply: true, nominee: 8, canonical: 4, failures_shortfall: {"1": [0, 48], "2": [0, 29], "4": [0, 6], "8": [0, 0]}}
+  max_splits.matched_sor_cycle_safe: {apply: true, nominee: 4, canonical: 4, failures_shortfall: {"1": [0, 104], "2": [0, 64], "4": [2, 32], "8": [4, 4]}}
+  max_splits.path_split: {apply: false, nominee: 4, canonical: 4, failures_shortfall: {"1": [0, 110], "2": [0, 69], "4": [0, 9], "8": [43, 43]}}
+  max_splits.optimized_recipes: {apply: false, nominee: 4, canonical: 4, failures_shortfall: {"1": [0, 103], "2": [0, 54], "4": [0, 19], "8": [0, 4]}}
 
 # ----------------------------------------------------------------------------- rules
 rules:
@@ -462,6 +491,15 @@ rules:
     ONCE into a fresh slot `<id>.retry1`; the failed attempt stays in the ledger and is reported
     as a deviation. A completed run is never re-executed, whatever its statuses or timings;
     solver timeouts/failures are outcomes, never retry reasons; host load is never a retry reason.
+  host_sleep: >-
+    Registered after stage T (whose host slept; its timings are contaminated, statuses valid)
+    and before any L/R/M/I execution, never as a post-hoc filter: those stages run under a
+    `caffeinate -i -m -s -w <executor pid>` assertion started by the executor; the executor
+    captures `pmset -g log` sleep/wake transitions for the stage window
+    (`pmset-sleep-wake.txt`) beside the load samples; a timing window with any `Sleep`
+    transition is `slept`, one over the load threshold `contaminated`, one without load
+    samples or without the registered sleep log `unknown` -- all three are inconclusive timing.
+    Monotonic solve clocks and hard-wall deadlines exclude sleep; statuses are unaffected.
   disposition: >-
     Per identity (R021-C/1 §8): reject if a registered gate fails (correctness, determinism,
     accounting, identity/P1, certificate validity, unsupported-scope rule) or a pre-registered

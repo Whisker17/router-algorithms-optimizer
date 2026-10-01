@@ -469,30 +469,55 @@ def timing(arm: Arm) -> dict[str, Any]:
     }
 
 
+def sleep_events(text: str) -> list[dict[str, Any]]:
+    """Host sleep/wake transitions from `pmset -g log` text: `<date> <time> <tz> <Type> ...`
+    with Type `Sleep`, `Wake` or `DarkWake`, as epoch seconds (the timezone offset is used)."""
+    from datetime import datetime
+
+    events = []
+    for line in text.splitlines():
+        parts = line.split(None, 4)
+        if len(parts) < 4 or parts[3] not in ("Sleep", "Wake", "DarkWake"):
+            continue
+        try:
+            moment = datetime.strptime(" ".join(parts[:3]), "%Y-%m-%d %H:%M:%S %z")
+        except ValueError:
+            continue
+        events.append({"t": moment.timestamp(), "type": parts[3]})
+    return events
+
+
 def host_window(
-    samples: Sequence[Mapping[str, Any]], start: float, end: float, logical_cpus: int
+    samples: Sequence[Mapping[str, Any]],
+    start: float,
+    end: float,
+    logical_cpus: int,
+    *,
+    sleeps: Sequence[Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """L01 host rule over a time window: contaminated iff some 1-minute load sample in
-    [start, end] exceeds 0.5 × logical CPUs; no sample → unknown (treated as inconclusive)."""
+    [start, end] exceeds 0.5 × logical CPUs; no sample → unknown. With a sleep/wake log
+    (`sleeps`, registered for stages L/R/M/I), any `Sleep` transition in the window makes it
+    `slept` (monotonic solve clocks exclude sleep, wall clocks do not). Every state other than
+    `clean` is inconclusive timing; statuses and outputs are unaffected."""
     threshold = 0.5 * logical_cpus
     inside = [float(s["load1"]) for s in samples if start <= float(s["t"]) <= end]
+    slept = None if sleeps is None else sum(
+        1 for e in sleeps if e["type"] == "Sleep" and start <= float(e["t"]) <= end)  # fmt: skip
+    base: dict[str, Any] = {"threshold": threshold, "samples": len(inside),
+                            "sleep_transitions": slept}  # fmt: skip
     if not inside:
-        return {"threshold": threshold, "samples": 0, "max_load1": None, "state": "unknown"}
+        return {**base, "max_load1": None, "state": "unknown"}
     over = sum(1 for v in inside if v > threshold)
-    return {
-        "threshold": threshold,
-        "samples": len(inside),
-        "max_load1": max(inside),
-        "samples_over": over,
-        "state": "contaminated" if over else "clean",
-    }
+    state = "slept" if slept else "contaminated" if over else "clean"
+    return {**base, "max_load1": max(inside), "samples_over": over, "state": state}
 
 
 def timing_verdict(hosts: Sequence[Mapping[str, Any]], *, noise_floor_available: bool) -> str:
     """`inconclusive` unless every window is clean AND an A/A noise floor exists; a batch
     run with one sample per case has none, so its timing is descriptive only."""
     if any(h.get("state") != "clean" for h in hosts):
-        return "inconclusive (host load or no load sample)"
+        return "inconclusive (host load, host sleep or no load sample)"
     if not noise_floor_available:
         return "descriptive only (one sample per case: no A/A noise floor, no speed verdict)"
     return "eligible for the L01 comparator"
@@ -865,6 +890,7 @@ __all__ = [
     "equal_value",
     "history_view",
     "host_window",
+    "sleep_events",
     "identity",
     "memory_view",
     "nominee",

@@ -273,3 +273,24 @@ def test_cfmm_estimate_only_from_the_initial_converged_solve_without_fallback() 
     bad = A.cfmm_view(arm("cf", [cell("a", "ok", 99, search=cf("not_converged", True, False)),
                                  cell("b", "ok", 50, search=cf("converged", True, True))]))
     assert bad["gate"] == "fail" and bad["estimate_rule_violations"] == ["a", "b"]
+
+
+def test_host_sleep_makes_a_window_inconclusive_never_clean() -> None:
+    log = (
+        "2026-10-01 14:33:08 +0800 Sleep               \tEntering Sleep state due to 'x'\n"
+        "2026-10-01 14:33:09 +0800 Wake Requests       \t[process=dasd]\n"
+        "2026-10-01 14:33:11 +0800 DarkWake            \tDarkWake from Deep Idle\n"
+        "2026-10-01 14:33:12 +0800 Assertions          \tPID 1 Created\n"
+        "garbage line\n"
+    )
+    events = A.sleep_events(log)
+    assert [e["type"] for e in events] == ["Sleep", "Wake", "DarkWake"]
+    t = events[0]["t"]
+    assert t == 1790836388.0  # 06:33:08 UTC
+    samples = [{"t": t - 10, "load1": 1.0}, {"t": t + 10, "load1": 1.0}]
+    slept = A.host_window(samples, t - 20, t + 20, 10, sleeps=events)
+    assert slept["state"] == "slept" and slept["sleep_transitions"] == 1
+    assert A.timing_verdict([slept], noise_floor_available=True).startswith("inconclusive")
+    awake = A.host_window(samples, t + 1, t + 20, 10, sleeps=events)
+    assert awake["state"] == "clean" and awake["sleep_transitions"] == 0
+    assert A.host_window(samples, t + 1, t + 20, 10)["sleep_transitions"] is None

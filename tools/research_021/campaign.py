@@ -600,6 +600,14 @@ def execute(
                    "logical_cpus": os.cpu_count()})  # fmt: skip
     sampler = _Sampler(out / "load.jsonl", float(campaign.raw["host"]["load_sample_seconds"]))
     sampler.start()
+    stage_rules = campaign.raw["stages"][stage]
+    stage_started = time.time()
+    keep_awake: subprocess.Popen[bytes] | None = None
+    if stage_rules.get("caffeinate"):
+        # a sleep-prevention assertion that lives exactly as long as this executor (-w)
+        awake_argv = ["caffeinate", "-i", "-m", "-s", "-w", str(os.getpid())]
+        keep_awake = subprocess.Popen(awake_argv)
+        ledger.append({"event": "caffeinate", "pid": keep_awake.pid, "argv": awake_argv})
     pending = list(invocations)
     running: dict[str, tuple[subprocess.Popen[bytes], Invocation, set[Path], Any, Any]] = {}
     failed = False
@@ -681,6 +689,11 @@ def execute(
         sampler.stop.set()
         sampler.join(timeout=5)
         sampler.sample()
+        if stage_rules.get("pmset_capture"):
+            _capture_pmset(out, stage_started, ledger)
+        if keep_awake is not None:
+            keep_awake.terminate()
+            keep_awake.wait(timeout=10)
         for s, handler in previous.items():
             signal.signal(s, handler)
     if interrupted.is_set():
@@ -689,6 +702,22 @@ def execute(
         return 130
     ledger.append({"event": "stage_end", "stage": stage, "failed": failed})
     return 1 if failed else 0
+
+
+def _capture_pmset(out: Path, since: float, ledger: Ledger) -> None:
+    """Append the host's sleep/wake transitions since the stage start (`pmset -g log`) to
+    `pmset-sleep-wake.txt`; a failed capture is recorded (its windows are then `unknown`)."""
+    try:
+        text = subprocess.run(["pmset", "-g", "log"], capture_output=True, text=True,
+                              timeout=300, check=True).stdout  # fmt: skip
+    except (OSError, subprocess.SubprocessError) as exc:
+        ledger.append({"event": "pmset_capture", "ok": False, "error": str(exc)})
+        return
+    keep = [line for line, e in ((x, r021.sleep_events(x)) for x in text.splitlines())
+            if e and e[0]["t"] >= since - 60]  # fmt: skip
+    with (out / "pmset-sleep-wake.txt").open("a", encoding="utf-8") as handle:
+        handle.write("".join(f"{line}\n" for line in keep))
+    ledger.append({"event": "pmset_capture", "ok": True, "lines": len(keep)})
 
 
 def _retry_plan(campaign: Campaign, stage: str, out: Path, inv_id: str) -> list[Invocation]:
@@ -967,8 +996,12 @@ NEW_IDS = ("metis_history", "direct_split_certified", "incremental_graph_repair"
            "uni_sor_cycle_safe", "cfmm_dual")  # fmt: skip
 
 
-def analyze(campaign: Campaign, stage: str, *, inputs: Path, out: Path) -> dict[str, Any]:
-    """The registered analysis of a stage from its ledger and run records."""
+def analyze(
+    campaign: Campaign, stage: str, *, inputs: Path, out: Path, pmset: Path | None = None
+) -> dict[str, Any]:
+    """The registered analysis of a stage from its ledger and run records. Host sleep is read
+    from `pmset` (default `<out>/pmset-sleep-wake.txt`); a stage that registers
+    `pmset_capture` without a readable log has every timing window `unknown`."""
     done = read_ledger(out)
     started_ids = {e["id"] for e in Ledger(out / "ledger.jsonl").entries()
                    if e.get("event") == "start"}  # fmt: skip
@@ -977,6 +1010,11 @@ def analyze(campaign: Campaign, stage: str, *, inputs: Path, out: Path) -> dict[
     samples = [json.loads(x) for x in (out / "load.jsonl").read_text().splitlines() if x] \
         if (out / "load.jsonl").is_file() else []  # fmt: skip
     cpus = int(campaign.raw["host"]["logical_cpus"])
+    pmset_path = pmset or out / "pmset-sleep-wake.txt"
+    sleeps: list[dict[str, Any]] | None = None
+    if pmset_path.is_file():
+        sleeps = r021.sleep_events(pmset_path.read_text(encoding="utf-8", errors="replace"))
+    host_note = "sleep/wake log: " + (str(pmset_path) if sleeps is not None else "none")
     inventory = schedule(campaign, stage)
     invocations: dict[str, Any] = {}
     reconciliation: list[str] = list(loaded.problems)
@@ -1010,7 +1048,10 @@ def analyze(campaign: Campaign, stage: str, *, inputs: Path, out: Path) -> dict[
             cells={k: v.status for k, v in run.rows.items()}, complete=run.manifest.complete,
         )  # fmt: skip
         window = r021.host_window(samples, float(entry.get("started") or 0),
-                                  float(entry.get("t") or 0), os.cpu_count() or cpus)  # fmt: skip
+                                  float(entry.get("t") or 0), os.cpu_count() or cpus,
+                                  sleeps=sleeps)  # fmt: skip
+        if sleeps is None and campaign.raw["stages"][stage].get("pmset_capture"):
+            window["state"] = "unknown"  # a registered sleep log is missing: never "clean"
         arms = []
         for algorithm in run.algorithms:
             arm = r021.arm_from_run(run, algorithm, f"{inv.id}/{algorithm}")
@@ -1075,6 +1116,9 @@ def analyze(campaign: Campaign, stage: str, *, inputs: Path, out: Path) -> dict[
         "comparisons": comparisons,
         "latency_comparisons": latency,
         "host_samples": len(samples),
+        "host_sleep_log": host_note,
+        "host_sleep_transitions": None if sleeps is None else sum(
+            1 for e in sleeps if e["type"] == "Sleep"),
     }  # fmt: skip
 
 
@@ -1229,6 +1273,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--out", required=True)
     p.add_argument("--json")
     p.add_argument("--markdown")
+    p.add_argument("--pmset", help="pmset sleep/wake log (default <out>/pmset-sleep-wake.txt)")
     args = parser.parse_args(argv)
     try:
         campaign = load_campaign(args.manifest)
@@ -1278,7 +1323,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"freeze record written: {args.out}")
             return 0
         if args.command == "analyze":
-            result = analyze(campaign, args.stage, inputs=Path(args.inputs), out=Path(args.out))
+            result = analyze(campaign, args.stage, inputs=Path(args.inputs), out=Path(args.out),
+                             pmset=Path(args.pmset) if args.pmset else None)  # fmt: skip
             text = json.dumps(result, indent=1, sort_keys=True, default=str)
             Path(args.json or Path(args.out) / "analysis.json").write_text(text + "\n")
             Path(args.markdown or Path(args.out) / "analysis.md").write_text(
