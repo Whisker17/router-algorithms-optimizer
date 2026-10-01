@@ -14,9 +14,18 @@
 The tuning registration (driver, manifest, every campaign profile, the nominee rule) was
 committed and pushed at `7524de2363928e9a10c9f91e6ce5bb5444575315` **before any tuning
 observation**, and stage T was executed from a clean clone of exactly that commit. Later commits
-change only analysis/reporting code, documentation and evidence (no solver, profile or
-measured-invocation change; `git diff 7524de2 -- routing pools benchmark snapshot report main.py
-config/research_021/profiles` is empty). No report-split solver was executed by component A, and
+change no solver, no stage-T invocation, no stage-T profile and not the nominee rule or its
+function (`git diff 7524de2 -- routing pools benchmark snapshot report main.py` is empty; the
+only new profile is the report-stage `same_grid_nominee`). **Post-observation analysis
+additions, disclosed:** `4285a1b` (made while stage T was running, after early tuning records
+had been inspected) added the T comparisons `coverage.certified.full` and
+`coverage.cycle_safe.full`, removed the `admission_checks` same-unit ratio from `cycle.*` (the
+reference has no such unit, so it was always N/A), and added the resolved-profile identity check,
+the CFMM estimate-rule gate, domain / stage-seconds views and the empirical-cost price-context
+binding to the analysis; `a3685e5` added the host-sleep classification; the verifier-fix commit
+added the cross-stage resolution, the executable launch gate, the retry analysis path, the
+saved-literal comparison, the report-mirror id rename, the recorded-CPU load threshold and the
+L01-matrix exposure label. None of these touches a nominee input or a measured invocation. No report-split solver was executed by component A, and
 none may run before the parent accepts this freeze. The nominees, the nominee arms and the
 host-sleep controls (§3) were registered at `a3685e5` from the completed stage-T records; the
 final stage-T analysis and the freeze record are from a clean checkout of `a3685e5`.
@@ -95,9 +104,24 @@ without a complete manifest because of infrastructure (host restart, OOM kill, d
 tool/auth failure; evidence recorded) may be re-executed **once** into `<id>.retry1`
 (`--retry-infrastructure ID`); the failed attempt stays in the ledger and is reported. A
 completed run is never re-executed, whatever its statuses or timings; solver timeouts and
-failures are outcomes; host load is never a retry reason. Stage L additionally follows L08's
-launch gate (5 load samples 30 s apart, ≤ 3.0 headroom only; a busy host means not launched and
-a reported blocker; no waiting loop, no retry; contamination alone never stops a session).
+failures are outcomes; host load is never a retry reason. The retry's registered derived
+children (report / replay / order-check) are re-planned as `<child>.retry1` against the retried
+run, and the analysis uses the `.retry1` entries in place of the registered ids, labelled
+`deviation: infrastructure_retry` with the original attempt attached; any other analysis change
+needs a documented amendment before analysis.
+
+**Launch gate (stage L, executable).** `execute --stage L` first records 5 one-minute load
+samples 30 s apart (`launch_gate` ledger event); if any exceeds 3.0 (L08's headroom — headroom
+only, never a validity rule) the stage is not launched (`stage_not_launched`, exit 3, nothing
+started): a reported blocker, no waiting loop, no retry. Only an orchestrator waiver
+(`--waive-launch-headroom REASON`, recorded) launches it anyway; contamination after launch
+never stops a session.
+
+**Cross-stage dependencies.** Stage outputs are siblings `<root>/<stage>/` (§7). An invocation
+depending on another stage's invocation (`M-roster` reads `{dir:L-R}/bundles/full_source-matrix`)
+resolves it from that stage's sibling ledger and slot (`--stage-root`, default the parent of
+`--out`); a dependency that never ended `ok` in any registered ledger makes the dependent
+invocation `blocked` immediately — the executor never waits for it.
 
 ## 4. Registered exploration (stage T, tuning only)
 
@@ -166,8 +190,9 @@ report-stage invocation per bundle of that pair at the nominee (the roster rows 
 nominee = 4 adds nothing. Nominees never change a preset file.
 
 *Stage-T nominees (final; the rule above applied unchanged to the complete, clean stage-T
-analysis [`campaign/tuning-analysis.json`](campaign/tuning-analysis.json), 384 cells per value
-for each pair):*
+analysis [`campaign/tuning-analysis.json`](campaign/tuning-analysis.json); cells per value:
+`same_grid_allocation` 384 (2 algorithms × 2 bundles × 96), `matched_sor_cycle_safe` 192,
+`path_split` 192, `optimized_recipes` 192):*
 
 | Comparison | Applied | Nominee | failures / shortfall per value |
 | --- | --- | --- | --- |
@@ -196,6 +221,13 @@ defects from quality and list their statuses apart.
 
 ### 5.2 Measurement and statistics
 
+**Domain identity, disclosed.** `same_domain` for `same_grid_allocation`, `repair_off_on`,
+`matched_sor_cycle_safe` and the E/L/S pairs holds **by construction** (one profile or
+identical profile values, the same bundle, grid, pool order and budgets, checked by the
+resolved-profile identity). A per-case `candidate_domain_hash` exists only for the five new
+identities (`r021.diagnostics/1`); base IDs such as `direct_split` and `uni_sor_port` emit none, so
+the analysis cannot verify per-case domain-hash equality of those pairs — results must say so.
+
 Per-case exact integer gross; exact relative bps; per-family and per-stratum splits; the
 decomposition works on per-case log ratios over one common-OK case set, never on added bps with
 different denominators. No pooled p-value; no single-request percentile; batch distributions carry
@@ -222,13 +254,19 @@ the WHI-1449 campaign are untouched and not merged with it.
 
 ### 5.5 Stage I (shared CLI invocation matrix)
 
+Exposure: stages L and M use the L01 matrix (9 tuning cases plus their 15 held-out report twins)
+and are labelled `previously_exposed`; the sentinel and saved quotes are `not_a_corpus_split`.
+
 On the sentinel (USDC → USDT 1000, parent corpus): `quote --strategies all` with `--details` and
 compact, `base`, `optimized`, `profile`, and `--strategies profile --details` for every campaign
 profile and the pinned L3/E4 files; each quote gets `report`, its manifest `replay_command` and
 `order-check` against it. The net profile's quote is a registered refusal (exit 1, empirical cost
 is not supported by quote). The saved eight- and nine-strategy profiles are quoted literally with
 `--strategies profile` and their recorded replay command is executed twice (relocated only into
-the durable copy and a fresh results directory) with an order-check between the two; each quote
+the durable copy and a fresh results directory) with an order-check between the two, and the
+registered `saved_literal` comparison checks replay-a against the durable ORIGINAL run (same
+algorithms in order, identical resolved profile, identical status/score/evaluation per algorithm;
+search-stat and revision differences across sources are not compared); each quote
 must show exactly one solve attempt per selected algorithm, one worker per algorithm in order and
 no memory pass.
 
@@ -303,13 +341,19 @@ git clone --no-hardlinks <repo or worktree> $A/$SHA/src && git -C $A/$SHA/src ch
 cd $A/$SHA/src && uv sync
 uv run python tools/research_021/campaign.py check                     # 0 problems, else stop
 uv run python tools/research_021/campaign.py inputs --primary <primary clone> --root $A   # verified copies
-# 1. L alone on the host (launch gate §3), then 2. R, 3. M, 4. I alone -- one stage at a time
+# 1. L alone on the host (its launch gate runs inside execute, §3; exit 3 = not launched, stop and
+#    report), then 2. R, 3. M (reads L's sibling output), 4. I alone -- one stage at a time; each
+#    stage holds caffeinate and captures its pmset sleep/wake log itself
 for S in L R M I; do
   uv run python tools/research_021/campaign.py execute --stage $S --inputs $A/inputs --out $A/$SHA/$S
   uv run python tools/research_021/campaign.py analyze --stage $S --inputs $A/inputs --out $A/$SHA/$S
 done
 ```
 
+- Keep the sibling layout `$A/$SHA/<stage>`: stage M resolves `{dir:L-R}` from `$A/$SHA/L`
+  (an unresolved dependency is `blocked` at once). The loop above is reproduced end to end on
+  bounded fixtures by `tests/research_021/test_campaign.py::
+  test_section7_stage_loop_resolves_a_cross_stage_dependency`.
 - `execute` never re-runs a slot; an infrastructure failure uses
   `--retry-infrastructure <id>` once (§3). Long stages run in the background with the executor's
   own ledger; do not schedule other heavy work during L and I. A deadline is an execution-control

@@ -22,6 +22,8 @@ heuristic_default_loss_tolerance: null
 holdout_exposure:
   tuning: exploration_data
   report: previously_exposed        # WHI-1447, WHI-1503..1510, WHI-1449 (R021-C/1 §6.1)
+  # the L01 matrix (stages L, M) mixes 9 tuning cases with their 15 held-out report twins
+  l01_matrix: previously_exposed (L01 matrix = tuning cases + held-out report twins)
 host:
   logical_cpus: 10                  # reference Apple M2 Pro; checked at execution time
   load_sample_seconds: 30
@@ -251,22 +253,22 @@ invocations:
   - {id: T-quote-smoke, stage: T, kind: quote, bundle: tuning_full, profile: canonical_gross, strategies: all, details: true, request: tuning_smoke, algorithms: *all14, derive: [report, replay, order_check]}
 
   # ---- L: L02-L05 reassessment through the real L08 arm commands (component B, alone)
-  - {id: L-R, stage: L, kind: latency_run, arm: R, bundle: full}
-  - {id: L-R-sb, stage: L, kind: latency_sufficient, arm: R, bundle: full, after: [L-R]}
-  - {id: L-E1, stage: L, kind: latency_run, arm: E1, bundle: full, after: [L-R-sb]}
-  - {id: L-E1-sb, stage: L, kind: latency_sufficient, arm: E1, bundle: full, after: [L-E1]}
-  - {id: L-E2, stage: L, kind: latency_run, arm: E2, bundle: full, after: [L-E1-sb]}
-  - {id: L-E2-sb, stage: L, kind: latency_sufficient, arm: E2, bundle: full, after: [L-E2]}
-  - {id: L-E3, stage: L, kind: latency_run, arm: E3, bundle: full, after: [L-E2-sb]}
-  - {id: L-E3-sb, stage: L, kind: latency_sufficient, arm: E3, bundle: full, after: [L-E3]}
-  - {id: L-E4, stage: L, kind: latency_run, arm: E4, bundle: full, after: [L-E3-sb]}
-  - {id: L-E4-sb, stage: L, kind: latency_sufficient, arm: E4, bundle: full, after: [L-E4]}
-  - {id: L-cmp-L02, stage: L, kind: latency_compare, baseline: L-R, candidate: L-E1, lane: exact}
-  - {id: L-cmp-L03, stage: L, kind: latency_compare, baseline: L-E1, candidate: L-E2, lane: exact}
-  - {id: L-cmp-L04, stage: L, kind: latency_compare, baseline: L-E2, candidate: L-E3, lane: exact}
-  - {id: L-cmp-L05, stage: L, kind: latency_compare, baseline: L-E3, candidate: L-E4, lane: exact}
-  - {id: L-cmp-R-E3, stage: L, kind: latency_compare, baseline: L-R, candidate: L-E3, lane: exact}
-  - {id: L-cmp-R-E4, stage: L, kind: latency_compare, baseline: L-R, candidate: L-E4, lane: exact}
+  - {id: L-R, stage: L, kind: latency_run, exposure: l01_matrix, arm: R, bundle: full}
+  - {id: L-R-sb, stage: L, kind: latency_sufficient, exposure: l01_matrix, arm: R, bundle: full, after: [L-R]}
+  - {id: L-E1, stage: L, kind: latency_run, exposure: l01_matrix, arm: E1, bundle: full, after: [L-R-sb]}
+  - {id: L-E1-sb, stage: L, kind: latency_sufficient, exposure: l01_matrix, arm: E1, bundle: full, after: [L-E1]}
+  - {id: L-E2, stage: L, kind: latency_run, exposure: l01_matrix, arm: E2, bundle: full, after: [L-E1-sb]}
+  - {id: L-E2-sb, stage: L, kind: latency_sufficient, exposure: l01_matrix, arm: E2, bundle: full, after: [L-E2]}
+  - {id: L-E3, stage: L, kind: latency_run, exposure: l01_matrix, arm: E3, bundle: full, after: [L-E2-sb]}
+  - {id: L-E3-sb, stage: L, kind: latency_sufficient, exposure: l01_matrix, arm: E3, bundle: full, after: [L-E3]}
+  - {id: L-E4, stage: L, kind: latency_run, exposure: l01_matrix, arm: E4, bundle: full, after: [L-E3-sb]}
+  - {id: L-E4-sb, stage: L, kind: latency_sufficient, exposure: l01_matrix, arm: E4, bundle: full, after: [L-E4]}
+  - {id: L-cmp-L02, stage: L, kind: latency_compare, exposure: l01_matrix, baseline: L-R, candidate: L-E1, lane: exact}
+  - {id: L-cmp-L03, stage: L, kind: latency_compare, exposure: l01_matrix, baseline: L-E1, candidate: L-E2, lane: exact}
+  - {id: L-cmp-L04, stage: L, kind: latency_compare, exposure: l01_matrix, baseline: L-E2, candidate: L-E3, lane: exact}
+  - {id: L-cmp-L05, stage: L, kind: latency_compare, exposure: l01_matrix, baseline: L-E3, candidate: L-E4, lane: exact}
+  - {id: L-cmp-R-E3, stage: L, kind: latency_compare, exposure: l01_matrix, baseline: L-R, candidate: L-E3, lane: exact}
+  - {id: L-cmp-R-E4, stage: L, kind: latency_compare, exposure: l01_matrix, baseline: L-R, candidate: L-E4, lane: exact}
 
   # ---- R: frozen report-split comparison (component B, after freeze acceptance)
   - {id: R-roster-full, stage: R, kind: run, bundle: report_full, profile: canonical_gross, strategies: all, algorithms: *all14, derive: [report]}
@@ -288,7 +290,7 @@ invocations:
   - {id: R-same-grid-nominee-sor, stage: R, kind: run, bundle: report_sor, profile: same_grid_nominee, strategies: profile, algorithms: [direct_split, direct_split_certified], derive: [report]}
 
   # ---- M: memory (separate tracemalloc pass) on the L01 full-source matrix (24 cases)
-  - {id: M-roster, stage: M, kind: run, bundle: "{dir:L-R}/bundles/full_source-matrix", cases: 24, bundle_hash: 72f4f4e4c08d4c34e8480ee56ca8eebab005bb15eb3865349d7df12ba59cfb04, profile: memory_gross, strategies: all, algorithms: *all14, derive: [report]}
+  - {id: M-roster, stage: M, kind: run, exposure: l01_matrix, bundle: "{dir:L-R}/bundles/full_source-matrix", cases: 24, bundle_hash: 72f4f4e4c08d4c34e8480ee56ca8eebab005bb15eb3865349d7df12ba59cfb04, profile: memory_gross, strategies: all, algorithms: *all14, derive: [report]}
 
   # ---- I: the shared CLI invocation matrix (component B, alone): quotes of the sentinel
   - {id: I-all-details, stage: I, kind: quote, bundle: full, profile: canonical_gross, strategies: all, details: true, request: sentinel, algorithms: *all14, derive: [report, replay, order_check]}
@@ -314,7 +316,9 @@ invocations:
   # quote refuses empirical_cost by design (WHI-1498): a registered refusal (exit 1, nothing written)
   - {id: I-net-refused, stage: I, kind: quote, bundle: full, profile: net_empirical, strategies: profile, details: true, request: sentinel, algorithms: [], expect_exit: 1, expect_stderr: "objective empirical_cost is not supported by quote"}
   # the saved pre-0.2.1 eight- and nine-strategy profiles: literal quote with --strategies
-  # profile, and their recorded replay command twice (same-HEAD identity) vs the original run
+  # profile, and their recorded replay command twice: replay-a vs replay-b is the same-HEAD
+  # order-check; replay-a vs the durable ORIGINAL run is the registered `saved_literal`
+  # comparison (same algorithms, identical resolved profile, identical status/score/evaluation)
   - {id: I-saved8-quote, stage: I, kind: quote, bundle: full, profile: "saved:saved8", strategies: profile, details: true, request: sentinel, algorithms: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port, uni_sor_adaptive, uni_sor_optimized], derive: [report]}
   - {id: I-saved9-quote, stage: I, kind: quote, bundle: full, profile: "saved:saved9", strategies: profile, details: true, request: sentinel, algorithms: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port, uni_sor_adaptive, uni_sor_optimized, metis_inspired], derive: [report]}
   - {id: I-saved8-replay-a, stage: I, kind: replay_saved, saved: saved8}
@@ -416,6 +420,9 @@ comparisons:
   # report-stage nominee arms (same_grid_allocation applied nominee 8)
   - {id: same_grid.nominee.full, stage: R, registered: same_grid_allocation, kind: equal_value, class: same_domain, baseline: R-same-grid-nominee-full/direct_split, candidate: R-same-grid-nominee-full/direct_split_certified}
   - {id: same_grid.nominee.sor, stage: R, registered: same_grid_allocation, kind: equal_value, class: same_domain, baseline: R-same-grid-nominee-sor/direct_split, candidate: R-same-grid-nominee-sor/direct_split_certified}
+  # literal saved-profile replays vs their durable original runs (stage I)
+  - {id: saved8.literal, stage: I, registered: saved_profile_replay, kind: saved_literal, saved: saved8, replay: I-saved8-replay-a}
+  - {id: saved9.literal, stage: I, registered: saved_profile_replay, kind: saved_literal, saved: saved9, replay: I-saved9-replay-a}
   # gross-only identities under a net objective: every row unsupported
   - {id: net.full, stage: T, registered: unsupported_scope, kind: all_unsupported, arms: [T-net-full/direct_split_certified, T-net-full/cfmm_dual]}
   - {id: net.sor, stage: T, registered: unsupported_scope, kind: all_unsupported, arms: [T-net-sor/direct_split_certified, T-net-sor/cfmm_dual]}
@@ -489,8 +496,22 @@ rules:
     An invocation whose process ends without a complete manifest because of infrastructure
     (host restart, OOM kill, disk full, tool/auth failure; evidence recorded) may be re-executed
     ONCE into a fresh slot `<id>.retry1`; the failed attempt stays in the ledger and is reported
-    as a deviation. A completed run is never re-executed, whatever its statuses or timings;
+    as a deviation. Its registered derived children (report / replay / order-check) are re-planned
+    as `<child>.retry1` against the retried run, and the analysis then uses the `.retry1` entries
+    in place of the registered ids, labelled `deviation: infrastructure_retry` with the original
+    attempt attached; any other analysis change needs a documented amendment before analysis.
+    A completed run is never re-executed, whatever its statuses or timings;
     solver timeouts/failures are outcomes, never retry reasons; host load is never a retry reason.
+  cross_stage: >-
+    Stage outputs are siblings `<root>/<stage>/` (§7 layout). A dependency registered in
+    another stage (M-roster's `{dir:L-R}`) is resolved from that stage's sibling ledger and slot;
+    an invocation whose dependency never ended `ok` in any registered ledger is recorded
+    `blocked` immediately (the executor never waits for it).
+  launch_gate: >-
+    A stage with `launch_gate` (L) first records `samples` 1-minute load samples
+    `interval_seconds` apart in its ledger; if any exceeds `headroom_load1` the stage is not
+    launched (exit 3, `stage_not_launched` recorded): no waiting loop, no retry. Only an
+    orchestrator waiver (`--waive-launch-headroom REASON`) launches it anyway, recorded.
   host_sleep: >-
     Registered after stage T (whose host slept; its timings are contaminated, statuses valid)
     and before any L/R/M/I execution, never as a post-hoc filter: those stages run under a

@@ -421,6 +421,40 @@ def read_ledger(out: Path) -> dict[str, dict[str, Any]]:
     return latest
 
 
+def cross_stage_done(
+    campaign: Campaign, invocations: Sequence[Invocation], stage: str, stage_root: Path
+) -> dict[str, dict[str, Any]]:
+    """The recorded outcome of every dependency of `invocations` registered in ANOTHER stage,
+    read from that stage's sibling ledger `<stage_root>/<stage>/ledger.jsonl` (the documented
+    stage-by-stage layout). A dependency without a recorded `end` is simply absent here, and the
+    executor then blocks the dependent invocation immediately -- it never waits for it."""
+    out: dict[str, dict[str, Any]] = {}
+    for inv in invocations:
+        for dep in inv.depends:
+            other = campaign.by_id.get(dep)
+            if other is None or other.stage == stage:
+                continue
+            entry = read_ledger(stage_root / other.stage).get(dep)
+            if entry is not None:
+                out[dep] = entry
+    return out
+
+
+def effective_entry(
+    done: Mapping[str, Mapping[str, Any]], inv_id: str
+) -> tuple[Mapping[str, Any] | None, str | None]:
+    """The ledger entry the analysis uses for a registered invocation: its own `ok` end, else
+    its single registered infrastructure re-execution `<id>.retry1` when that ended `ok`
+    (returned with the deviation label), else its own (failed/blocked) entry or None."""
+    own = done.get(inv_id)
+    if own is not None and own.get("result") == "ok":
+        return own, None
+    retry = done.get(f"{inv_id}.retry1")
+    if retry is not None and retry.get("result") == "ok":
+        return retry, "infrastructure_retry"
+    return own, None
+
+
 def _single_child(directory: Path) -> Path:
     children = sorted(p for p in directory.iterdir() if p.is_dir())
     if len(children) != 1:
@@ -436,8 +470,15 @@ class Context:
     out: Path
     launcher: tuple[str, ...]
     done: dict[str, dict[str, Any]] = field(default_factory=dict)
+    stage: str | None = None
+    stage_root: Path | None = None  # sibling stage outputs: <stage_root>/<stage>/
 
     def slot(self, inv_id: str) -> Path:
+        """An invocation's slot: in this stage's `out`, or -- for a registered invocation of
+        another stage -- in that stage's sibling output `<stage_root>/<stage>/<id>`."""
+        inv = self.campaign.by_id.get(inv_id)
+        if inv is not None and self.stage and inv.stage != self.stage and self.stage_root:
+            return self.stage_root / inv.stage / inv_id
         return self.out / inv_id
 
     def run_dir(self, inv_id: str) -> Path:
@@ -567,9 +608,13 @@ def execute(
     allow_dirty: bool = False,
     launcher: Sequence[str] = DEFAULT_LAUNCHER,
     echo: Callable[[str], None] = print,
+    stage_root: Path | None = None,
+    waive_launch_headroom: str | None = None,
 ) -> int:
     """Run a stage's invocations (see module docstring). Returns 0 when every executed
-    invocation ended with its expected exit status, 1 otherwise, 130 when interrupted."""
+    invocation ended with its expected exit status, 1 otherwise, 3 when the registered launch
+    gate did not launch the stage, 130 when interrupted. `stage_root` (default `out.parent`)
+    holds the sibling stage outputs a cross-stage dependency is read from."""
     revision, dirty, _ = git_provenance(REPO)
     if dirty and not allow_dirty:
         raise CampaignError("the working tree is dirty: the measured source must be a commit")
@@ -590,7 +635,10 @@ def execute(
     verify_inputs(campaign, inputs, bundles)
     out.mkdir(parents=True, exist_ok=True)
     ledger = Ledger(out / "ledger.jsonl")
-    ctx = Context(campaign, inputs, out, tuple(launcher), done=read_ledger(out))
+    root = stage_root if stage_root is not None else out.parent
+    done = {**cross_stage_done(campaign, invocations, stage, root), **read_ledger(out)}
+    ctx = Context(campaign, inputs, out, tuple(launcher), done=done, stage=stage,
+                  stage_root=root)  # fmt: skip
     for inv in invocations:
         if ctx.slot(inv.id).exists():
             raise CampaignError(f"{inv.id}: slot {ctx.slot(inv.id)} exists -- never re-run")
@@ -598,9 +646,13 @@ def execute(
     ledger.append({"event": "stage", "stage": stage, "git_revision": revision,
                    "git_dirty": dirty, "lanes": lanes, "invocations": [i.id for i in invocations],
                    "logical_cpus": os.cpu_count()})  # fmt: skip
+    stage_rules = campaign.raw["stages"][stage]
+    gate = stage_rules.get("launch_gate")
+    if gate and not retry_infrastructure:
+        if not _launch_gate(gate, ledger, echo, waive_launch_headroom):
+            return 3
     sampler = _Sampler(out / "load.jsonl", float(campaign.raw["host"]["load_sample_seconds"]))
     sampler.start()
-    stage_rules = campaign.raw["stages"][stage]
     stage_started = time.time()
     keep_awake: subprocess.Popen[bytes] | None = None
     if stage_rules.get("caffeinate"):
@@ -609,6 +661,7 @@ def execute(
         keep_awake = subprocess.Popen(awake_argv)
         ledger.append({"event": "caffeinate", "pid": keep_awake.pid, "argv": awake_argv})
     pending = list(invocations)
+    planned = {i.id for i in invocations}
     running: dict[str, tuple[subprocess.Popen[bytes], Invocation, set[Path], Any, Any]] = {}
     failed = False
     interrupted = threading.Event()
@@ -624,12 +677,17 @@ def execute(
             for inv in list(pending):
                 if len(running) >= lanes:
                     break
-                deps = [d for d in inv.depends if d in campaign.by_id]
+                deps = [d for d in inv.depends if d in campaign.by_id or d in planned]
                 states = [ctx.done.get(d, {}).get("result") for d in deps]
-                if any(s not in (None, "ok") for s in states):
+                waiting = {i.id for i in pending} | set(running)
+                unresolvable = [d for d, st in zip(deps, states, strict=True)
+                                if st is None and d not in waiting]  # fmt: skip
+                if any(s not in (None, "ok") for s in states) or unresolvable:
                     pending.remove(inv)
+                    reason = (f"dependency never ended in any registered ledger: {unresolvable}"
+                              if unresolvable else f"dependency not ok: {deps}")  # fmt: skip
                     ledger.append({"event": "blocked", "id": inv.id, "result": "blocked",
-                                   "reason": f"dependency not ok: {deps}"})  # fmt: skip
+                                   "reason": reason})  # fmt: skip
                     ctx.done[inv.id] = {"result": "blocked"}
                     failed = True
                     continue
@@ -704,6 +762,31 @@ def execute(
     return 1 if failed else 0
 
 
+def _launch_gate(
+    gate: Mapping[str, Any], ledger: Ledger, echo: Callable[[str], None], waiver: str | None
+) -> bool:
+    """The registered stage launch gate (L08 §2): `samples` 1-minute load samples
+    `interval_seconds` apart, recorded; the stage launches only if none exceeds
+    `headroom_load1` (headroom only, never a validity rule) -- otherwise it is NOT launched and
+    the blocker is recorded (no waiting loop, no retry). A waiver given by the orchestrator is
+    recorded with its reason and launches regardless."""
+    samples = []
+    for index in range(int(gate["samples"])):
+        if index:
+            time.sleep(float(gate["interval_seconds"]))
+        samples.append({"t": time.time(), "load1": os.getloadavg()[0]})
+    peak = max(s["load1"] for s in samples)
+    busy = peak > float(gate["headroom_load1"])
+    launched = not busy or waiver is not None
+    ledger.append({"event": "launch_gate", "samples": samples, "max_load1": peak,
+                   "headroom_load1": gate["headroom_load1"], "busy": busy,
+                   "waiver": waiver, "launched": launched})  # fmt: skip
+    if not launched:
+        ledger.append({"event": "stage_not_launched", "reason": "launch gate: host busy"})
+        echo(f"launch gate: max 1-minute load {peak:.2f} > {gate['headroom_load1']}: not launched")
+    return launched
+
+
 def _capture_pmset(out: Path, since: float, ledger: Ledger) -> None:
     """Append the host's sleep/wake transitions since the stage start (`pmset -g log`) to
     `pmset-sleep-wake.txt`; a failed capture is recorded (its windows are then `unknown`)."""
@@ -740,7 +823,22 @@ def _retry_plan(campaign: Campaign, stage: str, out: Path, inv_id: str) -> list[
     retry_id = f"{inv_id}.retry1"
     if (out / retry_id).exists():
         raise CampaignError(f"{inv_id}: the single infrastructure re-execution was already used")
-    return [Invocation(retry_id, stage, original.kind, {**original.raw, "id": retry_id})]
+    plan = [Invocation(retry_id, stage, original.kind, {**original.raw, "id": retry_id})]
+    # its registered derived children (report / replay / order-check) are re-planned against
+    # the retried run with the same `.retry1` suffix, so the analysis can use them in its place
+    mapped = {inv_id: retry_id}
+    for inv in campaign.stage(stage):
+        refs = [inv.parent] if inv.parent else [str(x) for x in inv.raw.get("of") or []]
+        if inv.id in mapped or not refs or not any(r in mapped for r in refs):
+            continue
+        child_id = f"{inv.id}.retry1"
+        mapped[inv.id] = child_id
+        raw = {**inv.raw, "id": child_id}
+        if "of" in raw:
+            raw["of"] = [mapped.get(str(x), str(x)) for x in raw["of"]]
+        parent = mapped.get(inv.parent) if inv.parent else None
+        plan.append(Invocation(child_id, stage, inv.kind, raw, parent=parent))
+    return plan
 
 
 # ----------------------------------------------------------------------------- freeze
@@ -863,8 +961,11 @@ class Loaded:
         from report.aggregate import load_run
 
         self.ctx, self.stage, self.runs, self.problems = ctx, stage, {}, []
+        self.deviations: dict[str, str] = {}
         for inv in ctx.campaign.stage(stage):
-            entry = ctx.done.get(inv.id)
+            entry, deviation = effective_entry(ctx.done, inv.id)
+            if deviation:
+                self.deviations[inv.id] = deviation
             if inv.kind not in PRODUCES_RUN or int(inv.get("expect_exit", 0)) != 0:
                 continue
             if not entry:
@@ -901,6 +1002,9 @@ def _mirror(campaign: Campaign, comparison: Mapping[str, Any]) -> dict[str, Any]
 
     out: dict[str, Any] = sub(dict(comparison))
     out["stage"] = mirror.get("to_stage", "R")
+    # a report-split comparison never carries a tuning label (e.g. depth.tuning -> depth.report)
+    out["id"] = str(comparison["id"]).replace("tuning", "report")
+    out["mirrored_from"] = comparison["id"]
     if comparison.get("id") in (mirror.get("known_defects_apart") or []):
         out["exclude_cases"] = list(campaign.raw["known_report_defects"]["cases"])
     return out
@@ -978,6 +1082,8 @@ def run_comparison(loaded: Loaded, spec: Mapping[str, Any]) -> dict[str, Any]:
         out["result"] = r021.nominee(scan, canonical=int(spec["canonical"]),
                                      algorithms=spec["algorithms"])  # fmt: skip
         return out
+    if kind == "saved_literal":
+        return _saved_literal(loaded, spec, out)
     if kind == "all_unsupported":
         rows = [r021.status_counts(loaded.arm(ref)) for ref in spec["arms"]]
         out["result"] = rows
@@ -985,6 +1091,42 @@ def run_comparison(loaded: Loaded, spec: Mapping[str, Any]) -> dict[str, Any]:
                                     for r in rows) else "fail"  # fmt: skip
         return out
     raise CampaignError(f"{spec['id']}: unknown comparison kind {kind}")
+
+
+def _saved_literal(loaded: Loaded, spec: Mapping[str, Any], out: dict[str, Any]) -> dict[str, Any]:
+    """A literal replay of a saved pre-0.2.1 profile against its durable ORIGINAL run: the
+    same algorithms in order, an identical resolved profile, and per algorithm identical status,
+    score and evaluation (search-stat and revision differences across sources are legitimate
+    and not compared)."""
+    from report.aggregate import load_run
+
+    key = str(spec["saved"])
+    saved_spec = loaded.ctx.campaign.raw["saved_quotes"][key]
+    saved = loaded.ctx.inputs / "saved" / key
+    original = load_run(saved / "runs" / str(saved_spec["run"]), bundle_dirs=[saved / "bundle"])
+    replay_id = str(spec["replay"])
+    if replay_id not in loaded.runs:
+        raise CampaignError(f"{spec['id']}: replay {replay_id} has no loaded run")
+    replay = loaded.runs[replay_id]
+    same_resolved = original.manifest.resolved_profile == replay.manifest.resolved_profile
+    same_algorithms = list(original.algorithms) == list(replay.algorithms) == [
+        str(a) for a in saved_spec["algorithms"]]  # fmt: skip
+    per_algorithm = {
+        a: r021.identity(r021.arm_from_run(original, a, f"original/{a}"),
+                         r021.arm_from_run(replay, a, f"{replay_id}/{a}"))
+        for a in original.algorithms if a in replay.algorithms
+    }  # fmt: skip
+    gates = [same_resolved, same_algorithms, *(v["gate"] == "pass" for v in per_algorithm.values())]
+    out["result"] = {
+        "original_run": str(saved / "runs" / str(saved_spec["run"])),
+        "original_git_revision": original.manifest.git_revision,
+        "replay_git_revision": replay.manifest.git_revision,
+        "same_algorithms_in_order": same_algorithms,
+        "same_resolved_profile": same_resolved,
+        "per_algorithm": per_algorithm,
+    }
+    out["gate"] = "pass" if all(gates) else "fail"
+    return out
 
 
 def _only(arm: r021.Arm, cases: Sequence[str]) -> r021.Arm:
@@ -997,19 +1139,25 @@ NEW_IDS = ("metis_history", "direct_split_certified", "incremental_graph_repair"
 
 
 def analyze(
-    campaign: Campaign, stage: str, *, inputs: Path, out: Path, pmset: Path | None = None
+    campaign: Campaign, stage: str, *, inputs: Path, out: Path, pmset: Path | None = None,
+    stage_root: Path | None = None,
 ) -> dict[str, Any]:
     """The registered analysis of a stage from its ledger and run records. Host sleep is read
     from `pmset` (default `<out>/pmset-sleep-wake.txt`); a stage that registers
     `pmset_capture` without a readable log has every timing window `unknown`."""
-    done = read_ledger(out)
-    started_ids = {e["id"] for e in Ledger(out / "ledger.jsonl").entries()
-                   if e.get("event") == "start"}  # fmt: skip
-    ctx = Context(campaign, inputs, out, DEFAULT_LAUNCHER, done=done)
+    stage_root = out.parent if stage_root is None else stage_root
+    done = {**cross_stage_done(campaign, campaign.stage(stage), stage, stage_root),
+            **read_ledger(out)}  # fmt: skip
+    events = Ledger(out / "ledger.jsonl").entries()
+    started_ids = {e["id"] for e in events if e.get("event") == "start"}
+    ctx = Context(campaign, inputs, out, DEFAULT_LAUNCHER, done=done, stage=stage,
+                  stage_root=stage_root)  # fmt: skip
     loaded = Loaded(ctx, stage)
     samples = [json.loads(x) for x in (out / "load.jsonl").read_text().splitlines() if x] \
         if (out / "load.jsonl").is_file() else []  # fmt: skip
-    cpus = int(campaign.raw["host"]["logical_cpus"])
+    # the load threshold uses the executing host's logical CPUs recorded in the ledger
+    recorded = [e.get("logical_cpus") for e in events if e.get("event") == "stage"]
+    cpus = int(recorded[-1] if recorded and recorded[-1] else campaign.raw["host"]["logical_cpus"])
     pmset_path = pmset or out / "pmset-sleep-wake.txt"
     sleeps: list[dict[str, Any]] | None = None
     if pmset_path.is_file():
@@ -1019,9 +1167,13 @@ def analyze(
     invocations: dict[str, Any] = {}
     reconciliation: list[str] = list(loaded.problems)
     for inv in campaign.stage(stage):
-        entry = done.get(inv.id)
+        entry, deviation = effective_entry(done, inv.id)
         invocations[inv.id] = {k: (entry or {}).get(k) for k in
                                ("result", "exit_code", "expected_exit", "run_dir", "started", "t")}
+        invocations[inv.id]["holdout_exposure"] = _exposure(campaign, inv)
+        if deviation:
+            invocations[inv.id]["deviation"] = {"kind": deviation, "used": f"{inv.id}.retry1",
+                                                "original": done.get(inv.id)}  # fmt: skip
         if entry is None:
             state = "started, not ended (running or interrupted)" if inv.id in started_ids \
                 else "never executed"  # fmt: skip
@@ -1048,7 +1200,7 @@ def analyze(
             cells={k: v.status for k, v in run.rows.items()}, complete=run.manifest.complete,
         )  # fmt: skip
         window = r021.host_window(samples, float(entry.get("started") or 0),
-                                  float(entry.get("t") or 0), os.cpu_count() or cpus,
+                                  float(entry.get("t") or 0), cpus,
                                   sleeps=sleeps)  # fmt: skip
         if sleeps is None and campaign.raw["stages"][stage].get("pmset_capture"):
             window["state"] = "unknown"  # a registered sleep log is missing: never "clean"
@@ -1084,9 +1236,7 @@ def analyze(
             git_revision=run.manifest.git_revision, git_dirty=run.manifest.git_dirty,
             profile_sha256=run.manifest.profile_sha256, bundle_hash=run.manifest.bundle_hash,
             replay_command=run.manifest.replay_command, arms=arms,
-            holdout_exposure=campaign.raw["holdout_exposure"].get(
-                str(campaign.raw["inputs"].get(str(inv.get("bundle")), {}).get("split")),
-                "not_a_corpus_split"),
+            holdout_exposure=_exposure(campaign, inv),
         )  # fmt: skip
     comparisons = []
     for spec in stage_comparisons(campaign, stage):
@@ -1098,7 +1248,8 @@ def analyze(
     latency = {}
     for inv in campaign.stage(stage):
         if inv.kind == "latency_compare" and (out / inv.id / "compare.json").is_file():
-            latency[inv.id] = json.loads((out / inv.id / "compare.json").read_text())
+            latency[inv.id] = {"holdout_exposure": _exposure(campaign, inv),
+                               "compare": json.loads((out / inv.id / "compare.json").read_text())}
     revision, dirty, _ = git_provenance(REPO)
     return {
         "schema": "r021.campaign-analysis/1",
@@ -1120,6 +1271,17 @@ def analyze(
         "host_sleep_transitions": None if sleeps is None else sum(
             1 for e in sleeps if e["type"] == "Sleep"),
     }  # fmt: skip
+
+
+def _exposure(campaign: Campaign, inv: Invocation) -> str:
+    """Holdout exposure label: an invocation's declared `exposure`, else its bundle's split
+    (`holdout_exposure` of the manifest); only a request outside every corpus split is
+    `not_a_corpus_split`."""
+    labels = campaign.raw["holdout_exposure"]
+    if inv.get("exposure"):
+        return str(labels.get(str(inv.get("exposure")), inv.get("exposure")))
+    split = campaign.raw["inputs"].get(str(inv.get("bundle")), {}).get("split")
+    return str(labels.get(str(split), "not_a_corpus_split"))
 
 
 def _expected_algorithms(campaign: Campaign, inv: Invocation) -> list[str]:
@@ -1263,6 +1425,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--lanes", type=int)
     p.add_argument("--only", action="append", default=[])
     p.add_argument("--retry-infrastructure")
+    p.add_argument("--stage-root", help="sibling stage outputs (default: the parent of --out)")
+    p.add_argument("--waive-launch-headroom", metavar="REASON",
+                   help="orchestrator-authorized waiver of the launch headroom (recorded)")
     p = sub.add_parser("freeze")
     p.add_argument("--inputs")
     p.add_argument("--nominees", help="stage-T analysis.json whose applied nominees to record")
@@ -1274,6 +1439,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--json")
     p.add_argument("--markdown")
     p.add_argument("--pmset", help="pmset sleep/wake log (default <out>/pmset-sleep-wake.txt)")
+    p.add_argument("--stage-root", dest="analysis_stage_root",
+                   help="sibling stage outputs (default: the parent of --out)")
     args = parser.parse_args(argv)
     try:
         campaign = load_campaign(args.manifest)
@@ -1307,7 +1474,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "execute":
             return execute(campaign, args.stage, inputs=Path(args.inputs), out=Path(args.out),
                            lanes=args.lanes, only=args.only,
-                           retry_infrastructure=args.retry_infrastructure)  # fmt: skip
+                           retry_infrastructure=args.retry_infrastructure,
+                           stage_root=Path(args.stage_root) if args.stage_root else None,
+                           waive_launch_headroom=args.waive_launch_headroom)  # fmt: skip
         if args.command == "freeze":
             nominees = None
             if args.nominees:
@@ -1324,7 +1493,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.command == "analyze":
             result = analyze(campaign, args.stage, inputs=Path(args.inputs), out=Path(args.out),
-                             pmset=Path(args.pmset) if args.pmset else None)  # fmt: skip
+                             pmset=Path(args.pmset) if args.pmset else None,
+                             stage_root=Path(args.analysis_stage_root)
+                             if args.analysis_stage_root else None)  # fmt: skip
             text = json.dumps(result, indent=1, sort_keys=True, default=str)
             Path(args.json or Path(args.out) / "analysis.json").write_text(text + "\n")
             Path(args.markdown or Path(args.out) / "analysis.md").write_text(

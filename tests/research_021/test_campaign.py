@@ -498,3 +498,206 @@ def test_stage_executor_and_analysis_on_bounded_fixtures(tmp_path: Path) -> None
         C.execute(campaign, "T", inputs=changed, out=tmp_path / "out2", allow_dirty=True,
                   launcher=(sys.executable,), echo=lambda _: None)  # fmt: skip
     assert not (tmp_path / "out2").exists()
+
+
+# ----------------------------------------------------------------------------- §7 stage loop
+
+
+def test_generated_campaign_profiles_run_only_literally(campaign: Any) -> None:
+    """The generated profiles are not legacy pins (tests/benchmark exempts them): each is run
+    with `--strategies profile`, except memory_gross whose `all` derivation is the 14 roster."""
+    generated = set(C.generated_profiles(campaign))
+    for inv in campaign.invocations:
+        if inv.kind in ("run", "quote") and inv.get("profile") in generated:
+            if inv.get("profile") == "memory_gross":
+                assert inv.get("strategies") == "all" and inv.algorithms == ALL14, inv.id
+            else:
+                assert inv.get("strategies") == "profile", inv.id
+
+
+def test_report_mirror_ids_and_exposure_labels(campaign: Any) -> None:
+    ids = [c["id"] for c in C.stage_comparisons(campaign, "R")]
+    assert "depth.report" in ids and not any("tuning" in i for i in ids)
+    assert C._exposure(campaign, campaign.by_id["M-roster"]).startswith("previously_exposed")
+    assert C._exposure(campaign, campaign.by_id["L-R"]).startswith("previously_exposed")
+    assert C._exposure(campaign, campaign.by_id["L-cmp-L02"]).startswith("previously_exposed")
+    assert C._exposure(campaign, campaign.by_id["R-roster-full"]) == "previously_exposed"
+    assert C._exposure(campaign, campaign.by_id["T-roster-full"]) == "exploration_data"
+
+
+def _stage_loop_campaign(tmp_path: Path, *, saved: Path | None = None,
+                         gate_headroom: float = 1000.0) -> Any:  # fmt: skip
+    small = read_profile_document(REPO / "config" / "daily_gross.yaml")
+    small["algorithms"] = ["direct", "single_path"]
+    small["measurement"] = {"warmup": 0, "repeats": 1, "seed": 7, "order": "fixed",
+                            "memory_pass": False}  # fmt: skip
+    base = tmp_path / "small.yaml"
+    base.write_text(yaml.safe_dump(small, sort_keys=False))
+    sha = C._sha256_bytes
+    inputs = {}
+    for key, source in (("mixed", MIXED), ("corpus", CORPUS)):
+        lines = [x for x in (source / "cases.jsonl").read_text().splitlines() if x.strip()]
+        inputs[key] = {"source": str(source.relative_to(REPO)),
+                       "bundle_hash": sha((source / "manifest.json").read_bytes()),
+                       "cases": len(lines), "split": "fixture", "cohort": "fixture"}  # fmt: skip
+    rules = {"lanes": 1, "caffeinate": True, "pmset_capture": True}
+    doc: dict[str, Any] = {
+        "schema": C.SCHEMA,
+        "host": {"logical_cpus": 10, "load_sample_seconds": 1},
+        "holdout_exposure": {"fixture": "fixture"},
+        "inputs": inputs,
+        "requests": {"one": {"token_in": "USDC", "token_out": "USDT0", "amount": "1500.25"}},
+        "profiles": {"small": {"path": str(base), "sha256": sha(base.read_bytes())}},
+        "stages": {"L": {**rules, "launch_gate": {"samples": 2, "interval_seconds": 0,
+                                                  "headroom_load1": gate_headroom}},
+                   "R": rules, "M": rules, "I": rules},
+        "known_report_defects": {"cases": []},
+        "invocations": [
+            {"id": "X-L", "stage": "L", "kind": "run", "bundle": "mixed", "profile": "small",
+             "strategies": "profile", "algorithms": ["direct", "single_path"]},
+            {"id": "X-R", "stage": "R", "kind": "run", "bundle": "mixed", "profile": "small",
+             "strategies": "profile", "algorithms": ["direct", "single_path"],
+             "derive": ["report"]},
+            # a cross-stage dependency exactly like M-roster's {dir:L-R}
+            {"id": "X-M", "stage": "M", "kind": "run", "bundle": "{dir:X-L}", "cases": 4,
+             "bundle_hash": inputs["mixed"]["bundle_hash"], "profile": "small",
+             "strategies": "profile", "algorithms": ["direct", "single_path"]},
+            {"id": "X-I", "stage": "I", "kind": "quote", "bundle": "corpus", "profile": "small",
+             "strategies": "profile", "details": True, "request": "one",
+             "algorithms": ["direct", "single_path"], "derive": ["report", "replay",
+                                                                 "order_check"]},
+        ],
+        "comparisons": [],
+    }  # fmt: skip
+    if saved is not None:
+        doc["saved_quotes"] = {"s2": {
+            "source": str(saved), "run": next((saved / "runs").iterdir()).name,
+            "profile_sha256": sha((saved / "profile.yaml").read_bytes()),
+            "quote_sha256": sha((saved / "quote.json").read_bytes()),
+            "bundle_hash": sha((saved / "bundle" / "manifest.json").read_bytes()),
+            "algorithms": ["direct", "single_path"]}}  # fmt: skip
+        doc["invocations"] += [
+            {"id": "X-saved-a", "stage": "I", "kind": "replay_saved", "saved": "s2"},
+            {"id": "X-saved-b", "stage": "I", "kind": "replay_saved", "saved": "s2",
+             "after": ["X-saved-a"]},
+            {"id": "X-saved-order", "stage": "I", "kind": "order_check",
+             "of": ["X-saved-a", "X-saved-b"]},
+        ]  # fmt: skip
+        doc["comparisons"].append({"id": "saved.literal", "stage": "I", "kind": "saved_literal",
+                                   "saved": "s2", "replay": "X-saved-a"})  # fmt: skip
+    # resolved THROUGH the L slot (<root>/L/X-L/<run>/), like M-roster's {dir:L-R}/bundles/...:
+    # four levels up is tmp_path, whose inputs/mixed is the registered bundle
+    doc["invocations"][2]["bundle"] = "{dir:X-L}/../../../../inputs/mixed"
+    path = tmp_path / "campaign.yaml"
+    path.write_text(yaml.safe_dump(doc, sort_keys=False))
+    return C.load_campaign(path)
+
+
+def _quiet(_: str) -> None:
+    return None
+
+
+def test_section7_stage_loop_resolves_a_cross_stage_dependency(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Bounded fixture reproduction of preregistration §7: `execute --stage S --out
+    <root>/S` then `analyze` for S = L, R, M, I. M depends on an L slot through `{dir:X-L}`
+    and must start (it used to wait forever); a saved literal replay is compared with its
+    durable original; every stage records its launch/keep-awake/sleep-log evidence."""
+    quotes = tmp_path / "saved-src"
+    assert main.main(["quote", "--bundle", str(CORPUS), "--profile",
+                      str(REPO / "config" / "daily_gross.yaml"), "--token-in", "USDC",
+                      "--token-out", "USDT0", "--amount", "1500.25", "--quotes-dir", str(quotes),
+                      "--strategies", "profile"]) == 0  # fmt: skip
+    saved_src = next(quotes.iterdir())
+    doc = yaml.safe_load((saved_src / "profile.yaml").read_text())
+    doc["algorithms"] = ["direct", "single_path"]  # a small "saved" effective profile
+    (saved_src / "profile.yaml").write_text(yaml.safe_dump(doc, sort_keys=False))
+    shutil.rmtree(saved_src / "runs")
+    assert main.main(["run", "--bundle", str(saved_src / "bundle"), "--profile",
+                      str(saved_src / "profile.yaml"), "--results-dir", str(saved_src / "runs"),
+                      "--strategies", "profile"]) == 0  # fmt: skip
+    record = json.loads((saved_src / "quote.json").read_text())
+    record["replay_command"] = (f"uv run python main.py run --bundle {saved_src}/bundle "
+                                f"--profile {saved_src}/profile.yaml --results-dir "
+                                f"{saved_src}/runs --strategies profile")  # fmt: skip
+    (saved_src / "quote.json").write_text(json.dumps(record))
+    capsys.readouterr()
+    campaign = _stage_loop_campaign(tmp_path, saved=saved_src)
+    root, inputs = tmp_path / "root", tmp_path / "inputs"
+    C.prepare_inputs(campaign, REPO, inputs)
+    for stage in ("L", "R", "M", "I"):
+        code = C.execute(campaign, stage, inputs=inputs, out=root / stage, allow_dirty=True,
+                         launcher=(sys.executable,), echo=_quiet)  # fmt: skip
+        assert code == 0, (stage, (root / stage / "ledger.jsonl").read_text()[-1500:])
+        result = C.analyze(campaign, stage, inputs=inputs, out=root / stage)
+        assert result["reconciled"], (stage, result["reconciliation_problems"])
+        events = {e.get("event") for e in C.Ledger(root / stage / "ledger.jsonl").entries()}
+        assert {"caffeinate", "pmset_capture"} <= events, stage
+        if stage == "L":
+            gate = next(e for e in C.Ledger(root / "L" / "ledger.jsonl").entries()
+                        if e.get("event") == "launch_gate")  # fmt: skip
+            assert gate["launched"] is True and len(gate["samples"]) == 2
+        if stage == "I":
+            literal = next(c for c in result["comparisons"] if c["id"] == "saved.literal")
+            assert literal["gate"] == "pass", literal
+            assert literal["result"]["same_resolved_profile"] is True
+    m_start = next(e for e in C.Ledger(root / "M" / "ledger.jsonl").entries()
+                   if e.get("event") == "start")  # fmt: skip
+    assert str(root / "L" / "X-L") in " ".join(m_start["argv"])
+
+
+def test_an_unresolved_cross_stage_dependency_blocks_immediately(tmp_path: Path) -> None:
+    campaign = _stage_loop_campaign(tmp_path)
+    inputs = tmp_path / "inputs"
+    C.prepare_inputs(campaign, REPO, inputs)
+    code = C.execute(campaign, "M", inputs=inputs, out=tmp_path / "fresh" / "M",
+                     allow_dirty=True, launcher=(sys.executable,), echo=_quiet)  # fmt: skip
+    assert code == 1
+    blocked = [e for e in C.Ledger(tmp_path / "fresh" / "M" / "ledger.jsonl").entries()
+               if e.get("event") == "blocked"]  # fmt: skip
+    assert blocked and blocked[0]["id"] == "X-M" and "never ended" in blocked[0]["reason"]
+
+
+def test_launch_gate_does_not_launch_a_busy_host_unless_waived(tmp_path: Path) -> None:
+    campaign = _stage_loop_campaign(tmp_path, gate_headroom=-1.0)
+    inputs = tmp_path / "inputs"
+    C.prepare_inputs(campaign, REPO, inputs)
+    out = tmp_path / "root" / "L"
+    assert C.execute(campaign, "L", inputs=inputs, out=out, allow_dirty=True,
+                     launcher=(sys.executable,), echo=_quiet) == 3  # fmt: skip
+    events = C.Ledger(out / "ledger.jsonl").entries()
+    assert [e["event"] for e in events][-2:] == ["launch_gate", "stage_not_launched"]
+    assert not (out / "X-L").exists()  # nothing launched, no slot
+    waived = tmp_path / "root2" / "L"
+    assert C.execute(campaign, "L", inputs=inputs, out=waived, allow_dirty=True,
+                     launcher=(sys.executable,), echo=_quiet,
+                     waive_launch_headroom="orchestrator: quiet-host waiver") == 0  # fmt: skip
+    gate = next(e for e in C.Ledger(waived / "ledger.jsonl").entries()
+                if e.get("event") == "launch_gate")  # fmt: skip
+    assert gate["busy"] is True and gate["launched"] is True and gate["waiver"]
+
+
+def test_an_infrastructure_retry_and_its_children_feed_the_analysis(tmp_path: Path) -> None:
+    campaign = _stage_loop_campaign(tmp_path)
+    inputs = tmp_path / "inputs"
+    C.prepare_inputs(campaign, REPO, inputs)
+    out = tmp_path / "root" / "R"
+    # an "infrastructure" failure: the launcher itself fails, no manifest is ever written
+    assert C.execute(campaign, "R", inputs=inputs, out=out, allow_dirty=True,
+                     launcher=("false",), echo=_quiet) == 1  # fmt: skip
+    first = C.read_ledger(out)
+    assert first["X-R"]["result"] == "failed" and first["X-R.report"]["result"] == "blocked"
+    assert C.execute(campaign, "R", inputs=inputs, out=out, allow_dirty=True,
+                     launcher=(sys.executable,), echo=_quiet,
+                     retry_infrastructure="X-R") == 0  # fmt: skip
+    after = C.read_ledger(out)
+    assert after["X-R.retry1"]["result"] == "ok" and after["X-R.report.retry1"]["result"] == "ok"
+    result = C.analyze(campaign, "R", inputs=inputs, out=out)
+    assert result["reconciled"], result["reconciliation_problems"]
+    inv = result["invocations"]["X-R"]
+    assert inv["deviation"]["kind"] == "infrastructure_retry"
+    assert inv["deviation"]["original"]["result"] == "failed"
+    with pytest.raises(C.CampaignError, match="already used"):
+        C.execute(campaign, "R", inputs=inputs, out=out, allow_dirty=True,
+                  launcher=(sys.executable,), echo=_quiet, retry_infrastructure="X-R")
