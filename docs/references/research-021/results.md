@@ -517,6 +517,32 @@ No registered-analysis defect was found. One gap is noted:
     or claim above changes. From WHI-1603 on both identities record the bundle's real cohort
     (`direct_split_certified.cohort_of`), so a new run on these bundles records a different
     domain hash than the frozen records.
+- **R1-F1 (WHI-1605, added after the release review; frozen records not rewritten)**: the
+  measured code declared `direct_split_certified` with `direct_split`'s capabilities and no
+  protocol ceiling. Every frozen resolved profile that runs it therefore records
+  `algorithm_config.direct_split_certified.capabilities` =
+  `{multi_hop: false, shared_pools: false, split: true}`. That disagrees with its R021-C/1
+  ceiling `constant_product` (`benchmark.diagnostics.IDENTITIES`): the identity is
+  `unsupported` on any non-constant-product direct pool. The ordinary `main.py report` of
+  such a run labels its `full_source` pairs `matched`, not `coverage`.
+  - No recorded number is affected. On full-source bundles this identity has no `ok` cell
+    (R, M, I and T: only `unsupported` and `no_route`). Its `ok` cells (20 on `report_sor`,
+    6 on `tuning_sor`) are on the matched `sor_compatible` cohort, where the label is
+    `matched` either way. The registered analysis does not read `capabilities`.
+  - From WHI-1605 on the identity records `protocols: ["constant_product"]`.
+    `Capabilities.protocols` has one documented meaning, the protocol-family ceiling
+    (`None` = every family). The `uni_sor_*` identities keep recording `V2`/`V3` literally,
+    mapped as `V2` = `constant_product` and `V3` = `concentrated`
+    (`routing.algorithms.base.protocol_families`). Every other identity's recorded
+    capabilities and literal replay are unchanged.
+  - `freeze.json` is unchanged. Its `effective_settings.resolved_profile_sha256` for the 25
+    invocations that run `direct_split_certified` no longer regenerates from the current
+    tree. With the measured capability restored, every value regenerates
+    (`tests/research_021/test_campaign.py`). The same applies to re-analysis: run from the
+    current tree, the reconciliation reports `resolved profile differs from the registered
+    one` for those invocations. For example, 7 in stage I; the comparisons stay
+    byte-identical. The §12 reproduction runs from the measured clone and is unaffected.
+    Nothing was re-run; no number or claim above changes.
 
 ## 12. Evidence and reproduction
 

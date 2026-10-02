@@ -106,7 +106,9 @@ from snapshot.models import Case, ConstantProductPoolState, SnapshotBundle
 NAME = "direct_split_certified"
 REFERENCE = direct_split.NAME
 
-CAPABILITIES = direct_split.CAPABILITIES
+# direct_split's shapes with the constant-product ceiling of its scope (WHI-1605, R1-F1):
+# any other direct pool is `unsupported`, so it never matches an unrestricted identity.
+CAPABILITIES = dataclasses.replace(direct_split.CAPABILITIES, protocols=("constant_product",))
 SEARCH_PARAMS = direct_split.SEARCH_PARAMS  # ("max_splits", "percent_step")
 
 DOMAINS = ("repository_grid", "raw_integer")
