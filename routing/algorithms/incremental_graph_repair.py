@@ -90,6 +90,7 @@ from routing.algorithms.base import (
     require_option_keys,
     validated_options,
 )
+from routing.algorithms.direct_split_certified import cohort_of
 from routing.algorithms.incremental_graph import (
     PoolFlow,
     PreparedIncrementalGraph,
@@ -867,7 +868,7 @@ def domain(bundle: SnapshotBundle, graph: PreparedIncrementalGraph) -> dict[str,
         "schema": "r021.domain/1",
         "universe": {
             "bundle": bundle.bundle_hash,
-            "cohort": "fixture" if bundle.kind == "synthetic" else "full_source",
+            "cohort": cohort_of(bundle),
             "pools": pools,
         },
         "protocols": ["constant_product", "concentrated", "liquidity_book"],
