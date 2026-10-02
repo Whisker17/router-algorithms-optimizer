@@ -8,8 +8,9 @@ fixtures), plus the profile-derivation and validation rules behind it:
   optimized strategies, then the experimental `metis_inspired` (WHI-1540) and the implemented
   0.2.1 identities `metis_history` (WHI-1550), `direct_split_certified` (WHI-1552; a visible
   `unsupported` row on a non-CPMM direct pair), `incremental_graph_repair` (WHI-1554),
-  `uni_sor_cycle_safe` (WHI-1556) and `cfmm_dual` (WHI-1558, CPMM stage), each with its pinned
-  preset, sequentially;
+  `uni_sor_cycle_safe` (WHI-1556) and `cfmm_dual` (WHI-1558; current preset `cfmm_dual/2`,
+  CP+CL stage, WHI-1559; historical CPMM-only `cfmm_dual/1`), each with its pinned preset,
+  sequentially;
   `base` / `optimized` / `profile` select as documented, intentional subsets and custom
   algorithms are kept, nothing is duplicated; a listed `metis_inspired` keeps its place and
   every declared graph setting, undeclared ones come from the pinned M4 profile, and an
