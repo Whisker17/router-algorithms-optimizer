@@ -501,6 +501,22 @@ No registered-analysis defect was found. One gap is noted:
 - `direct_split_certified` real-corpus certificates are single-pool. The `cfmm_dual` `converged`
   label means only the numerical residual criterion. CFMM continuous-vs-exact gaps are not
   universally 1e-9 (WHI-1559 feed-forward).
+- **R1-F2 (WHI-1603, added after the release review; frozen records not rewritten)**: the
+  measured code hard-coded `universe.cohort = full_source` in the `r021.domain/1` of
+  `metis_history` and `incremental_graph_repair` for every non-synthetic bundle. On the matched
+  `sor_compatible` bundles these two identities' frozen records therefore carry
+  `universe.cohort = full_source` and the `candidate_domain_hash` of that domain, whereas
+  `direct_split_certified`, `cfmm_dual` and `uni_sor_cycle_safe` record `sor_compatible`.
+  - Affected runs (bundle `report_sor` `8213b7b0…`): `R-roster-sor` (both identities, 302 each)
+    and `R-repair-off-sor` (`incremental_graph_repair`, 302). The stage-T tuning records on
+    `tuning_sor` (`b900b866…`: `T-roster-sor`, `T-repair-off-sor`, 96 each) carry the same
+    label. Records on full-source bundles (R, M, I) are labelled correctly.
+  - Outcomes are unaffected: the label is metadata only (plans, scores, statuses and work
+    counters do not depend on it), and candidate-domain hashes are compared only within each
+    identity, where every arm of a pair carries the same label. Nothing was re-run; no number
+    or claim above changes. From WHI-1603 on both identities record the bundle's real cohort
+    (`direct_split_certified.cohort_of`), so a new run on these bundles records a different
+    domain hash than the frozen records.
 
 ## 12. Evidence and reproduction
 
