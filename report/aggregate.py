@@ -43,12 +43,14 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
+from benchmark.diagnostics import PROTOCOLS
 from benchmark.results import (
     RunManifest,
     load_case_records,
     load_manifest,
     load_memory_records,
 )
+from routing.algorithms.base import protocol_families
 
 DEFAULT_MIN_SAMPLES = 30
 STATUS_ORDER = (
@@ -541,10 +543,10 @@ def _allowed_topologies(capabilities: Mapping[str, Any]) -> set[str]:
 
 def comparison_kind(run: RunData, algorithm: str, baseline: str) -> str:
     """How to read `algorithm` vs `baseline` in this run's universe."""
-    restricted = [
+    restricted = [  # a protocol-family ceiling below every family (WHI-1605)
         name
         for name in (algorithm, baseline)
-        if run.capabilities.get(name, {}).get("protocols") is not None
+        if set(protocol_families(run.capabilities.get(name, {}).get("protocols"))) != set(PROTOCOLS)
     ]
     if restricted and run.cohort != COHORT_MATCHED:
         return "coverage"  # the unrestricted side may use sources the other cannot

@@ -20,6 +20,7 @@ import main
 from benchmark.results import ResultError, load_manifest
 from report import aggregate as agg
 from report.render import render_report
+from routing.algorithms.registry import ALGORITHMS
 
 MIN = 3  # min_samples used by most tests
 T_IN, T_OUT, T_MID = "0x" + "a" * 40, "0x" + "b" * 40, "0x" + "c" * 40
@@ -459,6 +460,29 @@ def test_differing_coverage_and_matched_vs_full_cohorts(tmp_path: Path) -> None:
     assert html.count("<section class='run'") == 2
     assert agg.COHORT_TITLES[agg.COHORT_MATCHED].split(" (")[0] in html
     assert "Full five-source coverage" in html and "⚑" in html
+
+
+def test_full_source_direct_split_certified_pairs_are_coverage(tmp_path: Path) -> None:
+    """WHI-1605 (R1-F1): `direct_split_certified` is `unsupported` on any non-constant-
+    product direct pool, so on a full-source cohort its pairs are coverage, not like-for-like;
+    two unrestricted identities stay `matched`."""
+    bundle = write_bundle(tmp_path, cohort="full_source")
+    cases = ["c1", "c2"]
+    algos = ["path_split", "direct_split", "direct_split_certified"]
+    records = [rec(c, a, gross=1000 + i) for c in cases for i, a in enumerate(algos)]
+    configs = {  # what a resolved profile records for each factory
+        a: {"capabilities": ALGORITHMS[a].capabilities.to_dict(), "params": {}} for a in algos
+    }
+    run = load(write_run(tmp_path, records, algorithms=algos, bundle=bundle, configs=configs))
+    assert run.cohort == agg.COHORT_FULL
+    for a, b in (
+        ("path_split", "direct_split_certified"),
+        ("direct_split_certified", "path_split"),
+    ):
+        assert agg.paired_gross(run, a, b, run.case_ids, 1)["kind"] == "coverage"
+    assert agg.comparison_kind(run, "path_split", "direct_split") == "matched"
+    run.capabilities["direct_split"]["protocols"] = ["V2", "concentrated", "liquidity_book"]
+    assert agg.comparison_kind(run, "path_split", "direct_split") == "matched"  # every family
 
 
 def test_bundle_labels_are_used_only_when_the_hash_matches(tmp_path: Path) -> None:

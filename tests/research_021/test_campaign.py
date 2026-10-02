@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import importlib.util
 import json
 import multiprocessing
@@ -36,6 +37,7 @@ import main
 from benchmark.profile import preset_options, read_profile_document
 from benchmark.results import load_case_records, load_manifest
 from benchmark.strategies import derive
+from routing.algorithms import direct_split
 from routing.algorithms.registry import ALGORITHMS
 
 REPO = Path(__file__).resolve().parents[2]
@@ -227,7 +229,9 @@ def test_registered_nominees_are_the_rule_results_of_the_clean_tuning_analysis(
         k: v["nominee"] for k, v in registered.items()}  # fmt: skip
 
 
-def test_freeze_record_regenerates_from_code_and_manifest(campaign: Any) -> None:
+def test_freeze_record_regenerates_from_code_and_manifest(
+    campaign: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
     record = C.freeze_record(campaign, inputs=None, nominees=None)
     for name, pins in record["presets"].items():
         for pin in pins:  # every preset file (current and historical) still matches its pin
@@ -247,6 +251,19 @@ def test_freeze_record_regenerates_from_code_and_manifest(campaign: Any) -> None
     frozen_path = EVIDENCE / "freeze.json"
     if frozen_path.is_file():  # after the freeze commit: nothing may drift from it
         frozen = json.loads(frozen_path.read_text())
+        # ... except the one disclosed post-freeze change (WHI-1605, results.md §11): the
+        # resolved `capabilities` of direct_split_certified gained its constant-product
+        # ceiling. Exactly the invocations running it drift; with the measured capability
+        # every frozen value regenerates.
+        drifted = {k for k, v in record["effective_settings"].items()
+                   if v != frozen["effective_settings"][k]}  # fmt: skip
+        assert drifted == {k for k, v in frozen["effective_settings"].items()
+                           if "direct_split_certified" in v["algorithms"]}  # fmt: skip
+        measured = dataclasses.replace(
+            ALGORITHMS["direct_split_certified"], capabilities=direct_split.CAPABILITIES
+        )
+        monkeypatch.setitem(ALGORITHMS, "direct_split_certified", measured)
+        record = C.freeze_record(campaign, inputs=None, nominees=None)
         for key in ("files", "presets", "effective_settings", "inventory", "rules_sha256",
                     "known_report_defects", "saved_quotes"):
             assert frozen[key] == json.loads(json.dumps(record[key])), key

@@ -273,7 +273,9 @@ def test_registered_once_as_a_custom_identity_between_history_and_repair() -> No
         metis_history.NAME, NAME, incremental_graph_repair.NAME, "uni_sor_cycle_safe", "cfmm_dual"
     )  # fmt: skip
     assert FACTORY.options_validator is dsc.validate_options  # module-level (picklable)
-    assert FACTORY.capabilities == direct_split.CAPABILITIES
+    assert FACTORY.capabilities == dataclasses.replace(  # WHI-1605: + constant-product ceiling
+        direct_split.CAPABILITIES, protocols=("constant_product",)
+    )
     assert FACTORY.search_params == ("max_splits", "percent_step") and FACTORY.graph_params == ()
     assert FACTORY.provenance is not None and "raw_integer" in str(FACTORY.provenance)
     # the reference is untouched: no options, no preset, same factory object

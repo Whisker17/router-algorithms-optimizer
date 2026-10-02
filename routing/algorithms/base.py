@@ -25,12 +25,13 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
 from typing import Any, Protocol
 
+from benchmark.diagnostics import PROTOCOLS
 from benchmark.objective import ObjectiveContext
 from routing.evaluator import Evaluation
 from routing.plan import RoutePlan
@@ -185,9 +186,17 @@ class Capabilities:
     several routes; `shared_pools`: several routes of one plan may share a physical
     pool and split/merge at intermediate tokens (`incremental_graph`, WHI-1441) -- an
     expanded topology, so its results are reported apart from the capability-matched
-    pool-disjoint comparison (docs/DESIGN.md §2.11). `protocols`: the SOR route protocols
-    whose pools the algorithm can route through (`uni_sor_port`: `("V2", "V3")`, WHI-1444;
-    other pools never enter its candidates), or `None` for every admitted pool."""
+    pool-disjoint comparison (docs/DESIGN.md §2.11).
+
+    `protocols` (WHI-1605) has one meaning: the protocol-family ceiling -- the only families
+    whose pools the algorithm can ever route through -- or `None` for every admitted pool
+    (every family). Its vocabulary is the R021-C/1 §3.1 family set
+    (`benchmark.diagnostics.PROTOCOLS`: `constant_product`, `concentrated`, `liquidity_book`),
+    except that the SOR identities (`uni_sor_*`, WHI-1444) keep recording their SOR route
+    protocols `("V2", "V3")` literally (resolved profiles and replay stay byte-identical);
+    `SOR_PROTOCOL_FAMILIES` maps them (`V2` = `constant_product`, `V3` = `concentrated`).
+    Every reader that interprets the ceiling (`report.aggregate.comparison_kind`, the
+    identity-table test) goes through `protocol_families`."""
 
     multi_hop: bool
     split: bool
@@ -206,6 +215,20 @@ class Capabilities:
 
 
 SINGLE_POOL = Capabilities(multi_hop=False, split=False)
+
+# The R021 family of each SOR route protocol a `Capabilities.protocols` may name.
+SOR_PROTOCOL_FAMILIES: Mapping[str, str] = MappingProxyType(
+    {"V2": "constant_product", "V3": "concentrated"}
+)
+
+
+def protocol_families(protocols: Sequence[str] | None) -> tuple[str, ...]:
+    """A declared or recorded `Capabilities.protocols` as its R021 family ceiling: `None` is
+    every family, SOR route names map by `SOR_PROTOCOL_FAMILIES`, any other name is kept
+    as is (an unknown name never widens the ceiling)."""
+    if protocols is None:
+        return PROTOCOLS
+    return tuple(SOR_PROTOCOL_FAMILIES.get(p, p) for p in protocols)
 
 
 class SolveFn(Protocol):
