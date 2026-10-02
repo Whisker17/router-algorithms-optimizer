@@ -2251,6 +2251,9 @@ When navigating the codebase, consult these authoritative entry points:
     - This guide contains principles, checked toy examples and bounded real-state walkthroughs
       only. The frozen WHI-1562 comparison campaign, and any disposition, are separate and not
       reported here.
+    - The frozen WHI-1562 report is [`research-021/results.md`](research-021/results.md): its
+      measured statuses, matched quality and experimental dispositions are recorded there only.
+      It changes no claim of this guide.
 11. **Certificates Stay in Their Domain:**
     - Only `direct_split_certified` emits `certified` bounds, and only for all-CPMM direct pools
       under `gross_only`, for its exact request, grid, pool order and cardinality.

@@ -149,6 +149,13 @@ No loader code ships with the template — write it when the first config file l
   `m4.yaml` (sha256 `661311df…4471`) is also the pinned source of the Metis-inspired graph
   settings a profile does not declare under `--strategies all` (WHI-1540); nothing in these
   files was edited for that.
+- `research_021/campaign.yaml` — the WHI-1562 (R021-P14) paired-campaign manifest: inputs and
+  hashes, every campaign profile, stage, invocation (with its expected algorithm order and
+  row inventory), registered comparison and pre-registered rule; read only by
+  `tools/research_021/campaign.py`. `research_021/profiles/*.yaml` are GENERATED from
+  `full_gross.yaml` / `full.yaml` by `campaign.py profiles --write` (do not edit; `check`
+  refuses drift) and run with `--strategies profile`. See
+  `docs/references/research-021/preregistration.md`.
 - `calibration/` — the WHI-1447 tuning-split calibration profiles: `probe-h3-*.yaml`
   (uncapped 3-hop demand probes), `sweep-base.yaml` and the `sweep-*.yaml` grid points
   generated from it by `main.py calibrate profiles` (do not edit; regenerate).

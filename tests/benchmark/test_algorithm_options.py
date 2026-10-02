@@ -92,6 +92,11 @@ NEW_PROFILES = (
     | {f"config/direct_split_certified/{name}.yaml" for name in ("grid", "raw_stress")}
     | {"config/uni_sor_cycle_safe/matched.yaml"}
     | {"config/cfmm_dual/cpmm.yaml", "config/cfmm_dual/cl.yaml"}
+    # WHI-1562: campaign profiles GENERATED from full_gross/full by tools/research_021 (not
+    # legacy; drift-checked by `campaign.py check`, and registered to run only with
+    # `--strategies profile` except memory_gross -- tests/research_021 asserts both)
+    | {p.relative_to(REPO).as_posix() for p in (REPO / "config" / "research_021" / "profiles")
+       .glob("*.yaml")}  # fmt: skip
 )
 TEST_ALARM_SECONDS = 240
 
