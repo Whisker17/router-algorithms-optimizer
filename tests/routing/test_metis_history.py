@@ -299,11 +299,11 @@ def test_registered_once_as_a_custom_identity_right_after_metis_inspired() -> No
         source_path="config/daily_gross.yaml",
         source_sha256="x",
     )
-    assert list(profile.algorithms)[-6:] == [
+    assert list(profile.algorithms)[-7:] == [
         metis_inspired.NAME, NAME, "direct_split_certified", "incremental_graph_repair",
-        "uni_sor_cycle_safe", "cfmm_dual",
+        "uni_sor_cycle_safe", "cfmm_dual", "single_path_bounded",
     ]  # fmt: skip
-    assert len(profile.algorithms) == 14
+    assert len(profile.algorithms) == 15  # + single_path_bounded (WHI-1599)
     assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
     assert dict(profile.algorithm_config(FACTORY).options) == PRESET
     assert profile.algorithm_config(FACTORY).params == {
@@ -1215,7 +1215,7 @@ def test_saved_eight_nine_and_ten_strategy_profiles_replay_literally() -> None:
     source = yaml.safe_load((REPO / "config" / "daily_gross.yaml").read_text())
     document, _ = derive(source, "all", source_path="s", source_sha256="x")
     dsc = "direct_split_certified"  # WHI-1552, added after this identity
-    cyc = ["uni_sor_cycle_safe", "cfmm_dual"]  # WHI-1556, WHI-1558, added after this identity
+    cyc = ["uni_sor_cycle_safe", "cfmm_dual", "single_path_bounded"]  # WHI-1556/1558/1599, later
     for drop in ([NAME, dsc, "incremental_graph_repair", *cyc, metis_inspired.NAME],
                  [NAME, dsc, "incremental_graph_repair", *cyc], [NAME, dsc, *cyc]):  # fmt: skip
         saved = json.loads(json.dumps(document))
@@ -1229,6 +1229,6 @@ def test_saved_eight_nine_and_ten_strategy_profiles_replay_literally() -> None:
             saved["algorithm_options"] = options
         literal, profile = derive(saved, "profile", source_path="s", source_sha256="x")
         assert literal == saved and NAME not in profile.algorithms
-        assert len(profile.algorithms) == 14 - len(drop)
+        assert len(profile.algorithms) == 15 - len(drop)
     for mode in ("base", "optimized"):
         assert NAME not in derive(source, mode, source_path="s", source_sha256="x")[1].algorithms

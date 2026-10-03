@@ -297,7 +297,8 @@ def _strategies_argument(parser: argparse.ArgumentParser) -> None:
         "the implemented 0.2.1 experimental identities (metis_history, "
         "direct_split_certified in its repository_grid mode, incremental_graph_repair, "
         "uni_sor_cycle_safe, cfmm_dual (CPMM+CL stage, gross-only), each with its pinned "
-        "current preset); base / optimized: one group; "
+        "current preset), then the 0.2.2 exact bound-pruned accelerations "
+        "(single_path_bounded); base / optimized: one group; "
         "profile: the profile's exact algorithm "
         "selection "
         "(the replay path)",
