@@ -1,0 +1,4874 @@
+{
+ "a5": {
+  "budgets": [
+   {
+    "kind": "max_quotes",
+    "p": 25
+   },
+   {
+    "kind": "max_quotes",
+    "p": 50
+   },
+   {
+    "kind": "max_candidates",
+    "p": 25
+   },
+   {
+    "kind": "max_candidates",
+    "p": 50
+   }
+  ],
+  "groups": {
+   "ig": "g_ig",
+   "mh": "g_mh",
+   "sp": "g_sp"
+  },
+  "rule": "For each pair, over the reference's non-truncated `ok` cells of `T-A1-<group>-full`: p25 and p50 (nearest rank, integer) of its `search.quotes_executed` (positive values only) become two `max_quotes` budgets, and of its `candidates_considered` (positive values only) two `max_candidates` budgets. A budget run replaces only that one `budget` key of the pair's A1 profile (the other stays as in the 0.2.1 budget); reference and bounded run in the same invocation. Reported separately under `not_exact_budget_binding`, never as exactness evidence.",
+  "values": {
+   "ig": {
+    "max_candidates": {
+     "p25": 90527,
+     "p50": 229704
+    },
+    "max_quotes": {
+     "p25": 15456,
+     "p50": 26358
+    }
+   },
+   "mh": {
+    "max_candidates": {
+     "p25": 24513,
+     "p50": 30026
+    },
+    "max_quotes": {
+     "p25": 12733,
+     "p50": 21559
+    }
+   },
+   "sp": {
+    "max_candidates": {
+     "p25": 1714,
+     "p50": 4840
+    },
+    "max_quotes": {
+     "p25": 911,
+     "p50": 2960
+    }
+   }
+  }
+ },
+ "contract": "R022-Q02/1",
+ "effective_settings": {
+  "I-batch17": {
+   "algorithms": {
+    "cfmm_dual": {
+     "options_source": {
+      "key": "R021-P12-cfmm_dual",
+      "kind": "preset",
+      "path": "config/cfmm_dual/preset_v2.yaml",
+      "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+      "version": 2
+     },
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": "aa6eea57323764328d2432421b43e658e79b438c5b9533a0ac40f8ed9937b2ea"
+    },
+    "direct": {
+     "options_source": null,
+     "params": {},
+     "settings_sha256": null
+    },
+    "direct_split": {
+     "options_source": null,
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "direct_split_certified": {
+     "options_source": {
+      "key": "R021-P06-direct_split_certified",
+      "kind": "preset",
+      "path": "config/direct_split_certified/preset_v1.yaml",
+      "sha256": "d2653303f33d8bd9391c5ee6ae564c2c1fa83366a548063691e87d148e23c70f",
+      "version": 1
+     },
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+    },
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_repair": {
+     "options_source": {
+      "key": "R021-P08-incremental_graph_repair",
+      "kind": "preset",
+      "path": "config/incremental_graph_repair/preset_v1.yaml",
+      "sha256": "13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "89af50289837bb6929f1f184f342db974da0cbe134dda5ed4497b12df7264abf"
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_inspired": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "path_split": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_adaptive": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {},
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       25,
+       50,
+       75,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 1000000,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_cycle_safe": {
+     "options_source": {
+      "key": "uni_sor_cycle_safe",
+      "kind": "preset",
+      "path": "config/uni_sor_cycle_safe/preset_v1.yaml",
+      "sha256": "668e9d42d99b9ecce09fb044f827d4f0a4eec281cab401fb0cd74917557e739a",
+      "version": 1
+     },
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    "uni_sor_optimized": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {
+       "L02": {
+        "skip_empty_spans": true
+       },
+       "L03": {
+        "bin_capacity": 4096,
+        "lifetime": "per_solve",
+        "tick_capacity": 16384
+       },
+       "L04": {
+        "lifetime": "per_solve",
+        "max_checkpoints": 262144,
+        "max_keys": 4096
+       }
+      },
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       5,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 8,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_port": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "aa188fa82d333cfdb0b33a3ba8907b745fae341e2449406ba18ea8941c234f82"
+  },
+  "I-quote-compact": {
+   "algorithms": {
+    "cfmm_dual": {
+     "options_source": {
+      "key": "R021-P12-cfmm_dual",
+      "kind": "preset",
+      "path": "config/cfmm_dual/preset_v2.yaml",
+      "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+      "version": 2
+     },
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": "aa6eea57323764328d2432421b43e658e79b438c5b9533a0ac40f8ed9937b2ea"
+    },
+    "direct": {
+     "options_source": null,
+     "params": {},
+     "settings_sha256": null
+    },
+    "direct_split": {
+     "options_source": null,
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "direct_split_certified": {
+     "options_source": {
+      "key": "R021-P06-direct_split_certified",
+      "kind": "preset",
+      "path": "config/direct_split_certified/preset_v1.yaml",
+      "sha256": "d2653303f33d8bd9391c5ee6ae564c2c1fa83366a548063691e87d148e23c70f",
+      "version": 1
+     },
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+    },
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_repair": {
+     "options_source": {
+      "key": "R021-P08-incremental_graph_repair",
+      "kind": "preset",
+      "path": "config/incremental_graph_repair/preset_v1.yaml",
+      "sha256": "13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "89af50289837bb6929f1f184f342db974da0cbe134dda5ed4497b12df7264abf"
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_inspired": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "path_split": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_adaptive": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {},
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       25,
+       50,
+       75,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 1000000,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_cycle_safe": {
+     "options_source": {
+      "key": "uni_sor_cycle_safe",
+      "kind": "preset",
+      "path": "config/uni_sor_cycle_safe/preset_v1.yaml",
+      "sha256": "668e9d42d99b9ecce09fb044f827d4f0a4eec281cab401fb0cd74917557e739a",
+      "version": 1
+     },
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    "uni_sor_optimized": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {
+       "L02": {
+        "skip_empty_spans": true
+       },
+       "L03": {
+        "bin_capacity": 4096,
+        "lifetime": "per_solve",
+        "tick_capacity": 16384
+       },
+       "L04": {
+        "lifetime": "per_solve",
+        "max_checkpoints": 262144,
+        "max_keys": 4096
+       }
+      },
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       5,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 8,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_port": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "aa188fa82d333cfdb0b33a3ba8907b745fae341e2449406ba18ea8941c234f82"
+  },
+  "I-quote-details": {
+   "algorithms": {
+    "cfmm_dual": {
+     "options_source": {
+      "key": "R021-P12-cfmm_dual",
+      "kind": "preset",
+      "path": "config/cfmm_dual/preset_v2.yaml",
+      "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+      "version": 2
+     },
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": "aa6eea57323764328d2432421b43e658e79b438c5b9533a0ac40f8ed9937b2ea"
+    },
+    "direct": {
+     "options_source": null,
+     "params": {},
+     "settings_sha256": null
+    },
+    "direct_split": {
+     "options_source": null,
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "direct_split_certified": {
+     "options_source": {
+      "key": "R021-P06-direct_split_certified",
+      "kind": "preset",
+      "path": "config/direct_split_certified/preset_v1.yaml",
+      "sha256": "d2653303f33d8bd9391c5ee6ae564c2c1fa83366a548063691e87d148e23c70f",
+      "version": 1
+     },
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+    },
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_repair": {
+     "options_source": {
+      "key": "R021-P08-incremental_graph_repair",
+      "kind": "preset",
+      "path": "config/incremental_graph_repair/preset_v1.yaml",
+      "sha256": "13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "89af50289837bb6929f1f184f342db974da0cbe134dda5ed4497b12df7264abf"
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_inspired": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "path_split": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_adaptive": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {},
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       25,
+       50,
+       75,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 1000000,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_cycle_safe": {
+     "options_source": {
+      "key": "uni_sor_cycle_safe",
+      "kind": "preset",
+      "path": "config/uni_sor_cycle_safe/preset_v1.yaml",
+      "sha256": "668e9d42d99b9ecce09fb044f827d4f0a4eec281cab401fb0cd74917557e739a",
+      "version": 1
+     },
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    "uni_sor_optimized": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {
+       "L02": {
+        "skip_empty_spans": true
+       },
+       "L03": {
+        "bin_capacity": 4096,
+        "lifetime": "per_solve",
+        "tick_capacity": 16384
+       },
+       "L04": {
+        "lifetime": "per_solve",
+        "max_checkpoints": 262144,
+        "max_keys": 4096
+       }
+      },
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       5,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 8,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_port": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "aa188fa82d333cfdb0b33a3ba8907b745fae341e2449406ba18ea8941c234f82"
+  },
+  "L-q1": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "4cad40f30c6933479f1efc5eac4f707e51b6c260c293b5d994a7f6bb7539c47c"
+  },
+  "L-q2": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "4cad40f30c6933479f1efc5eac4f707e51b6c260c293b5d994a7f6bb7539c47c"
+  },
+  "L-q3": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "4cad40f30c6933479f1efc5eac4f707e51b6c260c293b5d994a7f6bb7539c47c"
+  },
+  "L-q4": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "4cad40f30c6933479f1efc5eac4f707e51b6c260c293b5d994a7f6bb7539c47c"
+  },
+  "L-q5": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "4cad40f30c6933479f1efc5eac4f707e51b6c260c293b5d994a7f6bb7539c47c"
+  },
+  "M-A5-ig-c25-report": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "85bab7a7773c84ac77681d68d2fdd1fec336181ef0cff943b038a5581831e3ee"
+  },
+  "M-A5-ig-c25-tuning": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "85bab7a7773c84ac77681d68d2fdd1fec336181ef0cff943b038a5581831e3ee"
+  },
+  "M-A5-ig-c50-report": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "7f02aa98c33d5b3b730c51761701168190e1168299758526cd473a59543bc9c0"
+  },
+  "M-A5-ig-c50-tuning": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "7f02aa98c33d5b3b730c51761701168190e1168299758526cd473a59543bc9c0"
+  },
+  "M-A5-ig-q25-report": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "8f13c61a6788e099ac7d7c78a18cdce8966fb2e207a4be7c5fafcf79d154d559"
+  },
+  "M-A5-ig-q25-tuning": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "8f13c61a6788e099ac7d7c78a18cdce8966fb2e207a4be7c5fafcf79d154d559"
+  },
+  "M-A5-ig-q50-report": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "220ab7c43c8defefacb36395c6fd1d71b1f47f57c9c4a6c94a600f4ce179a261"
+  },
+  "M-A5-ig-q50-tuning": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "220ab7c43c8defefacb36395c6fd1d71b1f47f57c9c4a6c94a600f4ce179a261"
+  },
+  "M-A5-mh-c25-report": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "d6d5dcfff23773a47d9ae06af51db76ce43d690da0981c3cce5853343c13590a"
+  },
+  "M-A5-mh-c25-tuning": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "d6d5dcfff23773a47d9ae06af51db76ce43d690da0981c3cce5853343c13590a"
+  },
+  "M-A5-mh-c50-report": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "7a3080ce5f43a9051a6f28af65622c1239121d9f351c741b786c368870a81eca"
+  },
+  "M-A5-mh-c50-tuning": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "7a3080ce5f43a9051a6f28af65622c1239121d9f351c741b786c368870a81eca"
+  },
+  "M-A5-mh-q25-report": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "d29eb9d9082f62b4ae540add8480a7231c120475b244234baada820d62c1f690"
+  },
+  "M-A5-mh-q25-tuning": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "d29eb9d9082f62b4ae540add8480a7231c120475b244234baada820d62c1f690"
+  },
+  "M-A5-mh-q50-report": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "2cb86f2615ddd8d94a391fdc9a0e6d0bde367298a55b202e20e1b23f64ae9023"
+  },
+  "M-A5-mh-q50-tuning": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "2cb86f2615ddd8d94a391fdc9a0e6d0bde367298a55b202e20e1b23f64ae9023"
+  },
+  "M-A5-sp-c25-report": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "ef5f74433dec14ccd7dc2a45b29ea78a3fe1bf196a31244272c014e8371fdfa7"
+  },
+  "M-A5-sp-c25-tuning": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "ef5f74433dec14ccd7dc2a45b29ea78a3fe1bf196a31244272c014e8371fdfa7"
+  },
+  "M-A5-sp-c50-report": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "ed25addc3fcc188141f506347f78fc374206f0888a203af532bdd7e31cd82cf5"
+  },
+  "M-A5-sp-c50-tuning": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "ed25addc3fcc188141f506347f78fc374206f0888a203af532bdd7e31cd82cf5"
+  },
+  "M-A5-sp-q25-report": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "54e4ab2aa06ae5bb78ab5c6b8b4f316a91d795fc22f6c10bc5f0423cb9353942"
+  },
+  "M-A5-sp-q25-tuning": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "54e4ab2aa06ae5bb78ab5c6b8b4f316a91d795fc22f6c10bc5f0423cb9353942"
+  },
+  "M-A5-sp-q50-report": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "636f60f2b6c034faa9acda0e3f3deae368356bf67c0d07fdfa4ca3190f99f1c1"
+  },
+  "M-A5-sp-q50-tuning": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "636f60f2b6c034faa9acda0e3f3deae368356bf67c0d07fdfa4ca3190f99f1c1"
+  },
+  "R-A1-ig-full": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "de5b6500b51d73e1b21c75541f5ffe6a0bfdc7dacab3ded1b0a44c24019877f2"
+  },
+  "R-A1-ig-sor": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "de5b6500b51d73e1b21c75541f5ffe6a0bfdc7dacab3ded1b0a44c24019877f2"
+  },
+  "R-A1-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "76b7ee9a07eb2cdd56813917351cfd5dbe82d1d6b333f6b805daa0ab4f74327d"
+  },
+  "R-A1-mh-sor": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "76b7ee9a07eb2cdd56813917351cfd5dbe82d1d6b333f6b805daa0ab4f74327d"
+  },
+  "R-A1-sp-full": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "d9f202809cae1cad8e5d7aeb9a17996ad2df6f190d474a2223d424cfbb89b0e1"
+  },
+  "R-A1-sp-sor": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "d9f202809cae1cad8e5d7aeb9a17996ad2df6f190d474a2223d424cfbb89b0e1"
+  },
+  "R-A2-ig-full": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "035f1ccb4785852281f5cb67e09e605e341d74297e1579bc761c803bee29961a"
+  },
+  "R-A2-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "800eeedfd7c837f6f3dd818ec7d043338fede9e08f2acdd9c52e7349d45b156f"
+  },
+  "R-A2-sp-full": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "4e8f352e51f7dd131e2581d89207d61de6c15e3d3bff1a3767fc16ffe236a3fb"
+  },
+  "R-A3-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "507e84bc045d4797d5a4e4c73ef0329981f95f766286d151bc698a19f4e4a413"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "507e84bc045d4797d5a4e4c73ef0329981f95f766286d151bc698a19f4e4a413"
+    }
+   },
+   "resolved_profile_sha256": "8bebe3c142d90a0b6c6520d0d8769e2696b46e2780318a9d1180b5ac49fe01da"
+  },
+  "R-A4-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "449bb5d1ae8078af25a33fd9e678c372b6c652659f9809b25187c73706550a4a"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "449bb5d1ae8078af25a33fd9e678c372b6c652659f9809b25187c73706550a4a"
+    }
+   },
+   "resolved_profile_sha256": "bb8cb5dd9e2c2e3b0047c1acb2b37cac48601bb1034ce3995f433bc6791a4015"
+  },
+  "R-B14-ra-full": {
+   "algorithms": {
+    "direct": {
+     "options_source": null,
+     "params": {},
+     "settings_sha256": null
+    },
+    "direct_split": {
+     "options_source": null,
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "direct_split_certified": {
+     "options_source": {
+      "key": "R021-P06-direct_split_certified",
+      "kind": "preset",
+      "path": "config/direct_split_certified/preset_v1.yaml",
+      "sha256": "d2653303f33d8bd9391c5ee6ae564c2c1fa83366a548063691e87d148e23c70f",
+      "version": 1
+     },
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+    },
+    "uni_sor_cycle_safe": {
+     "options_source": {
+      "key": "uni_sor_cycle_safe",
+      "kind": "preset",
+      "path": "config/uni_sor_cycle_safe/preset_v1.yaml",
+      "sha256": "668e9d42d99b9ecce09fb044f827d4f0a4eec281cab401fb0cd74917557e739a",
+      "version": 1
+     },
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    }
+   },
+   "resolved_profile_sha256": "65d475208d54340784a32b51f93142f525ce069b91eb391cfcd3238c857045f1"
+  },
+  "R-B14-ra-sor": {
+   "algorithms": {
+    "direct": {
+     "options_source": null,
+     "params": {},
+     "settings_sha256": null
+    },
+    "direct_split": {
+     "options_source": null,
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "direct_split_certified": {
+     "options_source": {
+      "key": "R021-P06-direct_split_certified",
+      "kind": "preset",
+      "path": "config/direct_split_certified/preset_v1.yaml",
+      "sha256": "d2653303f33d8bd9391c5ee6ae564c2c1fa83366a548063691e87d148e23c70f",
+      "version": 1
+     },
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+    },
+    "uni_sor_cycle_safe": {
+     "options_source": {
+      "key": "uni_sor_cycle_safe",
+      "kind": "preset",
+      "path": "config/uni_sor_cycle_safe/preset_v1.yaml",
+      "sha256": "668e9d42d99b9ecce09fb044f827d4f0a4eec281cab401fb0cd74917557e739a",
+      "version": 1
+     },
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    }
+   },
+   "resolved_profile_sha256": "65d475208d54340784a32b51f93142f525ce069b91eb391cfcd3238c857045f1"
+  },
+  "R-B14-rb-full": {
+   "algorithms": {
+    "cfmm_dual": {
+     "options_source": {
+      "key": "R021-P12-cfmm_dual",
+      "kind": "preset",
+      "path": "config/cfmm_dual/preset_v2.yaml",
+      "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+      "version": 2
+     },
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": "aa6eea57323764328d2432421b43e658e79b438c5b9533a0ac40f8ed9937b2ea"
+    },
+    "uni_sor_optimized": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {
+       "L02": {
+        "skip_empty_spans": true
+       },
+       "L03": {
+        "bin_capacity": 4096,
+        "lifetime": "per_solve",
+        "tick_capacity": 16384
+       },
+       "L04": {
+        "lifetime": "per_solve",
+        "max_checkpoints": 262144,
+        "max_keys": 4096
+       }
+      },
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       5,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 8,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_port": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "5d0c43f5ef06c73a6c462f7edf32ae9f6a40f1950de70cb82598c6ef2cf7597b"
+  },
+  "R-B14-rb-sor": {
+   "algorithms": {
+    "cfmm_dual": {
+     "options_source": {
+      "key": "R021-P12-cfmm_dual",
+      "kind": "preset",
+      "path": "config/cfmm_dual/preset_v2.yaml",
+      "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+      "version": 2
+     },
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": "aa6eea57323764328d2432421b43e658e79b438c5b9533a0ac40f8ed9937b2ea"
+    },
+    "uni_sor_optimized": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {
+       "L02": {
+        "skip_empty_spans": true
+       },
+       "L03": {
+        "bin_capacity": 4096,
+        "lifetime": "per_solve",
+        "tick_capacity": 16384
+       },
+       "L04": {
+        "lifetime": "per_solve",
+        "max_checkpoints": 262144,
+        "max_keys": 4096
+       }
+      },
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       5,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 8,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_port": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "5d0c43f5ef06c73a6c462f7edf32ae9f6a40f1950de70cb82598c6ef2cf7597b"
+  },
+  "R-B14-rc-full": {
+   "algorithms": {
+    "incremental_graph_repair": {
+     "options_source": {
+      "key": "R021-P08-incremental_graph_repair",
+      "kind": "preset",
+      "path": "config/incremental_graph_repair/preset_v1.yaml",
+      "sha256": "13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "89af50289837bb6929f1f184f342db974da0cbe134dda5ed4497b12df7264abf"
+    },
+    "uni_sor_adaptive": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {},
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       25,
+       50,
+       75,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 1000000,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "2c2b9cecdf48f214b2c193c1fbadb419a3a6234f247af2ab893291b5c8d7685f"
+  },
+  "R-B14-rc-sor": {
+   "algorithms": {
+    "incremental_graph_repair": {
+     "options_source": {
+      "key": "R021-P08-incremental_graph_repair",
+      "kind": "preset",
+      "path": "config/incremental_graph_repair/preset_v1.yaml",
+      "sha256": "13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "89af50289837bb6929f1f184f342db974da0cbe134dda5ed4497b12df7264abf"
+    },
+    "uni_sor_adaptive": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {},
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       25,
+       50,
+       75,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 1000000,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "2c2b9cecdf48f214b2c193c1fbadb419a3a6234f247af2ab893291b5c8d7685f"
+  },
+  "R-B14-rd-full": {
+   "algorithms": {
+    "metis_inspired": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "path_split": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "7503c13172ddcc26a2ad3b2f261d238f183ef1c5794e7a3eab5641b6011b5589"
+  },
+  "R-B14-rd-sor": {
+   "algorithms": {
+    "metis_inspired": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "path_split": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "7503c13172ddcc26a2ad3b2f261d238f183ef1c5794e7a3eab5641b6011b5589"
+  },
+  "R-WP-A1-ig-full": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "de5b6500b51d73e1b21c75541f5ffe6a0bfdc7dacab3ded1b0a44c24019877f2"
+  },
+  "R-WP-A1-ig-sor": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "de5b6500b51d73e1b21c75541f5ffe6a0bfdc7dacab3ded1b0a44c24019877f2"
+  },
+  "R-WP-A1-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "76b7ee9a07eb2cdd56813917351cfd5dbe82d1d6b333f6b805daa0ab4f74327d"
+  },
+  "R-WP-A1-mh-sor": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "76b7ee9a07eb2cdd56813917351cfd5dbe82d1d6b333f6b805daa0ab4f74327d"
+  },
+  "R-WP-A1-sp-full": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "d9f202809cae1cad8e5d7aeb9a17996ad2df6f190d474a2223d424cfbb89b0e1"
+  },
+  "R-WP-A1-sp-sor": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "d9f202809cae1cad8e5d7aeb9a17996ad2df6f190d474a2223d424cfbb89b0e1"
+  },
+  "R-WP-A4-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "449bb5d1ae8078af25a33fd9e678c372b6c652659f9809b25187c73706550a4a"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "449bb5d1ae8078af25a33fd9e678c372b6c652659f9809b25187c73706550a4a"
+    }
+   },
+   "resolved_profile_sha256": "bb8cb5dd9e2c2e3b0047c1acb2b37cac48601bb1034ce3995f433bc6791a4015"
+  },
+  "T-A1-ig-full": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "de5b6500b51d73e1b21c75541f5ffe6a0bfdc7dacab3ded1b0a44c24019877f2"
+  },
+  "T-A1-ig-sor": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "de5b6500b51d73e1b21c75541f5ffe6a0bfdc7dacab3ded1b0a44c24019877f2"
+  },
+  "T-A1-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "76b7ee9a07eb2cdd56813917351cfd5dbe82d1d6b333f6b805daa0ab4f74327d"
+  },
+  "T-A1-mh-sor": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "76b7ee9a07eb2cdd56813917351cfd5dbe82d1d6b333f6b805daa0ab4f74327d"
+  },
+  "T-A1-sp-full": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "d9f202809cae1cad8e5d7aeb9a17996ad2df6f190d474a2223d424cfbb89b0e1"
+  },
+  "T-A1-sp-sor": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "d9f202809cae1cad8e5d7aeb9a17996ad2df6f190d474a2223d424cfbb89b0e1"
+  },
+  "T-A2-ig-full": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "035f1ccb4785852281f5cb67e09e605e341d74297e1579bc761c803bee29961a"
+  },
+  "T-A2-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "800eeedfd7c837f6f3dd818ec7d043338fede9e08f2acdd9c52e7349d45b156f"
+  },
+  "T-A2-sp-full": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "4e8f352e51f7dd131e2581d89207d61de6c15e3d3bff1a3767fc16ffe236a3fb"
+  },
+  "T-A3-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "507e84bc045d4797d5a4e4c73ef0329981f95f766286d151bc698a19f4e4a413"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "507e84bc045d4797d5a4e4c73ef0329981f95f766286d151bc698a19f4e4a413"
+    }
+   },
+   "resolved_profile_sha256": "8bebe3c142d90a0b6c6520d0d8769e2696b46e2780318a9d1180b5ac49fe01da"
+  },
+  "T-A4-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "449bb5d1ae8078af25a33fd9e678c372b6c652659f9809b25187c73706550a4a"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "449bb5d1ae8078af25a33fd9e678c372b6c652659f9809b25187c73706550a4a"
+    }
+   },
+   "resolved_profile_sha256": "bb8cb5dd9e2c2e3b0047c1acb2b37cac48601bb1034ce3995f433bc6791a4015"
+  },
+  "T-WP-A1-ig-full": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "de5b6500b51d73e1b21c75541f5ffe6a0bfdc7dacab3ded1b0a44c24019877f2"
+  },
+  "T-WP-A1-ig-sor": {
+   "algorithms": {
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "de5b6500b51d73e1b21c75541f5ffe6a0bfdc7dacab3ded1b0a44c24019877f2"
+  },
+  "T-WP-A1-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "76b7ee9a07eb2cdd56813917351cfd5dbe82d1d6b333f6b805daa0ab4f74327d"
+  },
+  "T-WP-A1-mh-sor": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    }
+   },
+   "resolved_profile_sha256": "76b7ee9a07eb2cdd56813917351cfd5dbe82d1d6b333f6b805daa0ab4f74327d"
+  },
+  "T-WP-A1-sp-full": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "d9f202809cae1cad8e5d7aeb9a17996ad2df6f190d474a2223d424cfbb89b0e1"
+  },
+  "T-WP-A1-sp-sor": {
+   "algorithms": {
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "d9f202809cae1cad8e5d7aeb9a17996ad2df6f190d474a2223d424cfbb89b0e1"
+  },
+  "T-WP-A4-mh-full": {
+   "algorithms": {
+    "metis_history": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "449bb5d1ae8078af25a33fd9e678c372b6c652659f9809b25187c73706550a4a"
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "449bb5d1ae8078af25a33fd9e678c372b6c652659f9809b25187c73706550a4a"
+    }
+   },
+   "resolved_profile_sha256": "bb8cb5dd9e2c2e3b0047c1acb2b37cac48601bb1034ce3995f433bc6791a4015"
+  }
+ },
+ "files": {
+  "cost_model": {
+   "path": "config/costs/mantle-101082044-cost-v1.json",
+   "sha256": "50e89727d6b6ac869c14c837c7cdec8099efc897d201794640912f3f6b4b7e71"
+  },
+  "latency:arms": {
+   "path": "config/research_022/latency-arms.yaml",
+   "sha256": "661ee7977150b9502c5f3dcd8160252c5195f2ff2647e29079f7b6f9c71d334b"
+  },
+  "latency:l01": {
+   "path": "config/latency/l01.yaml",
+   "sha256": "961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b"
+  },
+  "latency:protocol": {
+   "path": "config/research_022/l01-r022.yaml",
+   "sha256": "f34475cdff54713f4641e2ac4c32c7cab41eefcdc7ffb79a4ba6cdc149350400"
+  },
+  "metis_history_bounded_preset": {
+   "path": "config/metis_history_bounded/preset_v1.yaml",
+   "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce"
+  },
+  "metis_history_preset": {
+   "path": "config/metis_history/preset_v1.yaml",
+   "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799"
+  },
+  "metis_m4_settings": {
+   "path": "config/metis_challenge/m4.yaml",
+   "sha256": "661311df6ff7a36a43954fff0e42f6b30b824d35d96c06f0e215960f256d4471"
+  },
+  "profile:a3_mh": {
+   "path": "config/research_022/profiles/a3_mh.yaml",
+   "sha256": "5af2e4eacb83a47faa4f8283e6cd7f43461a0d095be3a36afa71dbcdbf31f12e"
+  },
+  "profile:a4_mh": {
+   "path": "config/research_022/profiles/a4_mh.yaml",
+   "sha256": "81b6476fd1e1428de54b1de5aa73a3d48506bf7c9ac9cbfcfd7c7cb9765ab01c"
+  },
+  "profile:a5_ig_c25": {
+   "path": "config/research_022/profiles/a5_ig_c25.yaml",
+   "sha256": "d2ac4ff1c383860c2740b5f319999d2e8f4ce0847f3299e3ca69516e3f451d4f"
+  },
+  "profile:a5_ig_c50": {
+   "path": "config/research_022/profiles/a5_ig_c50.yaml",
+   "sha256": "6e26772519a6a07c4047dc46349e026ae03583f1230fc457d21bdd93c7bd2532"
+  },
+  "profile:a5_ig_q25": {
+   "path": "config/research_022/profiles/a5_ig_q25.yaml",
+   "sha256": "b863eb189da66cda8eb7b11f65d13e32bd06c1c308ae174af6445d84d435e968"
+  },
+  "profile:a5_ig_q50": {
+   "path": "config/research_022/profiles/a5_ig_q50.yaml",
+   "sha256": "4cf8b22be872af1be86726ace29380ea607b09290765ac72f2c72dd231ea015a"
+  },
+  "profile:a5_mh_c25": {
+   "path": "config/research_022/profiles/a5_mh_c25.yaml",
+   "sha256": "614766dc67f52f664f6e9f8fc6cd4377682bf9ff2432b86d316ac7e663ec1f58"
+  },
+  "profile:a5_mh_c50": {
+   "path": "config/research_022/profiles/a5_mh_c50.yaml",
+   "sha256": "bf3889ae7b9a68181f807d8b75b7a41d363be59d16a8ded7cef9878f9887a5cd"
+  },
+  "profile:a5_mh_q25": {
+   "path": "config/research_022/profiles/a5_mh_q25.yaml",
+   "sha256": "0749b9587d762a381004865c6db881cf82773e9c6718fc965f69a703deb6825a"
+  },
+  "profile:a5_mh_q50": {
+   "path": "config/research_022/profiles/a5_mh_q50.yaml",
+   "sha256": "adb3e35918699090e8d53a9b77311c3aaf000a929937a98618ee3008dd0ddef0"
+  },
+  "profile:a5_sp_c25": {
+   "path": "config/research_022/profiles/a5_sp_c25.yaml",
+   "sha256": "6531a98e3b6844b4a2c088ba63a4e5da56df1b279c50200d90ada4b3296279ab"
+  },
+  "profile:a5_sp_c50": {
+   "path": "config/research_022/profiles/a5_sp_c50.yaml",
+   "sha256": "958c1ce554b33d02f34ee364310cf4be07e2153712bcac6c2a6fb084a3382330"
+  },
+  "profile:a5_sp_q25": {
+   "path": "config/research_022/profiles/a5_sp_q25.yaml",
+   "sha256": "b73ff19364a5258b86c098d494994d944a64f0a94434cb156464b186e7c218e8"
+  },
+  "profile:a5_sp_q50": {
+   "path": "config/research_022/profiles/a5_sp_q50.yaml",
+   "sha256": "579e77f3c4b86e7f0471e0b84e80cac7a55ddfe9507523e995e140560e07a627"
+  },
+  "profile:canonical_gross": {
+   "path": "config/full_gross.yaml",
+   "sha256": "51a8a65184ae765867fd9d7763776852b2b4576e3cf7116a8dc15ccd87028177"
+  },
+  "profile:canonical_net": {
+   "path": "config/full.yaml",
+   "sha256": "a99f33f8547a03ec6ff16f354b409a742d61db56921c45f88cbc26eb0887fab6"
+  },
+  "profile:g_ig": {
+   "path": "config/research_022/profiles/g_ig.yaml",
+   "sha256": "bd4da5a2ff3f484a57fbb00777a981e17cdfd09840e90e0966963a2a9926dc44"
+  },
+  "profile:g_mh": {
+   "path": "config/research_022/profiles/g_mh.yaml",
+   "sha256": "19b551b721a8ed2cd9b9a32dce1bc512bfb54acf8fda81cfc0311bb04c487bbe"
+  },
+  "profile:g_rest_a": {
+   "path": "config/research_022/profiles/g_rest_a.yaml",
+   "sha256": "98efd87aa09c8469d83bc7fc1119ebd4d21a21af50b293c8cbdb2ab84188a1a4"
+  },
+  "profile:g_rest_b": {
+   "path": "config/research_022/profiles/g_rest_b.yaml",
+   "sha256": "8e0ae2498a8f7c2df4255dd64ae35cc6924fe875344935dcd0d907515c660c92"
+  },
+  "profile:g_rest_c": {
+   "path": "config/research_022/profiles/g_rest_c.yaml",
+   "sha256": "42d027063d4598c3c1f1b41dafc6ae4ef00486de67cb1fe128e939b5aaa5bc20"
+  },
+  "profile:g_rest_d": {
+   "path": "config/research_022/profiles/g_rest_d.yaml",
+   "sha256": "951b353bd25135bfb46a78002b74894ca898e25d4419416a9602f0845a740dd9"
+  },
+  "profile:g_sp": {
+   "path": "config/research_022/profiles/g_sp.yaml",
+   "sha256": "cb12da507be3612c43a23a4b21343d1f4bd6e3a0e8244274c3336144ea04a90c"
+  },
+  "profile:n_ig": {
+   "path": "config/research_022/profiles/n_ig.yaml",
+   "sha256": "be0c29414a93e2a189db793e2a8b87fd33a07927134afe1757e3a5ea9df1b593"
+  },
+  "profile:n_mh": {
+   "path": "config/research_022/profiles/n_mh.yaml",
+   "sha256": "54cafce759a02d6c8cb06dde791140de9885d052dee4074098519a2fd494e651"
+  },
+  "profile:n_sp": {
+   "path": "config/research_022/profiles/n_sp.yaml",
+   "sha256": "a6c2d85c446816c52272e8dcace54ff4032435c053ca5957f59415d7851d30d6"
+  },
+  "profile:timing_pairs": {
+   "path": "config/research_022/profiles/timing_pairs.yaml",
+   "sha256": "86cf3cbf493771fc43cb96654ce9364e210d4766fd15ea8680f2d4140e01d852"
+  },
+  "schedule": {
+   "path": "config/research_022/schedule.yaml",
+   "sha256": "becf5ba653257214ad21fe0b7352c812f0cacfebc62b91ab707719de015fad81"
+  },
+  "tool:pruning_analysis.py": {
+   "path": "tools/research_022/pruning_analysis.py",
+   "sha256": "5e1b974a83b7c73afc878256e202dd72eac706d86fabb68255094fe4bbf43b3f"
+  },
+  "tool:pruning_campaign.py": {
+   "path": "tools/research_022/pruning_campaign.py",
+   "sha256": "1d120cbd2b19b709d22c5e2257ecada081f38ab74e6f6c4eb4fab875121845f9"
+  },
+  "tool:pruning_work.py": {
+   "path": "tools/research_022/pruning_work.py",
+   "sha256": "f40d1488c41e38e213c080c2c312bc5d5c586059a6636e88bf5d076aeec3a01c"
+  },
+  "tool:r021_analysis": {
+   "path": "tools/research_021/analysis.py",
+   "sha256": "311a92988ffdc42901de65adc6199e16d5a0faa849447a12ed6accff562b2288"
+  },
+  "tool:r021_campaign": {
+   "path": "tools/research_021/campaign.py",
+   "sha256": "2307d801d5f25fdd742208cf7c8b16483853e5a3e80351187121574b797c65c4"
+  }
+ },
+ "inventory": {
+  "I": {
+   "cells": 1666,
+   "invocations": [
+    {
+     "algorithms": [
+      "direct",
+      "single_path",
+      "direct_split",
+      "path_split",
+      "incremental_graph",
+      "uni_sor_port",
+      "uni_sor_adaptive",
+      "uni_sor_optimized",
+      "metis_inspired",
+      "metis_history",
+      "direct_split_certified",
+      "incremental_graph_repair",
+      "uni_sor_cycle_safe",
+      "cfmm_dual",
+      "single_path_bounded",
+      "incremental_graph_bounded",
+      "metis_history_bounded"
+     ],
+     "bundle": "fixture",
+     "cases": 96,
+     "cells": 1632,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "I-batch17",
+     "kind": "run",
+     "profile": "canonical_gross",
+     "strategies": "all"
+    },
+    {
+     "depends": [
+      "I-batch17"
+     ],
+     "id": "I-batch17.report",
+     "kind": "report",
+     "of": "I-batch17"
+    },
+    {
+     "depends": [
+      "I-batch17"
+     ],
+     "id": "I-batch17.replay",
+     "kind": "replay",
+     "of": "I-batch17"
+    },
+    {
+     "depends": [
+      "I-batch17",
+      "I-batch17.replay"
+     ],
+     "id": "I-batch17.order",
+     "kind": "order_check",
+     "of": [
+      "I-batch17",
+      "I-batch17.replay"
+     ]
+    },
+    {
+     "algorithms": [
+      "direct",
+      "single_path",
+      "direct_split",
+      "path_split",
+      "incremental_graph",
+      "uni_sor_port",
+      "uni_sor_adaptive",
+      "uni_sor_optimized",
+      "metis_inspired",
+      "metis_history",
+      "direct_split_certified",
+      "incremental_graph_repair",
+      "uni_sor_cycle_safe",
+      "cfmm_dual",
+      "single_path_bounded",
+      "incremental_graph_bounded",
+      "metis_history_bounded"
+     ],
+     "bundle": "full",
+     "cases": 1,
+     "cells": 17,
+     "depends": [],
+     "details": true,
+     "expect_exit": 0,
+     "id": "I-quote-details",
+     "kind": "quote",
+     "profile": "canonical_gross",
+     "request": {
+      "amount": "1000",
+      "token_in": "USDC",
+      "token_out": "USDT"
+     },
+     "solves_per_algorithm": 1,
+     "strategies": "all"
+    },
+    {
+     "depends": [
+      "I-quote-details"
+     ],
+     "id": "I-quote-details.report",
+     "kind": "report",
+     "of": "I-quote-details"
+    },
+    {
+     "depends": [
+      "I-quote-details"
+     ],
+     "id": "I-quote-details.replay",
+     "kind": "replay",
+     "of": "I-quote-details"
+    },
+    {
+     "depends": [
+      "I-quote-details",
+      "I-quote-details.replay"
+     ],
+     "id": "I-quote-details.order",
+     "kind": "order_check",
+     "of": [
+      "I-quote-details",
+      "I-quote-details.replay"
+     ]
+    },
+    {
+     "algorithms": [
+      "direct",
+      "single_path",
+      "direct_split",
+      "path_split",
+      "incremental_graph",
+      "uni_sor_port",
+      "uni_sor_adaptive",
+      "uni_sor_optimized",
+      "metis_inspired",
+      "metis_history",
+      "direct_split_certified",
+      "incremental_graph_repair",
+      "uni_sor_cycle_safe",
+      "cfmm_dual",
+      "single_path_bounded",
+      "incremental_graph_bounded",
+      "metis_history_bounded"
+     ],
+     "bundle": "full",
+     "cases": 1,
+     "cells": 17,
+     "depends": [],
+     "details": false,
+     "expect_exit": 0,
+     "id": "I-quote-compact",
+     "kind": "quote",
+     "profile": "canonical_gross",
+     "request": {
+      "amount": "1000",
+      "token_in": "USDC",
+      "token_out": "USDT"
+     },
+     "solves_per_algorithm": 1,
+     "strategies": "all"
+    },
+    {
+     "depends": [
+      "I-quote-compact"
+     ],
+     "id": "I-quote-compact.report",
+     "kind": "report",
+     "of": "I-quote-compact"
+    },
+    {
+     "depends": [
+      "I-quote-compact"
+     ],
+     "id": "I-quote-compact.replay",
+     "kind": "replay",
+     "of": "I-quote-compact"
+    },
+    {
+     "depends": [
+      "I-quote-compact",
+      "I-quote-compact.replay"
+     ],
+     "id": "I-quote-compact.order",
+     "kind": "order_check",
+     "of": [
+      "I-quote-compact",
+      "I-quote-compact.replay"
+     ]
+    }
+   ],
+   "stage": "I",
+   "stage_rules": {
+    "caffeinate": true,
+    "lanes": 1,
+    "owner": "the implementer, alone on the host",
+    "pmset_capture": true,
+    "split": "fixture and sentinel (no corpus split)"
+   }
+  },
+  "L": {
+   "cells": 30,
+   "invocations": [
+    {
+     "arm": "REF",
+     "depends": [],
+     "id": "L-ref",
+     "kind": "l01_run"
+    },
+    {
+     "arm": "BND",
+     "depends": [
+      "L-ref"
+     ],
+     "id": "L-bnd",
+     "kind": "l01_run"
+    },
+    {
+     "baseline": "L-ref",
+     "candidate": "L-bnd",
+     "depends": [
+      "L-bnd"
+     ],
+     "id": "L-cmp",
+     "kind": "l01_compare"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded",
+      "incremental_graph",
+      "incremental_graph_bounded",
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "bundle": "full",
+     "cases": 1,
+     "cells": 6,
+     "depends": [
+      "L-cmp"
+     ],
+     "details": true,
+     "expect_exit": 0,
+     "id": "L-q1",
+     "kind": "quote",
+     "profile": "timing_pairs",
+     "request": {
+      "amount": "1000",
+      "token_in": "USDC",
+      "token_out": "USDT"
+     },
+     "solves_per_algorithm": 1,
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded",
+      "incremental_graph",
+      "incremental_graph_bounded",
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "bundle": "full",
+     "cases": 1,
+     "cells": 6,
+     "depends": [
+      "L-q1"
+     ],
+     "details": true,
+     "expect_exit": 0,
+     "id": "L-q2",
+     "kind": "quote",
+     "profile": "timing_pairs",
+     "request": {
+      "amount": "1000",
+      "token_in": "USDC",
+      "token_out": "USDT"
+     },
+     "solves_per_algorithm": 1,
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded",
+      "incremental_graph",
+      "incremental_graph_bounded",
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "bundle": "full",
+     "cases": 1,
+     "cells": 6,
+     "depends": [
+      "L-q2"
+     ],
+     "details": true,
+     "expect_exit": 0,
+     "id": "L-q3",
+     "kind": "quote",
+     "profile": "timing_pairs",
+     "request": {
+      "amount": "1000",
+      "token_in": "USDC",
+      "token_out": "USDT"
+     },
+     "solves_per_algorithm": 1,
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded",
+      "incremental_graph",
+      "incremental_graph_bounded",
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "bundle": "full",
+     "cases": 1,
+     "cells": 6,
+     "depends": [
+      "L-q3"
+     ],
+     "details": true,
+     "expect_exit": 0,
+     "id": "L-q4",
+     "kind": "quote",
+     "profile": "timing_pairs",
+     "request": {
+      "amount": "1000",
+      "token_in": "USDC",
+      "token_out": "USDT"
+     },
+     "solves_per_algorithm": 1,
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded",
+      "incremental_graph",
+      "incremental_graph_bounded",
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "bundle": "full",
+     "cases": 1,
+     "cells": 6,
+     "depends": [
+      "L-q4"
+     ],
+     "details": true,
+     "expect_exit": 0,
+     "id": "L-q5",
+     "kind": "quote",
+     "profile": "timing_pairs",
+     "request": {
+      "amount": "1000",
+      "token_in": "USDC",
+      "token_out": "USDT"
+     },
+     "solves_per_algorithm": 1,
+     "strategies": "profile"
+    }
+   ],
+   "stage": "L",
+   "stage_rules": {
+    "caffeinate": true,
+    "lanes": 1,
+    "launch_window": {
+     "headroom_load1": 3.0,
+     "interval_seconds": 30,
+     "max_wait_seconds": 21600,
+     "resample_every_seconds": 300,
+     "samples": 5
+    },
+    "owner": "the implementer, alone on the host, ONCE, only after the exactness gate passed (\u00a711.5)",
+    "pmset_capture": true,
+    "split": "mixed (L01 matrix tuning cases + held-out twins, sentinel)"
+   }
+  },
+  "M": {
+   "cells": 9552,
+   "invocations": [
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-sp-q25-tuning",
+     "kind": "run",
+     "profile": "a5_sp_q25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-sp-q50-tuning",
+     "kind": "run",
+     "profile": "a5_sp_q50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-sp-c25-tuning",
+     "kind": "run",
+     "profile": "a5_sp_c25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-sp-c50-tuning",
+     "kind": "run",
+     "profile": "a5_sp_c50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-ig-q25-tuning",
+     "kind": "run",
+     "profile": "a5_ig_q25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-ig-q50-tuning",
+     "kind": "run",
+     "profile": "a5_ig_q50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-ig-c25-tuning",
+     "kind": "run",
+     "profile": "a5_ig_c25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-ig-c50-tuning",
+     "kind": "run",
+     "profile": "a5_ig_c50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-mh-q25-tuning",
+     "kind": "run",
+     "profile": "a5_mh_q25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-mh-q50-tuning",
+     "kind": "run",
+     "profile": "a5_mh_q50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-mh-c25-tuning",
+     "kind": "run",
+     "profile": "a5_mh_c25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-mh-c50-tuning",
+     "kind": "run",
+     "profile": "a5_mh_c50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-sp-q25-report",
+     "kind": "run",
+     "profile": "a5_sp_q25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-sp-q50-report",
+     "kind": "run",
+     "profile": "a5_sp_q50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-sp-c25-report",
+     "kind": "run",
+     "profile": "a5_sp_c25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-sp-c50-report",
+     "kind": "run",
+     "profile": "a5_sp_c50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-ig-q25-report",
+     "kind": "run",
+     "profile": "a5_ig_q25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-ig-q50-report",
+     "kind": "run",
+     "profile": "a5_ig_q50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-ig-c25-report",
+     "kind": "run",
+     "profile": "a5_ig_c25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-ig-c50-report",
+     "kind": "run",
+     "profile": "a5_ig_c50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-mh-q25-report",
+     "kind": "run",
+     "profile": "a5_mh_q25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-mh-q50-report",
+     "kind": "run",
+     "profile": "a5_mh_q50",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-mh-c25-report",
+     "kind": "run",
+     "profile": "a5_mh_c25",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A5",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "M-A5-mh-c50-report",
+     "kind": "run",
+     "profile": "a5_mh_c50",
+     "strategies": "profile"
+    }
+   ],
+   "stage": "M",
+   "stage_rules": {
+    "caffeinate": true,
+    "lanes": 5,
+    "owner": "the implementer, from the freeze commit (the A5 values are fixed by the rule below)",
+    "pmset_capture": true,
+    "split": "tuning and report (A5, full_source only)"
+   }
+  },
+  "R": {
+   "cells": 17516,
+   "invocations": [
+    {
+     "algorithms": [
+      "uni_sor_cycle_safe",
+      "direct",
+      "direct_split",
+      "direct_split_certified"
+     ],
+     "arm": "B14",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 1208,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-B14-ra-full",
+     "kind": "run",
+     "profile": "g_rest_a",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "uni_sor_port",
+      "uni_sor_optimized",
+      "cfmm_dual"
+     ],
+     "arm": "B14",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 906,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-B14-rb-full",
+     "kind": "run",
+     "profile": "g_rest_b",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph_repair",
+      "uni_sor_adaptive"
+     ],
+     "arm": "B14",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-B14-rc-full",
+     "kind": "run",
+     "profile": "g_rest_c",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "path_split",
+      "metis_inspired"
+     ],
+     "arm": "B14",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-B14-rd-full",
+     "kind": "run",
+     "profile": "g_rest_d",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "uni_sor_cycle_safe",
+      "direct",
+      "direct_split",
+      "direct_split_certified"
+     ],
+     "arm": "B14",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 1208,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-B14-ra-sor",
+     "kind": "run",
+     "profile": "g_rest_a",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "uni_sor_port",
+      "uni_sor_optimized",
+      "cfmm_dual"
+     ],
+     "arm": "B14",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 906,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-B14-rb-sor",
+     "kind": "run",
+     "profile": "g_rest_b",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph_repair",
+      "uni_sor_adaptive"
+     ],
+     "arm": "B14",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-B14-rc-sor",
+     "kind": "run",
+     "profile": "g_rest_c",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "path_split",
+      "metis_inspired"
+     ],
+     "arm": "B14",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-B14-rd-sor",
+     "kind": "run",
+     "profile": "g_rest_d",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A4",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A4-mh-full",
+     "kind": "run",
+     "profile": "a4_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A3",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A3-mh-full",
+     "kind": "run",
+     "profile": "a3_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A1-ig-full",
+     "kind": "run",
+     "profile": "g_ig",
+     "strategies": "profile"
+    },
+    {
+     "depends": [
+      "R-A1-ig-full"
+     ],
+     "id": "R-A1-ig-full.report",
+     "kind": "report",
+     "of": "R-A1-ig-full"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A1-mh-full",
+     "kind": "run",
+     "profile": "g_mh",
+     "strategies": "profile"
+    },
+    {
+     "depends": [
+      "R-A1-mh-full"
+     ],
+     "id": "R-A1-mh-full.report",
+     "kind": "report",
+     "of": "R-A1-mh-full"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A1-sp-full",
+     "kind": "run",
+     "profile": "g_sp",
+     "strategies": "profile"
+    },
+    {
+     "depends": [
+      "R-A1-sp-full"
+     ],
+     "id": "R-A1-sp-full.report",
+     "kind": "report",
+     "of": "R-A1-sp-full"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A1-ig-sor",
+     "kind": "run",
+     "profile": "g_ig",
+     "strategies": "profile"
+    },
+    {
+     "depends": [
+      "R-A1-ig-sor"
+     ],
+     "id": "R-A1-ig-sor.report",
+     "kind": "report",
+     "of": "R-A1-ig-sor"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A1-mh-sor",
+     "kind": "run",
+     "profile": "g_mh",
+     "strategies": "profile"
+    },
+    {
+     "depends": [
+      "R-A1-mh-sor"
+     ],
+     "id": "R-A1-mh-sor.report",
+     "kind": "report",
+     "of": "R-A1-mh-sor"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A1-sp-sor",
+     "kind": "run",
+     "profile": "g_sp",
+     "strategies": "profile"
+    },
+    {
+     "depends": [
+      "R-A1-sp-sor"
+     ],
+     "id": "R-A1-sp-sor.report",
+     "kind": "report",
+     "of": "R-A1-sp-sor"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A2",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A2-ig-full",
+     "kind": "run",
+     "profile": "n_ig",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A2",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A2-mh-full",
+     "kind": "run",
+     "profile": "n_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A2",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-A2-sp-full",
+     "kind": "run",
+     "profile": "n_sp",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A4",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-WP-A4-mh-full",
+     "kind": "run",
+     "profile": "a4_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-WP-A1-ig-full",
+     "kind": "run",
+     "profile": "g_ig",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-WP-A1-mh-full",
+     "kind": "run",
+     "profile": "g_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_full",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-WP-A1-sp-full",
+     "kind": "run",
+     "profile": "g_sp",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-WP-A1-ig-sor",
+     "kind": "run",
+     "profile": "g_ig",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-WP-A1-mh-sor",
+     "kind": "run",
+     "profile": "g_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "report_sor",
+     "cases": 302,
+     "cells": 604,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "R-WP-A1-sp-sor",
+     "kind": "run",
+     "profile": "g_sp",
+     "strategies": "profile"
+    }
+   ],
+   "stage": "R",
+   "stage_rules": {
+    "caffeinate": true,
+    "lanes": 5,
+    "owner": "the implementer, ONCE, from the freeze commit",
+    "pmset_capture": true,
+    "split": "report"
+   }
+  },
+  "T": {
+   "cells": 3456,
+   "invocations": [
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A4",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A4-mh-full",
+     "kind": "run",
+     "profile": "a4_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A3",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A3-mh-full",
+     "kind": "run",
+     "profile": "a3_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A1-ig-full",
+     "kind": "run",
+     "profile": "g_ig",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A1-mh-full",
+     "kind": "run",
+     "profile": "g_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A1-sp-full",
+     "kind": "run",
+     "profile": "g_sp",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_sor",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A1-ig-sor",
+     "kind": "run",
+     "profile": "g_ig",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_sor",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A1-mh-sor",
+     "kind": "run",
+     "profile": "g_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_sor",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A1-sp-sor",
+     "kind": "run",
+     "profile": "g_sp",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A2",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A2-ig-full",
+     "kind": "run",
+     "profile": "n_ig",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A2",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A2-mh-full",
+     "kind": "run",
+     "profile": "n_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A2",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-A2-sp-full",
+     "kind": "run",
+     "profile": "n_sp",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A4",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-WP-A4-mh-full",
+     "kind": "run",
+     "profile": "a4_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-WP-A1-ig-full",
+     "kind": "run",
+     "profile": "g_ig",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-WP-A1-mh-full",
+     "kind": "run",
+     "profile": "g_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_full",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-WP-A1-sp-full",
+     "kind": "run",
+     "profile": "g_sp",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "incremental_graph",
+      "incremental_graph_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_sor",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-WP-A1-ig-sor",
+     "kind": "run",
+     "profile": "g_ig",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "metis_history",
+      "metis_history_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_sor",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-WP-A1-mh-sor",
+     "kind": "run",
+     "profile": "g_mh",
+     "strategies": "profile"
+    },
+    {
+     "algorithms": [
+      "single_path",
+      "single_path_bounded"
+     ],
+     "arm": "A1",
+     "bundle": "tuning_sor",
+     "cases": 96,
+     "cells": 192,
+     "depends": [],
+     "expect_exit": 0,
+     "id": "T-WP-A1-sp-sor",
+     "kind": "run",
+     "profile": "g_sp",
+     "strategies": "profile"
+    }
+   ],
+   "stage": "T",
+   "stage_rules": {
+    "caffeinate": true,
+    "lanes": 5,
+    "owner": "the implementer, first (before any report-split solve)",
+    "pmset_capture": true,
+    "split": "tuning"
+   }
+  }
+ },
+ "issue": "WHI-1602",
+ "rules_sha256": "a412f03f225687f2e496a8728c9f5cfeb0b1cb530387ffe8f1ecb5d3e90dffc6",
+ "schema": "r022.campaign-freeze/1"
+}

@@ -258,7 +258,10 @@ a5:
   groups: {sp: g_sp, ig: g_ig, mh: g_mh}
   budgets: [{kind: max_quotes, p: 25}, {kind: max_quotes, p: 50},
             {kind: max_candidates, p: 25}, {kind: max_candidates, p: 50}]
-  values: null                      # filled before any report-split solve (the freeze commit)
+  values:
+    sp: {"max_quotes": {"p25": 911, "p50": 2960}, "max_candidates": {"p25": 1714, "p50": 4840}}
+    ig: {"max_quotes": {"p25": 15456, "p50": 26358}, "max_candidates": {"p25": 90527, "p50": 229704}}
+    mh: {"max_quotes": {"p25": 12733, "p50": 21559}, "max_candidates": {"p25": 24513, "p50": 30026}}
 
 # ----------------------------------------------------------------------------- invocations
 # Stages L and I are listed literally; T, R and M are expanded from `arms` / `a5`.

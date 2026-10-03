@@ -19,6 +19,7 @@ import copy
 import importlib.util
 import json
 import multiprocessing
+import re
 import signal
 import sys
 from collections.abc import Iterator
@@ -149,7 +150,7 @@ def test_group_profiles_change_only_the_algorithm_list_and_the_registered_sets(
 
 def test_stage_inventories_are_exact(campaign: Any) -> None:
     counts = {s: len(campaign.stage(s)) for s in "TRMIL"}
-    assert counts == {"T": 18, "R": 32, "M": 0, "I": 12, "L": 8}
+    assert counts == {"T": 18, "R": 32, "M": 24, "I": 12, "L": 8}  # M exists once a5 is frozen
     ids = {i.id for i in campaign.stage("R")}
     assert {f"R-A1-{g}-{b}" for g in ("ig", "mh", "sp") for b in ("full", "sor")} <= ids
     assert {f"R-B14-{g}-{b}" for g in ("ra", "rb", "rc", "rd") for b in ("full", "sor")} <= ids
@@ -162,24 +163,31 @@ def test_stage_inventories_are_exact(campaign: Any) -> None:
     assert [i.id for i in campaign.stage("L")][:3] == ["L-ref", "L-bnd", "L-cmp"]
 
 
-def test_the_a5_expansion_needs_the_values_and_adds_twenty_four_runs(campaign: Any) -> None:
-    raw = copy.deepcopy(campaign.raw)
-    assert raw["a5"]["values"] is None and C.a5_profiles(raw) == {}
-    q = {"p25": 10, "p50": 20}
-    raw["a5"]["values"] = {g: {"max_quotes": q, "max_candidates": q} for g in ("sp", "ig", "mh")}
-    built = C.build(raw)
-    runs = built.stage("M")
+def test_the_a5_expansion_needs_the_frozen_values_and_adds_twenty_four_runs(campaign: Any) -> None:
+    values = campaign.raw["a5"]["values"]  # the freeze commit's: the rule applied to stage T
+    assert set(values) == {"sp", "ig", "mh"}
+    for group in values.values():
+        for kind in ("max_quotes", "max_candidates"):
+            assert 0 < group[kind]["p25"] <= group[kind]["p50"]
+    runs = campaign.stage("M")
     assert len(runs) == 24  # 3 pairs x 4 budgets x (tuning, report)
-    one = built.by_id["M-A5-ig-c50-report"]
+    one = campaign.by_id["M-A5-ig-c50-report"]
     assert one.get("bundle") == "report_full" and one.raw["pair"] == "incremental_graph"
-    assert raw["profiles"].get("a5_ig_c50") is None  # `build` adds them to its own copy only
-    spec = built.raw["profiles"]["a5_ig_c50"]["generate"]
-    assert spec["budget"] == {"max_candidates": 20} and spec["base"] == "canonical_gross"
+    spec = campaign.raw["profiles"]["a5_ig_c50"]["generate"]
+    assert spec["budget"] == {"max_candidates": values["ig"]["max_candidates"]["p50"]}
+    quotes = campaign.raw["profiles"]["a5_sp_q25"]["generate"]["budget"]
+    assert quotes == {"max_quotes": values["sp"]["max_quotes"]["p25"]}
+    unfrozen = copy.deepcopy(campaign.raw)
+    unfrozen["a5"]["values"] = None
+    assert C.a5_profiles(unfrozen) == {} and C.build(unfrozen).stage("M") == []
 
 
 def test_the_a5_values_are_written_once_into_the_schedule(tmp_path: Path) -> None:
     path = tmp_path / "schedule.yaml"
-    path.write_text((REPO / "config/research_022/schedule.yaml").read_text())
+    unfrozen = re.sub(r"  values:\n(?:    .+\n)+", "  values: null\n",
+                      (REPO / "config/research_022/schedule.yaml").read_text())  # fmt: skip
+    assert "values: null" in unfrozen
+    path.write_text(unfrozen)
     values = {g: {"max_quotes": {"p25": 1, "p50": 2}, "max_candidates": {"p25": 3, "p50": 4}}
               for g in ("sp", "ig", "mh")}
     C.write_a5_values(path, values)
@@ -531,3 +539,15 @@ def test_stage_l_is_inconclusive_for_load_sleep_or_a_missing_log_and_never_a_cla
         "gate_passed"] is False  # fmt: skip
     no_log = C._latency_view(campaign, out, C.c21.read_ledger(out), samples, None, 10)
     assert no_log["gate_passed"] is False and no_log["per_strategy"] == {}
+
+
+def test_the_committed_analysis_drops_only_the_per_pair_families_and_pins_them() -> None:
+    pair = {"a->b": {"cases": 1}}
+    result: dict[str, Any] = {"work": {"w": {"families": {"cohort": {"x": 1}, "pair": pair}}},
+                              "stage": "T"}  # fmt: skip
+    out = C.compact(result)
+    assert out["work"]["w"]["families"]["cohort"] == {"x": 1}
+    assert out["work"]["w"]["families"]["pair"]["omitted_from_compact_copy"] == 1
+    assert out["work"]["w"]["families"]["pair"]["sha256"] == C.sha256_bytes(
+        json.dumps(pair, sort_keys=True).encode())  # fmt: skip
+    assert result["work"]["w"]["families"]["pair"] == pair  # the input is untouched
