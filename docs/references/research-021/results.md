@@ -515,8 +515,19 @@ No registered-analysis defect was found. One gap is noted:
     counters do not depend on it), and candidate-domain hashes are compared only within each
     identity, where every arm of a pair carries the same label. Nothing was re-run; no number
     or claim above changes. From WHI-1603 on both identities record the bundle's real cohort
-    (`direct_split_certified.cohort_of`), so a new run on these bundles records a different
-    domain hash than the frozen records.
+    in a batch `main.py run` (`direct_split_certified.cohort_of`), so a new run on these
+    bundles records a different domain hash than the frozen records.
+  - Single requests (WHI-1606, release review R2-F1): until WHI-1606 a `main.py quote` over a
+    matched `sor_compatible` cut still recorded `full_source` in all four `cohort_of` users
+    (`metis_history`, `incremental_graph_repair`, `direct_split_certified`, `cfmm_dual`),
+    because the derived request bundle did not carry the parent's cohort. From WHI-1606 on
+    the quote path records it (`derived_from.cohort` in the request provenance), so both
+    batch `run` and `quote` record the real cohort. The latency harness's matched sentinel
+    (`benchmark.latency.build_bundles`) deliberately still does not: it would label these
+    identities `full_source`, so that its derived-bundle hash stays the one the recorded
+    L01 experiments (0.1.2 and stage L) carry (`docs/DEFERRED_ISSUES.md`). No frozen record
+    is affected: the stage-I quotes and `T-quote-smoke` used full-source parents, and the
+    stage-L matched sentinel ran only base identities, which record no `r021.domain/1`.
 - **R1-F1 (WHI-1605, added after the release review; frozen records not rewritten)**: the
   measured code declared `direct_split_certified` with `direct_split`'s capabilities and no
   protocol ceiling. Every frozen resolved profile that runs it therefore records

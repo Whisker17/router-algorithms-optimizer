@@ -294,6 +294,9 @@ class SnapshotBundle:
     # stratum, origin, split -- cohorts, envelope, exclusions). None for other bundles.
     prices: PriceContext | None = None
     corpus: Mapping[str, Any] | None = None
+    # WHI-1606: the matched cohort a derived single-request bundle was cut from, from its
+    # provenance `derived_from.cohort` (snapshot.request); None for every other bundle.
+    derived_cohort: str | None = None
 
     def pools_for_pair(self, token_a: str, token_b: str) -> tuple[PoolState, ...]:
         """All admitted pools directly connecting `token_a` and `token_b`, in a

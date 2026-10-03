@@ -12,9 +12,10 @@ custom request never borrows a corpus case's labels or a corpus bundle's identit
 The derived bundle is a plain (non-corpus) bundle: the corpus descriptor's case labels
 (origin, stratum, split, envelope bound) cannot describe a custom request honestly, and
 the bundle loader only admits a price context together with a corpus descriptor. Token
-metadata therefore travels in the provenance record. Its content is deterministic (no
-timestamps or local paths), so an identical request over an identical parent yields an
-identical bundle hash.
+metadata therefore travels in the provenance record, and so does a matched
+`sor_compatible` parent's cohort when the caller asks for it (`main.py quote`, WHI-1606).
+Its content is deterministic (no timestamps or local paths), so an identical request over
+an identical parent yields an identical bundle hash.
 """
 
 from __future__ import annotations
@@ -155,7 +156,9 @@ def request_case(
     )
 
 
-def request_provenance(parent: SnapshotBundle, case: Case) -> dict[str, Any]:
+def request_provenance(
+    parent: SnapshotBundle, case: Case, *, record_cohort: bool = False
+) -> dict[str, Any]:
     """The derived bundle's provenance record (see module docstring)."""
     tokens = token_universe(parent)
     parent_manifest = json.loads((Path(parent.source_path) / MANIFEST_FILE).read_text())
@@ -166,6 +169,19 @@ def request_provenance(parent: SnapshotBundle, case: Case) -> dict[str, Any]:
         str(getattr(p, "source_key", None) or "generic") for p in parent.pools.values()
     )
     token_in, token_out = tokens[case.token_in], tokens[case.token_out]
+    derived_from: dict[str, Any] = {
+        "bundle_id": parent.bundle_id,
+        "bundle_hash": parent.bundle_hash,
+        "kind": parent.kind,
+        "checksums": parent_manifest["checksums"],
+    }
+    # WHI-1606: a matched-cohort parent's cohort (R021-C/1 §3.1), which the plain request
+    # bundle cannot carry in a corpus descriptor; the loader exposes it as
+    # `SnapshotBundle.derived_cohort`. Only on request (the `quote` path) and only for a
+    # `sor_compatible` cut: every full-source, synthetic and latency-sentinel request
+    # bundle keeps its exact bytes and bundle hash.
+    if record_cohort and (parent.corpus or {}).get("cohort") == "sor_compatible":
+        derived_from["cohort"] = "sor_compatible"
     return {
         "schema": REQUEST_SCHEMA,
         "exploratory": True,
@@ -176,12 +192,7 @@ def request_provenance(parent: SnapshotBundle, case: Case) -> dict[str, Any]:
             "hash": parent.block.hash,
             "timestamp": parent.block.timestamp,
         },
-        "derived_from": {
-            "bundle_id": parent.bundle_id,
-            "bundle_hash": parent.bundle_hash,
-            "kind": parent.kind,
-            "checksums": parent_manifest["checksums"],
-        },
+        "derived_from": derived_from,
         "request": {
             "case_id": case.case_id,
             "token_in": token_in.to_dict(),
@@ -201,9 +212,12 @@ def request_provenance(parent: SnapshotBundle, case: Case) -> dict[str, Any]:
     }
 
 
-def derive_request_bundle(parent: SnapshotBundle, case: Case, output_dir: Path) -> SnapshotBundle:
-    """Publish the single-case request bundle at `output_dir` (refuses to overwrite)."""
-    provenance = request_provenance(parent, case)
+def derive_request_bundle(
+    parent: SnapshotBundle, case: Case, output_dir: Path, *, record_cohort: bool = False
+) -> SnapshotBundle:
+    """Publish the single-case request bundle at `output_dir` (refuses to overwrite).
+    `record_cohort` records a `sor_compatible` parent's cohort (see `request_provenance`)."""
+    provenance = request_provenance(parent, case, record_cohort=record_cohort)
     bundle = write_bundle(
         output_dir,
         bundle_id=f"{parent.bundle_id}{EXPLORATORY_MARK}{case.case_id.removeprefix('quote-')}",

@@ -100,6 +100,18 @@ soon — anything touching high-risk paths defaults to at least High), **Medium*
   Fix: scope those greps to exclude `docs/references/`, then commit the doc. Until then
   the reasoning behind the workflow lives only in commit messages.
 
+- **The latency harness's matched sentinel labels `cohort_of` users `full_source`**
+  (Low, WHI-1606). `benchmark/latency.py::build_bundles` derives the `sor_compatible/sentinel`
+  request bundle without `record_cohort`, so `metis_history`, `incremental_graph_repair`,
+  `direct_split_certified` and `cfmm_dual` would record `universe.cohort = full_source` in
+  their `r021.domain/1` if a future latency run included them (no recorded run does: stage L
+  ran only base identities there). Deferred deliberately: recording the cohort changes that
+  bundle's hash (`c967974a…` → `90f31051…` on the L01 parent), and `report.latency compare`
+  refuses experiments whose derived bundles differ, so every recorded L01 experiment (the
+  0.1.2 baseline `d5061563` and the 0.2.1 stage-L experiments) would stop being comparable.
+  `main.py quote` records it (WHI-1606). Fix: pass `record_cohort=True` there under a new
+  latency protocol version, whose derived-bundle hashes are recorded afresh.
+
 ---
 
 ## Resolved

@@ -366,10 +366,11 @@ WORK_UNITS = (
 
 def cohort_of(bundle: SnapshotBundle) -> str:
     """The domain universe's cohort (R021-C/1 §3.1): `fixture` for a synthetic bundle, the
-    corpus descriptor's cohort for a matched-cohort cut, else `full_source`."""
+    corpus descriptor's cohort for a matched-cohort cut or the cohort a single-request
+    bundle records it was cut from (WHI-1606, read at load time), else `full_source`."""
     if bundle.kind == "synthetic":
         return "fixture"
-    cohort = (bundle.corpus or {}).get("cohort")
+    cohort = (bundle.corpus or {}).get("cohort") or bundle.derived_cohort
     return "sor_compatible" if cohort == "sor_compatible" else "full_source"
 
 

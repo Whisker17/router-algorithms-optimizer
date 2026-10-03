@@ -162,7 +162,11 @@ def run_quote(prepared: PreparedQuote, quotes_dir: str | Path) -> QuoteRun:
         effective = single_run_document(prepared.source_profile)
     effective_path.write_text(header + yaml.safe_dump(effective, sort_keys=False), encoding="utf-8")
     profile = load_profile(effective_path)
-    bundle = derive_request_bundle(prepared.parent, prepared.case, quote_dir / "bundle")
+    # The single-request path records a matched parent's cohort (WHI-1606); the latency
+    # harness's sentinels deliberately do not (docs/DEFERRED_ISSUES.md).
+    bundle = derive_request_bundle(
+        prepared.parent, prepared.case, quote_dir / "bundle", record_cohort=True
+    )
     results_dir = quote_dir / "runs"
     replay = shlex.join(
         [
