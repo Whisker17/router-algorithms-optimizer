@@ -1,0 +1,21 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "bundle_id": "uniswap-v3-101057678-a2195dd2",
+  "checksums": {
+    "cases.jsonl": "91d9f15a32289d3742932ff1de046bdf57c2fb479bd7ca26268a3d1a144373e6",
+    "pools.json": "ee2641281586e14e05852158d8753780b15d178d3851e6740bbe9d89dba9c9a1",
+    "provenance.json": "689c3eaa24265426098a2630ab1a7f9f0acc03d51887e9b6af188bfaf167848c"
+  },
+  "files": {
+    "cases": "cases.jsonl",
+    "pools": "pools.json",
+    "provenance": "provenance.json"
+  },
+  "kind": "real",
+  "schema_version": 1
+}

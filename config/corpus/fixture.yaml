@@ -1,0 +1,19 @@
+# Representative regression fixture of the WHI-1436 corpus (tests/fixtures/corpus/bundle),
+# cut from the full bundle by `uv run python main.py corpus fixture`. Pool records are
+# copied unchanged (same block, same read_at); the corpus descriptor's pool-dependent
+# fields are recomputed for the subset and it names the full bundle it came from.
+#
+# Every admitted pool of these token pairs is kept (all five sources are represented by
+# mETH/WETH alone), plus every case whose pair is listed: the empirical strata, the
+# no-direct-pool pair USDC/FBTC (routable only through USDC/USDT0 -> USDT0/FBTC), and the
+# state-derived boundary cases.
+pairs:
+  - [METH, WETH]
+  - [USDT0, WMNT]
+  - [USDC, USDT0]
+  - [USDT0, FBTC]
+case_pairs:
+  - [METH, WETH]
+  - [USDT0, WMNT]
+  - [USDC, USDT0]
+  - [USDC, FBTC]

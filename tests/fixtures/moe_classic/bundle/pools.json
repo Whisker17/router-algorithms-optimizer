@@ -1,0 +1,134 @@
+{
+  "pools": [
+    {
+      "fee_bps": 30,
+      "pool_id": "0x4e7685df06201521f35a182467feefe02c53d847",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "277229670",
+      "reserve1": "416513449682493328611",
+      "source_key": "moe_classic_v1",
+      "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "0x1a4d4aa3bd8587f6e05cc98cf87954f7d95c11c6",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "211259108",
+      "reserve1": "318519551362175256878",
+      "source_key": "moe_classic_v1",
+      "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "0x4a18891de69124d2853a4e27543edb7e2e001179",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "179842499571809255215",
+      "reserve1": "45561670382774725",
+      "source_key": "moe_classic_v1",
+      "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "0xa375ea3e1f92d62e3a71b668bab09f7155267fa3",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "847879093017181102096",
+      "reserve1": "194905821150936050",
+      "source_key": "moe_classic_v1",
+      "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+      "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "0x86e3a987187fed135d6d9c114f1857d8144f01e1",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "720375061034206296",
+      "reserve1": "791283598976786238",
+      "source_key": "moe_classic_v1",
+      "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+      "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "0xaf50cd8c03096a416fc1b88e328bab3e09e0f175",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "3614556",
+      "reserve1": "1180071307107836",
+      "source_key": "moe_classic_v1",
+      "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "0x19a414a6b1743315c731492cb9b7b559d7db9ab7",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "962531",
+      "reserve1": "373225793339433",
+      "source_key": "moe_classic_v1",
+      "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "0x5c819961990c9f4f9fbfd4101f1d4e565b8aa0a6",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "1243986277",
+      "reserve1": "426003298150622509",
+      "source_key": "moe_classic_v1",
+      "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "0x33b1d7cfff71bba9dd987f96ad57e0a5f7db9ac5",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "119027110",
+      "reserve1": "44626005941710367",
+      "source_key": "moe_classic_v1",
+      "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+    },
+    {
+      "fee_bps": 30,
+      "pool_id": "0x8e3a13418743ab1a98434551937ea687e451b589",
+      "read_at": {
+        "block_hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+        "block_number": 101057678
+      },
+      "reserve0": "42876428",
+      "reserve1": "42816731",
+      "source_key": "moe_classic_v1",
+      "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+    }
+  ]
+}

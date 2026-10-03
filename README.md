@@ -1,75 +1,90 @@
-# code-template
+# router-algorithms-optimizer
 
-A project template for process-standardized, agent-driven development. Every new
-project starts from this skeleton and inherits the same workflow: **PRD-first specs,
-Linear-tracked issues, worktree-per-issue git flow, and a vendored suite of engineering
-skills**.
+An offline Python benchmark for Mantle swap-routing algorithms. Freeze one real liquidity
+snapshot, compare exact-input solvers using a common evaluator, and report quality,
+latency and execution-cost trade-offs. Uniswap SOR is a required scoped comparator;
+Jupiter/Metis is future research.
 
-**Runtime-neutral by design.** Nothing in the workflow names a model. Skills name a
-*role* (`REVIEWER`, `ESCALATOR`, `EXPLORER`); `config/agent-roles.conf` maps roles to
-commands and `scripts/agent-dispatch.sh` dispatches them, so the same process runs under
-Claude Code, Codex, or an agent that only has a terminal. See `docs/agents/runtime.md`.
+The business spec is [docs/DESIGN.md](docs/DESIGN.md). The 0.1.0 implementation and
+acceptance artifacts are present; read [the acceptance record](docs/references/v1-acceptance.md)
+and [known limitations](docs/DEFERRED_ISSUES.md) before interpreting results. Template
+synchronization does not change the algorithms, frozen corpus, profiles or measured evidence.
 
-Extracted and generalized from `pm-arbitrage-bot`, where this process was battle-tested.
+## Build and use
 
-## How to use
+```bash
+uv sync
+uv run python main.py --help
+uv run pytest
+uv run pytest tests/test_synthetic_run.py
+uv run ruff check .
+uv run mypy
+```
 
-1. Create a new repo from this template (GitHub "Use this template", or clone + re-init).
-2. Open it in any coding agent and say: **"Read SETUP.md and execute it."**
-   The agent interviews you (project name, Linear project, high-risk paths, stack,
-   Docker, agent roles), replaces every placeholder marker, wires up git/GitHub merge
-   policy, verifies the skeleton, and deletes `SETUP.md`.
-3. Produce the spec of record: `/grill-me <your idea>` → `/to-spec` fills
-   `docs/DESIGN.md`.
-4. Break it down: `/to-tickets` publishes blocked/blocking Linear issues.
-5. Implement: `/implement` per issue — worktree off the **resolved base** (version-scoped
-   → `release/v{version}`, repo-wide governance → `dev`, hotfix → `main`; never a
-   defaulted `dev`), three-round review loop, self-squash-merge on green (except
-   {{HIGH_RISK_PATHS}} and releases). A ready *set* of tickets can go to `/orchestrate`
-   instead of driving each `/implement` by hand.
-6. Ship: cut a temporary `release/vX.Y.Z` from `dev` → PR into `main` (merge commit), tag,
-   deploy **from the tag**. Production broken while `dev` holds unshippable work? Take the
-   hotfix lane instead — `docs/GIT_WORKFLOW.md`.
+Existing runtime profiles and preparation/cost configuration are documented in
+[config/README.md](config/README.md). Replay and reporting are offline; preparation uses
+fixed-block public Mantle RPC and scoped Enterprise Dune queries. Never commit secrets
+or full local datasets. `.gitignore` retains this project's `/data/` exclusion.
 
-## What's inside
+## Process tooling
 
-| Layer | Contents |
-|-------|----------|
-| **Agent guidance** | `AGENTS.md` (canonical; `CLAUDE.md` is a symlink) |
-| **Runtime adapter** | `docs/agents/runtime.md` (role contract, degraded mode), `config/agent-roles.conf` (role → command), `scripts/agent-dispatch.sh` (dispatch + `--probe`) |
-| **Skills** (22 vendored from `mattpocock/skills` + first-party `/orchestrate` + `/ponytail`) | implement, code-review, orchestrate, ponytail, handoff, tdd, diagnosing-bugs, prototype, wayfinder, grill-me, grill-with-docs, grilling, triage, improve-codebase-architecture, research, resolving-merge-conflicts, setup-matt-pocock-skills, to-spec, to-tickets, domain-modeling, codebase-design, teach, writing-great-skills, ask-matt + `skills-lock.json` |
-| **Docs system** | `docs/DESIGN.md` (PRD skeleton, spec of record), `docs/GIT_WORKFLOW.md`, `docs/DEFERRED_ISSUES.md`, `docs/TRAPS.md` (orchestrate trap registry), `docs/adr/`, `docs/references/`, `docs/agents/` (domain / issue-tracker / triage-labels / issue-template) |
-| **Git workflow** | main ≡ production + dev + `release/v*` version integration + worktree-per-issue; fail-closed base resolution (version-scoped / governance carve-out / hotfix — never a defaulted `dev`); per-lane merge strategy (squash → `dev` and → long-lived `release/v*`, merge commit → `main` and for a finished integration branch); fan-out of `dev` into every live version branch; release vs hotfix decision rule; version axis (tracker Release ↔ tag ↔ GitHub Release); mandatory post-merge cleanup; Linear state lockstep; agent self-merge with human-review exceptions; `.githooks/pre-push` guard |
-| **Stack layer** (default: Python/uv, swappable) | `pyproject.toml` (uv + hatchling + ruff + mypy strict + pytest), `main.py`, `tests/`, `config/` convention, `.env.example`, optional `Dockerfile` + `docker-compose.yml` |
+Adopted from [code-template](https://github.com/Whisker17/code-template) v0.2.0 at
+`0c468b16eb9b1f87269cd83b399b57b23688bbd9`. Source, compatibility adaptations and verification:
+[docs/agents/template-sync.md](docs/agents/template-sync.md).
 
-The **process layer** (docs, workflow, skills) is stack-agnostic; only the stack layer
-changes when a project isn't Python.
+- **Instructions:** `AGENTS.md` is canonical. Keep the current `CLAUDE.md` compatibility
+  symlink for the installed Claude Code 2.1.280 client; the upstream no-symlink default
+  requires a verified newer client. No global client/settings were changed.
+- **Roles:** ORCHESTRATOR, IMPLEMENTER and REVIEWER. Runtime, exact model and medium/high
+  effort mappings live only in `config/agent-roles.conf`; the dispatcher translates flags
+  and fails rather than silently replacing a model or lowering effort.
+- **Issue execution:** new/rescheduled work includes Complexity, Reason and Expected scope
+  in the canonical [issue template](docs/agents/issue-template.md). Completed legacy issues
+  remain historical evidence; future work is not silently re-scoped.
+- **Implementation:** ponytail, relevant behavioral checks, a worktree/PR and short handoff.
+  No mandatory TDD, ladder report or per-issue multi-round review.
+- **Integration:** under release orchestration, workers stop at PR/handoff and the
+  orchestrator verifies and merges serially. Shared interfaces/modules serialize even
+  without a blocker edge. Required project checks always apply.
+- **Review:** one independent final-commit PR review for governance and standalone work.
+  A release has at most three complete candidate reviews and two automatic fix batches;
+  fixes remain in the original Release. Remaining blockers go to a human, not another
+  automatic round. Review covers the entire version, not just its final issue.
+- **Git:** preserve resolved-base routing, per-lane merge strategy, fan-out, human
+  production/integration gates and tag-only deployment. See [Git workflow](docs/GIT_WORKFLOW.md).
 
-## Template evolution
+```bash
+scripts/agent-dispatch.sh --probe  # static config/PATH only
+scripts/agent-dispatch.sh IMPLEMENTER /path/to/prompt.md --effort medium
+```
 
-This template is expected to improve as projects hit process-level problems. Downstream
-repos carry a "Template feedback loop" section in their `AGENTS.md`: when a project
-discovers a template-layer improvement, port it back here and record it in
-`CHANGELOG.md`. Old projects pick changes up manually (there is deliberately no
-auto-sync).
+A real role call proves authentication/dispatch. Probe once per release or after a config
+change/error, not before every issue. The role config cannot switch an already-running
+session's model. [Runtime contract](docs/agents/runtime.md).
 
-Skills are pinned by `skills-lock.json`; upgrade them here deliberately, not per-project.
+## Core skills
 
-> ⚠️ **Locally customized skills** — `skills-lock.json` records the *upstream* hash, so it
-> cannot detect these edits and **re-vendoring via `/setup-matt-pocock-skills` will
-> silently overwrite them.** Diff before accepting any skill upgrade to:
->
-> - `implement/SKILL.md` — three-round review loop + escalation pass; self-merge
->   authorization; `REVIEWER`/`ESCALATOR` role dispatch; ponytail generation
->   constraint + shrink pass before review
-> - `code-review/SKILL.md` — `REVIEWER` role dispatch on both axes; Reinvented Wheel
->   smell on the Standards baseline
-> - `improve-codebase-architecture/`, `codebase-design/DESIGN-IT-TWICE.md`,
->   `wayfinder/SKILL.md` — `EXPLORER` role dispatch with a documented serial fallback
-> - `ask-matt/SKILL.md` — runtime-neutral compaction wording; implement drives
->   tdd + ponytail
-> - `orchestrate/` — first-party, not vendored; do not add it to `skills-lock.json`.
->   Trap registry lives in `docs/TRAPS.md` (skill-local `traps.md` is a pointer).
->   Verify checks the implementer's rung report.
-> - `ponytail/` — first-party, not vendored; do not add it to `skills-lock.json`.
->   Generation constraint driven by `/implement`, not a process skill.
+Project-local skills are `grill-me`, `to-spec`, `to-tickets`, `implement`, `orchestrate`,
+`code-review`, `handoff` and `ponytail`. Read `.claude/skills/<name>/SKILL.md` directly if
+the runtime does not auto-load them. Other globally installed skills are unaffected.
+
+`to-spec` preserves numbered product-spec sections and publishes only on instruction;
+`to-tickets` uses the repository's one issue template. Traps are on-demand references,
+not a full registry pasted into every worker context. Release state is durable in one
+Linear project document, `Release X.Y.Z — orchestration`, with baseline/candidate SHAs,
+review/fix mappings and unresolved blockers.
+
+## Project binding and template maintenance
+
+Linear project: **Mantle Router Algorithm Optimizer**; team: **Whisker-Personal / WHI**;
+pipeline: **router-algorithms-optimizer**. Do not replace these with template placeholders,
+and do not confuse template v0.2 with the project's 0.2.0 Jupiter work.
+
+`skills-lock.json` records original upstream provenance, not hashes of every local edit.
+The template customizes the six vendored core skills; `orchestrate` and `ponytail` are
+first-party and intentionally not entries in that lock. Re-vendoring directly from
+`mattpocock/skills` can erase the template's contracts. Compare against the pinned template
+and preserve the local adaptations in the sync record before upgrading.
+
+Template-layer improvements belong in [CHANGELOG.md](CHANGELOG.md) and should be offered
+back to `Whisker17/code-template`; project behavior and benchmark evidence stay here.

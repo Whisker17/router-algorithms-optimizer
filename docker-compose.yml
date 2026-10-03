@@ -2,8 +2,8 @@
 services:
   app:
     build: .
-    image: "{{PROJECT_NAME}}:latest"
-    container_name: "{{PROJECT_NAME}}"
+    image: "router-algorithms-optimizer:latest"
+    container_name: "router-algorithms-optimizer"
     # unless-stopped, not always: restarts after a crash or host reboot, but honors a
     # deliberate `docker compose stop` across a later reboot — an emergency stop must
     # not silently undo itself.

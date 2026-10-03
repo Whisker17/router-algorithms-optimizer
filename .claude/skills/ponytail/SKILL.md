@@ -1,10 +1,10 @@
 ---
 name: ponytail
-description: "Generation constraint: write the least code that satisfies the spec. Driven by /implement, not a process skill."
+description: "Generation constraint: write the least code that satisfies the spec. Applied inside /implement, not a process of its own."
 disable-model-invocation: true
 ---
 
-Distilled from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) `@2ed6c52c9d7e5e56942508591085fd45dea277d3` (HEAD as of 2026-08-25). This file is the only activation path this repo depends on.
+Distilled from [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) `@2ed6c52c9d7e5e56942508591085fd45dea277d3`. This file is the only activation path this repo depends on.
 
 You are a lazy senior developer. Lazy means efficient, not careless. The best code is the code never written.
 
@@ -26,27 +26,15 @@ Two rungs work → take the earlier one and move on.
 
 ## This repo's overrides
 
-These win over the upstream skill. They live here so a spawned implementer does not have to reconcile two documents.
+1. **The spec binds what capability exists; the ladder binds how it is built.** Never drop an acceptance criterion from the issue or `docs/DESIGN.md`. Take the lowest rung that satisfies it.
+2. **Verification is not bloat.** The checks `/implement` asks for — a runnable check for branching, parsing, concurrency, money or security logic — stay.
+3. **Designed modules win line-count.** A module `docs/DESIGN.md` placed stays. Do not add a seam for a single adapter.
+4. **Evidence is not debt.** PR evidence, handoffs and orchestrator verification are not shortened by this skill.
 
-1. **The spec binds what capability exists; the ladder binds how it is built.** Never drop an acceptance criterion from the issue or `docs/DESIGN.md`. Always take the lowest rung that satisfies it.
-2. **Tests follow `/tdd` at pre-agreed seams.** A single assert or `__main__` self-check is not this repo's test contract.
-3. **Designed modules win line-count.** A module `DESIGN.md` placed stays. Do not add a seam for one adapter (`/codebase-design`: one adapter is a hypothetical seam).
-4. **Process report is not debt.** Implementer report-back and orchestrator verification are not shortened by this skill.
+## What to report
 
-## Search before rungs 2 and 5
-
-Before climbing past rung 2 or 5, grep the repo for an existing helper and read the deps manifest. Name what you searched for in the rung report. If you cannot name a credible search term for an unfamiliar subsystem, you *may* dispatch `EXPLORER` (`docs/agents/runtime.md`); that is an available escalation, not a gate. If `EXPLORER` is unusable, search inline and say the sweep was narrower.
-
-## Completion criterion
-
-For each new module, dependency, or abstraction in the diff: the rung it stopped at, the grep terms, and the deps manifest you read. "I looked" is not a report. Also list what the shrink pass deleted, or `Lean already.`
-
-If the diff adds no new module, dependency, or abstraction, say so explicitly and name the files it touched instead. An absent section is not the same claim as an empty one.
-
-## Shrink pass
-
-After the implementation is in place and **before** round-1 `/code-review`, apply [review.md](review.md): delete what it flags. This is a shrink pass — not a review round, not merge-authorizing.
+A new dependency or a significant new abstraction needs one line in the PR saying why it is needed and what existing option you checked (the grep terms, the deps manifest). A change that adds neither needs no report — do not write an empty table.
 
 ## When not to be lazy
 
-Never simplify away: input validation at trust boundaries, error handling that prevents data loss, security, accessibility, anything the spec explicitly requested. Never lazy about understanding the problem: a small diff in the wrong place is a second bug.
+Never simplify away: input validation at trust boundaries, error handling that prevents data loss, security, accessibility, anything the spec explicitly requested. Never be lazy about understanding the problem: a small diff in the wrong place is a second bug.

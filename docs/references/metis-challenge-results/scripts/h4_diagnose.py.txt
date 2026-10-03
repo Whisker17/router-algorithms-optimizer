@@ -1,0 +1,117 @@
+"""WHI-1449 H4 correctness diagnostic (NOT a timed arm): for ONLY the tuning cases where
+the measured M4 and M4-off records differ in exact gross, run the unchanged
+`metis_inspired.diagnose_case` with the M4 prepared settings (label_hops 4, pruning on).
+It replays M4's label trajectory on its own caches and, at every chunk, re-scores the
+exhaustive 4-hop enumeration maximum on the identical committed state and carried amount.
+Checks: the replayed trajectory equals the measured M4 record's allocation/sequence, the
+measured records are ok with accounting_matches_evaluation, and every divergent chunk is in
+the unchanged H>=4 allowed classes (tie, quote_failure, token_revisit, prefix_admission).
+Local same-state attribution explains each chunk decision; it is not a proof of every
+final-plan counterfactual (after the first divergence the M4-off trajectory differs).
+Write-once output. usage: h4_diagnose.py <bundle_tuning> <M4 run dir> <M4-off run dir> <out.json>"""
+import dataclasses, datetime, hashlib, json, sys, time
+from pathlib import Path
+from benchmark.profile import load_profile
+from benchmark.results import git_provenance, load_case_records, load_manifest
+from routing.algorithms import metis_inspired
+from routing.algorithms.registry import get_algorithm
+from snapshot.bundle import load_bundle, sha256_file
+
+bundle_dir, m4_dir, off_dir, out = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4])
+if out.exists():
+    raise SystemExit(f"refusing to overwrite {out}")
+rev, dirty, _ = git_provenance()
+if rev != "446674e80e66ad93834786e1493f223dc38de3eb" or dirty is not False:
+    raise SystemExit(f"not the frozen clean source: {rev} dirty={dirty}")
+bundle = load_bundle(bundle_dir)
+assert bundle.bundle_hash == "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b"
+profile = load_profile("config/metis_challenge/m4.yaml")
+runs = {}
+for arm, d in (("M4", m4_dir), ("M4-off", off_dir)):
+    m = load_manifest(d)  # strict: complete + checksum
+    assert m.bundle_hash == bundle.bundle_hash and m.algorithms == ("metis_inspired",)
+    assert m.git_revision == rev and m.git_dirty is False
+    recs = load_case_records(d)
+    ids = [r["case_id"] for r in recs]
+    assert len(ids) == len(set(ids)) == 96 and sorted(ids) == sorted(c.case_id for c in bundle.cases)
+    runs[arm] = {"manifest": m, "records": {r["case_id"]: r for r in recs}, "dir": d}
+expected = json.loads(json.dumps(dataclasses.replace(profile, objective=profile.objective.bind(bundle)).resolved()))
+assert runs["M4"]["manifest"].resolved_profile == expected, "M4 run settings differ from m4.yaml"
+assert runs["M4-off"]["manifest"].resolved_profile["graph"] == {"chunks": 50, "label_hops": 4, "label_pruning": False}
+
+def gross(r):
+    return int(r["evaluation"]["gross_output"]) if r["status"] == "ok" else None
+
+cases = [c for c in bundle.cases
+         if gross(runs["M4"]["records"][c.case_id]) != gross(runs["M4-off"]["records"][c.case_id])]
+factory = get_algorithm(metis_inspired.NAME)
+prepared = factory.prepare(bundle, profile.algorithm_config(factory))
+assert prepared.label_hops == 4 and prepared.label_pruning is True and prepared.max_hops == 3
+allowed = sorted(metis_inspired.allowed_classes(prepared.label_hops))
+started = time.perf_counter()
+rows, stop = [], []
+for case in cases:
+    r4, roff = runs["M4"]["records"][case.case_id], runs["M4-off"]["records"][case.case_id]
+    s4, soff = r4["search"], roff["search"]
+    t0 = time.perf_counter()
+    diag = metis_inspired.diagnose_case(case, bundle, prepared)
+    findings = []
+    for arm, r in (("M4", r4), ("M4-off", roff)):
+        if r["status"] != "ok":
+            findings.append(f"{arm} status {r['status']}")
+        if r["search"].get("accounting_matches_evaluation") is not True:
+            findings.append(f"{arm} accounting_matches_evaluation {r['search'].get('accounting_matches_evaluation')}")
+    if s4.get("incremental_status") != "ok" or diag["trajectory_status"] != "ok":
+        findings.append(f"incremental_status {s4.get('incremental_status')} / trajectory {diag['trajectory_status']}")
+    if diag["incremental_allocation"] != s4.get("incremental_allocation") or diag["incremental_chunk_sequence"] != s4.get("incremental_chunk_sequence"):
+        findings.append("diagnostic trajectory differs from the measured M4 record")
+    if diag["unexplained_chunks"]:
+        findings.append(f"{diag['unexplained_chunks']} unexplained chunk(s)")
+    if findings:
+        stop.append(case.case_id)
+    rows.append({
+        "case_id": case.case_id,
+        "m4": {"gross": gross(r4), "chosen_source": s4.get("chosen_source"), "chunk_path_hops": s4.get("chunk_path_hops"),
+               "incremental_evaluated_gross": s4.get("incremental_evaluated_gross"), "label_skipped_revisit": s4.get("label_skipped_revisit"),
+               "label_rejected_cycle": s4.get("label_rejected_cycle"), "marginal_failures": s4.get("marginal_failures"),
+               "accounting_matches_evaluation": s4.get("accounting_matches_evaluation")},
+        "m4_off": {"gross": gross(roff), "chosen_source": soff.get("chosen_source"), "chunk_path_hops": soff.get("chunk_path_hops"),
+                   "incremental_evaluated_gross": soff.get("incremental_evaluated_gross"), "marginal_failures": soff.get("marginal_failures"),
+                   "accounting_matches_evaluation": soff.get("accounting_matches_evaluation")},
+        "m4_minus_m4off": (gross(r4) - gross(roff)) if gross(r4) is not None and gross(roff) is not None else None,
+        "findings": findings,
+        "diagnostic_seconds": round(time.perf_counter() - t0, 3),
+        "diagnostic": diag,
+    })
+    print(case.case_id, diag["classes"], findings or "ok", flush=True)
+classes = {}
+for row in rows:
+    for k, v in row["diagnostic"]["classes"].items():
+        classes[k] = classes.get(k, 0) + v
+doc = {
+    "pass": "WHI-1449 H4 correctness diagnostic for the M4 vs M4-off tuning differences -- separate pass, NOT a measurement",
+    "written_at_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+    "source": {"git_revision": rev, "git_dirty": dirty},
+    "bundle": {"path": str(bundle_dir), "bundle_hash": bundle.bundle_hash},
+    "profile": {"path": "config/metis_challenge/m4.yaml", "sha256": sha256_file(Path("config/metis_challenge/m4.yaml"))},
+    "runs": {arm: {"run_id": v["manifest"].run_id, "run_dir": str(v["dir"]), "cases_sha256": v["manifest"].cases_sha256,
+                   "manifest_sha256": sha256_file(v["dir"] / "manifest.json")} for arm, v in runs.items()},
+    "selection_rule": "tuning cases whose measured M4 and M4-off exact integer gross differ (recomputed from the records)",
+    "cases": [c.case_id for c in cases],
+    "cases_sha256": hashlib.sha256("\n".join(c.case_id for c in cases).encode()).hexdigest(),
+    "label_hops": prepared.label_hops,
+    "allowed_classes": allowed,
+    "class_totals": dict(sorted(classes.items())),
+    "unexplained_chunks": sum(r["diagnostic"]["unexplained_chunks"] for r in rows),
+    "cases_with_findings": stop,
+    "stop": bool(stop),
+    "limitation": "local same-state attribution per chunk on M4's trajectory; not a proof of every final-plan counterfactual",
+    "diagnostic_wall_seconds": round(time.perf_counter() - started, 3),
+    "script_sha256": sha256_file(Path(__file__)),
+    "rows": rows,
+}
+out.write_text(json.dumps(doc, indent=1) + "\n")
+out.chmod(0o444)
+print(json.dumps({k: doc[k] for k in ("cases", "class_totals", "unexplained_chunks", "cases_with_findings", "stop")}))
+print(out, hashlib.sha256(out.read_bytes()).hexdigest())
+sys.exit(1 if stop else 0)

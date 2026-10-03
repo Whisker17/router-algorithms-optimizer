@@ -1,0 +1,21 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "bundle_id": "moe-classic-101057678-a2195dd2",
+  "checksums": {
+    "cases.jsonl": "0ca8ae46526f2358056a47dab06b453f1ec5fe3c91fe6aecfd0b5330f91986a9",
+    "pools.json": "26da8640ff6bce19a41cebd6ac4553e78511ba3d1ac22846c4d78042d7233e8a",
+    "provenance.json": "2e7f145c9e5f7a187cf1797a59d91160d7f63ee09fe0266f28d4021660c7e6ae"
+  },
+  "files": {
+    "cases": "cases.jsonl",
+    "pools": "pools.json",
+    "provenance": "provenance.json"
+  },
+  "kind": "real",
+  "schema_version": 1
+}

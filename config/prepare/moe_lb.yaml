@@ -1,0 +1,112 @@
+# Merchant Moe Liquidity Book v2.2 fixed-block prepare selection (WHI-1434). Read by
+# `uv run python main.py prepare --source moe_lb --block <n> --output <dir>`
+# (snapshot/collectors/liquidity_book.py, loader snapshot/prepare_config.py
+# `LBPrepareConfig`).
+#
+# Verified deployment facts (LBFactory / LBPair implementation code hashes, collection
+# admission, the approved swap-hook and extra-hook implementations) live in
+# config/protocols.yaml (`moe_lb_v2_2.lb_collection`); this file only chooses what to
+# collect. Token labels are local aliases; bundles store lowercase addresses only.
+# `decimals` is a declaration the token's own decimals() must match at the block. Only
+# declared tokens can be collected: plain ERC-20s whose pair balances equal the pair's
+# reserves + protocol fees at the block and whose transfers credit the exact amount (fork
+# evidence); fee-on-transfer / rebasing tokens are out of scope.
+schema_version: 1
+source: moe_lb_v2_2
+bundle_id_prefix: moe-lb
+tokens:
+  USDT: {address: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE", decimals: 6}
+  USDC: {address: "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9", decimals: 6}
+  WMNT: {address: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8", decimals: 18}
+  WETH: {address: "0xdEAddEaDdeadDEadDEADDEAddEADDEAddead1111", decimals: 18}
+  METH: {address: "0xcDA86A272531e8640cD7F1a92c01839911B90bb0", decimals: 18}  # mETH
+# Pair universe: every pair of the five tokens the CL and Classic sources also list. Each
+# is looked up through LBFactory.getAllLBPairs at the frozen block, which returns every
+# bin step (not a Dune emitter list); all of them are collected -- including pairs with an
+# empty book, whose emptiness is proven by walking the tree to both ends of the id space.
+# No bin step is excluded (`excluded_bin_steps: [{bin_step, reason}]` would record one as
+# a reasoned omission).
+pairs:
+  - tokens: [USDT, WMNT]
+  - tokens: [USDC, WMNT]
+  - tokens: [WMNT, WETH]
+  - tokens: [WMNT, METH]
+  - tokens: [METH, WETH]
+  - tokens: [USDC, METH]
+  - tokens: [USDT, WETH]
+  - tokens: [USDT, METH]
+  - tokens: [USDC, WETH]
+  - tokens: [USDC, USDT]
+# Reference cases = the declared amount envelope: both directions of every token pair that
+# has an LB pair, small/medium/large, scaled to the deepest pair's reserves at the block
+# (USD: WMNT ~$0.67, WETH ~$2,610, mETH ~$2,910). Large cases cross many bins (dynamic fee
+# rises bin by bin) and exhaust the shallower sibling pairs, which the collector proves by
+# walking their tree to the end of the id space. Hand-chosen admission cases, not the
+# stratified empirical corpus (WHI-1436).
+cases:
+  # USDT/WMNT (bin steps 15/25 hold liquidity; 20/50/100 are empty)
+  - {case_id: usdt_wmnt_small, token_in: USDT, token_out: WMNT, amount_in: "10000000"}
+  - {case_id: usdt_wmnt_medium, token_in: USDT, token_out: WMNT, amount_in: "100000000"}
+  - {case_id: usdt_wmnt_large, token_in: USDT, token_out: WMNT, amount_in: "500000000"}
+  - {case_id: wmnt_usdt_small, token_in: WMNT, token_out: USDT, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_usdt_medium, token_in: WMNT, token_out: USDT, amount_in: "200000000000000000000"}
+  - {case_id: wmnt_usdt_large, token_in: WMNT, token_out: USDT, amount_in: "1000000000000000000000"}
+  # USDC/WMNT: both pairs (25/50) are empty at the block -> insufficient liquidity
+  - {case_id: usdc_wmnt_small, token_in: USDC, token_out: WMNT, amount_in: "1000000"}
+  - {case_id: wmnt_usdc_small, token_in: WMNT, token_out: USDC, amount_in: "1000000000000000000"}
+  # WMNT/WETH (bin step 10 holds liquidity)
+  - {case_id: wmnt_weth_small, token_in: WMNT, token_out: WETH, amount_in: "10000000000000000000"}
+  - {case_id: wmnt_weth_medium, token_in: WMNT, token_out: WETH, amount_in: "500000000000000000000"}
+  - {case_id: wmnt_weth_large, token_in: WMNT, token_out: WETH, amount_in: "3000000000000000000000"}
+  - {case_id: weth_wmnt_small, token_in: WETH, token_out: WMNT, amount_in: "1000000000000000"}
+  - {case_id: weth_wmnt_medium, token_in: WETH, token_out: WMNT, amount_in: "100000000000000000"}
+  - {case_id: weth_wmnt_large, token_in: WETH, token_out: WMNT, amount_in: "1000000000000000000"}
+  # WMNT/mETH (bin step 10; 25 is nearly empty)
+  - {case_id: wmnt_meth_small, token_in: WMNT, token_out: METH, amount_in: "1000000000000000000"}
+  - {case_id: wmnt_meth_medium, token_in: WMNT, token_out: METH, amount_in: "20000000000000000000"}
+  - {case_id: wmnt_meth_large, token_in: WMNT, token_out: METH, amount_in: "150000000000000000000"}
+  - {case_id: meth_wmnt_small, token_in: METH, token_out: WMNT, amount_in: "100000000000000"}
+  - {case_id: meth_wmnt_medium, token_in: METH, token_out: WMNT, amount_in: "10000000000000000"}
+  - {case_id: meth_wmnt_large, token_in: METH, token_out: WMNT, amount_in: "100000000000000000"}
+  # mETH/WETH (bin step 2)
+  - {case_id: meth_weth_small, token_in: METH, token_out: WETH, amount_in: "1000000000000000"}
+  - {case_id: meth_weth_medium, token_in: METH, token_out: WETH, amount_in: "500000000000000000"}
+  - {case_id: meth_weth_large, token_in: METH, token_out: WETH, amount_in: "5000000000000000000"}
+  - {case_id: weth_meth_small, token_in: WETH, token_out: METH, amount_in: "1000000000000000"}
+  - {case_id: weth_meth_medium, token_in: WETH, token_out: METH, amount_in: "500000000000000000"}
+  - {case_id: weth_meth_large, token_in: WETH, token_out: METH, amount_in: "5000000000000000000"}
+  # USDT/WETH (bin step 10): plus 1 wei of WETH (dust) and a WETH input beyond the whole
+  # USDT side of the book (insufficient liquidity)
+  - {case_id: usdt_weth_small, token_in: USDT, token_out: WETH, amount_in: "1000000"}
+  - {case_id: usdt_weth_medium, token_in: USDT, token_out: WETH, amount_in: "100000000"}
+  - {case_id: usdt_weth_large, token_in: USDT, token_out: WETH, amount_in: "5000000000"}
+  - {case_id: weth_usdt_small, token_in: WETH, token_out: USDT, amount_in: "100000000000000"}
+  - {case_id: weth_usdt_medium, token_in: WETH, token_out: USDT, amount_in: "5000000000000000"}
+  - {case_id: weth_usdt_large, token_in: WETH, token_out: USDT, amount_in: "15000000000000000"}
+  - {case_id: weth_usdt_dust, token_in: WETH, token_out: USDT, amount_in: "1"}
+  - {case_id: weth_usdt_exhaust, token_in: WETH, token_out: USDT, amount_in: "50000000000000000"}
+  # USDT/mETH (bin step 10)
+  - {case_id: usdt_meth_small, token_in: USDT, token_out: METH, amount_in: "1000000"}
+  - {case_id: usdt_meth_medium, token_in: USDT, token_out: METH, amount_in: "500000000"}
+  - {case_id: usdt_meth_large, token_in: USDT, token_out: METH, amount_in: "3000000000"}
+  - {case_id: meth_usdt_small, token_in: METH, token_out: USDT, amount_in: "100000000000000"}
+  - {case_id: meth_usdt_medium, token_in: METH, token_out: USDT, amount_in: "500000000000000000"}
+  - {case_id: meth_usdt_large, token_in: METH, token_out: USDT, amount_in: "5000000000000000000"}
+  # USDC/USDT (bin step 1; 100 is empty): plus 1 raw USDC (dust)
+  - {case_id: usdc_usdt_small, token_in: USDC, token_out: USDT, amount_in: "1000000"}
+  - {case_id: usdc_usdt_medium, token_in: USDC, token_out: USDT, amount_in: "100000000"}
+  - {case_id: usdc_usdt_large, token_in: USDC, token_out: USDT, amount_in: "3000000000"}
+  - {case_id: usdc_usdt_dust, token_in: USDC, token_out: USDT, amount_in: "1"}
+  - {case_id: usdt_usdc_small, token_in: USDT, token_out: USDC, amount_in: "1000000"}
+  - {case_id: usdt_usdc_medium, token_in: USDT, token_out: USDC, amount_in: "100000000"}
+  - {case_id: usdt_usdc_large, token_in: USDT, token_out: USDC, amount_in: "1000000000"}
+collection:
+  walk_chunk_bins: 16
+  margin_bins: 4
+  max_bins_per_direction: 2000
+rpc:
+  max_batch_size: 5
+  max_attempts: 8
+  base_delay_seconds: 1.0
+  max_delay_seconds: 16.0
+  timeout_seconds: 30.0

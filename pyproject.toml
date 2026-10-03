@@ -1,9 +1,14 @@
 [project]
-name = "{{PROJECT_NAME}}"
-version = "0.1.0"
-description = "{{PROJECT_DESCRIPTION}}"
+name = "router-algorithms-optimizer"
+version = "0.2.1"
+description = "Offline benchmark for Mantle swap-routing algorithms"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "numpy==2.5.3",
+    "pycryptodome>=3.23.0",
+    "pyyaml>=6.0.3",
+    "scipy==1.18.1",
+]
 
 [dependency-groups]
 dev = [
@@ -11,6 +16,7 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "ruff>=0.6",
     "mypy>=1.11",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 
 # No build-system on purpose: uv treats this as a virtual project (deps only, nothing
@@ -43,4 +49,4 @@ pythonpath = ["."]
 python_version = "3.12"
 strict = true
 # Mirror the wheel packages list once modules land:
-files = ["main.py"]
+files = ["main.py", "snapshot", "pools", "routing", "benchmark", "report", "tests", "tools/upstream/uni_sor/author_inputs.py", "tools/research_021/analysis.py", "tools/research_021/campaign.py"]

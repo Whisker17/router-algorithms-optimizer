@@ -1,0 +1,51 @@
+# WHI-1504 mutation check transcript (documentary; not a production script).
+# Setup: cp pools/concentrated.py /tmp/whi1504-conc.py (the unmutated 8c7337a source),
+# then run this with bash from the repo root. Each mutant is one exact text replacement;
+# the unmutated source is restored on every exit (EXIT trap; INT/TERM exit through it).
+# Each probe has its own `timeout 120` and prints the real exit status: 1 = killed by a
+# failing test, 124 = timeout, 0 = SURVIVED.
+# Recorded result on 8c7337a: all 20 mutants killed; every probe's pytest summary line
+# read '1 failed'. That recorded run printed only the summary line (its exit status was
+# not captured); none timed out.
+trap 'cp /tmp/whi1504-conc.py pools/concentrated.py' EXIT
+trap 'exit 130' INT TERM
+
+run() { name=$1; shift; python3 - "$@" <<'EOF'
+import sys
+from pathlib import Path
+p=Path("pools/concentrated.py"); s=Path("/tmp/whi1504-conc.py").read_text()
+old,new=sys.argv[1],sys.argv[2]
+assert s.count(old)==1,(old, s.count(old))
+p.write_text(s.replace(old,new,1))
+EOF
+out=$(timeout 120 uv run pytest tests/pools/test_concentrated.py -q -x -p no:cacheprovider 2>&1); rc=$?
+echo "$name: exit=$rc ($( [ $rc -eq 124 ] && echo TIMEOUT || tail -1 <<<"$out"))"; }
+run M01-first-initialized "            if not initialized and (" "            if True and ("
+run M02-first-limit-zfo "tick_next > limit_tick if zero_for_one else tick_next < limit_tick" "tick_next >= limit_tick if zero_for_one else tick_next < limit_tick"
+run M03-first-limit-ofz "tick_next > limit_tick if zero_for_one else tick_next < limit_tick" "tick_next > limit_tick if zero_for_one else tick_next <= limit_tick"
+run M04-range-lo "word >= word_lo" "word >= word_lo - 1"
+run M05-range-hi "word <= word_hi" "word <= word_hi + 1"
+run M06-nonzero-zfo "                        word >= word_lo
+                        and not bitmap_get(word, 0)" "                        word >= word_lo
+                        and True"
+run M07-nonzero-ofz "                        word <= word_hi
+                        and not bitmap_get(word, 0)" "                        word <= word_hi
+                        and True"
+run M08-limit-zfo "and word * word_ticks > limit_tick" "and word * word_ticks >= limit_tick"
+run M09-limit-ofz "and (word + 1) * word_ticks - spacing < limit_tick" "and (word + 1) * word_ticks - spacing <= limit_tick"
+run M10-steps-zfo "steps += 1 + first - word" "steps += first - word"
+run M11-steps-ofz "steps += 1 + word - first" "steps += word - first"
+run M12-tick-zfo "tick = (word + 1) * word_ticks - 1" "tick = (word + 1) * word_ticks"
+run M13-tick-ofz "tick = word * word_ticks - spacing" "tick = word * word_ticks - spacing + 1"
+run M14-start-zfo "first = word = tick_next // word_ticks - 1" "first = word = tick_next // word_ticks"
+run M15-start-ofz "first = word = (tick_next + spacing) // word_ticks" "first = word = (tick_next + spacing) // word_ticks + 1"
+run M16-posliq "if liquidity == 0 and skip_empty_spans:" "if skip_empty_spans:"
+run M17-fee "skip_empty_spans = skip_empty_spans and state.fee < FEE_PIPS_DENOMINATOR" "skip_empty_spans = skip_empty_spans"
+run M18-ofzbound "    if zero_for_one or get_sqrt_ratio_at_tick(bound) == sqrt_price_limit_x96:" "    if True:"
+run M19-default "    skip_empty_spans: bool = True," "    skip_empty_spans: bool = False,"
+run M20-firstread "                read_word, tick, state.tick_spacing, zero_for_one
+            )
+            if not initialized" "                lambda w: bitmap_get(w, 0), tick, state.tick_spacing, zero_for_one
+            )
+            if not initialized"
+cp /tmp/whi1504-conc.py pools/concentrated.py

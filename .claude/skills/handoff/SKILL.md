@@ -1,16 +1,24 @@
 ---
 name: handoff
-description: Compact the current conversation into a handoff document for another agent to pick up.
+description: Compact the current work into a short handoff for another agent or session, pointing at durable evidence instead of restating it.
 argument-hint: "What will the next session be used for?"
 disable-model-invocation: true
 ---
 
-Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to the temporary directory of the user's OS - not the current workspace.
+Write a handoff so a fresh agent can continue the work. Save it in the OS temporary directory (or the output path your caller binds), not in the workspace.
 
-Include a "suggested skills" section in the document, which suggests skills that the agent should invoke.
+A temporary handoff is a courier, never the only record. Before writing it, make sure the facts a resume depends on already live somewhere durable: the PR body or issue comments for issue-level results, and the `Release X.Y.Z — orchestration` document (`docs/agents/issue-tracker.md`) for release-level state (baseline B, round, reviewed SHAs, finding → fix mapping).
 
-Do not duplicate content already captured in other artifacts (specs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.
+Include only:
 
-Redact any sensitive information, such as API keys, passwords, or personally identifiable information.
+- issue, spec, PR, branch and worktree links/paths, and the resolved base;
+- the current commit SHA and what it implements;
+- acceptance commands, their actual results, and artifact locations;
+- open questions, failed or not-run checks, and the next step;
+- effects on dependent tasks, with evidence for any corrected conclusion;
+- the role, model and effort actually used;
+- suggested skills for the next session.
 
-If the user passed arguments, treat them as a description of what the next session will focus on and tailor the doc accordingly.
+Reference specs, plans, issues, commits and diffs by path or URL; do not copy them. Redact secrets and personal data.
+
+If the user passed arguments, treat them as what the next session will focus on and tailor the handoff to that.

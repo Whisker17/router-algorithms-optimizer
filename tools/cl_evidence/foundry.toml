@@ -1,0 +1,27 @@
+# Validation-only evidence generator for pools/concentrated.py (WHI-1428).
+# Not part of the Python benchmark runtime; see README.md.
+[profile.default]
+src = "test"
+test = "test"
+out = "out"
+cache_path = "cache"
+libs = []
+solc_version = "0.8.26"
+optimizer = true
+via_ir = true
+evm_version = "cancun"
+# Fixtures are streamed as JSON Lines into the Python test-fixture directory.
+fs_permissions = [
+  { access = "read-write", path = "../../tests/fixtures/concentrated" },
+  { access = "read-write", path = "../../tests/fixtures/agni" },
+  { access = "read-write", path = "../../tests/fixtures/fusionx" },
+  { access = "read-write", path = "../../tests/fixtures/uniswap_v3" },
+  { access = "read-write", path = "../../tests/fixtures/moe_classic" },
+  { access = "read-write", path = "../../tests/fixtures/liquidity_book" },
+  { access = "read-write", path = "../../tests/fixtures/moe_lb" },
+  { access = "read-write", path = "../../tests/fixtures/corpus" },
+  { access = "read", path = "requests" },
+]
+
+[lint]
+lint_on_build = false

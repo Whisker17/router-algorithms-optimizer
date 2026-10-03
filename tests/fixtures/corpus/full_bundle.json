@@ -1,0 +1,44 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+    "number": 101082044,
+    "timestamp": 1790294400
+  },
+  "bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+  "bundle_id": "mantle-5src-101082044-091b0759",
+  "bytes": {
+    "cases.jsonl": 74213,
+    "corpus.json": 423586,
+    "pools.json": 13111335,
+    "prices.json": 2690,
+    "provenance.json": 415291
+  },
+  "cases": 398,
+  "cases_by_group": {
+    "activity_pair": 288,
+    "boundary": 62,
+    "no_direct_pool_pair": 48
+  },
+  "checksums": {
+    "cases.jsonl": "75420a1d64faeabecde0c3cacb4f3e33e14963a8360736291e58ee446622a450",
+    "corpus.json": "bd8f9f7612610371e44108de0743904b936ac419399a97ec011474176adb4106",
+    "pools.json": "67c0fe81b169daa0082f11a7d51482694d89db6e90c0b1583f061d2921b90429",
+    "prices.json": "1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd",
+    "provenance.json": "4dd47b2207a5f9f4e9ddae0002e0f49416a6ba2880f6a6084f41d4b11cd3b2d5"
+  },
+  "note": "SHA-256 manifest of the full WHI-1436 corpus bundle, which lives under the gitignored data/corpus/mantle-5src-101082044/bundle (see docs/references/corpus.md for the recipe). tests/snapshot/test_corpus.py checks a locally prepared bundle against this record.",
+  "path": "data/corpus/mantle-5src-101082044/bundle",
+  "pools": 143,
+  "pools_by_source": {
+    "agni_v3": 45,
+    "fusionx_v3": 26,
+    "moe_classic_v1": 14,
+    "moe_lb_v2_2": 45,
+    "uniswap_v3": 13
+  },
+  "splits": {
+    "report": 302,
+    "tuning": 96
+  }
+}

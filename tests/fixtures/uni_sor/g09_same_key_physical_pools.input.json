@@ -1,0 +1,214 @@
+{
+  "adaptations": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amount_in_raw": "1000",
+  "behaviours": [
+    "B-Q5",
+    "B-S9",
+    "B-F1"
+  ],
+  "case_id": "g09_same_key_physical_pools",
+  "categories": [
+    "G-9",
+    "G-12"
+  ],
+  "chain_id": 1,
+  "description": "Two V3 pools share (token0, token1, fee=500) and two V2 pairs share a token pair, as Agni/FusionX/Uniswap v3 and Moe Classic can on Mantle. Under the route-scoped pool-id provider (A-5, D-2) they are distinct, so the two 500 pools are combined.",
+  "expect": {
+    "naive_selection": [
+      {
+        "percent": 50,
+        "pool_ids": [
+          "moe_ab_1"
+        ]
+      },
+      {
+        "percent": 50,
+        "pool_ids": [
+          "agni_ab_500"
+        ]
+      }
+    ],
+    "same_key_selected": true,
+    "selection": [
+      {
+        "percent": 50,
+        "pool_ids": [
+          "fusionx_ab_500"
+        ]
+      },
+      {
+        "percent": 50,
+        "pool_ids": [
+          "agni_ab_500"
+        ]
+      }
+    ]
+  },
+  "gas_score_provider": "zero (gross_only)",
+  "naive_alternative": "upstream single-factory identity (CREATE2 address of (token0, token1, fee)) conflates them: agni + moe_ab_1 = 190",
+  "origin": {
+    "kind": "synthetic"
+  },
+  "pools": {
+    "V2": [
+      {
+        "pool_id": "moe_ab_1",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "pool_id": "moe_ab_2",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "V3": [
+      {
+        "fee": 500,
+        "pool_id": "agni_ab_500",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 500,
+        "pool_id": "fusionx_ab_500",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  },
+  "quotes": [
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "100",
+      "route_pool_ids": [
+        "agni_ab_500"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "150",
+      "route_pool_ids": [
+        "agni_ab_500"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "99",
+      "route_pool_ids": [
+        "fusionx_ab_500"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "149",
+      "route_pool_ids": [
+        "fusionx_ab_500"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "90",
+      "route_pool_ids": [
+        "moe_ab_1"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "140",
+      "route_pool_ids": [
+        "moe_ab_1"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 50,
+      "raw_quote": "89",
+      "route_pool_ids": [
+        "moe_ab_2"
+      ]
+    },
+    {
+      "family": "V2",
+      "gas_cost_in_quote_token": "0",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "0",
+      "percent": 100,
+      "raw_quote": "139",
+      "route_pool_ids": [
+        "moe_ab_2"
+      ]
+    }
+  ],
+  "routing": {
+    "max_hops": 3,
+    "max_splits": 2,
+    "min_splits": 1,
+    "percent_step": 50
+  },
+  "schema": "uni-sor-golden-input/1",
+  "token_in": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "token_out": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tokens": [
+    {
+      "address": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "decimals": 18,
+      "symbol": "TKA"
+    },
+    {
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "decimals": 18,
+      "symbol": "TKB"
+    },
+    {
+      "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "decimals": 18,
+      "symbol": "TKC"
+    },
+    {
+      "address": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "decimals": 18,
+      "symbol": "TKD"
+    },
+    {
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+      "symbol": "TKE"
+    }
+  ]
+}

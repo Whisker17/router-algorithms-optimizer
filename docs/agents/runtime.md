@@ -1,129 +1,122 @@
 # Agent runtime adapter
 
-How this repo's skills reach a *second* agent — for review, escalation, or codebase
-exploration — without assuming which runtime or vendor you are working in.
+How this repo's skills reach another agent without assuming a runtime or vendor.
 
-Skills in `.claude/skills/` name a **role**. This file maps roles to real commands.
-That indirection is the whole point: model generations turn over every few months, and
-the mapping must have exactly one edit point.
+Skills name a **role** and a semantic **effort**; this file and one config file map them
+to real commands. Model generations turn over every few months, so the mapping has exactly
+one edit point.
 
-- **Mapping:** `config/agent-roles.conf`
+- **Mapping (the only place a model ID lives):** `config/agent-roles.conf`
 - **Executable seam:** `scripts/agent-dispatch.sh`
-
-## The invariant
-
-> Review must be performed by a **different context** than the one that wrote the code,
-> running a model **at least as capable** as the implementer, and **preferably from a
-> different vendor**.
-
-Everything below is machinery for holding that invariant in whatever runtime you happen
-to be in. `model: "opus"` hardcoded in a skill is *one encoding* of the invariant, valid
-only inside Claude Code — not the invariant itself.
+- **Tests (fake runtimes, no model calls):** `tests/test_agent_dispatch.py`
 
 ## Roles
 
-| Role | Purpose | Wants |
-|------|---------|-------|
-| `IMPLEMENTER` | The session reading this. Never dispatched — it *is* the caller. | — |
-| `REVIEWER` | Fresh-context review of a diff (`/code-review`, both axes). | ≥ implementer strength; different vendor preferred |
-| `ESCALATOR` | Resolves findings the review loop could not close (`/implement` round-3 escalation). | Strongest reasoner available. May equal `REVIEWER` |
-| `EXPLORER` | Read-only codebase sweeps, parallelised (`/improve-codebase-architecture`, `/wayfinder` research, design-it-twice). | Cheap and fast; depth matters less |
+| Role | Does | Effort | Does not |
+| --- | --- | --- | --- |
+| `ORCHESTRATOR` | Reads the whole release, dispatches work, verifies evidence, merges serially, runs the release review loop (`/orchestrate`) | `high` | Implement features; declare a review passed |
+| `IMPLEMENTER` | Implements one issue in its own worktree, runs the relevant checks, opens the PR, hands off (`/implement`) | `medium` / `high` from the issue's `Complexity` (`docs/agents/issue-template.md` § Execution) | Widen scope; create the next release |
+| `REVIEWER` | Independent adversarial review of a PR range or a release snapshot (`/code-review`) | `high` | Edit the reviewed code; pass style preferences off as defects |
 
-## Two dispatch mechanisms
+Ordinary exploration is done by whichever role owns the task. There is no escalation role:
+unresolved findings past the review budget go to a human.
 
-**1. Subprocess (canonical).** `scripts/agent-dispatch.sh <ROLE> <prompt-file>` shells out
-to a non-interactive CLI. Works in every runtime, including ones with no sub-agent
-primitive. It is the *definition* of what dispatching a role means: the prompt contract
-and the output contract are identical everywhere, so a skill written against it behaves
-the same under Claude Code, Codex, or a chat-only agent driving a terminal.
+## The invariant
 
-**2. Native sub-agent (optimization).** A runtime with its own fresh-context primitive may
-use it instead — Claude Code's `Agent` tool with `model:` set to the role's `_MODEL` from
-`config/agent-roles.conf`. Saves a process launch and keeps tool output in-band. Use it
-when available; it is not a different design, just a faster path to the same contract.
+> Review runs in a **different context** from the one that wrote the code, preferably on a
+> **different vendor**.
 
-Do **not** write a skill with a three-way branch on runtime. Write it against the role,
-note that a native primitive may substitute, and let this file hold the details.
+A self-review inside the implementing context never counts as the independent review any
+rule asks for. There is no reliable automatic ranking of "at least as capable"; choose the
+reviewer deliberately (below) and record which model reviewed.
 
-## Choosing a reviewer
+## Dispatch
 
-Cross-vendor is the **preferred** configuration, not a fallback:
+```text
+scripts/agent-dispatch.sh <ROLE> <prompt-file|-> --effort <medium|high>
+scripts/agent-dispatch.sh --probe [ROLE ...]
+```
 
-- Implementer Claude Sonnet → reviewer Claude Opus: stronger, but shares the
-  implementer's training-induced blind spots.
-- Implementer Codex or Grok → reviewer Claude Opus (or the reverse): independent failure
-  modes. A blind spot in one is not systematically a blind spot in the other.
+- `--effort` is a template-level word. The dispatcher translates it through the role's
+  `_EFFORT_MEDIUM` / `_EFFORT_HIGH` value into the runtime's own flag; it is never passed
+  through on the assumption that two CLIs mean the same thing.
+- Unknown role or effort, missing `--effort`, or a missing prompt file: exit `2`.
+  Unset runtime/model, unsupported effort (mapping unset), unknown runtime, or binary not
+  on `PATH`: exit `3`. Any other non-zero exit is the runtime's own (authentication and call
+  failures included), returned unchanged. The dispatcher never retries, never swaps in
+  another model and never lowers the effort.
+- The adapter builds the **whole** argv; there is no free-form flag or command field, so
+  nothing can override the model, the effort or the fresh session (no resume/continue).
+  Model and effort values must be single plain tokens. Permissions and sandboxing belong
+  in the runtime's own config. A leftover `<ROLE>_CMD` / `<ROLE>_EXTRA_ARGS` fails with
+  exit `3`.
+- The dispatched process runs in the caller's working directory (for an implementer, its
+  worktree); its result is stdout.
+- No secrets in the config: authentication is the runtime's own login or environment.
 
-So a runtime with no strong sibling model is not disadvantaged — installing the `claude`
-CLI purely as a review sidecar gives you the *better* arrangement. Whatever you pick,
-`IMPLEMENTER_LABEL` in the conf should say who is implementing, so `--probe` can warn
-when both sides of the review are the same vendor.
+**Native sub-agents** (a runtime's own fresh-context primitive) may replace the subprocess
+only when they honour the same role model, effort, working directory and output contract,
+read from `config/agent-roles.conf`. If the primitive cannot set the configured model and
+effort, use the subprocess path — do not silently drop the effort.
+
+**Orchestrator session.** `ORCHESTRATOR_MODEL` names the target orchestrator model. If the
+current session is not running it, start a matching session (dispatch `ORCHESTRATOR`) and
+hand off. A config file cannot switch the model of a session that is already running; never
+claim it did.
 
 ## Preflight
 
-Before any skill relies on a dispatched role:
+- `--probe` checks the config file and `PATH` only. It is **not** evidence of
+  authentication or a working call, and must never be reported as such.
+- The real check is one light call per role that will be used:
+  `printf 'Reply with exactly: DISPATCH-OK\n' | scripts/agent-dispatch.sh <ROLE> - --effort high`
+  must print `DISPATCH-OK` and exit `0`.
+- Run it **once at the start of a release** (or before a standalone `/implement` relies on
+  `REVIEWER`) — not before every issue. Run it again when the config changes or a real
+  dispatch hits an authentication or call error.
 
-```bash
-scripts/agent-dispatch.sh --probe            # all roles
-scripts/agent-dispatch.sh --probe REVIEWER   # one role
-```
+## Reviewer unavailable
 
-Exit `0` = usable, `3` = unusable. The probe confirms the role is configured and its
-binary resolves on `PATH`. It **cannot** confirm the flags are correct or that the CLI is
-authenticated — verify a new `_CMD` once by hand (`--help`, then one real dispatch)
-before trusting it.
+- Ordinary version issues may still be implemented and integrated into the version branch
+  (their review is the release review anyway), but the **release is blocked** and must not
+  be promoted.
+- Paths that need an independent pre-merge review (governance, standalone `/implement`,
+  hotfix) stay at **`In Review`**; say in the PR which role was unavailable.
+- Never replace the missing review with a review in the implementing context, and never
+  record findings in `docs/DEFERRED_ISSUES.md` from a review that did not happen.
 
-## Degraded mode
+## Parallel dispatch
 
-**This is the load-bearing rule of this file.**
+Parallelism buys wall-clock time; only context isolation is load-bearing. Use the runtime's
+existing concurrency limit. If you cannot confirm capacity, or the runtime cannot run
+dispatches concurrently, run them **serially**, one dispatch per task. There is no separate
+scheduler configuration.
 
-`/implement`'s authorization to self-squash-merge is *derived from* the review loop having
-actually run (`docs/GIT_WORKFLOW.md` § Agent / automation constraints #4). So a
-portability gap must never silently become an unreviewed merge.
+## Choosing models
 
-If a required role probes unusable:
+Cross-vendor review is the preferred configuration: independent failure modes catch more
+than a stronger model sharing the implementer's blind spots. `--probe` notes when
+`IMPLEMENTER` and `REVIEWER` use the same model.
 
-1. **Stop. Do not review your own work in the implementing context** and call the loop
-   complete. Same-context self-review does not satisfy the invariant — it is the exact
-   failure the two-context split exists to prevent.
-2. Finish the implementation, open the PR, and leave the tracker at **`In Review`** for a
-   human. Say plainly in the PR body which role was unavailable and that the review loop
-   did not run.
-3. Never record findings in `docs/DEFERRED_ISSUES.md` on the strength of a review that
-   did not happen.
+The upstream template ships every role unconfigured. This project supplies its own
+Pi registry-verified bindings in `config/agent-roles.conf`; see `template-sync.md` for
+real-call validation and client compatibility. Do not replace those working bindings with
+blank template values or treat a static probe as authentication evidence.
 
-A missing `EXPLORER` is less severe — it degrades breadth, not the safety gate. Fall back
-to searching inline and say the sweep was narrower than intended.
-
-## When a skill wants parallel sub-agents
-
-Several skills spawn agents in parallel — `/code-review` (2), design-it-twice (3+),
-`/wayfinder` research (N). Parallelism there buys wall-clock time and, more importantly,
-**context isolation**. Only the isolation is load-bearing.
-
-If your runtime cannot run dispatches concurrently, run them **serially** — one
-`agent-dispatch.sh` call per agent, each with its own prompt file. Isolation is preserved
-because each subprocess starts clean. Report that you ran serially; do not silently drop
-agents to compensate for the wall-clock cost, and in particular never collapse
-`/code-review`'s two axes into one agent — the separation is what stops one axis from
-masking the other.
+When a generation turns over, edit `config/agent-roles.conf` and nothing else. A model name
+inside `.claude/skills/` is drift; fix the skill to name a role.
 
 ## Per-runtime notes
 
-| Runtime | Native sub-agent | Skill loading | Notes |
-|---------|------------------|---------------|-------|
-| Claude Code | `Agent` tool, `model:` override | `.claude/skills/` auto-loaded, `/name` | `EnterWorktree` defaults to `origin/<default-branch>` — see the base trap in `docs/GIT_WORKFLOW.md` |
-| Codex | none equivalent | reads `AGENTS.md`; each skill ships `agents/openai.yaml` interface metadata | Use the subprocess path for all roles |
-| Any other | assume none | may have no skill loader — see below | Use the subprocess path for all roles |
+| Runtime | Adapter argv (flags read from `--help`; confirm with one real call) | Native sub-agent | Instruction/skill loading |
+| --- | --- | --- | --- |
+| Claude Code | `claude -p --model <M> --effort <E>`, prompt on stdin | `Agent` tool, if it can honour model and effort | Loads `AGENTS.md` natively from **v2.1.281**; a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` in the tree or an ancestor can stop it loading `AGENTS.md` (user setting `claude-md-and-agents-md` changes that). Confirm with `/memory`. Skills auto-load from `.claude/skills/` as `/name`. |
+| Codex | `codex exec --model <M> -c model_reasoning_effort="<E>" -`, prompt on stdin | none equivalent | Reads `AGENTS.md`; skills ship `agents/openai.yaml` metadata |
+| pi | `pi -p --model <provider/id> --thinking <E> @<prompt-file>` (stdin is spooled to a temp file) | the host's own sub-agent tool, same contract | Per host configuration |
+| Other | add an adapter to `scripts/agent-dispatch.sh` with a test | assume none | May have no skill loader |
 
-**Runtimes with no skill loader.** A skill is just a markdown file. If yours does not
-auto-discover `.claude/skills/`, it can still be told the path: *"read
-`.claude/skills/implement/SKILL.md` and follow it."* The `## Agent skills` section of
-`AGENTS.md` lists the paths for exactly this reason.
+**No skill loader?** A skill is a markdown file: *"read `.claude/skills/implement/SKILL.md`
+and follow it."* `AGENTS.md` § Agent skills lists the paths for this reason.
 
-## Changing models
-
-When a generation turns over (`opus` → whatever supersedes it), edit
-`config/agent-roles.conf` and nothing else. If you find yourself editing a model name
-inside `.claude/skills/`, that skill has drifted back to hardcoding — fix the skill to
-name a role instead.
+`EnterWorktree` in Claude Code defaults to `origin/<default-branch>`; see the base check in
+`docs/GIT_WORKFLOW.md`.

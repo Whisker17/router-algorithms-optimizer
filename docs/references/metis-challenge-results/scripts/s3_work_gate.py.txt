@@ -1,0 +1,103 @@
+"""WHI-1449 S3 work gate (memo §10.6) from the measured A0/M3 records only (write-once output).
+
+S3 stops H-M1b if M3's median stage-2 scored candidates are not below A0's: here M3
+`search.label_relaxations` vs A0 `search.paths_scored`, per case, strict `<` of the medians.
+Missing or non-integer counters are reported as unknown, never zero, and excluded from the
+medians with the exclusion counted. No tolerance is applied."""
+import hashlib, json, statistics, sys
+from pathlib import Path
+from benchmark.results import load_case_records, load_manifest
+
+a0_dir, m3_dir, out = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+if out.exists():
+    raise SystemExit(f"refusing to overwrite {out}")
+runs = {}
+for arm, d, algo, key in (("A0", a0_dir, "incremental_graph", "paths_scored"),
+                          ("M3", m3_dir, "metis_inspired", "label_relaxations")):
+    m = load_manifest(d)  # strict: complete + checksum
+    recs = load_case_records(d)
+    ids = [r["case_id"] for r in recs]
+    assert len(ids) == len(set(ids)) == m.case_count == m.scheduled_count
+    assert all(r["algorithm"] == algo for r in recs)
+    runs[arm] = {"manifest": m, "records": {r["case_id"]: r for r in recs}, "key": key}
+assert runs["A0"]["manifest"].bundle_hash == runs["M3"]["manifest"].bundle_hash
+assert set(runs["A0"]["records"]) == set(runs["M3"]["records"])
+order = runs["A0"]["manifest"].measurement["case_order"]
+
+def q(xs):
+    xs = sorted(xs)
+    if not xs:
+        return None
+    pick = lambda p: xs[min(len(xs) - 1, int(p * (len(xs) - 1)))]
+    return {"n": len(xs), "min": xs[0], "p05": pick(0.05), "p25": pick(0.25), "median": statistics.median(xs),
+            "p75": pick(0.75), "p95": pick(0.95), "max": xs[-1], "mean": sum(xs) / len(xs)}
+
+per_case, work, quotes, cons = [], {"A0": [], "M3": []}, {"A0": [], "M3": []}, {"A0": [], "M3": []}
+unknown = {"A0": [], "M3": []}
+statuses = {"A0": {}, "M3": {}}
+truncated = {"A0": [], "M3": []}
+for cid in order:
+    row = {"case_id": cid}
+    for arm, run in runs.items():
+        r = run["records"][cid]
+        s = r.get("search") or {}
+        v = s.get(run["key"])
+        statuses[arm][r["status"]] = statuses[arm].get(r["status"], 0) + 1
+        if s.get("truncated_by") is not None or r.get("limit_hit") is not None:
+            truncated[arm].append(cid)
+        ok_int = isinstance(v, int) and not isinstance(v, bool)
+        if ok_int:
+            work[arm].append(v)
+        else:
+            unknown[arm].append(cid)
+        qe = s.get("quotes_executed")
+        if isinstance(qe, int):
+            quotes[arm].append(qe)
+        cc = r.get("candidates_considered")
+        if isinstance(cc, int):
+            cons[arm].append(cc)
+        row[arm] = {"status": r["status"], "limit_hit": r.get("limit_hit"), "truncated_by": s.get("truncated_by"),
+                    run["key"]: v if ok_int else None, "quotes_executed": qe, "quotes_counted": (r.get("quotes") or {}).get("counted"),
+                    "candidates_considered": cc, "score": r.get("score"),
+                    "chunk_path_hops": s.get("chunk_path_hops"), "chosen_source": s.get("chosen_source")}
+    a, m = row["A0"]["paths_scored"], row["M3"]["label_relaxations"]
+    row["work_ratio_m3_over_a0"] = (m / a) if isinstance(a, int) and isinstance(m, int) and a > 0 else None
+    row["m3_quotes_le_a0"] = (row["M3"]["quotes_executed"] <= row["A0"]["quotes_executed"]
+                              if isinstance(row["M3"]["quotes_executed"], int) and isinstance(row["A0"]["quotes_executed"], int) else None)
+    row["same_score"] = row["A0"]["score"] == row["M3"]["score"]
+    per_case.append(row)
+paired = [(r["A0"]["paths_scored"], r["M3"]["label_relaxations"]) for r in per_case
+          if isinstance(r["A0"]["paths_scored"], int) and isinstance(r["M3"]["label_relaxations"], int)]
+med_a0 = statistics.median(work["A0"]) if work["A0"] else None
+med_m3 = statistics.median(work["M3"]) if work["M3"] else None
+met = None if med_a0 is None or med_m3 is None else med_m3 < med_a0
+doc = {
+    "gate": "S3 work (memo §10.6): M3 median stage-2 scored candidates strictly below A0's",
+    "units": {"A0": "search.paths_scored (paths per chunk, summed)", "M3": "search.label_relaxations (quote-backed relaxations, summed)"},
+    "runs": {arm: {"run_id": run["manifest"].run_id, "cases_sha256": run["manifest"].cases_sha256,
+                   "git_revision": run["manifest"].git_revision, "git_dirty": run["manifest"].git_dirty}
+             for arm, run in runs.items()},
+    "bundle_hash": runs["A0"]["manifest"].bundle_hash,
+    "scheduled_cases": len(order),
+    "statuses": statuses,
+    "truncated_or_limit_hit_cases": truncated,
+    "unknown_work_counter_cases": unknown,
+    "work": {"A0_paths_scored": q(work["A0"]), "M3_label_relaxations": q(work["M3"])},
+    "paired_cases_with_both_counters": len(paired),
+    "paired_m3_below_a0": sum(m < a for a, m in paired),
+    "work_ratio_m3_over_a0": q([r["work_ratio_m3_over_a0"] for r in per_case if r["work_ratio_m3_over_a0"] is not None]),
+    "quotes_executed": {"A0": q(quotes["A0"]), "M3": q(quotes["M3"])},
+    "cases_m3_quotes_le_a0": sum(1 for r in per_case if r["m3_quotes_le_a0"] is True),
+    "cases_m3_quotes_gt_a0": [r["case_id"] for r in per_case if r["m3_quotes_le_a0"] is False],
+    "candidates_considered_incl_embedded_path_split": {"A0": q(cons["A0"]), "M3": q(cons["M3"])},
+    "cases_same_final_score": sum(r["same_score"] for r in per_case),
+    "median_a0_paths_scored": med_a0,
+    "median_m3_label_relaxations": med_m3,
+    "s3_condition_met": met,
+    "per_case": per_case,
+}
+out.write_text(json.dumps(doc, indent=1) + "\n")
+print(json.dumps({k: doc[k] for k in ("statuses", "median_a0_paths_scored", "median_m3_label_relaxations", "s3_condition_met",
+                                      "paired_cases_with_both_counters", "paired_m3_below_a0", "cases_m3_quotes_le_a0",
+                                      "cases_same_final_score", "unknown_work_counter_cases", "truncated_or_limit_hit_cases")}))
+print(out, hashlib.sha256(out.read_bytes()).hexdigest())

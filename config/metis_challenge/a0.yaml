@@ -1,0 +1,37 @@
+# WHI-1449 Metis-inspired challenge, arm A0 (docs/references/jupiter-metis-challenge.md
+# §10.4: one profile per arm, one pass, same source revision).
+# Purpose: reference and disabled-mechanism baseline for M3
+# (splits: tuning, report).
+# Every value is config/full_gross.yaml's (memo §10.3 "reused"; a test enforces it) except
+# `algorithms` and, for the metis_inspired arms, the two new keys:
+#   graph.label_hops     New, unvalidated, registered, NOT tuned (memo §10.3); must be
+#                        >= search.max_hops; no default.
+#   graph.label_pruning  New ablation switch, not a tunable; no default.
+# metis_inspired is an experimental Metis-INSPIRED Python variant -- NOT Jupiter Metis, no
+# production equivalence. Run with `main.py run --strategies profile` (it belongs to neither
+# comparison group).
+schema_version: 2
+algorithms:
+  - incremental_graph
+objective:
+  mode: gross_only
+search:
+  max_hops: 3
+  max_splits: 4
+  percent_step: 5
+graph:
+  chunks: 50
+budget:
+  time_limit_seconds: 900
+  max_quotes: 300000
+  max_candidates: null      # explicitly no cap (metis_inspired: it would cap relaxations per chunk)
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1447
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

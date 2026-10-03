@@ -1,0 +1,91 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+    "number": 101082044,
+    "timestamp": 1790294400
+  },
+  "native": {
+    "derivation": "WMNT wraps native MNT 1:1 (deposit/withdraw at par), so the native gas token is priced at the WMNT observation",
+    "symbol": "MNT",
+    "via_token": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+  },
+  "quote_currency": "USD",
+  "schema": "price-context/1",
+  "source": {
+    "execution_id": "01M3BGWAD5MSW779Z7JZ6R9X4P",
+    "export_sha256": "a2ec67676ad7b742af8cb4c127c5043d75be310136f2677704b84cca0b64f3a3",
+    "max_staleness_seconds": 3600,
+    "provider": "dune",
+    "query_id": 8832131,
+    "selection": "latest minute bucket [t, t+60s) with t+60s <= snapshot timestamp and t >= snapshot - max_staleness_seconds",
+    "table": "prices.minute"
+  },
+  "tokens": {
+    "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": {
+      "decimals": 6,
+      "origin": "coinpaprika",
+      "price": "0.999718",
+      "status": "ok",
+      "symbol": "USDC",
+      "timestamp": 1790294340
+    },
+    "0x1bdd8878252daddd3af2ba30628813271294edc0": {
+      "decimals": 18,
+      "origin": "dex.trades",
+      "price": "0.06138980477081803",
+      "status": "ok",
+      "symbol": "CATI",
+      "timestamp": 1790294340
+    },
+    "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": {
+      "decimals": 6,
+      "origin": "coinpaprika",
+      "price": "0.999436",
+      "status": "ok",
+      "symbol": "USDT",
+      "timestamp": 1790294340
+    },
+    "0x779ded0c9e1022225f8e0630b35a9b54be713736": {
+      "decimals": 6,
+      "origin": "dex.trades",
+      "price": "0.9990376510332882",
+      "status": "ok",
+      "symbol": "USDT0",
+      "timestamp": 1790294340
+    },
+    "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": {
+      "decimals": 18,
+      "origin": "coinpaprika",
+      "price": "0.677247",
+      "status": "ok",
+      "symbol": "WMNT",
+      "timestamp": 1790294340
+    },
+    "0xc96de26018a54d51c097160568752c4e3bd6c364": {
+      "decimals": 8,
+      "origin": "coinpaprika",
+      "price": "84212.65",
+      "status": "ok",
+      "symbol": "FBTC",
+      "timestamp": 1790294340
+    },
+    "0xcda86a272531e8640cd7f1a92c01839911b90bb0": {
+      "decimals": 18,
+      "origin": "coinpaprika",
+      "price": "2953.29",
+      "status": "ok",
+      "symbol": "mETH",
+      "timestamp": 1790294340
+    },
+    "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": {
+      "decimals": 18,
+      "origin": "coinpaprika",
+      "price": "2687.8",
+      "status": "ok",
+      "symbol": "WETH",
+      "timestamp": 1790294340
+    }
+  },
+  "unit": "quote currency per 1 whole token (10**decimals raw units)"
+}

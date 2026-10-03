@@ -1,20 +1,18 @@
-> **Canonical home.** This file is the trap registry. `/orchestrate` pastes it into
-> every implementer launch prompt. `.claude/skills/orchestrate/traps.md` is a
-> pointer, not the list — append entries here (a version-scoped docs PR, not a
-> governance PR). Downstream projects seed this file with *their* measured traps;
-> do not copy another repo's numbered list in wholesale.
+> **Canonical home.** This file is the on-demand project trap registry. Include only
+> entries relevant to the current issue in an implementer handoff; do not paste the
+> complete registry into every prompt. Append durable findings here (a version-scoped
+> docs PR, not a governance PR). The former skill-local pointer was removed by the
+> code-template v0.2 synchronization.
 
 # Trap registry — append-only, repo-specific
 
-This registry is the **durable channel** by which a trap reaches every implementer after the
-first one it's handed to — `implementer-prompt.md`'s launch prompt pastes it verbatim into
-every issue's prompt. (`SKILL.md`'s "Feed forward" step already names the other, immediate
-channel: mentioning a fresh trap directly in the very next launch prompt, which takes effect
-with no commit at all but doesn't outlive that one issue.) An entry that never makes it into
-this file does not survive past whichever single issue it may have been mentioned to by hand.
-Carry every entry into each launch prompt. Cost is why they are here. Each entry below is
-cited against the repo so it stays checkable; an entry that stops being true belongs in
-`docs/DEFERRED_ISSUES.md`'s own resolved section, not silently deleted here.
+This registry preserves reusable project evidence across sessions. Feed a relevant new
+trap directly into the next affected issue/handoff and retain it here when it outlives
+that task. The current orchestrator reads this file on demand and selects applicable
+entries instead of injecting all historical material. Each entry stays checkable; an
+obsolete lesson belongs in the resolved section of `docs/DEFERRED_ISSUES.md`, not in a
+silent deletion. WHI-1500 adapts the process wording to template v0.2 and preserves all
+seven numbered entries.
 
 **A trim is self-declaring.** An entry leaves this file in one of exactly two ways: it
 graduates to `docs/DEFERRED_ISSUES.md`'s resolved section once it stops being true (the
@@ -26,6 +24,11 @@ accidental, not reviewed.
 The numbered entries below are **process-layer** traps measured while this skill was
 dogfooded. Stack-specific traps (formatter scoping, measurement-binary paths, report-slot
 collisions) belong in the downstream project's copy of this file, not here.
+
+**Review applicability (WHI-1472):** reviewer-specific entries apply only when independent
+review is requested or required. They do not create an ordinary per-issue reviewer gate.
+The current development/release policy in `docs/GIT_WORKFLOW.md` is authoritative.
+Entries 4 and 7 retain their measured lessons with that scope; no numbered entry is removed.
 
 1. **`gh pr create` (and every later `gh` call) needs `--repo <owner/repo>` whenever
    `gh` would resolve the wrong GitHub repo.** A fork, a `no_push` `upstream`, or
@@ -44,21 +47,25 @@ collisions) belong in the downstream project's copy of this file, not here.
    (`git diff <base>`) looks like the fix for an empty three-dot on an uncommitted
    branch, but once `<base>` advances it shows the reviewer those foreign commits,
    reversed. Commit first; use three-dot; refuse to dispatch on an empty range.
-4. **`--probe` is not G1.** `scripts/agent-dispatch.sh --probe` only checks that the
-   binary resolves. A role whose binary is on `PATH` but whose auth/quota/flags fail
-   still reports `ok`. The gate is a real one-line dispatch that must print
-   `DISPATCH-OK` and exit 0 (`docs/agents/runtime.md` § Preflight). A failed G1 means
-   the review loop did not run — stop at `In Review`, never self-review.
+4. **`--probe` is not proof that a required review can run.** It only checks binary
+   discovery. Authentication, quota and flags need a real bounded dispatch (for example,
+   one that prints `DISPATCH-OK` and exits 0; see runtime § Preflight). If required
+   release review cannot run, keep its PR open and tracking issue at `In Review`; do not
+   claim self-review as independent evidence. Governance, standalone and hotfix lanes
+   that require pre-merge review also remain blocked on that review. Ordinary version
+   issues under release orchestration can continue after their own validation gates.
+   Use the configured role and explicit `--effort high`, without model/effort substitution.
 5. **Empty reviewer stdout is a vacuous gate, not a clean pass.** Exit 0 with no
    findings-shaped content is indistinguishable from "the dispatch never ran." Inline
-   the three-dot diff (and any file the spec needs) in both axis prompts rather than
-   depending on the reviewer to run git; if stdout is empty or a transport error,
-   retry once, then stop and report.
+   the three-dot diff (and any file the spec needs) in the single reviewer prompt rather
+   than relying on a later git invocation. Empty or transport-error output is not a pass:
+   record it, diagnose the dispatch and stop the gated step; no blind retry or fallback.
 6. **`pgrep -fl` dumps this machine's entire shell-snapshot environment** instead of the
    one process you meant to find. Use `pgrep -f <pat> | head -1` to get the pid, then
    `ps -o pid,etime,command -p <pid>`.
-7. **Generate committed measurement artifacts once, after the review loop closes, from a
-   clean committed sha.** Reviewers read `git diff <fixed-point>...HEAD`, not generated
-   reports — regenerating a report per round turns every prose finding into a full
-   re-measurement. If the tree is dirty at generation time, stamp provenance accordingly
-   rather than silently attributing a dirty run to a later commit.
+7. **Generate measurement artifacts from the validated candidate and bind them to its
+   commit/data/config identities.** Run the full acceptance required for each release
+   candidate/fix batch by `docs/GIT_WORKFLOW.md` and `/orchestrate`; do not substitute
+   evidence from an older SHA. Ordinary version issues under orchestration do not rerun
+   full E2E or regenerate reports merely to populate a handoff. If generation uses a
+   dirty tree, record that provenance rather than attributing it to a clean commit.

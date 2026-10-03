@@ -1,0 +1,44 @@
+# Documentary transcript (not a module): reduces a raw tools/latency/l06_sor_shortlist.py
+# output (gitignored data/latency-l06/) to the committed compact evidence. It only drops
+# fields and re-shapes rows; every number is copied, none is recomputed.
+#   cp docs/references/latency-l06/compact.py.txt /tmp/compact.py
+#   uv run python /tmp/compact.py data/latency-l06/<raw>.json docs/references/latency-l06/<out>.json
+import hashlib
+import json
+import sys
+
+raw_path, out_path = sys.argv[1], sys.argv[2]
+raw_bytes = open(raw_path, "rb").read()
+d = json.loads(raw_bytes)
+COLS = ["bundle", "split", "case", "setting", "transition", "regret_bps", "loss_raw",
+        "ref_quotes", "cand_quotes", "scope", "fallback_reason", "enumerated_routes",
+        "searched_routes", "searched_pools", "skipped_pools", "cand_selection",
+        "ref_selection", "independent_ok", "ref_equals_l01", "ref_solve_s", "cand_solve_s",
+        "load_1m"]
+
+
+def selection(side):
+    return ["+".join(r["pool_ids"]) + f"@{r['percent']}" for r in side["selection_routes"]]
+
+
+rows = []
+for r in d["rows"]:
+    c, ref = r["candidate"], r["reference"]
+    sl = c["shortlist"]
+    rows.append([
+        r["bundle"], r["split"], r["case"], r["setting"], r["transition"], r["regret_bps"],
+        r["loss_raw"], ref["quotes_counted"], c["quotes_counted"], c["search_scope"],
+        (sl.get("fallback") or {}).get("reason"),
+        sum((c["routes_enumerated"] or {}).values()),
+        sum((sl.get("searched_routes") or {}).values()), sl.get("searched_pools"),
+        sl.get("skipped_pools"), selection(c), selection(ref), c["independent_matches_solver"],
+        r["reference_equals_l01_baseline"], ref["solve_wall_seconds"], c["solve_wall_seconds"],
+        r["loadavg_1m_before"],
+    ])
+out = {k: d[k] for k in d if k not in ("rows",)}
+out["raw_sha256"] = hashlib.sha256(raw_bytes).hexdigest()
+out["row_columns"] = COLS
+out["rows"] = rows
+with open(out_path, "w") as f:
+    json.dump(out, f, indent=None, sort_keys=True, separators=(",", ":"))
+    f.write("\n")

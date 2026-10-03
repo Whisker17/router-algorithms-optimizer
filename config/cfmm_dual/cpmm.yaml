@@ -1,0 +1,55 @@
+# cfmm_dual CPMM comparison profile (WHI-1558; docs/references/research-021/cfmm-dual.md §10
+# "bounded comparison recipe"): the preset cfmm_dual/1 next to its matched controls
+# path_split and incremental_graph under ONE shared objective, search values and budget.
+# Class `incomparable_domain` (neither feasible set contains the other): side by side, never
+# ranked as a mechanism gain. cfmm_dual's market universe is the admitted constant-product
+# pools on <= search.max_hops paths (CPMM stage); a case with only concentrated/LB paths is a
+# visible `unsupported` row, never omitted. Replay it literally with
+# `main.py run|quote --strategies profile`.
+#
+# search/graph/budget repeat config/full_gross.yaml (3 hops, 4 splits, 5% grid, 50 chunks,
+# 900 s / 300000 quotes). SMOKE-SCALE and UNVALIDATED here (one measured attempt, no warmup):
+# the profile exists for the run/quote CLI checks and the preset demonstration, not as a
+# performance campaign (that is WHI-1562's); no speed or quality claim. The CL stage
+# (WHI-1559) adds its own profile; this file is never rewritten.
+schema_version: 2
+algorithms:
+  - path_split
+  - incremental_graph
+  - cfmm_dual
+objective:
+  mode: gross_only
+search:
+  max_hops: 3
+  max_splits: 4
+  percent_step: 5
+graph:
+  chunks: 50
+budget:
+  time_limit_seconds: 900
+  max_quotes: 300000
+  max_candidates: null      # explicitly no cap (it would cap fallback_paths_evaluated)
+algorithm_options:
+  cfmm_dual:                         # = preset_v1.yaml, so it resolves as {kind: preset}
+    market_protocols: constant_product
+    max_iterations: 200
+    max_function_evaluations: 600
+    lbfgs_memory: 10
+    pgtol: 1.0e-9
+    ftol: 1.0e-15
+    residual_tolerance: 1.0e-5
+    log_price_bound: 50.0
+    min_split_share: 1.0e-6
+    max_recovery_attempts: 8
+    cycle_resolve: true
+    fallback: single_path
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1558
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

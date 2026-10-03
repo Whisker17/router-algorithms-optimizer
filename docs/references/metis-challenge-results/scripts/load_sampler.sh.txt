@@ -1,0 +1,3 @@
+#!/bin/sh
+# Append one 1/5/15-minute load sample per minute (UTC) until killed.
+while true; do echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $(sysctl -n vm.loadavg)" >> "$1"; sleep 60; done

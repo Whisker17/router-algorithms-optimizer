@@ -1,0 +1,2302 @@
+{
+  "schema": "latency-research-evidence/1",
+  "source_commit": "b2a680578f65ac65653a8160f04a3d97a5c5e71e",
+  "purpose": "research only; no optimized implementation or speedup measurement",
+  "request": {
+    "amount_in_raw": "1000000000",
+    "case_id": "quote-b5feb74821d5",
+    "token_in": {
+      "address": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+      "decimals": 6,
+      "symbol": "USDC"
+    },
+    "token_out": {
+      "address": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+      "decimals": 6,
+      "symbol": "USDT"
+    }
+  },
+  "parent_bundle": {
+    "bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+    "bundle_id": "mantle-5src-101082044-091b0759",
+    "path": "data/corpus/mantle-5src-101082044/bundle"
+  },
+  "source_profile": {
+    "path": "config/daily_gross.yaml",
+    "sha256": "577b43ebc2d23f1d4d896501471b104013ca86e4d33f2b8315722f3bb5680c11"
+  },
+  "environment": {
+    "clock": {
+      "monotonic": true,
+      "name": "perf_counter_ns",
+      "resolution_seconds": 4.166666666666666e-08
+    },
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+      "pycryptodome": "3.23.0",
+      "pyyaml": "6.0.3"
+    },
+    "git_diff_sha256": null,
+    "git_dirty": false,
+    "git_revision": "b2a680578f65ac65653a8160f04a3d97a5c5e71e",
+    "machine": "arm64",
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_implementation": "CPython",
+    "python_version": "3.13.13",
+    "worker": {
+      "prepare_time_limit_seconds": 120.0,
+      "scope": "algorithm",
+      "start_method": "spawn"
+    }
+  },
+  "workstation_loadavg_start": [
+    61.2080078125,
+    33.1923828125,
+    18.76513671875
+  ],
+  "workstation_loadavg_end": [
+    54.99267578125,
+    45.0234375,
+    26.5205078125
+  ],
+  "timing_limitations": "Shared workstation, n=3 new independent cold CLI invocations; high load, no stable p95/SLA inference. Profiles are CPU-attribution diagnostics, not latency baselines.",
+  "historical_user_artifact": {
+    "quote_record": "data/quotes/20260926T051300040217Z-f064e5b6/quote.json",
+    "quote_record_sha256": "47e70b09d153baeb4b12c30a1e8d685211183fae8e77aa1f6d561062392ea849",
+    "algorithms": [
+      {
+        "algorithm": "direct",
+        "status": "ok",
+        "solve_seconds": 0.018547042,
+        "quotes": {
+          "attempted": 12,
+          "counted": 12
+        },
+        "gross_output": "1000230567",
+        "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336"
+      },
+      {
+        "algorithm": "single_path",
+        "status": "ok",
+        "solve_seconds": 0.443571875,
+        "quotes": {
+          "attempted": 265,
+          "counted": 265
+        },
+        "gross_output": "1000230567",
+        "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336"
+      },
+      {
+        "algorithm": "direct_split",
+        "status": "ok",
+        "solve_seconds": 0.324516083,
+        "quotes": {
+          "attempted": 240,
+          "counted": 240
+        },
+        "gross_output": "1000234653",
+        "evaluation_sha256": "53730f8b887fbafcd7bebae545b4e995f9c3d35d18127817c552cfc468522c42"
+      },
+      {
+        "algorithm": "path_split",
+        "status": "ok",
+        "solve_seconds": 2.267848208,
+        "quotes": {
+          "attempted": 1289,
+          "counted": 1289
+        },
+        "gross_output": "1000236685",
+        "evaluation_sha256": "a35ce8ec954323658d144aa597cc60da5ebeaca5c19c5cfefc6f60db70ec5476"
+      },
+      {
+        "algorithm": "incremental_graph",
+        "status": "ok",
+        "solve_seconds": 2.966059958,
+        "quotes": {
+          "attempted": 1918,
+          "counted": 1918
+        },
+        "gross_output": "1000237724",
+        "evaluation_sha256": "99ea27746b4e936b60bd56519e46a2ab635fa3a984a3d61fba2a1c4043b34cd5"
+      },
+      {
+        "algorithm": "uni_sor_port",
+        "status": "ok",
+        "solve_seconds": 9.144412292,
+        "quotes": {
+          "attempted": 3734,
+          "counted": 3734
+        },
+        "gross_output": "1000233775",
+        "evaluation_sha256": "0a9f44d5e2c9a54da475cf11988aaf8bbef95e35059e3b6cd21c3ba10e861f46"
+      }
+    ]
+  },
+  "unprofiled_runs": [
+    {
+      "index": 1,
+      "six_algorithm_cli_wall_seconds": 72.72480450000148,
+      "loadavg_end": [
+        77.943359375,
+        45.15380859375,
+        24.55810546875
+      ],
+      "bundle_hash": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+      "profile_sha256": "5f2de106303db600ac28fcb46e47f605926f7dc858cc9f38ffbd73bb28c7878d",
+      "run_id": "20260926T064314610143Z-136631ad",
+      "algorithms": [
+        {
+          "algorithm": "direct",
+          "status": "ok",
+          "solve_seconds": 0.340535208,
+          "worker_request_elapsed_seconds": 0.363590791,
+          "independent_evaluation_seconds": 0.0002055,
+          "quotes": {
+            "attempted": 12,
+            "counted": 12
+          },
+          "gross_output": "1000230567",
+          "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336",
+          "search_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        {
+          "algorithm": "single_path",
+          "status": "ok",
+          "solve_seconds": 1.859792333,
+          "worker_request_elapsed_seconds": 1.863396292,
+          "independent_evaluation_seconds": 0.000558417,
+          "quotes": {
+            "attempted": 265,
+            "counted": 265
+          },
+          "gross_output": "1000230567",
+          "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336",
+          "search_sha256": "4e75f50f2656210383083ba1cd90f1704472105ee41a32da4f1e059d2134c889"
+        },
+        {
+          "algorithm": "direct_split",
+          "status": "ok",
+          "solve_seconds": 2.155491708,
+          "worker_request_elapsed_seconds": 2.186026,
+          "independent_evaluation_seconds": 0.000403542,
+          "quotes": {
+            "attempted": 240,
+            "counted": 240
+          },
+          "gross_output": "1000234653",
+          "evaluation_sha256": "53730f8b887fbafcd7bebae545b4e995f9c3d35d18127817c552cfc468522c42",
+          "search_sha256": "71f1828f0dd378f7281c8f7fd20a85f9a37b647cf7309e4dca1275e00c9e7211"
+        },
+        {
+          "algorithm": "path_split",
+          "status": "ok",
+          "solve_seconds": 7.019686083,
+          "worker_request_elapsed_seconds": 7.025225417,
+          "independent_evaluation_seconds": 0.000696084,
+          "quotes": {
+            "attempted": 1289,
+            "counted": 1289
+          },
+          "gross_output": "1000236685",
+          "evaluation_sha256": "a35ce8ec954323658d144aa597cc60da5ebeaca5c19c5cfefc6f60db70ec5476",
+          "search_sha256": "bfc47dbfb252934c38677ea70e31e99de1b87bc57c89044e2711108c9c6fbeea"
+        },
+        {
+          "algorithm": "incremental_graph",
+          "status": "ok",
+          "solve_seconds": 10.813778791,
+          "worker_request_elapsed_seconds": 10.820360958,
+          "independent_evaluation_seconds": 0.000999417,
+          "quotes": {
+            "attempted": 1918,
+            "counted": 1918
+          },
+          "gross_output": "1000237724",
+          "evaluation_sha256": "99ea27746b4e936b60bd56519e46a2ab635fa3a984a3d61fba2a1c4043b34cd5",
+          "search_sha256": "f195da67715976100e0b4aa1000038561adb6eca2db1d69338d9587572b38c30"
+        },
+        {
+          "algorithm": "uni_sor_port",
+          "status": "ok",
+          "solve_seconds": 38.4336915,
+          "worker_request_elapsed_seconds": 38.454596292,
+          "independent_evaluation_seconds": 0.004350625,
+          "quotes": {
+            "attempted": 3734,
+            "counted": 3734
+          },
+          "gross_output": "1000233775",
+          "evaluation_sha256": "0a9f44d5e2c9a54da475cf11988aaf8bbef95e35059e3b6cd21c3ba10e861f46",
+          "search_sha256": "9df7c086c429d66ca131aa15ba4ba89d25af82b8bcec861773fd325515b98a49"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "six_algorithm_cli_wall_seconds": 46.98957220799639,
+      "loadavg_end": [
+        55.06982421875,
+        43.8662109375,
+        25.15576171875
+      ],
+      "bundle_hash": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+      "profile_sha256": "5f2de106303db600ac28fcb46e47f605926f7dc858cc9f38ffbd73bb28c7878d",
+      "run_id": "20260926T064426668115Z-d53cee87",
+      "algorithms": [
+        {
+          "algorithm": "direct",
+          "status": "ok",
+          "solve_seconds": 0.107204708,
+          "worker_request_elapsed_seconds": 0.110000542,
+          "independent_evaluation_seconds": 0.001510916,
+          "quotes": {
+            "attempted": 12,
+            "counted": 12
+          },
+          "gross_output": "1000230567",
+          "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336",
+          "search_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        {
+          "algorithm": "single_path",
+          "status": "ok",
+          "solve_seconds": 2.658437542,
+          "worker_request_elapsed_seconds": 2.6798205,
+          "independent_evaluation_seconds": 0.001516375,
+          "quotes": {
+            "attempted": 265,
+            "counted": 265
+          },
+          "gross_output": "1000230567",
+          "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336",
+          "search_sha256": "4e75f50f2656210383083ba1cd90f1704472105ee41a32da4f1e059d2134c889"
+        },
+        {
+          "algorithm": "direct_split",
+          "status": "ok",
+          "solve_seconds": 1.202443208,
+          "worker_request_elapsed_seconds": 1.208700208,
+          "independent_evaluation_seconds": 0.00066325,
+          "quotes": {
+            "attempted": 240,
+            "counted": 240
+          },
+          "gross_output": "1000234653",
+          "evaluation_sha256": "53730f8b887fbafcd7bebae545b4e995f9c3d35d18127817c552cfc468522c42",
+          "search_sha256": "71f1828f0dd378f7281c8f7fd20a85f9a37b647cf7309e4dca1275e00c9e7211"
+        },
+        {
+          "algorithm": "path_split",
+          "status": "ok",
+          "solve_seconds": 6.723639792,
+          "worker_request_elapsed_seconds": 6.727239833,
+          "independent_evaluation_seconds": 0.001723209,
+          "quotes": {
+            "attempted": 1289,
+            "counted": 1289
+          },
+          "gross_output": "1000236685",
+          "evaluation_sha256": "a35ce8ec954323658d144aa597cc60da5ebeaca5c19c5cfefc6f60db70ec5476",
+          "search_sha256": "bfc47dbfb252934c38677ea70e31e99de1b87bc57c89044e2711108c9c6fbeea"
+        },
+        {
+          "algorithm": "incremental_graph",
+          "status": "ok",
+          "solve_seconds": 6.317326166,
+          "worker_request_elapsed_seconds": 6.319936375,
+          "independent_evaluation_seconds": 0.000820167,
+          "quotes": {
+            "attempted": 1918,
+            "counted": 1918
+          },
+          "gross_output": "1000237724",
+          "evaluation_sha256": "99ea27746b4e936b60bd56519e46a2ab635fa3a984a3d61fba2a1c4043b34cd5",
+          "search_sha256": "f195da67715976100e0b4aa1000038561adb6eca2db1d69338d9587572b38c30"
+        },
+        {
+          "algorithm": "uni_sor_port",
+          "status": "ok",
+          "solve_seconds": 20.309679583,
+          "worker_request_elapsed_seconds": 20.313130833,
+          "independent_evaluation_seconds": 0.000755375,
+          "quotes": {
+            "attempted": 3734,
+            "counted": 3734
+          },
+          "gross_output": "1000233775",
+          "evaluation_sha256": "0a9f44d5e2c9a54da475cf11988aaf8bbef95e35059e3b6cd21c3ba10e861f46",
+          "search_sha256": "9df7c086c429d66ca131aa15ba4ba89d25af82b8bcec861773fd325515b98a49"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "six_algorithm_cli_wall_seconds": 41.942635500003234,
+      "loadavg_end": [
+        54.99267578125,
+        45.0234375,
+        26.5205078125
+      ],
+      "bundle_hash": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+      "profile_sha256": "5f2de106303db600ac28fcb46e47f605926f7dc858cc9f38ffbd73bb28c7878d",
+      "run_id": "20260926T064512423085Z-f4199a7a",
+      "algorithms": [
+        {
+          "algorithm": "direct",
+          "status": "ok",
+          "solve_seconds": 0.0857545,
+          "worker_request_elapsed_seconds": 0.086837417,
+          "independent_evaluation_seconds": 0.0002055,
+          "quotes": {
+            "attempted": 12,
+            "counted": 12
+          },
+          "gross_output": "1000230567",
+          "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336",
+          "search_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        {
+          "algorithm": "single_path",
+          "status": "ok",
+          "solve_seconds": 1.588735583,
+          "worker_request_elapsed_seconds": 1.589573417,
+          "independent_evaluation_seconds": 0.000195958,
+          "quotes": {
+            "attempted": 265,
+            "counted": 265
+          },
+          "gross_output": "1000230567",
+          "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336",
+          "search_sha256": "4e75f50f2656210383083ba1cd90f1704472105ee41a32da4f1e059d2134c889"
+        },
+        {
+          "algorithm": "direct_split",
+          "status": "ok",
+          "solve_seconds": 1.236396708,
+          "worker_request_elapsed_seconds": 1.238202166,
+          "independent_evaluation_seconds": 0.000900875,
+          "quotes": {
+            "attempted": 240,
+            "counted": 240
+          },
+          "gross_output": "1000234653",
+          "evaluation_sha256": "53730f8b887fbafcd7bebae545b4e995f9c3d35d18127817c552cfc468522c42",
+          "search_sha256": "71f1828f0dd378f7281c8f7fd20a85f9a37b647cf7309e4dca1275e00c9e7211"
+        },
+        {
+          "algorithm": "path_split",
+          "status": "ok",
+          "solve_seconds": 4.567211292,
+          "worker_request_elapsed_seconds": 4.578926958,
+          "independent_evaluation_seconds": 0.00087925,
+          "quotes": {
+            "attempted": 1289,
+            "counted": 1289
+          },
+          "gross_output": "1000236685",
+          "evaluation_sha256": "a35ce8ec954323658d144aa597cc60da5ebeaca5c19c5cfefc6f60db70ec5476",
+          "search_sha256": "bfc47dbfb252934c38677ea70e31e99de1b87bc57c89044e2711108c9c6fbeea"
+        },
+        {
+          "algorithm": "incremental_graph",
+          "status": "ok",
+          "solve_seconds": 8.773754875,
+          "worker_request_elapsed_seconds": 8.780717084,
+          "independent_evaluation_seconds": 0.001927875,
+          "quotes": {
+            "attempted": 1918,
+            "counted": 1918
+          },
+          "gross_output": "1000237724",
+          "evaluation_sha256": "99ea27746b4e936b60bd56519e46a2ab635fa3a984a3d61fba2a1c4043b34cd5",
+          "search_sha256": "f195da67715976100e0b4aa1000038561adb6eca2db1d69338d9587572b38c30"
+        },
+        {
+          "algorithm": "uni_sor_port",
+          "status": "ok",
+          "solve_seconds": 18.4191075,
+          "worker_request_elapsed_seconds": 18.422230709,
+          "independent_evaluation_seconds": 0.000500792,
+          "quotes": {
+            "attempted": 3734,
+            "counted": 3734
+          },
+          "gross_output": "1000233775",
+          "evaluation_sha256": "0a9f44d5e2c9a54da475cf11988aaf8bbef95e35059e3b6cd21c3ba10e861f46",
+          "search_sha256": "9df7c086c429d66ca131aa15ba4ba89d25af82b8bcec861773fd325515b98a49"
+        }
+      ]
+    }
+  ],
+  "cpu_profiles": [
+    {
+      "algorithm": "direct",
+      "clock": "time.process_time supplied to cProfile",
+      "cpu_seconds_instrumented": 0.11086400000000002,
+      "wall_seconds_instrumented": 0.26256004099559505,
+      "profiler_total_self_cpu_seconds": 0.110214,
+      "quotes_counted": 12,
+      "same_evaluation_and_search_as_baseline": true,
+      "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336",
+      "top_self_cpu": [
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "primitive_calls": 9,
+          "calls": 9,
+          "self_cpu_seconds": 0.024560000000000002,
+          "cumulative_cpu_seconds": 0.10763600000000001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "primitive_calls": 4232,
+          "calls": 4232,
+          "self_cpu_seconds": 0.013071000000000001,
+          "cumulative_cpu_seconds": 0.045814
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "primitive_calls": 4241,
+          "calls": 4241,
+          "self_cpu_seconds": 0.010018,
+          "cumulative_cpu_seconds": 0.010018
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 102,
+          "function": "mul_div",
+          "primitive_calls": 17631,
+          "calls": 17631,
+          "self_cpu_seconds": 0.009976,
+          "cumulative_cpu_seconds": 0.009976
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 114,
+          "function": "mul_div_rounding_up",
+          "primitive_calls": 8471,
+          "calls": 8471,
+          "self_cpu_seconds": 0.009078000000000001,
+          "cumulative_cpu_seconds": 0.013871000000000001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 283,
+          "function": "get_amount0_delta",
+          "primitive_calls": 4239,
+          "calls": 4239,
+          "self_cpu_seconds": 0.007187000000000001,
+          "cumulative_cpu_seconds": 0.016543000000000002
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 396,
+          "function": "next_initialized_tick_within_one_word",
+          "primitive_calls": 4232,
+          "calls": 4232,
+          "self_cpu_seconds": 0.006713,
+          "cumulative_cpu_seconds": 0.014162000000000001
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 193,
+          "function": "read_word",
+          "primitive_calls": 4232,
+          "calls": 4232,
+          "self_cpu_seconds": 0.004562,
+          "cumulative_cpu_seconds": 0.007108000000000001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 299,
+          "function": "get_amount1_delta",
+          "primitive_calls": 4232,
+          "calls": 4232,
+          "self_cpu_seconds": 0.004520000000000001,
+          "cumulative_cpu_seconds": 0.006762000000000001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 83,
+          "function": "to_int256",
+          "primitive_calls": 8473,
+          "calls": 8473,
+          "self_cpu_seconds": 0.003926000000000001,
+          "cumulative_cpu_seconds": 0.003926000000000001
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'mappingproxy' objects>",
+          "primitive_calls": 4491,
+          "calls": 4491,
+          "self_cpu_seconds": 0.002736,
+          "cumulative_cpu_seconds": 0.002736
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 125,
+          "function": "div_rounding_up",
+          "primitive_calls": 4239,
+          "calls": 4239,
+          "self_cpu_seconds": 0.002377,
+          "cumulative_cpu_seconds": 0.002377
+        }
+      ],
+      "selected_functions": [
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "calls": 4241,
+          "self_cpu_seconds": 0.010018,
+          "cumulative_cpu_seconds": 0.010018
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 101,
+          "function": "_freeze_mapping",
+          "calls": 19,
+          "self_cpu_seconds": 7.000000000000001e-05,
+          "cumulative_cpu_seconds": 7.000000000000001e-05
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 147,
+          "function": "__post_init__",
+          "calls": 9,
+          "self_cpu_seconds": 1.9e-05,
+          "cumulative_cpu_seconds": 8e-05
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "calls": 4232,
+          "self_cpu_seconds": 0.013071000000000001,
+          "cumulative_cpu_seconds": 0.045814
+        },
+        {
+          "file": "pools/quote.py",
+          "line": 74,
+          "function": "quote_exact_in",
+          "calls": 12,
+          "self_cpu_seconds": 6.1000000000000005e-05,
+          "cumulative_cpu_seconds": 0.108822
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 244,
+          "function": "__post_init__",
+          "calls": 1,
+          "self_cpu_seconds": 1.2e-05,
+          "cumulative_cpu_seconds": 2.1000000000000002e-05
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 572,
+          "function": "swap",
+          "calls": 2,
+          "self_cpu_seconds": 0.00022400000000000002,
+          "cumulative_cpu_seconds": 0.0008920000000000001
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 329,
+          "function": "quote_exact_in",
+          "calls": 9,
+          "self_cpu_seconds": 8.300000000000001e-05,
+          "cumulative_cpu_seconds": 0.10775100000000001
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "calls": 9,
+          "self_cpu_seconds": 0.024560000000000002,
+          "cumulative_cpu_seconds": 0.10763600000000001
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 691,
+          "function": "quote_exact_in",
+          "calls": 2,
+          "self_cpu_seconds": 2.9e-05,
+          "cumulative_cpu_seconds": 0.000937
+        },
+        {
+          "file": "pools/constant_product.py",
+          "line": 125,
+          "function": "quote_exact_in",
+          "calls": 1,
+          "self_cpu_seconds": 9e-06,
+          "cumulative_cpu_seconds": 3.2000000000000005e-05
+        },
+        {
+          "file": "routing/algorithms/direct.py",
+          "line": 54,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.00014900000000000002,
+          "cumulative_cpu_seconds": 0.11077000000000001
+        }
+      ]
+    },
+    {
+      "algorithm": "single_path",
+      "clock": "time.process_time supplied to cProfile",
+      "cpu_seconds_instrumented": 1.606963,
+      "wall_seconds_instrumented": 2.921531666012015,
+      "profiler_total_self_cpu_seconds": 1.5726950120000003,
+      "quotes_counted": 265,
+      "same_evaluation_and_search_as_baseline": true,
+      "evaluation_sha256": "bee1c7bac247daadf3b3d4ecfac2b811d10d08c66e75c1f2363463b247f84336",
+      "top_self_cpu": [
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "primitive_calls": 165,
+          "calls": 165,
+          "self_cpu_seconds": 0.374219892,
+          "cumulative_cpu_seconds": 1.429110002
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "primitive_calls": 49034,
+          "calls": 49034,
+          "self_cpu_seconds": 0.13745696000000002,
+          "cumulative_cpu_seconds": 0.471032987
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "primitive_calls": 49181,
+          "calls": 49181,
+          "self_cpu_seconds": 0.130689041,
+          "cumulative_cpu_seconds": 0.130689041
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 102,
+          "function": "mul_div",
+          "primitive_calls": 221123,
+          "calls": 221123,
+          "self_cpu_seconds": 0.12589802,
+          "cumulative_cpu_seconds": 0.12589802
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 114,
+          "function": "mul_div_rounding_up",
+          "primitive_calls": 98090,
+          "calls": 98090,
+          "self_cpu_seconds": 0.10178798600000001,
+          "cumulative_cpu_seconds": 0.15510700600000002
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 396,
+          "function": "next_initialized_tick_within_one_word",
+          "primitive_calls": 49034,
+          "calls": 49034,
+          "self_cpu_seconds": 0.079637968,
+          "cumulative_cpu_seconds": 0.18590702
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 283,
+          "function": "get_amount0_delta",
+          "primitive_calls": 49056,
+          "calls": 49056,
+          "self_cpu_seconds": 0.062534965,
+          "cumulative_cpu_seconds": 0.119423019
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 299,
+          "function": "get_amount1_delta",
+          "primitive_calls": 49145,
+          "calls": 49145,
+          "self_cpu_seconds": 0.049701022000000004,
+          "cumulative_cpu_seconds": 0.11160497800000001
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 193,
+          "function": "read_word",
+          "primitive_calls": 49034,
+          "calls": 49034,
+          "self_cpu_seconds": 0.048171044,
+          "cumulative_cpu_seconds": 0.074092035
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 158,
+          "function": "_protocol_fee_delta",
+          "primitive_calls": 44744,
+          "calls": 44744,
+          "self_cpu_seconds": 0.045100045000000005,
+          "cumulative_cpu_seconds": 0.066071038
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 83,
+          "function": "to_int256",
+          "primitive_calls": 98233,
+          "calls": 98233,
+          "self_cpu_seconds": 0.043234032000000006,
+          "cumulative_cpu_seconds": 0.043234032000000006
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'mappingproxy' objects>",
+          "primitive_calls": 72091,
+          "calls": 72091,
+          "self_cpu_seconds": 0.042370991000000004,
+          "cumulative_cpu_seconds": 0.042370991000000004
+        }
+      ],
+      "selected_functions": [
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "calls": 49181,
+          "self_cpu_seconds": 0.130689041,
+          "cumulative_cpu_seconds": 0.130689041
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 101,
+          "function": "_freeze_mapping",
+          "calls": 347,
+          "self_cpu_seconds": 0.004558001,
+          "cumulative_cpu_seconds": 0.004558001
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 147,
+          "function": "__post_init__",
+          "calls": 161,
+          "self_cpu_seconds": 0.000505996,
+          "cumulative_cpu_seconds": 0.0048209970000000005
+        },
+        {
+          "file": "routing/search.py",
+          "line": 136,
+          "function": "enumerate_paths",
+          "calls": 341,
+          "self_cpu_seconds": 0.00041000000000000005,
+          "cumulative_cpu_seconds": 0.004774001
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 244,
+          "function": "__post_init__",
+          "calls": 25,
+          "self_cpu_seconds": 0.0012499990000000001,
+          "cumulative_cpu_seconds": 0.001492999
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "calls": 49034,
+          "self_cpu_seconds": 0.13745696000000002,
+          "cumulative_cpu_seconds": 0.471032987
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 572,
+          "function": "swap",
+          "calls": 78,
+          "self_cpu_seconds": 0.019383063000000002,
+          "cumulative_cpu_seconds": 0.09064000100000001
+        },
+        {
+          "file": "pools/quote.py",
+          "line": 74,
+          "function": "quote_exact_in",
+          "calls": 265,
+          "self_cpu_seconds": 0.001503998,
+          "cumulative_cpu_seconds": 1.5272329980000001
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 329,
+          "function": "quote_exact_in",
+          "calls": 165,
+          "self_cpu_seconds": 0.0026909990000000003,
+          "cumulative_cpu_seconds": 1.4323250010000002
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "calls": 165,
+          "self_cpu_seconds": 0.374219892,
+          "cumulative_cpu_seconds": 1.429110002
+        },
+        {
+          "file": "routing/algorithms/single_path.py",
+          "line": 133,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.005707,
+          "cumulative_cpu_seconds": 1.603879
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 691,
+          "function": "quote_exact_in",
+          "calls": 78,
+          "self_cpu_seconds": 0.0007629980000000001,
+          "cumulative_cpu_seconds": 0.0917
+        },
+        {
+          "file": "pools/constant_product.py",
+          "line": 125,
+          "function": "quote_exact_in",
+          "calls": 22,
+          "self_cpu_seconds": 0.000153998,
+          "cumulative_cpu_seconds": 0.000669999
+        }
+      ]
+    },
+    {
+      "algorithm": "direct_split",
+      "clock": "time.process_time supplied to cProfile",
+      "cpu_seconds_instrumented": 1.822264,
+      "wall_seconds_instrumented": 3.7660318330017617,
+      "profiler_total_self_cpu_seconds": 1.8147509879999995,
+      "quotes_counted": 240,
+      "same_evaluation_and_search_as_baseline": true,
+      "evaluation_sha256": "53730f8b887fbafcd7bebae545b4e995f9c3d35d18127817c552cfc468522c42",
+      "top_self_cpu": [
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "primitive_calls": 180,
+          "calls": 180,
+          "self_cpu_seconds": 0.40374319900000005,
+          "cumulative_cpu_seconds": 1.794532003
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "primitive_calls": 78888,
+          "calls": 78888,
+          "self_cpu_seconds": 0.21887319300000002,
+          "cumulative_cpu_seconds": 0.7750100480000001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 102,
+          "function": "mul_div",
+          "primitive_calls": 323860,
+          "calls": 323860,
+          "self_cpu_seconds": 0.164634981,
+          "cumulative_cpu_seconds": 0.164634981
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "primitive_calls": 79056,
+          "calls": 79056,
+          "self_cpu_seconds": 0.163317865,
+          "cumulative_cpu_seconds": 0.163317865
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 114,
+          "function": "mul_div_rounding_up",
+          "primitive_calls": 157916,
+          "calls": 157916,
+          "self_cpu_seconds": 0.15430390300000002,
+          "cumulative_cpu_seconds": 0.23407090500000002
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 283,
+          "function": "get_amount0_delta",
+          "primitive_calls": 79028,
+          "calls": 79028,
+          "self_cpu_seconds": 0.122745954,
+          "cumulative_cpu_seconds": 0.28322587200000005
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 396,
+          "function": "next_initialized_tick_within_one_word",
+          "primitive_calls": 78888,
+          "calls": 78888,
+          "self_cpu_seconds": 0.106252886,
+          "cumulative_cpu_seconds": 0.23334590200000002
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 193,
+          "function": "read_word",
+          "primitive_calls": 78888,
+          "calls": 78888,
+          "self_cpu_seconds": 0.07958507000000001,
+          "cumulative_cpu_seconds": 0.12123600600000001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 299,
+          "function": "get_amount1_delta",
+          "primitive_calls": 78888,
+          "calls": 78888,
+          "self_cpu_seconds": 0.077740053,
+          "cumulative_cpu_seconds": 0.117011055
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 83,
+          "function": "to_int256",
+          "primitive_calls": 157956,
+          "calls": 157956,
+          "self_cpu_seconds": 0.069921913,
+          "cumulative_cpu_seconds": 0.069921913
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'mappingproxy' objects>",
+          "primitive_calls": 83251,
+          "calls": 83251,
+          "self_cpu_seconds": 0.044713935,
+          "cumulative_cpu_seconds": 0.044713935
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 125,
+          "function": "div_rounding_up",
+          "primitive_calls": 79028,
+          "calls": 79028,
+          "self_cpu_seconds": 0.040888966000000006,
+          "cumulative_cpu_seconds": 0.040888966000000006
+        }
+      ],
+      "selected_functions": [
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "calls": 79056,
+          "self_cpu_seconds": 0.163317865,
+          "cumulative_cpu_seconds": 0.163317865
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 101,
+          "function": "_freeze_mapping",
+          "calls": 380,
+          "self_cpu_seconds": 0.001735004,
+          "cumulative_cpu_seconds": 0.001735004
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 147,
+          "function": "__post_init__",
+          "calls": 180,
+          "self_cpu_seconds": 0.000449994,
+          "cumulative_cpu_seconds": 0.001979996
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "calls": 78888,
+          "self_cpu_seconds": 0.21887319300000002,
+          "cumulative_cpu_seconds": 0.7750100480000001
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 244,
+          "function": "__post_init__",
+          "calls": 20,
+          "self_cpu_seconds": 0.000195997,
+          "cumulative_cpu_seconds": 0.00040099900000000003
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 572,
+          "function": "swap",
+          "calls": 40,
+          "self_cpu_seconds": 0.002276995,
+          "cumulative_cpu_seconds": 0.010066999
+        },
+        {
+          "file": "pools/quote.py",
+          "line": 74,
+          "function": "quote_exact_in",
+          "calls": 240,
+          "self_cpu_seconds": 0.001132998,
+          "cumulative_cpu_seconds": 1.8103770010000002
+        },
+        {
+          "file": "routing/algorithms/direct_split.py",
+          "line": 157,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.0036770030000000003,
+          "cumulative_cpu_seconds": 1.821611
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 329,
+          "function": "quote_exact_in",
+          "calls": 180,
+          "self_cpu_seconds": 0.001664997,
+          "cumulative_cpu_seconds": 1.796690997
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "calls": 180,
+          "self_cpu_seconds": 0.40374319900000005,
+          "cumulative_cpu_seconds": 1.794532003
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 691,
+          "function": "quote_exact_in",
+          "calls": 40,
+          "self_cpu_seconds": 0.00040800200000000003,
+          "cumulative_cpu_seconds": 0.010630002000000001
+        },
+        {
+          "file": "pools/constant_product.py",
+          "line": 125,
+          "function": "quote_exact_in",
+          "calls": 20,
+          "self_cpu_seconds": 0.00020399800000000002,
+          "cumulative_cpu_seconds": 0.0009630000000000001
+        }
+      ]
+    },
+    {
+      "algorithm": "path_split",
+      "clock": "time.process_time supplied to cProfile",
+      "cpu_seconds_instrumented": 6.1607069999999995,
+      "wall_seconds_instrumented": 10.610177457987447,
+      "profiler_total_self_cpu_seconds": 6.048012970000001,
+      "quotes_counted": 1289,
+      "same_evaluation_and_search_as_baseline": true,
+      "evaluation_sha256": "a35ce8ec954323658d144aa597cc60da5ebeaca5c19c5cfefc6f60db70ec5476",
+      "top_self_cpu": [
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "primitive_calls": 810,
+          "calls": 810,
+          "self_cpu_seconds": 1.2824491470000001,
+          "cumulative_cpu_seconds": 5.014501998
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "primitive_calls": 184454,
+          "calls": 184454,
+          "self_cpu_seconds": 0.512978998,
+          "cumulative_cpu_seconds": 1.7904750390000002
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "primitive_calls": 185182,
+          "calls": 185182,
+          "self_cpu_seconds": 0.456649954,
+          "cumulative_cpu_seconds": 0.456649954
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 102,
+          "function": "mul_div",
+          "primitive_calls": 803711,
+          "calls": 803711,
+          "self_cpu_seconds": 0.441688835,
+          "cumulative_cpu_seconds": 0.441688835
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 114,
+          "function": "mul_div_rounding_up",
+          "primitive_calls": 369193,
+          "calls": 369193,
+          "self_cpu_seconds": 0.376655018,
+          "cumulative_cpu_seconds": 0.5743218400000001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 396,
+          "function": "next_initialized_tick_within_one_word",
+          "primitive_calls": 184454,
+          "calls": 184454,
+          "self_cpu_seconds": 0.281120971,
+          "cumulative_cpu_seconds": 0.6454710760000001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 283,
+          "function": "get_amount0_delta",
+          "primitive_calls": 184739,
+          "calls": 184739,
+          "self_cpu_seconds": 0.256068146,
+          "cumulative_cpu_seconds": 0.537882058
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 572,
+          "function": "swap",
+          "primitive_calls": 381,
+          "calls": 381,
+          "self_cpu_seconds": 0.18883202300000002,
+          "cumulative_cpu_seconds": 0.937339001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 299,
+          "function": "get_amount1_delta",
+          "primitive_calls": 184832,
+          "calls": 184832,
+          "self_cpu_seconds": 0.18372907600000002,
+          "cumulative_cpu_seconds": 0.36152699400000005
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 193,
+          "function": "read_word",
+          "primitive_calls": 184454,
+          "calls": 184454,
+          "self_cpu_seconds": 0.18164701400000002,
+          "cumulative_cpu_seconds": 0.278995101
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 83,
+          "function": "to_int256",
+          "primitive_calls": 369718,
+          "calls": 369718,
+          "self_cpu_seconds": 0.162622929,
+          "cumulative_cpu_seconds": 0.162622929
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'mappingproxy' objects>",
+          "primitive_calls": 255338,
+          "calls": 255338,
+          "self_cpu_seconds": 0.147737066,
+          "cumulative_cpu_seconds": 0.147737066
+        }
+      ],
+      "selected_functions": [
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "calls": 185182,
+          "self_cpu_seconds": 0.456649954,
+          "cumulative_cpu_seconds": 0.456649954
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 101,
+          "function": "_freeze_mapping",
+          "calls": 1787,
+          "self_cpu_seconds": 0.017260998,
+          "cumulative_cpu_seconds": 0.017260998
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 147,
+          "function": "__post_init__",
+          "calls": 801,
+          "self_cpu_seconds": 0.002181003,
+          "cumulative_cpu_seconds": 0.017843
+        },
+        {
+          "file": "routing/search.py",
+          "line": 136,
+          "function": "enumerate_paths",
+          "calls": 682,
+          "self_cpu_seconds": 0.0007760050000000001,
+          "cumulative_cpu_seconds": 0.008822004000000001
+        },
+        {
+          "file": "pools/quote.py",
+          "line": 74,
+          "function": "quote_exact_in",
+          "calls": 1289,
+          "self_cpu_seconds": 0.006820002,
+          "cumulative_cpu_seconds": 5.987072996
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "calls": 184454,
+          "self_cpu_seconds": 0.512978998,
+          "cumulative_cpu_seconds": 1.7904750390000002
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 244,
+          "function": "__post_init__",
+          "calls": 185,
+          "self_cpu_seconds": 0.006946997000000001,
+          "cumulative_cpu_seconds": 0.008545998
+        },
+        {
+          "file": "routing/algorithms/direct_split.py",
+          "line": 157,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.003371994,
+          "cumulative_cpu_seconds": 1.69846
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 572,
+          "function": "swap",
+          "calls": 381,
+          "self_cpu_seconds": 0.18883202300000002,
+          "cumulative_cpu_seconds": 0.937339001
+        },
+        {
+          "file": "routing/algorithms/path_split.py",
+          "line": 341,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.005131005,
+          "cumulative_cpu_seconds": 6.1430560000000005
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 329,
+          "function": "quote_exact_in",
+          "calls": 810,
+          "self_cpu_seconds": 0.010728987,
+          "cumulative_cpu_seconds": 5.027567996
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "calls": 810,
+          "self_cpu_seconds": 1.2824491470000001,
+          "cumulative_cpu_seconds": 5.014501998
+        },
+        {
+          "file": "routing/algorithms/single_path.py",
+          "line": 133,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.005423004,
+          "cumulative_cpu_seconds": 1.653529
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 691,
+          "function": "quote_exact_in",
+          "calls": 381,
+          "self_cpu_seconds": 0.005058002000000001,
+          "cumulative_cpu_seconds": 0.943868001
+        },
+        {
+          "file": "pools/constant_product.py",
+          "line": 125,
+          "function": "quote_exact_in",
+          "calls": 98,
+          "self_cpu_seconds": 0.000799999,
+          "cumulative_cpu_seconds": 0.0037480020000000003
+        },
+        {
+          "file": "routing/algorithms/path_split.py",
+          "line": 183,
+          "function": "_branch_and_bound",
+          "calls": 1,
+          "self_cpu_seconds": 0.004952000000000001,
+          "cumulative_cpu_seconds": 0.016427
+        }
+      ]
+    },
+    {
+      "algorithm": "incremental_graph",
+      "clock": "time.process_time supplied to cProfile",
+      "cpu_seconds_instrumented": 9.264148,
+      "wall_seconds_instrumented": 14.469138665997889,
+      "profiler_total_self_cpu_seconds": 9.114575981000003,
+      "quotes_counted": 1918,
+      "same_evaluation_and_search_as_baseline": true,
+      "evaluation_sha256": "99ea27746b4e936b60bd56519e46a2ab635fa3a984a3d61fba2a1c4043b34cd5",
+      "top_self_cpu": [
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "primitive_calls": 1180,
+          "calls": 1180,
+          "self_cpu_seconds": 1.3906279860000001,
+          "cumulative_cpu_seconds": 5.441101011000001
+        },
+        {
+          "file": "routing/algorithms/incremental_graph.py",
+          "line": 145,
+          "function": "creates_cycle",
+          "primitive_calls": 68000,
+          "calls": 68000,
+          "self_cpu_seconds": 0.6023289460000001,
+          "cumulative_cpu_seconds": 1.052925029
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "primitive_calls": 210748,
+          "calls": 210748,
+          "self_cpu_seconds": 0.5561030220000001,
+          "cumulative_cpu_seconds": 1.9353299250000002
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "primitive_calls": 211821,
+          "calls": 211821,
+          "self_cpu_seconds": 0.498827055,
+          "cumulative_cpu_seconds": 0.498827055
+        },
+        {
+          "file": "routing/algorithms/incremental_graph.py",
+          "line": 343,
+          "function": "marginal",
+          "primitive_calls": 68000,
+          "calls": 68000,
+          "self_cpu_seconds": 0.49659002700000004,
+          "cumulative_cpu_seconds": 2.156579024
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 102,
+          "function": "mul_div",
+          "primitive_calls": 912116,
+          "calls": 912116,
+          "self_cpu_seconds": 0.47121110600000005,
+          "cumulative_cpu_seconds": 0.47121110600000005
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 114,
+          "function": "mul_div_rounding_up",
+          "primitive_calls": 421982,
+          "calls": 421982,
+          "self_cpu_seconds": 0.406792763,
+          "cumulative_cpu_seconds": 0.617708934
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 396,
+          "function": "next_initialized_tick_within_one_word",
+          "primitive_calls": 210748,
+          "calls": 210748,
+          "self_cpu_seconds": 0.30252001700000003,
+          "cumulative_cpu_seconds": 0.6942340490000001
+        },
+        {
+          "file": "<string>",
+          "line": 23,
+          "function": "__hash__",
+          "primitive_calls": 335652,
+          "calls": 335652,
+          "self_cpu_seconds": 0.292114015,
+          "cumulative_cpu_seconds": 0.435798944
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 283,
+          "function": "get_amount0_delta",
+          "primitive_calls": 211234,
+          "calls": 211234,
+          "self_cpu_seconds": 0.27716297700000003,
+          "cumulative_cpu_seconds": 0.575419943
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'dict' objects>",
+          "primitive_calls": 470774,
+          "calls": 470774,
+          "self_cpu_seconds": 0.22118701500000001,
+          "cumulative_cpu_seconds": 0.22118701500000001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 299,
+          "function": "get_amount1_delta",
+          "primitive_calls": 211271,
+          "calls": 211271,
+          "self_cpu_seconds": 0.20046803200000002,
+          "cumulative_cpu_seconds": 0.392864949
+        }
+      ],
+      "selected_functions": [
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "calls": 211821,
+          "self_cpu_seconds": 0.498827055,
+          "cumulative_cpu_seconds": 0.498827055
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 101,
+          "function": "_freeze_mapping",
+          "calls": 2700,
+          "self_cpu_seconds": 0.025891985000000003,
+          "cumulative_cpu_seconds": 0.025891985000000003
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 147,
+          "function": "__post_init__",
+          "calls": 1166,
+          "self_cpu_seconds": 0.0031270100000000004,
+          "cumulative_cpu_seconds": 0.026823996000000003
+        },
+        {
+          "file": "routing/search.py",
+          "line": 136,
+          "function": "enumerate_paths",
+          "calls": 1023,
+          "self_cpu_seconds": 0.0008630030000000001,
+          "cumulative_cpu_seconds": 0.010096003000000001
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 244,
+          "function": "__post_init__",
+          "calls": 368,
+          "self_cpu_seconds": 0.008982999,
+          "cumulative_cpu_seconds": 0.011177998000000001
+        },
+        {
+          "file": "routing/algorithms/path_split.py",
+          "line": 183,
+          "function": "_branch_and_bound",
+          "calls": 1,
+          "self_cpu_seconds": 0.004976,
+          "cumulative_cpu_seconds": 0.021956
+        },
+        {
+          "file": "routing/algorithms/direct_split.py",
+          "line": 157,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.003471998,
+          "cumulative_cpu_seconds": 1.5853750000000002
+        },
+        {
+          "file": "routing/algorithms/incremental_graph.py",
+          "line": 145,
+          "function": "creates_cycle",
+          "calls": 68000,
+          "self_cpu_seconds": 0.6023289460000001,
+          "cumulative_cpu_seconds": 1.052925029
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 572,
+          "function": "swap",
+          "calls": 616,
+          "self_cpu_seconds": 0.19496496700000002,
+          "cumulative_cpu_seconds": 0.952319004
+        },
+        {
+          "file": "routing/algorithms/incremental_graph.py",
+          "line": 343,
+          "function": "marginal",
+          "calls": 68000,
+          "self_cpu_seconds": 0.49659002700000004,
+          "cumulative_cpu_seconds": 2.156579024
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 329,
+          "function": "quote_exact_in",
+          "calls": 1180,
+          "self_cpu_seconds": 0.014156969,
+          "cumulative_cpu_seconds": 5.458453003000001
+        },
+        {
+          "file": "routing/algorithms/incremental_graph.py",
+          "line": 290,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.125953945,
+          "cumulative_cpu_seconds": 9.232349000000001
+        },
+        {
+          "file": "pools/quote.py",
+          "line": 74,
+          "function": "quote_exact_in",
+          "calls": 1918,
+          "self_cpu_seconds": 0.009176982,
+          "cumulative_cpu_seconds": 6.439807001
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "calls": 210748,
+          "self_cpu_seconds": 0.5561030220000001,
+          "cumulative_cpu_seconds": 1.9353299250000002
+        },
+        {
+          "file": "routing/algorithms/path_split.py",
+          "line": 341,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.0040799930000000005,
+          "cumulative_cpu_seconds": 5.889336
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "calls": 1180,
+          "self_cpu_seconds": 1.3906279860000001,
+          "cumulative_cpu_seconds": 5.441101011000001
+        },
+        {
+          "file": "routing/algorithms/single_path.py",
+          "line": 133,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.005577997,
+          "cumulative_cpu_seconds": 1.601962
+        },
+        {
+          "file": "pools/liquidity_book.py",
+          "line": 691,
+          "function": "quote_exact_in",
+          "calls": 616,
+          "self_cpu_seconds": 0.006123997000000001,
+          "cumulative_cpu_seconds": 0.9604640010000001
+        },
+        {
+          "file": "pools/constant_product.py",
+          "line": 125,
+          "function": "quote_exact_in",
+          "calls": 122,
+          "self_cpu_seconds": 0.000914001,
+          "cumulative_cpu_seconds": 0.004421001
+        }
+      ]
+    },
+    {
+      "algorithm": "uni_sor_port",
+      "clock": "time.process_time supplied to cProfile",
+      "cpu_seconds_instrumented": 26.991965,
+      "wall_seconds_instrumented": 51.637554957997054,
+      "profiler_total_self_cpu_seconds": 26.396087174999998,
+      "quotes_counted": 3734,
+      "same_evaluation_and_search_as_baseline": true,
+      "evaluation_sha256": "0a9f44d5e2c9a54da475cf11988aaf8bbef95e35059e3b6cd21c3ba10e861f46",
+      "top_self_cpu": [
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "primitive_calls": 3289,
+          "calls": 3289,
+          "self_cpu_seconds": 7.052959603000001,
+          "cumulative_cpu_seconds": 26.441432996000003
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "primitive_calls": 908823,
+          "calls": 908823,
+          "self_cpu_seconds": 2.541131383,
+          "cumulative_cpu_seconds": 8.660432028
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "primitive_calls": 911741,
+          "calls": 911741,
+          "self_cpu_seconds": 2.374030801,
+          "cumulative_cpu_seconds": 2.374030801
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 102,
+          "function": "mul_div",
+          "primitive_calls": 4065150,
+          "calls": 4065150,
+          "self_cpu_seconds": 2.2884268050000003,
+          "cumulative_cpu_seconds": 2.2884268050000003
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 114,
+          "function": "mul_div_rounding_up",
+          "primitive_calls": 1818091,
+          "calls": 1818091,
+          "self_cpu_seconds": 1.878629271,
+          "cumulative_cpu_seconds": 2.8523634060000003
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 396,
+          "function": "next_initialized_tick_within_one_word",
+          "primitive_calls": 908823,
+          "calls": 908823,
+          "self_cpu_seconds": 1.461494496,
+          "cumulative_cpu_seconds": 3.422719042
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 283,
+          "function": "get_amount0_delta",
+          "primitive_calls": 909268,
+          "calls": 909268,
+          "self_cpu_seconds": 1.1538746750000002,
+          "cumulative_cpu_seconds": 2.1649936160000003
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 299,
+          "function": "get_amount1_delta",
+          "primitive_calls": 911029,
+          "calls": 911029,
+          "self_cpu_seconds": 0.916152033,
+          "cumulative_cpu_seconds": 2.069641089
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 193,
+          "function": "read_word",
+          "primitive_calls": 908823,
+          "calls": 908823,
+          "self_cpu_seconds": 0.890624928,
+          "cumulative_cpu_seconds": 1.3711821000000002
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 158,
+          "function": "_protocol_fee_delta",
+          "primitive_calls": 823432,
+          "calls": 823432,
+          "self_cpu_seconds": 0.8447358760000001,
+          "cumulative_cpu_seconds": 1.2360817750000002
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 83,
+          "function": "to_int256",
+          "primitive_calls": 1820935,
+          "calls": 1820935,
+          "self_cpu_seconds": 0.790513738,
+          "cumulative_cpu_seconds": 0.790513738
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'mappingproxy' objects>",
+          "primitive_calls": 1291621,
+          "calls": 1291621,
+          "self_cpu_seconds": 0.757958338,
+          "cumulative_cpu_seconds": 0.757958338
+        }
+      ],
+      "selected_functions": [
+        {
+          "file": "pools/cl_math.py",
+          "line": 179,
+          "function": "get_sqrt_ratio_at_tick",
+          "calls": 911741,
+          "self_cpu_seconds": 2.374030801,
+          "cumulative_cpu_seconds": 2.374030801
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 101,
+          "function": "_freeze_mapping",
+          "calls": 6408,
+          "self_cpu_seconds": 0.098482989,
+          "cumulative_cpu_seconds": 0.098482989
+        },
+        {
+          "file": "routing/algorithms/uni_sor_port.py",
+          "line": 429,
+          "function": "build_route_quotes",
+          "calls": 1,
+          "self_cpu_seconds": 0.015246976,
+          "cumulative_cpu_seconds": 26.753363
+        },
+        {
+          "file": "snapshot/models.py",
+          "line": 147,
+          "function": "__post_init__",
+          "calls": 3204,
+          "self_cpu_seconds": 0.009321002,
+          "cumulative_cpu_seconds": 0.107803991
+        },
+        {
+          "file": "routing/algorithms/uni_sor_port.py",
+          "line": 200,
+          "function": "__post_init__",
+          "calls": 27,
+          "self_cpu_seconds": 2.1000000000000002e-05,
+          "cumulative_cpu_seconds": 2.1000000000000002e-05
+        },
+        {
+          "file": "pools/cl_math.py",
+          "line": 313,
+          "function": "compute_swap_step_exact_in",
+          "calls": 908823,
+          "self_cpu_seconds": 2.541131383,
+          "cumulative_cpu_seconds": 8.660432028
+        },
+        {
+          "file": "routing/algorithms/uni_sor_port.py",
+          "line": 538,
+          "function": "get_best_swap_route_by",
+          "calls": 1,
+          "self_cpu_seconds": 0.004512,
+          "cumulative_cpu_seconds": 0.07101400000000001
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 329,
+          "function": "quote_exact_in",
+          "calls": 3289,
+          "self_cpu_seconds": 0.051696994,
+          "cumulative_cpu_seconds": 26.502796996
+        },
+        {
+          "file": "pools/concentrated.py",
+          "line": 164,
+          "function": "swap",
+          "calls": 3289,
+          "self_cpu_seconds": 7.052959603000001,
+          "cumulative_cpu_seconds": 26.441432996000003
+        },
+        {
+          "file": "pools/constant_product.py",
+          "line": 125,
+          "function": "quote_exact_in",
+          "calls": 445,
+          "self_cpu_seconds": 0.0018960000000000001,
+          "cumulative_cpu_seconds": 0.010144
+        },
+        {
+          "file": "routing/algorithms/uni_sor_port.py",
+          "line": 833,
+          "function": "solve",
+          "calls": 1,
+          "self_cpu_seconds": 0.00024,
+          "cumulative_cpu_seconds": 26.850704
+        },
+        {
+          "file": "routing/algorithms/uni_sor_port.py",
+          "line": 266,
+          "function": "compute_all_routes",
+          "calls": 3,
+          "self_cpu_seconds": 0.000669,
+          "cumulative_cpu_seconds": 0.014119000000000001
+        },
+        {
+          "file": "pools/quote.py",
+          "line": 74,
+          "function": "quote_exact_in",
+          "calls": 3734,
+          "self_cpu_seconds": 0.018026010000000002,
+          "cumulative_cpu_seconds": 26.544897011000003
+        }
+      ]
+    }
+  ],
+  "sor_count_only": {
+    "kind": "count-only diagnostic; no optimization and no latency claim",
+    "algorithm": "uni_sor_port",
+    "aggregate": {
+      "quotes": 3289,
+      "steps": 908823,
+      "zero_liquidity": 479410,
+      "zero_liquidity_uninitialized": 478425,
+      "initialized_targets": 381250
+    },
+    "sqrt_ratio_calls": 908823,
+    "distinct_tick_inputs": 13131,
+    "quotes_counted": 3734,
+    "matches_baseline_evaluation": true,
+    "matches_baseline_search": true,
+    "per_pool": [
+      {
+        "pool_id": "0xd145db1dfc3fcd2e999b47f3a02c85bd7750ed09",
+        "quotes": 180,
+        "steps": 226720,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 213072
+      },
+      {
+        "pool_id": "0xd372cd4acfcd646f9332b26c7b6bfa4777d90451",
+        "quotes": 100,
+        "steps": 220400,
+        "zero_liquidity": 216960,
+        "zero_liquidity_uninitialized": 216040,
+        "initialized_targets": 4360
+      },
+      {
+        "pool_id": "0x9055d14b6b658a3aa00e5835118fb93f8ba111df",
+        "quotes": 20,
+        "steps": 85520,
+        "zero_liquidity": 85520,
+        "zero_liquidity_uninitialized": 85520,
+        "initialized_targets": 0
+      },
+      {
+        "pool_id": "0x2bd0f40c241eabd326545a6467bb2da88bb46181",
+        "quotes": 20,
+        "steps": 84820,
+        "zero_liquidity": 84800,
+        "zero_liquidity_uninitialized": 84800,
+        "initialized_targets": 20
+      },
+      {
+        "pool_id": "0x8cfee38ab8b8f4bc2ff662e8cc8bdfb0439c9d2c",
+        "quotes": 20,
+        "steps": 69320,
+        "zero_liquidity": 69320,
+        "zero_liquidity_uninitialized": 69320,
+        "initialized_targets": 0
+      },
+      {
+        "pool_id": "0x4a313244ccddd402ef8c3b2c0bcbbd31782a5f88",
+        "quotes": 180,
+        "steps": 30443,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 28890
+      },
+      {
+        "pool_id": "0x328cfb13c66065240b58bff0ae1ce798fe314ec1",
+        "quotes": 180,
+        "steps": 29255,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 28572
+      },
+      {
+        "pool_id": "0x7b3a4b36b0c5c95142afcd1b883ed055aa166f85",
+        "quotes": 20,
+        "steps": 22965,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 17484
+      },
+      {
+        "pool_id": "0xd08c50f7e69e9aeb2867deff4a8053d9a855e26a",
+        "quotes": 180,
+        "steps": 18561,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 18561
+      },
+      {
+        "pool_id": "0xed3ee32bdcf51632707f130af827fd849929570e",
+        "quotes": 180,
+        "steps": 16003,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 15949
+      },
+      {
+        "pool_id": "0x064d4c6e06711eaff5a9e2a19e750ee8b94159ab",
+        "quotes": 20,
+        "steps": 9812,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 2420
+      },
+      {
+        "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+        "quotes": 180,
+        "steps": 9477,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 360
+      },
+      {
+        "pool_id": "0xc522a2108fb700952d42acec956d332f1856d7f9",
+        "quotes": 65,
+        "steps": 9116,
+        "zero_liquidity": 8910,
+        "zero_liquidity_uninitialized": 8910,
+        "initialized_targets": 141
+      },
+      {
+        "pool_id": "0x628f7131cf43e88ebe3921ae78c4ba0c31872bd4",
+        "quotes": 100,
+        "steps": 8968,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 5893
+      },
+      {
+        "pool_id": "0xc3e2f59ee3ea98bbc62455786d1470db0e7902d9",
+        "quotes": 100,
+        "steps": 5882,
+        "zero_liquidity": 1106,
+        "zero_liquidity_uninitialized": 1106,
+        "initialized_targets": 4776
+      },
+      {
+        "pool_id": "0x1858d52cf57c07a018171d7a1e68dc081f17144f",
+        "quotes": 20,
+        "steps": 5146,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 5106
+      },
+      {
+        "pool_id": "0xcb893a28933a89b5c4ee3d02ca37524d3d0bfc97",
+        "quotes": 180,
+        "steps": 4470,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 4409
+      },
+      {
+        "pool_id": "0xe87e42ff34d6baaf619eb91dd957e4ec45226894",
+        "quotes": 20,
+        "steps": 4268,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 3818
+      },
+      {
+        "pool_id": "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff",
+        "quotes": 180,
+        "steps": 4144,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 4144
+      },
+      {
+        "pool_id": "0x46e15789bd1eeb975551ea12f3eb74ae9409eb99",
+        "quotes": 100,
+        "steps": 4100,
+        "zero_liquidity": 1400,
+        "zero_liquidity_uninitialized": 1400,
+        "initialized_targets": 2600
+      },
+      {
+        "pool_id": "0x9cae9b5d0ee7e78dfd7e42fd995d4974d6907242",
+        "quotes": 20,
+        "steps": 3375,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 3349
+      },
+      {
+        "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+        "quotes": 65,
+        "steps": 3185,
+        "zero_liquidity": 3055,
+        "zero_liquidity_uninitialized": 2990,
+        "initialized_targets": 195
+      },
+      {
+        "pool_id": "0xefe8bfd40352b9c14b64c06f5e699b3d46ca4ffc",
+        "quotes": 65,
+        "steps": 3181,
+        "zero_liquidity": 2214,
+        "zero_liquidity_uninitialized": 2214,
+        "initialized_targets": 926
+      },
+      {
+        "pool_id": "0xaaecd138ad9cd20c13f1593a41bf3941940ec41e",
+        "quotes": 20,
+        "steps": 2814,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 2680
+      },
+      {
+        "pool_id": "0x01845ec86909006758de0d57957d88da10bf5809",
+        "quotes": 20,
+        "steps": 2149,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 1360
+      },
+      {
+        "pool_id": "0x8f99892c84d4e4af62082ebafb7d0d033938d26e",
+        "quotes": 20,
+        "steps": 1840,
+        "zero_liquidity": 1400,
+        "zero_liquidity_uninitialized": 1400,
+        "initialized_targets": 440
+      },
+      {
+        "pool_id": "0x6844209ce498ab6f02f1e5702c1f5c82ef564134",
+        "quotes": 20,
+        "steps": 1786,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 233
+      },
+      {
+        "pool_id": "0xc78ccab2e91185d16722be8ce8a4e9f7f7288023",
+        "quotes": 20,
+        "steps": 1720,
+        "zero_liquidity": 1720,
+        "zero_liquidity_uninitialized": 1720,
+        "initialized_targets": 0
+      },
+      {
+        "pool_id": "0xa123bb698ed70b64a2f2184f17b2add501dde7b0",
+        "quotes": 20,
+        "steps": 1635,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 838
+      },
+      {
+        "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+        "quotes": 20,
+        "steps": 1560,
+        "zero_liquidity": 1500,
+        "zero_liquidity_uninitialized": 1500,
+        "initialized_targets": 20
+      },
+      {
+        "pool_id": "0x6488f911c6cd86c289aa319c5a826dcf8f1ca065",
+        "quotes": 20,
+        "steps": 1510,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 403
+      },
+      {
+        "pool_id": "0xb083d0a9679b79033de5e44e928153d903d6dcfe",
+        "quotes": 20,
+        "steps": 1469,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 1060
+      },
+      {
+        "pool_id": "0xf231e1ca10bae443f176f907352ac575a056c843",
+        "quotes": 20,
+        "steps": 1331,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 1276
+      },
+      {
+        "pool_id": "0xee12e312878b74b2c17d80516128d7868f80365b",
+        "quotes": 20,
+        "steps": 1271,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 140
+      },
+      {
+        "pool_id": "0xe39688f2036261241e08951b69f9a4812a1e0402",
+        "quotes": 180,
+        "steps": 1256,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 1256
+      },
+      {
+        "pool_id": "0x425732f412f2a922156cf3c135a516c18f977cc1",
+        "quotes": 100,
+        "steps": 1116,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 1116
+      },
+      {
+        "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+        "quotes": 20,
+        "steps": 1085,
+        "zero_liquidity": 1065,
+        "zero_liquidity_uninitialized": 1065,
+        "initialized_targets": 20
+      },
+      {
+        "pool_id": "0x8e2c009e45420d2b36bc15315f9de8ceca2cc724",
+        "quotes": 20,
+        "steps": 1018,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 982
+      },
+      {
+        "pool_id": "0xa125af1a4704044501fe12ca9567ef1550e430e8",
+        "quotes": 100,
+        "steps": 915,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 915
+      },
+      {
+        "pool_id": "0xd34292f7585ac5a518c5ceb2d674d1423ad0569f",
+        "quotes": 20,
+        "steps": 894,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 725
+      },
+      {
+        "pool_id": "0xf494ba958514759b4dd8b6e0254b8d7a32212bcf",
+        "quotes": 20,
+        "steps": 884,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 760
+      },
+      {
+        "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+        "quotes": 100,
+        "steps": 744,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 0
+      },
+      {
+        "pool_id": "0x7415a4ba496dea52202771fb6a477933c28cfa1f",
+        "quotes": 20,
+        "steps": 734,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 640
+      },
+      {
+        "pool_id": "0xe1dc93d69439a924baaeaf9e64f4ae7be0af738a",
+        "quotes": 20,
+        "steps": 680,
+        "zero_liquidity": 440,
+        "zero_liquidity_uninitialized": 440,
+        "initialized_targets": 240
+      },
+      {
+        "pool_id": "0x551d49f0a9c3d5293293e12f36b210e0124dd4e7",
+        "quotes": 65,
+        "steps": 629,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 604
+      },
+      {
+        "pool_id": "0xb1ab8372d62bf35e655477568bdb72f32b13738f",
+        "quotes": 20,
+        "steps": 422,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 356
+      },
+      {
+        "pool_id": "0x540631a747f47112afc1667bdeaa4265ba52a7b5",
+        "quotes": 20,
+        "steps": 144,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 99
+      },
+      {
+        "pool_id": "0x0d290c8e7f3ffa5267de4b1f9f6f6d8d578624ac",
+        "quotes": 24,
+        "steps": 24,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 0
+      },
+      {
+        "pool_id": "0x16867d00d45347a2ded25b8cdb7022b3171d4ae0",
+        "quotes": 20,
+        "steps": 22,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 22
+      },
+      {
+        "pool_id": "0x36f66548cda219c6fc037037cee063b9f28b13ef",
+        "quotes": 20,
+        "steps": 20,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 0
+      },
+      {
+        "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+        "quotes": 20,
+        "steps": 20,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 20
+      },
+      {
+        "pool_id": "0xc339b7139785bbcaf45c728c2969eafe47ba06ca",
+        "quotes": 65,
+        "steps": 0,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 0
+      },
+      {
+        "pool_id": "0xc81f612980db7a9e5e16c52450f391698f6584cc",
+        "quotes": 20,
+        "steps": 0,
+        "zero_liquidity": 0,
+        "zero_liquidity_uninitialized": 0,
+        "initialized_targets": 0
+      }
+    ]
+  },
+  "profile_method": {
+    "steps": [
+      "Load the derived single-case bundle and effective single-run profile from baseline invocation1.",
+      "Prepare the same registry factory and objective, outside the profile. Reuse the recorded case seed.",
+      "Open the same quote meter and cProfile(timer=time.process_time) around exactly factory.solve(case,context,budget).",
+      "Direct diagnostic calls omit worker IPC/candidate sink and hard worker wall clock; they are not authoritative benchmark latency.",
+      "Compare complete evaluation and search statistics with the isolated-run result; all six match.",
+      "Count-only SOR wrappers forward unchanged to original functions and record zero-liquidity/uninitialized-step counts; no code or result is optimized."
+    ],
+    "no_parallel_own_jobs": "The three CLI runs were sequential; diagnostic processes started after baseline completion and ran sequentially. Other workstation load was not controlled."
+  },
+  "deterministic_evaluations_match_across_three_runs": true
+}

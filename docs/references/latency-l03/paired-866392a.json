@@ -1,0 +1,923 @@
+{
+ "capacities": {
+  "bin": 4096,
+  "tick": 16384
+ },
+ "environment": {
+  "cpu_count": 10,
+  "git_dirty": false,
+  "git_revision": "866392aaeffae5feb19aeea6b23fcba10126c29a",
+  "loadavg_start": [
+   6.26708984375,
+   12.31982421875,
+   14.7509765625
+  ],
+  "python": "3.13.13 (main, May 10 2026, 19:20:37) [Clang 22.1.3 ]"
+ },
+ "experiment": "data/latency-012/whi-1503/20260926T090434484129Z-d5061563 (primary clone, gitignored)",
+ "kind": "L03 in-process paired timing (post-L02 control vs L02+L03 cold/warm; uninstrumented solve window; not an L01 verdict)",
+ "load_threshold": 5.0,
+ "pairs": 3,
+ "targets": [
+  {
+   "max_load": 11.9765625,
+   "median": {
+    "cold": {
+     "cpu": 2.725003,
+     "wall": 2.744509375
+    },
+    "l02_only": {
+     "cpu": 3.450911,
+     "wall": 3.462996875
+    },
+    "warm": {
+     "cpu": 2.656541,
+     "wall": 2.683326542
+    }
+   },
+   "median_ratio_vs_l02_only": {
+    "cold": {
+     "cpu": 0.7896474293309795,
+     "wall": 0.7925243579666816
+    },
+    "warm": {
+     "cpu": 0.7698086099583559,
+     "wall": 0.7748567610243656
+    }
+   },
+   "memory_instrumented": {
+    "l02_l03": {
+     "constructor_seconds": 4.0542e-05,
+     "constructor_traced_bytes": 2500,
+     "retained_memo_bytes": 1970316,
+     "reuse": {
+      "bin": {
+       "capacity": 4096,
+       "entries": 0,
+       "hits": 0,
+       "misses": 0
+      },
+      "tick": {
+       "capacity": 16384,
+       "entries": 6789,
+       "hits": 424162,
+       "misses": 6789
+      }
+     },
+     "solve_peak_traced_bytes_over_start": 314760585
+    },
+    "l02_only": {
+     "constructor_seconds": 4.25e-06,
+     "constructor_traced_bytes": 60,
+     "retained_memo_bytes": 396800,
+     "reuse": null,
+     "solve_peak_traced_bytes_over_start": 313189549
+    }
+   },
+   "samples": {
+    "cold": [
+     {
+      "cpu": 2.674778,
+      "load_after": 11.57763671875,
+      "load_before": 11.57763671875,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 0,
+        "hits": 0,
+        "misses": 0
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 424162,
+        "misses": 6789
+       }
+      },
+      "wall": 2.680561125
+     },
+     {
+      "cpu": 2.725003,
+      "load_after": 10.70068359375,
+      "load_before": 11.37109375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 0,
+        "hits": 0,
+        "misses": 0
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 424162,
+        "misses": 6789
+       }
+      },
+      "wall": 2.744509375
+     },
+     {
+      "cpu": 2.759446,
+      "load_after": 10.22412109375,
+      "load_before": 10.244140625,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 0,
+        "hits": 0,
+        "misses": 0
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 424162,
+        "misses": 6789
+       }
+      },
+      "wall": 2.760620167
+     }
+    ],
+    "l02_only": [
+     {
+      "cpu": 3.479877,
+      "load_after": 11.57763671875,
+      "load_before": 11.9765625,
+      "reuse": null,
+      "wall": 3.483385666
+     },
+     {
+      "cpu": 3.425317,
+      "load_after": 10.70068359375,
+      "load_before": 10.70068359375,
+      "reuse": null,
+      "wall": 3.434303208
+     },
+     {
+      "cpu": 3.450911,
+      "load_after": 10.244140625,
+      "load_before": 10.70068359375,
+      "reuse": null,
+      "wall": 3.462996875
+     }
+    ],
+    "warm": [
+     {
+      "cpu": 2.68148,
+      "load_after": 11.37109375,
+      "load_before": 11.57763671875,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 0,
+        "hits": 0,
+        "misses": 0
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 855113,
+        "misses": 6789
+       }
+      },
+      "wall": 2.683326542
+     },
+     {
+      "cpu": 2.656541,
+      "load_after": 11.37109375,
+      "load_before": 11.37109375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 0,
+        "hits": 0,
+        "misses": 0
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 1286064,
+        "misses": 6789
+       }
+      },
+      "wall": 2.705986625
+     },
+     {
+      "cpu": 2.647032,
+      "load_after": 10.22412109375,
+      "load_before": 10.22412109375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 0,
+        "hits": 0,
+        "misses": 0
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 1717015,
+        "misses": 6789
+       }
+      },
+      "wall": 2.648074375
+     }
+    ]
+   },
+   "semantic_equal": true,
+   "target": "full_source/sentinel:uni_sor_port:quote-b5feb74821d5",
+   "warm_population_solve": {
+    "cpu": 2.68355,
+    "reuse": {
+     "bin": {
+      "capacity": 4096,
+      "entries": 0,
+      "hits": 0,
+      "misses": 0
+     },
+     "tick": {
+      "capacity": 16384,
+      "entries": 6789,
+      "hits": 424162,
+      "misses": 6789
+     }
+    },
+    "wall": 2.685088958
+   }
+  },
+  {
+   "max_load": 7.7421875,
+   "median": {
+    "cold": {
+     "cpu": 0.906752,
+     "wall": 0.907267209
+    },
+    "l02_only": {
+     "cpu": 1.063812,
+     "wall": 1.064434792
+    },
+    "warm": {
+     "cpu": 0.887838,
+     "wall": 0.8881695
+    }
+   },
+   "median_ratio_vs_l02_only": {
+    "cold": {
+     "cpu": 0.8523611314781183,
+     "wall": 0.8523464432192293
+    },
+    "warm": {
+     "cpu": 0.8345816742055927,
+     "wall": 0.8344048002519632
+    }
+   },
+   "memory_instrumented": {
+    "l02_l03": {
+     "constructor_seconds": 4.4334e-05,
+     "constructor_traced_bytes": 2308,
+     "retained_memo_bytes": 1911532,
+     "reuse": {
+      "bin": {
+       "capacity": 4096,
+       "entries": 349,
+       "hits": 12325,
+       "misses": 349
+      },
+      "tick": {
+       "capacity": 16384,
+       "entries": 6789,
+       "hits": 62155,
+       "misses": 6789
+      }
+     },
+     "solve_peak_traced_bytes_over_start": 87082382
+    },
+    "l02_only": {
+     "constructor_seconds": 8.625e-06,
+     "constructor_traced_bytes": 60,
+     "retained_memo_bytes": 261112,
+     "reuse": null,
+     "solve_peak_traced_bytes_over_start": 85434194
+    }
+   },
+   "samples": {
+    "cold": [
+     {
+      "cpu": 0.925933,
+      "load_after": 7.7421875,
+      "load_before": 7.7421875,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 12325,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 62155,
+        "misses": 6789
+       }
+      },
+      "wall": 0.926210625
+     },
+     {
+      "cpu": 0.906752,
+      "load_after": 7.4423828125,
+      "load_before": 7.4423828125,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 12325,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 62155,
+        "misses": 6789
+       }
+      },
+      "wall": 0.907267209
+     },
+     {
+      "cpu": 0.8997,
+      "load_after": 7.32666015625,
+      "load_before": 7.4423828125,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 12325,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 62155,
+        "misses": 6789
+       }
+      },
+      "wall": 0.899959833
+     }
+    ],
+    "l02_only": [
+     {
+      "cpu": 1.05282,
+      "load_after": 7.7421875,
+      "load_before": 7.7421875,
+      "reuse": null,
+      "wall": 1.053183583
+     },
+     {
+      "cpu": 1.067228,
+      "load_after": 7.4423828125,
+      "load_before": 7.4423828125,
+      "reuse": null,
+      "wall": 1.067866166
+     },
+     {
+      "cpu": 1.063812,
+      "load_after": 7.4423828125,
+      "load_before": 7.4423828125,
+      "reuse": null,
+      "wall": 1.064434792
+     }
+    ],
+    "warm": [
+     {
+      "cpu": 0.887838,
+      "load_after": 7.4423828125,
+      "load_before": 7.7421875,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 24999,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 131099,
+        "misses": 6789
+       }
+      },
+      "wall": 0.8881695
+     },
+     {
+      "cpu": 0.884853,
+      "load_after": 7.4423828125,
+      "load_before": 7.4423828125,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 37673,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 200043,
+        "misses": 6789
+       }
+      },
+      "wall": 0.885283042
+     },
+     {
+      "cpu": 0.915057,
+      "load_after": 7.32666015625,
+      "load_before": 7.32666015625,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 50347,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 268987,
+        "misses": 6789
+       }
+      },
+      "wall": 0.915328459
+     }
+    ]
+   },
+   "semantic_equal": true,
+   "target": "full_source/sentinel:incremental_graph:quote-b5feb74821d5",
+   "warm_population_solve": {
+    "cpu": 0.889785,
+    "reuse": {
+     "bin": {
+      "capacity": 4096,
+      "entries": 349,
+      "hits": 12325,
+      "misses": 349
+     },
+     "tick": {
+      "capacity": 16384,
+      "entries": 6789,
+      "hits": 62155,
+      "misses": 6789
+     }
+    },
+    "wall": 0.890043708
+   }
+  },
+  {
+   "max_load": 6.29052734375,
+   "median": {
+    "cold": {
+     "cpu": 0.193968,
+     "wall": 0.194053916
+    },
+    "l02_only": {
+     "cpu": 0.225489,
+     "wall": 0.225564916
+    },
+    "warm": {
+     "cpu": 0.177953,
+     "wall": 0.1782315
+    }
+   },
+   "median_ratio_vs_l02_only": {
+    "cold": {
+     "cpu": 0.8602104758990461,
+     "wall": 0.8603018565174382
+    },
+    "warm": {
+     "cpu": 0.7891870556878606,
+     "wall": 0.7901561251662026
+    }
+   },
+   "memory_instrumented": {
+    "l02_l03": {
+     "constructor_seconds": 5.5166e-05,
+     "constructor_traced_bytes": 2196,
+     "retained_memo_bytes": 1739220,
+     "reuse": {
+      "bin": {
+       "capacity": 4096,
+       "entries": 349,
+       "hits": 828,
+       "misses": 349
+      },
+      "tick": {
+       "capacity": 16384,
+       "entries": 6789,
+       "hits": 18253,
+       "misses": 6789
+      }
+     },
+     "solve_peak_traced_bytes_over_start": 19568224
+    },
+    "l02_only": {
+     "constructor_seconds": 5.792e-06,
+     "constructor_traced_bytes": 60,
+     "retained_memo_bytes": 89152,
+     "reuse": null,
+     "solve_peak_traced_bytes_over_start": 17920020
+    }
+   },
+   "samples": {
+    "cold": [
+     {
+      "cpu": 0.19165,
+      "load_after": 6.29052734375,
+      "load_before": 6.29052734375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 828,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 18253,
+        "misses": 6789
+       }
+      },
+      "wall": 0.191716875
+     },
+     {
+      "cpu": 0.193968,
+      "load_after": 6.29052734375,
+      "load_before": 6.29052734375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 828,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 18253,
+        "misses": 6789
+       }
+      },
+      "wall": 0.194053916
+     },
+     {
+      "cpu": 0.204034,
+      "load_after": 6.29052734375,
+      "load_before": 6.29052734375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 828,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 18253,
+        "misses": 6789
+       }
+      },
+      "wall": 0.204113875
+     }
+    ],
+    "l02_only": [
+     {
+      "cpu": 0.225489,
+      "load_after": 6.29052734375,
+      "load_before": 6.29052734375,
+      "reuse": null,
+      "wall": 0.225564916
+     },
+     {
+      "cpu": 0.226091,
+      "load_after": 6.29052734375,
+      "load_before": 6.29052734375,
+      "reuse": null,
+      "wall": 0.226138792
+     },
+     {
+      "cpu": 0.223998,
+      "load_after": 6.29052734375,
+      "load_before": 6.29052734375,
+      "reuse": null,
+      "wall": 0.2241265
+     }
+    ],
+    "warm": [
+     {
+      "cpu": 0.177953,
+      "load_after": 6.29052734375,
+      "load_before": 6.29052734375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 2005,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 43295,
+        "misses": 6789
+       }
+      },
+      "wall": 0.1782315
+     },
+     {
+      "cpu": 0.178153,
+      "load_after": 6.29052734375,
+      "load_before": 6.29052734375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 3182,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 68337,
+        "misses": 6789
+       }
+      },
+      "wall": 0.178346542
+     },
+     {
+      "cpu": 0.171754,
+      "load_after": 6.29052734375,
+      "load_before": 6.29052734375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 349,
+        "hits": 4359,
+        "misses": 349
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 6789,
+        "hits": 93379,
+        "misses": 6789
+       }
+      },
+      "wall": 0.171759416
+     }
+    ]
+   },
+   "semantic_equal": true,
+   "target": "full_source/sentinel:single_path:quote-b5feb74821d5",
+   "warm_population_solve": {
+    "cpu": 0.190418,
+    "reuse": {
+     "bin": {
+      "capacity": 4096,
+      "entries": 349,
+      "hits": 828,
+      "misses": 349
+     },
+     "tick": {
+      "capacity": 16384,
+      "entries": 6789,
+      "hits": 18253,
+      "misses": 6789
+     }
+    },
+    "wall": 0.190467958
+   }
+  },
+  {
+   "max_load": 6.26708984375,
+   "median": {
+    "cold": {
+     "cpu": 0.0047,
+     "wall": 0.004698
+    },
+    "l02_only": {
+     "cpu": 0.004656,
+     "wall": 0.00465425
+    },
+    "warm": {
+     "cpu": 0.003673,
+     "wall": 0.003672708
+    }
+   },
+   "median_ratio_vs_l02_only": {
+    "cold": {
+     "cpu": 1.0094501718213058,
+     "wall": 1.0094000107428693
+    },
+    "warm": {
+     "cpu": 0.7888745704467354,
+     "wall": 0.789108449266799
+    }
+   },
+   "memory_instrumented": {
+    "l02_l03": {
+     "constructor_seconds": 3.6625e-05,
+     "constructor_traced_bytes": 2196,
+     "retained_memo_bytes": 131344,
+     "reuse": {
+      "bin": {
+       "capacity": 4096,
+       "entries": 3,
+       "hits": 0,
+       "misses": 3
+      },
+      "tick": {
+       "capacity": 16384,
+       "entries": 533,
+       "hits": 165,
+       "misses": 533
+      }
+     },
+     "solve_peak_traced_bytes_over_start": 169820
+    },
+    "l02_only": {
+     "constructor_seconds": 4.042e-06,
+     "constructor_traced_bytes": 60,
+     "retained_memo_bytes": 11320,
+     "reuse": null,
+     "solve_peak_traced_bytes_over_start": 56572
+    }
+   },
+   "samples": {
+    "cold": [
+     {
+      "cpu": 0.004552,
+      "load_after": 6.26708984375,
+      "load_before": 6.26708984375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 3,
+        "hits": 0,
+        "misses": 3
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 533,
+        "hits": 165,
+        "misses": 533
+       }
+      },
+      "wall": 0.004551583
+     },
+     {
+      "cpu": 0.004721,
+      "load_after": 6.26708984375,
+      "load_before": 6.26708984375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 3,
+        "hits": 0,
+        "misses": 3
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 533,
+        "hits": 165,
+        "misses": 533
+       }
+      },
+      "wall": 0.004730125
+     },
+     {
+      "cpu": 0.0047,
+      "load_after": 6.26708984375,
+      "load_before": 6.26708984375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 3,
+        "hits": 0,
+        "misses": 3
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 533,
+        "hits": 165,
+        "misses": 533
+       }
+      },
+      "wall": 0.004698
+     }
+    ],
+    "l02_only": [
+     {
+      "cpu": 0.004622,
+      "load_after": 6.26708984375,
+      "load_before": 6.26708984375,
+      "reuse": null,
+      "wall": 0.004618333
+     },
+     {
+      "cpu": 0.004656,
+      "load_after": 6.26708984375,
+      "load_before": 6.26708984375,
+      "reuse": null,
+      "wall": 0.00465425
+     },
+     {
+      "cpu": 0.004916,
+      "load_after": 6.26708984375,
+      "load_before": 6.26708984375,
+      "reuse": null,
+      "wall": 0.004924167
+     }
+    ],
+    "warm": [
+     {
+      "cpu": 0.003673,
+      "load_after": 6.26708984375,
+      "load_before": 6.26708984375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 3,
+        "hits": 3,
+        "misses": 3
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 533,
+        "hits": 863,
+        "misses": 533
+       }
+      },
+      "wall": 0.003672708
+     },
+     {
+      "cpu": 0.003646,
+      "load_after": 6.26708984375,
+      "load_before": 6.26708984375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 3,
+        "hits": 6,
+        "misses": 3
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 533,
+        "hits": 1561,
+        "misses": 533
+       }
+      },
+      "wall": 0.003645333
+     },
+     {
+      "cpu": 0.003687,
+      "load_after": 6.26708984375,
+      "load_before": 6.26708984375,
+      "reuse": {
+       "bin": {
+        "capacity": 4096,
+        "entries": 3,
+        "hits": 9,
+        "misses": 3
+       },
+       "tick": {
+        "capacity": 16384,
+        "entries": 533,
+        "hits": 2259,
+        "misses": 533
+       }
+      },
+      "wall": 0.003685666
+     }
+    ]
+   },
+   "semantic_equal": true,
+   "target": "full_source/sentinel:direct:quote-b5feb74821d5",
+   "warm_population_solve": {
+    "cpu": 0.004813,
+    "reuse": {
+     "bin": {
+      "capacity": 4096,
+      "entries": 3,
+      "hits": 0,
+      "misses": 3
+     },
+     "tick": {
+      "capacity": 16384,
+      "entries": 533,
+      "hits": 165,
+      "misses": 533
+     }
+    },
+    "wall": 0.004810208
+   }
+  }
+ ]
+}

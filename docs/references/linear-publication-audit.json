@@ -1,0 +1,846 @@
+{
+  "schemaVersion": 1,
+  "status": "passed",
+  "checkedAt": "2026-09-24T08:29:03.457Z",
+  "verifier": "parent live Linear MCP readback, separate from publishing child",
+  "publisherModel": "claude/claude-opus-5-5",
+  "workflowRunId": "260a8036-19b1-4247-83c5-40a56f121e8b",
+  "childRunId": "2870819e-5c1b-40d1-ad4b-9c2c9c6ad26e",
+  "projectId": "29829418-7ca6-43c9-bf03-a49f05c76b1a",
+  "teamId": "37abcce9-0070-470b-a57b-d8213047c418",
+  "pipelineId": "3ae52bda-d2f7-4a18-9cd7-15dff9f8a8ed",
+  "counts": {
+    "issues": 25,
+    "releases": 2,
+    "milestones": 6,
+    "blockingEdges": 42,
+    "releaseIssueCounts": {
+      "0.1.0": 23,
+      "0.2.0": 2
+    },
+    "ordinaryRelatedPairs": 6,
+    "omissions": 0,
+    "duplicates": 0,
+    "verificationFailures": 0
+  },
+  "method": {
+    "freshReads": "Parent called list_issues(includeArchived), get_issue(includeRelations, includeReleases) for all 25, list_releases, list_milestones, and get_release for both releases. No publisher pass/fail assertion was used as acceptance.",
+    "bodyComparison": "SHA-256 compared to independently generated expected substituted full bodies from the frozen manifest. Unwrap issue nodes only after live inventory UUID+identifier+URL validation; normalize line endings, blank lines, trailing whitespace and unordered bullet marker only.",
+    "metadata": "Exact identity/title, project/team, single real Release/pipeline/Planned stage, milestone, priority, labels, Todo/unassigned/unstarted, native blockers and inverse blocks all checked.",
+    "releaseLimit": "Descriptions limited to 255 characters; full contracts are in docs/RELEASE_PLAN.md.",
+    "unobservable": "Release-level commitSha is not exposed by the MCP read schema; neither publisher nor parent wrote it. Embedded issue Release objects show null scheduling/start/completion dates."
+  },
+  "frozenSourceHashes": {
+    "docs/DESIGN.md": "0d7ad1d83d674e9e61e313d3131ba579471de32a032c0fe2854beb0f63558547",
+    "docs/ISSUE_PLAN.md": "02926159d19845ccdab7ca75d2b5786845056c15fa0656a197c8a3e8af1a8485",
+    "docs/RELEASE_PLAN.md": "9b8782b811c42da31b9eb4281d2dfa4a8482bd9dc5c4d6217c762f689361bec5"
+  },
+  "expectedAuditInputSha256": "c318bbc89bd28ef6190742fa2cb1278d9ea676d32259fc2fac37164ded822c8a",
+  "releases": {
+    "0.1.0": {
+      "id": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "url": "https://linear.app/whisker-personal/pipeline/router-algorithms-optimizer/release/010-reproducible-mantle-routing-benchmark-68441970a261",
+      "stage": "Planned",
+      "storedDescription": "Core static benchmark: 5 verified Mantle sources, Solidity-to-Python math, shared-pool evaluator, 6 mandatory algorithms incl. parity-tested Uni SOR, cost model, offline report. 23 issues: G00 + I01–I22. Full scope and exit gates: docs/RELEASE_PLAN.md"
+    },
+    "0.2.0": {
+      "id": "a65958a5-f0b4-42e7-9ace-1d376e363bca",
+      "url": "https://linear.app/whisker-personal/pipeline/router-algorithms-optimizer/release/020-jupiter-metis-challenge-14714fc6ff72",
+      "stage": "Planned",
+      "storedDescription": "Jupiter Metis challenge: source-backed feasibility (C01), then conditional distinct implementation and matched-budget ablation (C02, needs-info until C01 go). No-go requires explicit owner disposition. 2 issues. Full scope: docs/RELEASE_PLAN.md"
+    }
+  },
+  "milestones": {
+    "M0": "28d312dd-cfce-47de-aa18-a4f93d86b593",
+    "M1": "5c0c6d87-d77c-4fe6-b1ba-8a0775f75b82",
+    "M2": "00683ff9-a01c-407f-8285-0f2e4b326585",
+    "M3": "cb34a16a-cf56-44ba-96a9-bcfc611a1991",
+    "M4": "16369cbd-96a4-45b7-8479-5aa3011ac3e6",
+    "C1": "da77e216-2b72-46c6-82fb-e2262a7d8b51"
+  },
+  "issues": [
+    {
+      "designKey": "G00",
+      "identifier": "WHI-1425",
+      "uuid": "9ee295f5-6b92-4abc-9d84-7c2218119c53",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1425/infra-establish-the-repository-bootstrap-and-linear-project-binding",
+      "title": "[Infra] Establish the repository bootstrap and Linear project binding",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M0",
+      "milestoneId": "28d312dd-cfce-47de-aa18-a4f93d86b593",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-human",
+        "chore"
+      ],
+      "titleSha256": "705e91e9a65c40413ff07dcff00938e98d47771e26409c1784442600380972fa",
+      "canonicalBodySha256": "cb348b0ffbca19fbc84d624ca2665ceceecf3aa2fa68888ed7b550631a505136",
+      "blockedBy": [],
+      "blocks": [
+        "WHI-1426",
+        "WHI-1427"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I01",
+      "identifier": "WHI-1426",
+      "uuid": "97f52226-7f9d-4092-97c4-f3f8f60b50d1",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1426/010-snapshot-publish-a-verified-five-source-admission-catalog",
+      "title": "[0.1.0] [Snapshot] Publish a verified five-source admission catalog",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M0",
+      "milestoneId": "28d312dd-cfce-47de-aa18-a4f93d86b593",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "research"
+      ],
+      "titleSha256": "93e97b3252d3a111746cb61eb67e81dd77f3b1d5cb62f3343470ace402604ef7",
+      "canonicalBodySha256": "e23df8ba73905d0dd85846b7ef139693945a999666af0667710ce63c5730970b",
+      "blockedBy": [
+        "WHI-1425"
+      ],
+      "blocks": [
+        "WHI-1428",
+        "WHI-1432",
+        "WHI-1433",
+        "WHI-1442",
+        "WHI-1445"
+      ],
+      "relatedToPlatformGenerated": [
+        "WHI-1430"
+      ],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I02",
+      "identifier": "WHI-1427",
+      "uuid": "0fe47cfe-64db-41e7-b932-cb8ad0fc7ef8",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1427/010-benchmark-run-a-synthetic-direct-swap-from-cli-to-a-replayable",
+      "title": "[0.1.0] [Benchmark] Run a synthetic direct swap from CLI to a replayable result",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M1",
+      "milestoneId": "5c0c6d87-d77c-4fe6-b1ba-8a0775f75b82",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "383790bab8e5b3b899c7e506d518588d3db64ef0d811198b4692d247b6a17088",
+      "canonicalBodySha256": "ddf27b323dc7871bcf7b775217b8da46ee0c0f2eefaa19b5a63c4565d9af30f0",
+      "blockedBy": [
+        "WHI-1425"
+      ],
+      "blocks": [
+        "WHI-1428",
+        "WHI-1432",
+        "WHI-1433",
+        "WHI-1435",
+        "WHI-1437",
+        "WHI-1443"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I03",
+      "identifier": "WHI-1428",
+      "uuid": "01c19d2f-13d8-4cc1-9186-9cb0e2a141f8",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1428/010-pools-verify-integer-concentrated-liquidity-state-transitions",
+      "title": "[0.1.0] [Pools] Verify integer concentrated-liquidity state transitions",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M1",
+      "milestoneId": "5c0c6d87-d77c-4fe6-b1ba-8a0775f75b82",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "59dcf5e28b370dba5fd5c30a56624a638cf47d42a10733f02ea4e3a048452d6f",
+      "canonicalBodySha256": "2c1365b1b34f2db5587d0538f225dec4854b17bc67428f55f018b5cf9168e850",
+      "blockedBy": [
+        "WHI-1426",
+        "WHI-1427"
+      ],
+      "blocks": [
+        "WHI-1429",
+        "WHI-1430",
+        "WHI-1431",
+        "WHI-1444"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I04",
+      "identifier": "WHI-1429",
+      "uuid": "a7411b8b-e89a-438c-9d8c-e28360329850",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1429/010-snapshot-replay-an-agni-swap-from-a-fixed-block-snapshot",
+      "title": "[0.1.0] [Snapshot] Replay an Agni swap from a fixed-block snapshot",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M1",
+      "milestoneId": "5c0c6d87-d77c-4fe6-b1ba-8a0775f75b82",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "b7d6f49906dbb4a88deaf482f17674ebb96000323368b9a5182d3d797b649227",
+      "canonicalBodySha256": "2d437e37c06982ce46535e615c5c169255c6f214153d84330548aca7eeccbc58",
+      "blockedBy": [
+        "WHI-1428"
+      ],
+      "blocks": [
+        "WHI-1436"
+      ],
+      "relatedToPlatformGenerated": [
+        "WHI-1430",
+        "WHI-1431"
+      ],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I05",
+      "identifier": "WHI-1430",
+      "uuid": "867f336f-e052-47f2-b8a6-3a2bf8204d90",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1430/010-snapshot-admit-fusionx-v3-through-fixed-block-replay",
+      "title": "[0.1.0] [Snapshot] Admit FusionX v3 through fixed-block replay",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M2",
+      "milestoneId": "00683ff9-a01c-407f-8285-0f2e4b326585",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "0c72589d914e0ffcdfeca84fea5006ab797c1c5d820793f2c60e01d5648a436e",
+      "canonicalBodySha256": "7ee65424441139808e4607307f0d6fcf2463557b533e465ff93dc1847262132c",
+      "blockedBy": [
+        "WHI-1428"
+      ],
+      "blocks": [
+        "WHI-1436"
+      ],
+      "relatedToPlatformGenerated": [
+        "WHI-1426",
+        "WHI-1429",
+        "WHI-1431"
+      ],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I06",
+      "identifier": "WHI-1431",
+      "uuid": "10dd31be-b6d9-4881-9766-ececf43fdfad",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1431/010-snapshot-admit-uniswap-v3-through-fixed-block-replay",
+      "title": "[0.1.0] [Snapshot] Admit Uniswap v3 through fixed-block replay",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M2",
+      "milestoneId": "00683ff9-a01c-407f-8285-0f2e4b326585",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "993886e97b4ee046ce39ebf365b9f2660944b747c8b5c0842f4aa16282bd1ecc",
+      "canonicalBodySha256": "f6e78359ced60be435f4888c1d378017e339eacb0bb128c0b9d0a96a0dc5efe0",
+      "blockedBy": [
+        "WHI-1428"
+      ],
+      "blocks": [
+        "WHI-1436"
+      ],
+      "relatedToPlatformGenerated": [
+        "WHI-1429",
+        "WHI-1430"
+      ],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I07",
+      "identifier": "WHI-1432",
+      "uuid": "bbc8c804-f82a-4fa6-b8cd-f0a2016e286b",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1432/010-snapshot-replay-merchant-moe-classic-swaps-from-verified-reserves",
+      "title": "[0.1.0] [Snapshot] Replay Merchant Moe Classic swaps from verified reserves",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M2",
+      "milestoneId": "00683ff9-a01c-407f-8285-0f2e4b326585",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "2b612879b24dd56f7dca6c68ac0594da6a0de307a3b4d26eac6ba2ccd3992a65",
+      "canonicalBodySha256": "ec4093d766bab6f9d37202b012075623b78e804a52a4583395b5e81f63893ff2",
+      "blockedBy": [
+        "WHI-1426",
+        "WHI-1427"
+      ],
+      "blocks": [
+        "WHI-1436"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I08",
+      "identifier": "WHI-1433",
+      "uuid": "8a67d7ab-6073-4595-808a-4ef7f8cc1d3a",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1433/010-pools-verify-liquidity-book-quotes-with-evolving-fee-state",
+      "title": "[0.1.0] [Pools] Verify Liquidity Book quotes with evolving fee state",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M2",
+      "milestoneId": "00683ff9-a01c-407f-8285-0f2e4b326585",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "a360cf0f00b8220954b274685c66797c017165f8fcbc12f752f5a88e041e2526",
+      "canonicalBodySha256": "fe9c8a3bdaa106f585d55cf4c25bed50a10d4920453ee2b8c489a2757943a4f4",
+      "blockedBy": [
+        "WHI-1426",
+        "WHI-1427"
+      ],
+      "blocks": [
+        "WHI-1434"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I09",
+      "identifier": "WHI-1434",
+      "uuid": "93b57808-940f-4952-863c-b05dfa700a40",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1434/010-snapshot-replay-merchant-moe-lb-swaps-from-a-complete-bounded",
+      "title": "[0.1.0] [Snapshot] Replay Merchant Moe LB swaps from a complete bounded snapshot",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M2",
+      "milestoneId": "00683ff9-a01c-407f-8285-0f2e4b326585",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "e4e1a213ef1059417ee09813595f81747049ccbea5e77c72c1f5f9457f666f2a",
+      "canonicalBodySha256": "f4629f8649e669db643e59f68fc8b8095c61ec8460193467665fced54567ed9f",
+      "blockedBy": [
+        "WHI-1433"
+      ],
+      "blocks": [
+        "WHI-1436"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I10",
+      "identifier": "WHI-1435",
+      "uuid": "bc5516ce-1d6b-4d46-aea9-c12680fba729",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1435/010-routing-evaluate-split-and-merged-funding-with-shared-pool-state",
+      "title": "[0.1.0] [Routing] Evaluate split and merged funding with shared pool state",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M2",
+      "milestoneId": "00683ff9-a01c-407f-8285-0f2e4b326585",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "9c2f85f260c1857fbf370559dc8c0f60a2ba5fdec77a3435326b5fa12a394f8c",
+      "canonicalBodySha256": "50c5a96bd2805b86b7bb4009fe12fe7a4bddf3adb6fe4e7dee9e74c16aa4ee7b",
+      "blockedBy": [
+        "WHI-1427"
+      ],
+      "blocks": [
+        "WHI-1438",
+        "WHI-1439",
+        "WHI-1444",
+        "WHI-1445"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I11",
+      "identifier": "WHI-1436",
+      "uuid": "6cd96106-18f4-421f-9cb4-f70a0b6921d5",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1436/010-snapshot-freeze-a-five-source-corpus-with-stratified-requests",
+      "title": "[0.1.0] [Snapshot] Freeze a five-source corpus with stratified requests",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M2",
+      "milestoneId": "00683ff9-a01c-407f-8285-0f2e4b326585",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "4193572c0d52fbba5b120f25393b4cd08e97600f4757369fba9e51ede58dae9a",
+      "canonicalBodySha256": "05fe3028796548d0384063dac370d7ec50e819e6e6ad1b264a8a4d0990416264",
+      "blockedBy": [
+        "WHI-1429",
+        "WHI-1430",
+        "WHI-1431",
+        "WHI-1432",
+        "WHI-1434"
+      ],
+      "blocks": [
+        "WHI-1445",
+        "WHI-1447"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I12",
+      "identifier": "WHI-1437",
+      "uuid": "770e572e-ef9e-4660-a5be-7135274ec4d6",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1437/010-benchmark-measure-isolated-solves-without-losing-failed-cases",
+      "title": "[0.1.0] [Benchmark] Measure isolated solves without losing failed cases",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M2",
+      "milestoneId": "00683ff9-a01c-407f-8285-0f2e4b326585",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "18694ef726deed1741b4cfe8e8d9a130500ea3dc10a144fe7b474f72f4e17e22",
+      "canonicalBodySha256": "45fd702fe5c046cd74f0c85e2dad77497d33b5ef4ec7618f47356d9d5f23c05e",
+      "blockedBy": [
+        "WHI-1427"
+      ],
+      "blocks": [
+        "WHI-1446"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I13",
+      "identifier": "WHI-1438",
+      "uuid": "7e533e03-a574-4bfa-ad4f-86f2c8f7fcc4",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1438/010-routing-compare-the-best-bounded-single-path-against-direct-pools",
+      "title": "[0.1.0] [Routing] Compare the best bounded single path against direct pools",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M3",
+      "milestoneId": "cb34a16a-cf56-44ba-96a9-bcfc611a1991",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "3cc0a91309b6d464c2338fa1ed2930bada7d4c699d68b16928d7d095ba17144d",
+      "canonicalBodySha256": "3a0644e9b50e83145e96f1b2b7dabc5ef2c4acd7fb5a11216c64eae0c9f36f0f",
+      "blockedBy": [
+        "WHI-1435"
+      ],
+      "blocks": [
+        "WHI-1440"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I14",
+      "identifier": "WHI-1439",
+      "uuid": "832d9d7e-a0c0-45f3-89ce-baa0a301762f",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1439/010-routing-compare-discrete-allocation-across-direct-pools",
+      "title": "[0.1.0] [Routing] Compare discrete allocation across direct pools",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M3",
+      "milestoneId": "cb34a16a-cf56-44ba-96a9-bcfc611a1991",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "97cbbfdaa1c31e68b24ba7817b953f4d375b95bf12e8dee8b16a36eabd8c0a5d",
+      "canonicalBodySha256": "890cc9afa7d69623087eb8a3e3bdeb48b992f43c4b3f2124bf8a1c3d99c51ee1",
+      "blockedBy": [
+        "WHI-1435"
+      ],
+      "blocks": [
+        "WHI-1440"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I15",
+      "identifier": "WHI-1440",
+      "uuid": "a27517c9-b2ec-4e15-ab54-8842e0085eef",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1440/010-routing-compare-multi-hop-allocation-over-disjoint-paths",
+      "title": "[0.1.0] [Routing] Compare multi-hop allocation over disjoint paths",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M3",
+      "milestoneId": "cb34a16a-cf56-44ba-96a9-bcfc611a1991",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "bb846ec0665969f15b0f8c3aa15a5d94fadcf8efd3cfcf7962eb32c67e41fadd",
+      "canonicalBodySha256": "41ea6aa7c54be7bc665156bb0ccf58d2bb6197b4910db529a5f712c5b114c211",
+      "blockedBy": [
+        "WHI-1438",
+        "WHI-1439"
+      ],
+      "blocks": [
+        "WHI-1441"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I16",
+      "identifier": "WHI-1441",
+      "uuid": "8e62f5df-c132-4510-94c5-e4e4bc564f0e",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1441/010-routing-compare-incremental-allocation-with-shared-pool-state",
+      "title": "[0.1.0] [Routing] Compare incremental allocation with shared pool state",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M3",
+      "milestoneId": "cb34a16a-cf56-44ba-96a9-bcfc611a1991",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "2e65af9a1bba71787f65393efe1c9e07ebc1833943539a262735248eeb16a930",
+      "canonicalBodySha256": "80f5dbe2f712fb6f6c3144a181446be7870c1d75110ab21dc8ff1de18fed67dd",
+      "blockedBy": [
+        "WHI-1440"
+      ],
+      "blocks": [
+        "WHI-1448",
+        "WHI-1447"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I17",
+      "identifier": "WHI-1442",
+      "uuid": "b26cd247-fbd4-4600-bce3-4ad1ad07a929",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1442/010-routing-define-the-uniswap-sor-port-and-licensing-contract",
+      "title": "[0.1.0] [Routing] Define the Uniswap SOR port and licensing contract",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M0",
+      "milestoneId": "28d312dd-cfce-47de-aa18-a4f93d86b593",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "research"
+      ],
+      "titleSha256": "1fc3b8a4d4778d2f515ad31cf9ae608cad747f4fa7703b23075018c8096c64c6",
+      "canonicalBodySha256": "93328fbe08273289f42ca1c85eeb56c477b1c4623a1ac0eb7382d7f054a100ae",
+      "blockedBy": [
+        "WHI-1426"
+      ],
+      "blocks": [
+        "WHI-1443"
+      ],
+      "relatedToPlatformGenerated": [
+        "WHI-1444"
+      ],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I22",
+      "identifier": "WHI-1443",
+      "uuid": "4c7a0562-1b9f-453a-b8dd-8bb3f219825b",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1443/010-routing-generate-goldens-from-the-actual-pinned-uniswap-sor",
+      "title": "[0.1.0] [Routing] Generate goldens from the actual pinned Uniswap SOR functions",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M1",
+      "milestoneId": "5c0c6d87-d77c-4fe6-b1ba-8a0775f75b82",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "f9fd9a8ce6afee75709a85e503f6e1c9ca3e5e0cf9c0d2cd372ceaba73761252",
+      "canonicalBodySha256": "9e0a5803793d622b883f27fb92c36d3072211676704426ded038ecee4e1e64b1",
+      "blockedBy": [
+        "WHI-1427",
+        "WHI-1442"
+      ],
+      "blocks": [
+        "WHI-1444"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I18",
+      "identifier": "WHI-1444",
+      "uuid": "81ef20dd-b801-45a3-bcf9-495d84598122",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1444/010-routing-introduce-the-mandatory-parity-tested-uniswap-sor-python",
+      "title": "[0.1.0] [Routing] Introduce the mandatory parity-tested Uniswap SOR Python port",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M3",
+      "milestoneId": "cb34a16a-cf56-44ba-96a9-bcfc611a1991",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "20c8f952418925b75ba67546fe2b7f28d23084ef03095df68ff0a4c86da04208",
+      "canonicalBodySha256": "c92c8eac286e7becbe90c58d731ab1c6928dc90e9a20c49138f1107a36072cbd",
+      "blockedBy": [
+        "WHI-1428",
+        "WHI-1435",
+        "WHI-1443"
+      ],
+      "blocks": [
+        "WHI-1447"
+      ],
+      "relatedToPlatformGenerated": [
+        "WHI-1442"
+      ],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I19",
+      "identifier": "WHI-1445",
+      "uuid": "b6e92276-e659-4cbd-b144-a5ac119be46e",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1445/010-benchmark-calibrate-execution-cost-with-held-out-transaction",
+      "title": "[0.1.0] [Benchmark] Calibrate execution cost with held-out transaction evidence",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M4",
+      "milestoneId": "16369cbd-96a4-45b7-8479-5aa3011ac3e6",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "dc3f4fcd2ce6e9fdc75c3a458d2c2cc150d57328efbf6b17fff12d274b375c96",
+      "canonicalBodySha256": "19deafc03704eae6422778d4e3c1f8c1411053c5a3e54c6eda257a8120937df9",
+      "blockedBy": [
+        "WHI-1426",
+        "WHI-1435",
+        "WHI-1436"
+      ],
+      "blocks": [
+        "WHI-1446"
+      ],
+      "relatedToPlatformGenerated": [
+        "WHI-1447"
+      ],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I20",
+      "identifier": "WHI-1446",
+      "uuid": "1fd14b72-7542-450e-9507-1fea013a529e",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1446/010-report-render-offline-quality-versus-cost-comparisons-with-honest",
+      "title": "[0.1.0] [Report] Render offline quality-versus-cost comparisons with honest cohorts",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M4",
+      "milestoneId": "16369cbd-96a4-45b7-8479-5aa3011ac3e6",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "bf3d3ae7f145d3c9657482f623f84803809770b2915d01d316edbe3aff994a7f",
+      "canonicalBodySha256": "663af6eb98604f686bf2e33ed57272e16e0f8f694d13ede8d2f21db0b2a280c9",
+      "blockedBy": [
+        "WHI-1437",
+        "WHI-1445"
+      ],
+      "blocks": [
+        "WHI-1447"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "I21",
+      "identifier": "WHI-1447",
+      "uuid": "175dc189-1fbd-4c0f-86cb-f154ca629e49",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1447/010-benchmark-deliver-the-reproducible-six-algorithm-acceptance-report",
+      "title": "[0.1.0] [Benchmark] Deliver the reproducible six-algorithm acceptance report",
+      "releaseVersion": "0.1.0",
+      "releaseId": "c257e99c-df35-41d6-8576-a072601dcb5b",
+      "milestoneKey": "M4",
+      "milestoneId": "16369cbd-96a4-45b7-8479-5aa3011ac3e6",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 2,
+      "labels": [
+        "ready-for-agent",
+        "Feature"
+      ],
+      "titleSha256": "3130a1e659b2fb18407fddfaecbdc99faaf98847dfff49d206a751f8e035cc1a",
+      "canonicalBodySha256": "0084911b8fdc272ee9a1abb65a42981d0a67cec3a341fe77a262bccdee4dd1e0",
+      "blockedBy": [
+        "WHI-1436",
+        "WHI-1441",
+        "WHI-1444",
+        "WHI-1446"
+      ],
+      "blocks": [
+        "WHI-1449"
+      ],
+      "relatedToPlatformGenerated": [
+        "WHI-1445"
+      ],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "C01",
+      "identifier": "WHI-1448",
+      "uuid": "9040f02c-9639-4e4f-af85-ae0908367a7f",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1448/020-routing-define-a-source-backed-jupiter-metis-challenge",
+      "title": "[0.2.0] [Routing] Define a source-backed Jupiter Metis challenge",
+      "releaseVersion": "0.2.0",
+      "releaseId": "a65958a5-f0b4-42e7-9ace-1d376e363bca",
+      "milestoneKey": "C1",
+      "milestoneId": "da77e216-2b72-46c6-82fb-e2262a7d8b51",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 3,
+      "labels": [
+        "ready-for-agent",
+        "research"
+      ],
+      "titleSha256": "b8c6155b33988cc40d6351decdeec63cd7b22d1804c2e2145218b982fe484448",
+      "canonicalBodySha256": "6636976643d3c3ca60bd4321458e073cbb41913e6aa6ccefa464753924faeaa8",
+      "blockedBy": [
+        "WHI-1441"
+      ],
+      "blocks": [
+        "WHI-1449"
+      ],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    },
+    {
+      "designKey": "C02",
+      "identifier": "WHI-1449",
+      "uuid": "b704de6c-05c4-4bbd-9329-2bdce1ae37f2",
+      "url": "https://linear.app/whisker-personal/issue/WHI-1449/020-routing-evaluate-the-approved-metis-inspired-challenge",
+      "title": "[0.2.0] [Routing] Evaluate the approved Metis-inspired challenge",
+      "releaseVersion": "0.2.0",
+      "releaseId": "a65958a5-f0b4-42e7-9ace-1d376e363bca",
+      "milestoneKey": "C1",
+      "milestoneId": "da77e216-2b72-46c6-82fb-e2262a7d8b51",
+      "status": "Todo",
+      "assignee": null,
+      "priority": 3,
+      "labels": [
+        "needs-info",
+        "Feature"
+      ],
+      "titleSha256": "67380c2d4c7a36f74cef6b963b983384578e0567e5eac1991cd3f85eb7930151",
+      "canonicalBodySha256": "9c0ff2c273f807844fe79bd0773cf770e71adbf1526b19800da78fc0e2023582",
+      "blockedBy": [
+        "WHI-1448",
+        "WHI-1447"
+      ],
+      "blocks": [],
+      "relatedToPlatformGenerated": [],
+      "parentVerified": true,
+      "errors": []
+    }
+  ],
+  "remainingExecutionGates": [
+    "G00: deliberately establish valid git bootstrap base; publication did not create origin/dev.",
+    "I17: SOR license/provenance resolution before translation and reference harness work.",
+    "Protocol-source and RPC/data evidence must pass planned admission gates.",
+    "C02 remains needs-info until C01 supplies a distinct mechanism and go decision."
+  ]
+}

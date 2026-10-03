@@ -1,0 +1,2202 @@
+{
+  "admission": [
+    {
+      "case_id": "usdt_wmnt_small",
+      "followup_amount_in": "7546396332834164286",
+      "followup_status": "ok",
+      "pool_id": "0xf6c9020c9e915808481757779edb53daceae2415",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_small",
+      "followup_amount_in": "7479034066887460167",
+      "followup_status": "ok",
+      "pool_id": "0x365722f12ceb2063286a268b03c654df81b7c00f",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_small",
+      "pool_id": "0x4ee4ecb066eccf47c0231a5d27066dc56a4f6ad2",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_wmnt_small",
+      "pool_id": "0x616bef777161cb6219ad20599aff8c943ffea952",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_wmnt_small",
+      "pool_id": "0x35db358ccb1e9ff11d49fc7789949b3421b98931",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "followup_amount_in": "74365808955866094360",
+      "followup_status": "ok",
+      "pool_id": "0xf6c9020c9e915808481757779edb53daceae2415",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "followup_amount_in": "71235912041306416682",
+      "followup_status": "ok",
+      "pool_id": "0x365722f12ceb2063286a268b03c654df81b7c00f",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "pool_id": "0x4ee4ecb066eccf47c0231a5d27066dc56a4f6ad2",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "pool_id": "0x616bef777161cb6219ad20599aff8c943ffea952",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "pool_id": "0x35db358ccb1e9ff11d49fc7789949b3421b98931",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "followup_amount_in": "336803889181715272565",
+      "followup_status": "ok",
+      "pool_id": "0xf6c9020c9e915808481757779edb53daceae2415",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "followup_amount_in": "176693180583536963481",
+      "followup_status": "ok",
+      "pool_id": "0x365722f12ceb2063286a268b03c654df81b7c00f",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "pool_id": "0x4ee4ecb066eccf47c0231a5d27066dc56a4f6ad2",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "pool_id": "0x616bef777161cb6219ad20599aff8c943ffea952",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "pool_id": "0x35db358ccb1e9ff11d49fc7789949b3421b98931",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "followup_amount_in": "3300144",
+      "followup_status": "ok",
+      "pool_id": "0xf6c9020c9e915808481757779edb53daceae2415",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "followup_amount_in": "3301936",
+      "followup_status": "ok",
+      "pool_id": "0x365722f12ceb2063286a268b03c654df81b7c00f",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "pool_id": "0x4ee4ecb066eccf47c0231a5d27066dc56a4f6ad2",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "pool_id": "0x616bef777161cb6219ad20599aff8c943ffea952",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "pool_id": "0x35db358ccb1e9ff11d49fc7789949b3421b98931",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "followup_amount_in": "65213393",
+      "followup_status": "ok",
+      "pool_id": "0xf6c9020c9e915808481757779edb53daceae2415",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "pool_id": "0x365722f12ceb2063286a268b03c654df81b7c00f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "pool_id": "0x4ee4ecb066eccf47c0231a5d27066dc56a4f6ad2",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "pool_id": "0x616bef777161cb6219ad20599aff8c943ffea952",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "pool_id": "0x35db358ccb1e9ff11d49fc7789949b3421b98931",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "followup_amount_in": "311767750",
+      "followup_status": "ok",
+      "pool_id": "0xf6c9020c9e915808481757779edb53daceae2415",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "pool_id": "0x365722f12ceb2063286a268b03c654df81b7c00f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "pool_id": "0x4ee4ecb066eccf47c0231a5d27066dc56a4f6ad2",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "pool_id": "0x616bef777161cb6219ad20599aff8c943ffea952",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "pool_id": "0x35db358ccb1e9ff11d49fc7789949b3421b98931",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdc_wmnt_small",
+      "pool_id": "0xa1c653c415db1c00dfd04ee26e624f959a0ed52f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdc_wmnt_small",
+      "pool_id": "0x29350f5442f1335ee5bb7f9ea9d623bdd171d679",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdc_small",
+      "pool_id": "0xa1c653c415db1c00dfd04ee26e624f959a0ed52f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdc_small",
+      "pool_id": "0x29350f5442f1335ee5bb7f9ea9d623bdd171d679",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_small",
+      "followup_amount_in": "1247745704694757",
+      "followup_status": "ok",
+      "pool_id": "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_small",
+      "pool_id": "0xfcc3654088dc6b42ca181430d294a0dc44df477e",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_small",
+      "pool_id": "0x2adc49c5c0eeda219b7bb24016c0cfcca0992294",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_small",
+      "pool_id": "0xc53883b7a5271455cb155d5d4457fd3b2ba8367b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_medium",
+      "followup_amount_in": "62124216319543841",
+      "followup_status": "ok",
+      "pool_id": "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_medium",
+      "pool_id": "0xfcc3654088dc6b42ca181430d294a0dc44df477e",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_medium",
+      "pool_id": "0x2adc49c5c0eeda219b7bb24016c0cfcca0992294",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_medium",
+      "pool_id": "0xc53883b7a5271455cb155d5d4457fd3b2ba8367b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_large",
+      "followup_amount_in": "363437519450494769",
+      "followup_status": "ok",
+      "pool_id": "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_large",
+      "pool_id": "0xfcc3654088dc6b42ca181430d294a0dc44df477e",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_large",
+      "pool_id": "0x2adc49c5c0eeda219b7bb24016c0cfcca0992294",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_large",
+      "pool_id": "0xc53883b7a5271455cb155d5d4457fd3b2ba8367b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_small",
+      "followup_amount_in": "1999604406975195951",
+      "followup_status": "ok",
+      "pool_id": "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_small",
+      "pool_id": "0xfcc3654088dc6b42ca181430d294a0dc44df477e",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_small",
+      "pool_id": "0x2adc49c5c0eeda219b7bb24016c0cfcca0992294",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_small",
+      "pool_id": "0xc53883b7a5271455cb155d5d4457fd3b2ba8367b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_medium",
+      "followup_amount_in": "199548344743350186956",
+      "followup_status": "ok",
+      "pool_id": "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_medium",
+      "pool_id": "0xfcc3654088dc6b42ca181430d294a0dc44df477e",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_medium",
+      "pool_id": "0x2adc49c5c0eeda219b7bb24016c0cfcca0992294",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_medium",
+      "pool_id": "0xc53883b7a5271455cb155d5d4457fd3b2ba8367b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_large",
+      "followup_amount_in": "1920336199928142293931",
+      "followup_status": "ok",
+      "pool_id": "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_large",
+      "pool_id": "0xfcc3654088dc6b42ca181430d294a0dc44df477e",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_large",
+      "pool_id": "0x2adc49c5c0eeda219b7bb24016c0cfcca0992294",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_large",
+      "pool_id": "0xc53883b7a5271455cb155d5d4457fd3b2ba8367b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_small",
+      "followup_amount_in": "113699104710828",
+      "followup_status": "ok",
+      "pool_id": "0xf59c79b91877c2b5909e703117beab9b4b5df0d6",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_meth_small",
+      "pool_id": "0xdc39d7a23d52309b45be6e13c4b7948c78ce854f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_small",
+      "pool_id": "0x96069f55d86daa102011f366628dedfa4425909a",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_small",
+      "pool_id": "0x118e6794a2f8b2368304ab7bd5c426dcec06ec80",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_medium",
+      "followup_amount_in": "2272441939443652",
+      "followup_status": "ok",
+      "pool_id": "0xf59c79b91877c2b5909e703117beab9b4b5df0d6",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_meth_medium",
+      "pool_id": "0xdc39d7a23d52309b45be6e13c4b7948c78ce854f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_medium",
+      "pool_id": "0x96069f55d86daa102011f366628dedfa4425909a",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_medium",
+      "pool_id": "0x118e6794a2f8b2368304ab7bd5c426dcec06ec80",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_large",
+      "followup_amount_in": "16916965504398968",
+      "followup_status": "ok",
+      "pool_id": "0xf59c79b91877c2b5909e703117beab9b4b5df0d6",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_meth_large",
+      "pool_id": "0xdc39d7a23d52309b45be6e13c4b7948c78ce854f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_large",
+      "pool_id": "0x96069f55d86daa102011f366628dedfa4425909a",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_large",
+      "pool_id": "0x118e6794a2f8b2368304ab7bd5c426dcec06ec80",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_small",
+      "followup_amount_in": "219219721421709047",
+      "followup_status": "ok",
+      "pool_id": "0xf59c79b91877c2b5909e703117beab9b4b5df0d6",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_small",
+      "pool_id": "0xdc39d7a23d52309b45be6e13c4b7948c78ce854f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_small",
+      "followup_amount_in": "4941461309516647",
+      "followup_status": "ok",
+      "pool_id": "0x96069f55d86daa102011f366628dedfa4425909a",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_small",
+      "pool_id": "0x118e6794a2f8b2368304ab7bd5c426dcec06ec80",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_medium",
+      "followup_amount_in": "21868256448808396901",
+      "followup_status": "ok",
+      "pool_id": "0xf59c79b91877c2b5909e703117beab9b4b5df0d6",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_medium",
+      "pool_id": "0xdc39d7a23d52309b45be6e13c4b7948c78ce854f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_medium",
+      "pool_id": "0x96069f55d86daa102011f366628dedfa4425909a",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_medium",
+      "pool_id": "0x118e6794a2f8b2368304ab7bd5c426dcec06ec80",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_large",
+      "followup_amount_in": "205419559066635126319",
+      "followup_status": "ok",
+      "pool_id": "0xf59c79b91877c2b5909e703117beab9b4b5df0d6",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_large",
+      "pool_id": "0xdc39d7a23d52309b45be6e13c4b7948c78ce854f",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_large",
+      "pool_id": "0x96069f55d86daa102011f366628dedfa4425909a",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_large",
+      "pool_id": "0x118e6794a2f8b2368304ab7bd5c426dcec06ec80",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_weth_small",
+      "followup_amount_in": "549774720726198",
+      "followup_status": "ok",
+      "pool_id": "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_weth_small",
+      "pool_id": "0x451368c461f9f4a70c434576b31ed5f258e765f5",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_weth_medium",
+      "followup_amount_in": "274832852509763993",
+      "followup_status": "ok",
+      "pool_id": "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_weth_medium",
+      "pool_id": "0x451368c461f9f4a70c434576b31ed5f258e765f5",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_weth_large",
+      "followup_amount_in": "2747922237753448462",
+      "followup_status": "ok",
+      "pool_id": "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_weth_large",
+      "pool_id": "0x451368c461f9f4a70c434576b31ed5f258e765f5",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_meth_small",
+      "followup_amount_in": "454649864029458",
+      "followup_status": "ok",
+      "pool_id": "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_meth_small",
+      "pool_id": "0x451368c461f9f4a70c434576b31ed5f258e765f5",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_meth_medium",
+      "followup_amount_in": "227324932014729460",
+      "followup_status": "ok",
+      "pool_id": "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_meth_medium",
+      "pool_id": "0x451368c461f9f4a70c434576b31ed5f258e765f5",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_meth_large",
+      "followup_amount_in": "2272983294244713763",
+      "followup_status": "ok",
+      "pool_id": "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_meth_large",
+      "pool_id": "0x451368c461f9f4a70c434576b31ed5f258e765f5",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_weth_small",
+      "followup_amount_in": "188758485398597",
+      "followup_status": "ok",
+      "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_weth_small",
+      "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_weth_small",
+      "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_weth_medium",
+      "followup_amount_in": "17446086511386602",
+      "followup_status": "ok",
+      "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_weth_medium",
+      "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_weth_medium",
+      "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_weth_large",
+      "followup_amount_in": "645433975732774612",
+      "followup_status": "ok",
+      "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_weth_large",
+      "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_weth_large",
+      "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_small",
+      "followup_amount_in": "132140",
+      "followup_status": "ok",
+      "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_small",
+      "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_small",
+      "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_medium",
+      "followup_amount_in": "6593048",
+      "followup_status": "ok",
+      "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_medium",
+      "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_medium",
+      "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_large",
+      "followup_amount_in": "19481094",
+      "followup_status": "ok",
+      "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_large",
+      "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_large",
+      "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_dust",
+      "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+      "status": "insufficient_output_amount"
+    },
+    {
+      "case_id": "weth_usdt_dust",
+      "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_dust",
+      "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_exhaust",
+      "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_exhaust",
+      "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_usdt_exhaust",
+      "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_meth_small",
+      "followup_amount_in": "171463454160722",
+      "followup_status": "ok",
+      "pool_id": "0x3f0047606dcad6177c13742f1854fc8c999cd2b6",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_meth_small",
+      "pool_id": "0x813dc86f31e83c0372ae523e851076df767472e1",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_meth_small",
+      "pool_id": "0x37ce36db1d4da489e4c95ead59d9018ccdb21698",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_meth_medium",
+      "followup_amount_in": "80157909607187445",
+      "followup_status": "ok",
+      "pool_id": "0x3f0047606dcad6177c13742f1854fc8c999cd2b6",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_meth_medium",
+      "pool_id": "0x813dc86f31e83c0372ae523e851076df767472e1",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_meth_medium",
+      "pool_id": "0x37ce36db1d4da489e4c95ead59d9018ccdb21698",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_meth_large",
+      "followup_amount_in": "447246878456062022",
+      "followup_status": "ok",
+      "pool_id": "0x3f0047606dcad6177c13742f1854fc8c999cd2b6",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_meth_large",
+      "pool_id": "0x813dc86f31e83c0372ae523e851076df767472e1",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_meth_large",
+      "pool_id": "0x37ce36db1d4da489e4c95ead59d9018ccdb21698",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdt_small",
+      "followup_amount_in": "145045",
+      "followup_status": "ok",
+      "pool_id": "0x3f0047606dcad6177c13742f1854fc8c999cd2b6",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdt_small",
+      "pool_id": "0x813dc86f31e83c0372ae523e851076df767472e1",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdt_small",
+      "pool_id": "0x37ce36db1d4da489e4c95ead59d9018ccdb21698",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdt_medium",
+      "followup_amount_in": "652261437",
+      "followup_status": "ok",
+      "pool_id": "0x3f0047606dcad6177c13742f1854fc8c999cd2b6",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdt_medium",
+      "pool_id": "0x813dc86f31e83c0372ae523e851076df767472e1",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdt_medium",
+      "pool_id": "0x37ce36db1d4da489e4c95ead59d9018ccdb21698",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdt_large",
+      "followup_amount_in": "6006409563",
+      "followup_status": "ok",
+      "pool_id": "0x3f0047606dcad6177c13742f1854fc8c999cd2b6",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdt_large",
+      "pool_id": "0x813dc86f31e83c0372ae523e851076df767472e1",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdt_large",
+      "pool_id": "0x37ce36db1d4da489e4c95ead59d9018ccdb21698",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdc_usdt_small",
+      "followup_amount_in": "500150",
+      "followup_status": "ok",
+      "pool_id": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_usdt_small",
+      "pool_id": "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdc_usdt_medium",
+      "followup_amount_in": "50010564",
+      "followup_status": "ok",
+      "pool_id": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_usdt_medium",
+      "pool_id": "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdc_usdt_large",
+      "followup_amount_in": "1499886670",
+      "followup_status": "ok",
+      "pool_id": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_usdt_large",
+      "pool_id": "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdc_usdt_dust",
+      "pool_id": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+      "status": "insufficient_output_amount"
+    },
+    {
+      "case_id": "usdc_usdt_dust",
+      "pool_id": "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_usdc_small",
+      "followup_amount_in": "499750",
+      "followup_status": "ok",
+      "pool_id": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_usdc_small",
+      "pool_id": "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_usdc_medium",
+      "followup_amount_in": "49975006",
+      "followup_status": "ok",
+      "pool_id": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_usdc_medium",
+      "pool_id": "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdt_usdc_large",
+      "followup_amount_in": "499722373",
+      "followup_status": "ok",
+      "pool_id": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_usdc_large",
+      "pool_id": "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c",
+      "status": "insufficient_liquidity"
+    }
+  ],
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "block_verification": "resolved by number, <= finalized head, every state read EIP-1898 pinned to the hash with requireCanonical, header re-read by number and hash after collection",
+  "catalog": {
+    "approved_extra_swap_hooks": [
+      "0x2d4bf9f668e5b7c7fe33c8f116ae190669304676"
+    ],
+    "approved_swap_hooks": [
+      "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7"
+    ],
+    "factory": {
+      "address": "0xa6630671775c4ea2743840f9a5016dcf2a104054",
+      "code_hash": "0x24760bc3bcdceb37006bed0ee363ff2f93f79242e14c19dcd135d606cad3d249"
+    },
+    "pair_implementation": {
+      "address": "0xf6863db7323aac43fe8aef0b3ef63aa6b32ddb3b",
+      "code_hash": "0x4b7e74d0e7b8738bc0a95199fdfb27a3e8bb7578d034e5ff15034f0158be508a"
+    },
+    "upstream": {
+      "license": "MIT (repo-root LICENSE at the pinned tag; per-file SPDX headers agree)",
+      "ref": "tag v2.2.0, commit 1297c3822f0605e643155c35948959c0a0d05e17 (LBFactory.sol, LBPair.sol -- see pair_implementation.verification for the required optimizer-runs=300 override)",
+      "repo": "https://github.com/lfj-gg/joe-v2"
+    }
+  },
+  "collector": "snapshot.collectors.liquidity_book",
+  "discovery": {
+    "admitted": [
+      {
+        "bin_step": 15,
+        "created_by_owner": true,
+        "ignored_for_routing": false,
+        "pool_id": "0xf6c9020c9e915808481757779edb53daceae2415",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 25,
+        "created_by_owner": true,
+        "ignored_for_routing": false,
+        "pool_id": "0x365722f12ceb2063286a268b03c654df81b7c00f",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 50,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x4ee4ecb066eccf47c0231a5d27066dc56a4f6ad2",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 100,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x616bef777161cb6219ad20599aff8c943ffea952",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 20,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x35db358ccb1e9ff11d49fc7789949b3421b98931",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 25,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0xa1c653c415db1c00dfd04ee26e624f959a0ed52f",
+        "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "bin_step": 50,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x29350f5442f1335ee5bb7f9ea9d623bdd171d679",
+        "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "bin_step": 10,
+        "created_by_owner": true,
+        "ignored_for_routing": false,
+        "pool_id": "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "bin_step": 100,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0xfcc3654088dc6b42ca181430d294a0dc44df477e",
+        "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+        "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "bin_step": 50,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x2adc49c5c0eeda219b7bb24016c0cfcca0992294",
+        "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+        "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "bin_step": 25,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0xc53883b7a5271455cb155d5d4457fd3b2ba8367b",
+        "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+        "token_y": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "bin_step": 10,
+        "created_by_owner": true,
+        "ignored_for_routing": false,
+        "pool_id": "0xf59c79b91877c2b5909e703117beab9b4b5df0d6",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "bin_step": 100,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0xdc39d7a23d52309b45be6e13c4b7948c78ce854f",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "bin_step": 25,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x96069f55d86daa102011f366628dedfa4425909a",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "bin_step": 50,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x118e6794a2f8b2368304ab7bd5c426dcec06ec80",
+        "token_x": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "bin_step": 2,
+        "created_by_owner": true,
+        "ignored_for_routing": false,
+        "pool_id": "0x3b6c029e6409f2868769871f9ed6825b15bdca15",
+        "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token_y": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "bin_step": 100,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x451368c461f9f4a70c434576b31ed5f258e765f5",
+        "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+        "token_y": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "bin_step": 10,
+        "created_by_owner": true,
+        "ignored_for_routing": false,
+        "pool_id": "0xa15c851afc33aab6e478d538a4a8c66cacc19686",
+        "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 25,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa",
+        "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 50,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b",
+        "token_x": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 10,
+        "created_by_owner": true,
+        "ignored_for_routing": false,
+        "pool_id": "0x3f0047606dcad6177c13742f1854fc8c999cd2b6",
+        "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 25,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x813dc86f31e83c0372ae523e851076df767472e1",
+        "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 100,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x37ce36db1d4da489e4c95ead59d9018ccdb21698",
+        "token_x": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 1,
+        "created_by_owner": true,
+        "ignored_for_routing": false,
+        "pool_id": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec",
+        "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "bin_step": 100,
+        "created_by_owner": false,
+        "ignored_for_routing": false,
+        "pool_id": "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c",
+        "token_x": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token_y": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      }
+    ],
+    "method": "factory.getAllLBPairs over configured token pairs (every bin step)",
+    "omitted": [
+      {
+        "bin_step": null,
+        "pool_id": null,
+        "reason": "factory.getAllLBPairs returned no pair",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "bin_step": null,
+        "pool_id": null,
+        "reason": "factory.getAllLBPairs returned no pair",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      }
+    ]
+  },
+  "pools": {
+    "0x118e6794a2f8b2368304ab7bd5c426dcec06ec80": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x03e6ef73fdc9f8bd140a5b36fc0a76fbd02469403bf9184d53986953158f709f",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "150000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "100000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xe470050f67605ab24e241fef206c8c3787f03e91efd7f6d27acc7bf69529c9ef",
+      "completeness": {
+        "bin_range": [
+          8380245,
+          8380405
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "3000000000000000000000",
+            "end_active_id": 8380256,
+            "status": "ok"
+          },
+          "y_to_x": {
+            "amount_in": "1000000000000000000",
+            "end_active_id": 8380393,
+            "status": "ok"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 161,
+        "walk": {
+          "above": {
+            "bins_walked": 96,
+            "reached_end": false
+          },
+          "below": {
+            "bins_walked": 64,
+            "reached_end": false
+          }
+        }
+      },
+      "hooks": {
+        "address": "0x187c41cc09020bf9d8d0aec22b5bd063b74c4c85",
+        "clone_args": "0x1606c79be3ebd70d8d40bac6287e23005cfbefa2000000000000000000000000000000000000000000000000000000000000002e",
+        "code_hash": "0xb485bcf3d3b72814f863a2d4b7f867dc0de0b9b93ee0ff2d179b537e702d9490",
+        "contract": "LBHooksRewarder",
+        "extra": null,
+        "extra_hooks_parameters": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+        "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+        "parameters": "0x000000000000000000000151187c41cc09020bf9d8d0aec22b5bd063b74c4c85"
+      },
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x29350f5442f1335ee5bb7f9ea9d623bdd171d679": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x689a96c84cd4fdac89395a7f8528e2e94285ece067c0aedac1d9da997443b77d",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "1000000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x2adc49c5c0eeda219b7bb24016c0cfcca0992294": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xf791a490dff253691cf1b1d984a9879dc9ebd4dbdccad4397f618cf520a24552",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "3000000000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x35db358ccb1e9ff11d49fc7789949b3421b98931": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xd25cb2ce238de2ba06afafd5929294ed6a8395e9926474876f37f97051a7f98d",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "500000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x365722f12ceb2063286a268b03c654df81b7c00f": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x797f215032cef4bcd737fd569bf06df67fb6dac1c66522b331afe7943694d507",
+      "completeness": {
+        "bin_range": [
+          0,
+          8377956
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "500000000",
+            "end_active_id": 8377950,
+            "status": "ok"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 342,
+        "walk": {
+          "above": {
+            "bins_walked": 256,
+            "reached_end": false
+          },
+          "below": {
+            "bins_walked": 85,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x37ce36db1d4da489e4c95ead59d9018ccdb21698": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x6847b10165198c7933a3e9b56563e30edf791cf22f3cf35042188f6eab4862d2",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "5000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "3000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x3b6c029e6409f2868769871f9ed6825b15bdca15": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x55fbdc0c47782861335440912b1af5b83fa83872061a1621cb3b9082c5ecd91b",
+      "completeness": {
+        "bin_range": [
+          8389067,
+          8389099
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "5000000000000000000",
+            "end_active_id": 8389080,
+            "status": "ok"
+          },
+          "y_to_x": {
+            "amount_in": "5000000000000000000",
+            "end_active_id": 8389085,
+            "status": "ok"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 33,
+        "walk": {
+          "above": {
+            "bins_walked": 16,
+            "reached_end": false
+          },
+          "below": {
+            "bins_walked": 16,
+            "reached_end": false
+          }
+        }
+      },
+      "hooks": {
+        "address": "0x06f5e7cae14d6ef1e7b3c7dd5d8539344a0627b4",
+        "clone_args": "0x3b6c029e6409f2868769871f9ed6825b15bdca15000000000000000000000000000000000000000000000000000000000000001f",
+        "code_hash": "0xdc48debf8621b851b0b2370d143d95c182ab7d147a2258edde852793829781e1",
+        "contract": "LBHooksRewarder",
+        "extra": {
+          "address": "0x87580eb54a65da7ff8614807a88e43ffc306ed9d",
+          "clone_args": "0x3b6c029e6409f2868769871f9ed6825b15bdca15000000000000000000000000000000000000000006f5e7cae14d6ef1e7b3c7dd5d8539344a0627b4",
+          "code_hash": "0xdfc85b8a5bed4db62461ab36b75edac3b62f14e77cc7d33bea4e4be6b7f17fe9",
+          "contract": "LBHooksExtraRewarder",
+          "implementation": "0x2d4bf9f668e5b7c7fe33c8f116ae190669304676",
+          "implementation_code_hash": "0xb98cf49205f9f8cff629c453c08863e145bd13d138b1fd6fda01d1947ba89326"
+        },
+        "extra_hooks_parameters": "0x00000000000000000000015187580eb54a65da7ff8614807a88e43ffc306ed9d",
+        "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+        "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+        "parameters": "0x00000000000000000000015106f5e7cae14d6ef1e7b3c7dd5d8539344a0627b4"
+      },
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x3f0047606dcad6177c13742f1854fc8c999cd2b6": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xdf5b28e3565a71d617bb6de01747b43f34c734e4657049f80be9a3400ddf2911",
+      "completeness": {
+        "bin_range": [
+          8368718,
+          8369351
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "5000000000000000000",
+            "end_active_id": 8368725,
+            "status": "ok"
+          },
+          "y_to_x": {
+            "amount_in": "3000000000",
+            "end_active_id": 8369336,
+            "status": "ok"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 609,
+        "walk": {
+          "above": {
+            "bins_walked": 384,
+            "reached_end": false
+          },
+          "below": {
+            "bins_walked": 224,
+            "reached_end": false
+          }
+        }
+      },
+      "hooks": {
+        "address": "0x1e9983876d05548fde7e6aa8250b6cd358832a81",
+        "clone_args": "0x3f0047606dcad6177c13742f1854fc8c999cd2b60000000000000000000000000000000000000000000000000000000000000023",
+        "code_hash": "0x3b086b26907777ed010a4d531388e7314c2c0a96ccdb4925b72afa616a436496",
+        "contract": "LBHooksRewarder",
+        "extra": null,
+        "extra_hooks_parameters": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+        "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+        "parameters": "0x0000000000000000000001511e9983876d05548fde7e6aa8250b6cd358832a81"
+      },
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x451368c461f9f4a70c434576b31ed5f258e765f5": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x226d8f41a09fd95ceeaef85f5bccb34a14526db2ce5c63604af351f0b547db74",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "5000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "5000000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x48c1a89af1102cad358549e9bb16ae5f96cddfec": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xe0d6fbab0dc3fb6d4edf77eb96a271a7e492c5d6b9266a1ccc8ab0d622b9ba4d",
+      "completeness": {
+        "bin_range": [
+          8388596,
+          8388628
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "3000000000",
+            "end_active_id": 8388606,
+            "status": "ok"
+          },
+          "y_to_x": {
+            "amount_in": "1000000000",
+            "end_active_id": 8388614,
+            "status": "ok"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 33,
+        "walk": {
+          "above": {
+            "bins_walked": 16,
+            "reached_end": false
+          },
+          "below": {
+            "bins_walked": 16,
+            "reached_end": false
+          }
+        }
+      },
+      "hooks": {
+        "address": "0xffa96620c99a6667db9e5bbecc7414a76d4be6f1",
+        "clone_args": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec000000000000000000000000000000000000000000000000000000000000001d",
+        "code_hash": "0x2c2a19f5969197f7cb427b50419e93eb45e8a412fc850a7608d9e9e2b79d5062",
+        "contract": "LBHooksRewarder",
+        "extra": {
+          "address": "0x057adb71bc5caae936aa223886fa0a54597488dd",
+          "clone_args": "0x48c1a89af1102cad358549e9bb16ae5f96cddfec0000000000000000000000000000000000000000ffa96620c99a6667db9e5bbecc7414a76d4be6f1",
+          "code_hash": "0xc2ff3e24980280af20d589793c7d6fc942e6fcf7938a84d3b59ab21935a66063",
+          "contract": "LBHooksExtraRewarder",
+          "implementation": "0x2d4bf9f668e5b7c7fe33c8f116ae190669304676",
+          "implementation_code_hash": "0xb98cf49205f9f8cff629c453c08863e145bd13d138b1fd6fda01d1947ba89326"
+        },
+        "extra_hooks_parameters": "0x000000000000000000000151057adb71bc5caae936aa223886fa0a54597488dd",
+        "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+        "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+        "parameters": "0x000000000000000000000151ffa96620c99a6667db9e5bbecc7414a76d4be6f1"
+      },
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x4ee4ecb066eccf47c0231a5d27066dc56a4f6ad2": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x1d61c1543837dfeea1659faeedc1037777050b655e1f1cf9f83ac55cab36d9bb",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "500000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x5793fe38bd6370b15c16ce1db5721cf5f3ffc02c": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x9b6edb04964afb1be42f21aa205d191817aec2586eb7076209a063cc6bfeec3e",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "3000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "1000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x616bef777161cb6219ad20599aff8c943ffea952": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x2d1347d55ddbb041efb49acfc8f833ece281794f7b79dfdef4260be2ee4b6ff1",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "500000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x813dc86f31e83c0372ae523e851076df767472e1": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xc66da44e9cde18a56b78f9f118b8560133cfec2e62540645c40721ff21a2eab5",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "5000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "3000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0x96069f55d86daa102011f366628dedfa4425909a": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xc810a38048e9e6da4990a9f69179678ddf0639347153c5052bda6e682bb365f7",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "150000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "100000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 149,
+        "walk": {
+          "above": {
+            "bins_walked": 148,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0xa15c851afc33aab6e478d538a4a8c66cacc19686": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x613ebd72ed089ee10da33c00a5cd1e2edddec21df0ccd1f988411492a158e56b",
+      "completeness": {
+        "bin_range": [
+          0,
+          8369300
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "50000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "5000000000",
+            "end_active_id": 8369296,
+            "status": "ok"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 522,
+        "walk": {
+          "above": {
+            "bins_walked": 452,
+            "reached_end": false
+          },
+          "below": {
+            "bins_walked": 69,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": {
+        "address": "0x58415478f1573db336900a292bf0b3d1b99ed199",
+        "clone_args": "0xa15c851afc33aab6e478d538a4a8c66cacc19686000000000000000000000000000000000000000000000000000000000000001e",
+        "code_hash": "0x3aa5938ad4716743ed9a8a6da881e11362f3c18ad88802ad878824487ff53233",
+        "contract": "LBHooksRewarder",
+        "extra": {
+          "address": "0x5dc375525d766ffc2c22a4aebcc20bdbb811aba1",
+          "clone_args": "0xa15c851afc33aab6e478d538a4a8c66cacc19686000000000000000000000000000000000000000058415478f1573db336900a292bf0b3d1b99ed199",
+          "code_hash": "0x6ce204f227f436026ed4b987a8787a50c06c0e16fd6ac45b27920d25af806563",
+          "contract": "LBHooksExtraRewarder",
+          "implementation": "0x2d4bf9f668e5b7c7fe33c8f116ae190669304676",
+          "implementation_code_hash": "0xb98cf49205f9f8cff629c453c08863e145bd13d138b1fd6fda01d1947ba89326"
+        },
+        "extra_hooks_parameters": "0x0000000000000000000001515dc375525d766ffc2c22a4aebcc20bdbb811aba1",
+        "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+        "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+        "parameters": "0x00000000000000000000015158415478f1573db336900a292bf0b3d1b99ed199"
+      },
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0xa1c653c415db1c00dfd04ee26e624f959a0ed52f": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x6bc5e212a0736844a00e432408e466ef48fe9622eb791cc45feb1f3c195baad7",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "1000000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0xaa1e6d0fc12f012f8a778fd8c6e1f09f33fc5efa": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x1aef4be206922020c6ff49b35ca716563921cbdddb02b6aa31cac78f3fbd8d29",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "50000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "5000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0xc53883b7a5271455cb155d5d4457fd3b2ba8367b": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xf89b253a2dcc7dab0bc98b34c363160a4913a377f8de39ee9ac33468c533ce18",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "3000000000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0xdc39d7a23d52309b45be6e13c4b7948c78ce854f": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xa7b36c5ce9d96a85258238098ca166294749e60db0cdeb1ac2f5f50e60e42608",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "150000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "100000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0xf59c79b91877c2b5909e703117beab9b4b5df0d6": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x8a487507ef19d4c6b3bc7fcf27c692deee45d07c47d5c22b31951c39afa148d8",
+      "completeness": {
+        "bin_range": [
+          8380185,
+          8380328
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "150000000000000000000",
+            "end_active_id": 8380200,
+            "status": "ok"
+          },
+          "y_to_x": {
+            "amount_in": "100000000000000000",
+            "end_active_id": 8380321,
+            "status": "ok"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 129,
+        "walk": {
+          "above": {
+            "bins_walked": 96,
+            "reached_end": false
+          },
+          "below": {
+            "bins_walked": 32,
+            "reached_end": false
+          }
+        }
+      },
+      "hooks": {
+        "address": "0x37eaf2433e2e6eea1fe9af4d0bf5f150d1cd1d82",
+        "clone_args": "0xf59c79b91877c2b5909e703117beab9b4b5df0d60000000000000000000000000000000000000000000000000000000000000022",
+        "code_hash": "0xe81d340e489fe006973311527ad4938a0a328eaf90bcc92b43f75481a7ec0869",
+        "contract": "LBHooksRewarder",
+        "extra": {
+          "address": "0x290551676ce18430b78272bcfed6c2faa79fb3de",
+          "clone_args": "0xf59c79b91877c2b5909e703117beab9b4b5df0d6000000000000000000000000000000000000000037eaf2433e2e6eea1fe9af4d0bf5f150d1cd1d82",
+          "code_hash": "0xdfb2d7410ed479606268a9e2db96d02f1e3e99a531aecdb13fca10814a48530c",
+          "contract": "LBHooksExtraRewarder",
+          "implementation": "0x2d4bf9f668e5b7c7fe33c8f116ae190669304676",
+          "implementation_code_hash": "0xb98cf49205f9f8cff629c453c08863e145bd13d138b1fd6fda01d1947ba89326"
+        },
+        "extra_hooks_parameters": "0x000000000000000000000151290551676ce18430b78272bcfed6c2faa79fb3de",
+        "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+        "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+        "parameters": "0x00000000000000000000015137eaf2433e2e6eea1fe9af4d0bf5f150d1cd1d82"
+      },
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0xf6c9020c9e915808481757779edb53daceae2415": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xb5d12ab2b36748a7996c827c10c70490ea32d41c9bb54d693e79da60299c0d0e",
+      "completeness": {
+        "bin_range": [
+          8369833,
+          8370061
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000000000000000000",
+            "end_active_id": 8369844,
+            "status": "ok"
+          },
+          "y_to_x": {
+            "amount_in": "500000000",
+            "end_active_id": 8370057,
+            "status": "ok"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 229,
+        "walk": {
+          "above": {
+            "bins_walked": 164,
+            "reached_end": false
+          },
+          "below": {
+            "bins_walked": 64,
+            "reached_end": false
+          }
+        }
+      },
+      "hooks": {
+        "address": "0x08a62eb0ef6dbe762774abf5e18f49671559285b",
+        "clone_args": "0xf6c9020c9e915808481757779edb53daceae24150000000000000000000000000000000000000000000000000000000000000021",
+        "code_hash": "0x0de282213a015abf2b1b685b7d4f543a1e3fd70742eb3d776ada9de8b72cb9bc",
+        "contract": "LBHooksRewarder",
+        "extra": {
+          "address": "0xd332d0d721cedd74b71294a12fea0f29b861490a",
+          "clone_args": "0xf6c9020c9e915808481757779edb53daceae2415000000000000000000000000000000000000000008a62eb0ef6dbe762774abf5e18f49671559285b",
+          "code_hash": "0xe10644ad5e2350baf4cccb9aa934cfd8dcb62f3b9e4676bced194277078ac0a0",
+          "contract": "LBHooksExtraRewarder",
+          "implementation": "0x2d4bf9f668e5b7c7fe33c8f116ae190669304676",
+          "implementation_code_hash": "0xb98cf49205f9f8cff629c453c08863e145bd13d138b1fd6fda01d1947ba89326"
+        },
+        "extra_hooks_parameters": "0x000000000000000000000151d332d0d721cedd74b71294a12fea0f29b861490a",
+        "implementation": "0xdc0e38cbd08fa532847baecbf26c8b09ed9008a7",
+        "implementation_code_hash": "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369",
+        "parameters": "0x00000000000000000000015108a62eb0ef6dbe762774abf5e18f49671559285b"
+      },
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0xf76f7bdbc6214e1f78c22f35ba74446fd7e58d1b": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0xed30577c3835ecb711dfbfbaef8690f74d241de0139e06aefbf233c846dcef65",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "50000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "5000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    },
+    "0xfcc3654088dc6b42ca181430d294a0dc44df477e": {
+      "balances_equal_reserves_plus_protocol_fees": true,
+      "code_hash": "0x0be7ade5091c487de6c39711c3fb0ebdda515bfca19770944b84e561684147e9",
+      "completeness": {
+        "bin_range": [
+          0,
+          16777215
+        ],
+        "envelope": {
+          "x_to_y": {
+            "amount_in": "1000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "y_to_x": {
+            "amount_in": "3000000000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "limits": {
+          "margin_bins": 4,
+          "max_bins_per_direction": 2000,
+          "walk_chunk_bins": 16
+        },
+        "tree_bins": 0,
+        "walk": {
+          "above": {
+            "bins_walked": 0,
+            "reached_end": true
+          },
+          "below": {
+            "bins_walked": 0,
+            "reached_end": true
+          }
+        }
+      },
+      "hooks": null,
+      "identity": "runtime code == ImmutableClone(pair_implementation, tokenX ++ tokenY ++ uint16 binStep); address == CREATE2(factory, keccak256(abi.encode(tokenA, tokenB, binStep))); getLBPairInformation round trip; getTokenX/getTokenY/getBinStep/getFactory/implementation agree"
+    }
+  },
+  "prepare_config": {
+    "path": "config/prepare/moe_lb.yaml",
+    "sha256": "e0a0ecae35a9a893e7bfa32baf50aff5cccd12a64d3761de9d7b803af14644c5"
+  },
+  "rpc_endpoint": "https://rpc.mantle.xyz",
+  "schema": "lb-collection/1",
+  "source_capability": {
+    "protocol_family": "liquidity_book_v2",
+    "sor_protocol": null
+  },
+  "source_key": "moe_lb_v2_2",
+  "tokens": {
+    "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": {
+      "decimals": 6,
+      "label": "USDC"
+    },
+    "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": {
+      "decimals": 6,
+      "label": "USDT"
+    },
+    "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": {
+      "decimals": 18,
+      "label": "WMNT"
+    },
+    "0xcda86a272531e8640cd7f1a92c01839911b90bb0": {
+      "decimals": 18,
+      "label": "METH"
+    },
+    "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": {
+      "decimals": 18,
+      "label": "WETH"
+    }
+  }
+}

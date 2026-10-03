@@ -1,0 +1,1810 @@
+{
+ "fixed": {
+  "all_baseline_equal": true,
+  "all_cl_calls_equal": true,
+  "all_control_equal": true,
+  "all_semantic_baseline_equal": true,
+  "environment": {
+   "cpu_count": 10,
+   "git_dirty": false,
+   "git_revision": "0963f4da1c2305ad7b71bc559d4112fd657765bb",
+   "loadavg_start": [
+    6.76416015625,
+    31.19140625,
+    34.87451171875
+   ],
+   "python": "3.13.13 (main, May 10 2026, 19:20:37) [Clang 22.1.3 ]"
+  },
+  "experiment": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/latency-012/whi-1503/20260926T090434484129Z-d5061563",
+  "experiment_source": "bbda6e2f47872fbd4dcb4cca88da816240c4a1cd",
+  "kind": "L05 work diagnostic (instrumented; ref / ref_l05 / l04 / l04_l05, cold per solve)",
+  "order": "fixed",
+  "records": 50,
+  "rows": [
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/sentinel",
+    "case": "quote-b5feb74821d5",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 68000,
+     "l04_l05": 0,
+     "ref": 68000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 3,
+     "cycle_checks_executed": 1020,
+     "cycle_decisions_reused": 66980,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 340,
+     "score_invalidations": 404,
+     "scores_recomputed": 739,
+     "scores_reused": 67261
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 68000,
+    "quotes_executed": 1918,
+    "quotes_memoized": {
+     "l04": 58613,
+     "l04_l05": 1601,
+     "ref": 58613,
+     "ref_l05": 1601
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-09bc4e-201eba-large-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 68000,
+     "l04_l05": 0,
+     "ref": 68000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1700,
+     "cycle_decisions_reused": 66300,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 679,
+     "score_invalidations": 833,
+     "scores_recomputed": 1511,
+     "scores_reused": 66489
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 68000,
+    "quotes_executed": 2958,
+    "quotes_memoized": {
+     "l04": 60012,
+     "l04_l05": 1596,
+     "ref": 60012,
+     "ref_l05": 1596
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-09bc4e-201eba-large-3",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 68000,
+     "l04_l05": 0,
+     "ref": 68000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1700,
+     "cycle_decisions_reused": 66300,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 679,
+     "score_invalidations": 778,
+     "scores_recomputed": 1456,
+     "scores_reused": 66544
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 68000,
+    "quotes_executed": 2978,
+    "quotes_memoized": {
+     "l04": 60048,
+     "l04_l05": 1574,
+     "ref": 60048,
+     "ref_l05": 1574
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-09bc4e-201eba-low-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 68000,
+     "l04_l05": 0,
+     "ref": 68000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 6,
+     "cycle_checks_executed": 1360,
+     "cycle_decisions_reused": 66640,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 665,
+     "score_invalidations": 4026,
+     "scores_recomputed": 4672,
+     "scores_reused": 63328
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 68000,
+    "quotes_executed": 6658,
+    "quotes_memoized": {
+     "l04": 57095,
+     "l04_l05": 2627,
+     "ref": 57095,
+     "ref_l05": 2627
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-09bc4e-201eba-low-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 68000,
+     "l04_l05": 0,
+     "ref": 68000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1700,
+     "cycle_decisions_reused": 66300,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 663,
+     "score_invalidations": 2256,
+     "scores_recomputed": 2782,
+     "scores_reused": 65218
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 68000,
+    "quotes_executed": 4552,
+    "quotes_memoized": {
+     "l04": 58819,
+     "l04_l05": 2050,
+     "ref": 58819,
+     "ref_l05": 2050
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-1bdd88-78c1b0-low-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 3600,
+     "l04_l05": 0,
+     "ref": 3600,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 36,
+     "cycle_decisions_reused": 3564,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 18,
+     "score_invalidations": 200,
+     "scores_recomputed": 217,
+     "scores_reused": 3383
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 3600,
+    "quotes_executed": 245,
+    "quotes_memoized": {
+     "l04": 675,
+     "l04_l05": 78,
+     "ref": 675,
+     "ref_l05": 78
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-1bdd88-78c1b0-low-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 3600,
+     "l04_l05": 0,
+     "ref": 3600,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 36,
+     "cycle_decisions_reused": 3564,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 18,
+     "score_invalidations": 200,
+     "scores_recomputed": 217,
+     "scores_reused": 3383
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 3600,
+    "quotes_executed": 245,
+    "quotes_memoized": {
+     "l04": 675,
+     "l04_l05": 78,
+     "ref": 675,
+     "ref_l05": 78
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-779ded-78c1b0-large-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 35200,
+     "l04_l05": 0,
+     "ref": 35200,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 3,
+     "cycle_checks_executed": 528,
+     "cycle_decisions_reused": 34672,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 351,
+     "score_invalidations": 246,
+     "scores_recomputed": 596,
+     "scores_reused": 34604
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 35200,
+    "quotes_executed": 1207,
+    "quotes_memoized": {
+     "l04": 22969,
+     "l04_l05": 845,
+     "ref": 22969,
+     "ref_l05": 845
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-779ded-78c1b0-large-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 35200,
+     "l04_l05": 0,
+     "ref": 35200,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 3,
+     "cycle_checks_executed": 528,
+     "cycle_decisions_reused": 34672,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 176,
+     "score_invalidations": 260,
+     "scores_recomputed": 435,
+     "scores_reused": 34765
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 35200,
+    "quotes_executed": 1041,
+    "quotes_memoized": {
+     "l04": 23096,
+     "l04_l05": 876,
+     "ref": 23096,
+     "ref_l05": 876
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-779ded-78c1b0-low-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 35200,
+     "l04_l05": 0,
+     "ref": 35200,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 4,
+     "cycle_checks_executed": 528,
+     "cycle_decisions_reused": 34672,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 336,
+     "score_invalidations": 3180,
+     "scores_recomputed": 3500,
+     "scores_reused": 31700
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 35200,
+    "quotes_executed": 1891,
+    "quotes_memoized": {
+     "l04": 22875,
+     "l04_l05": 4041,
+     "ref": 22875,
+     "ref_l05": 4041
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-779ded-78c1b0-low-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 35200,
+     "l04_l05": 0,
+     "ref": 35200,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 3,
+     "cycle_checks_executed": 528,
+     "cycle_decisions_reused": 34672,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 351,
+     "score_invalidations": 921,
+     "scores_recomputed": 1271,
+     "scores_reused": 33929
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 35200,
+    "quotes_executed": 1531,
+    "quotes_memoized": {
+     "l04": 23081,
+     "l04_l05": 1722,
+     "ref": 23081,
+     "ref_l05": 1722
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-779ded-c96de2-large-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 7400,
+     "l04_l05": 0,
+     "ref": 7400,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 74,
+     "cycle_decisions_reused": 7326,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 37,
+     "score_invalidations": 200,
+     "scores_recomputed": 236,
+     "scores_reused": 7164
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 7400,
+    "quotes_executed": 550,
+    "quotes_memoized": {
+     "l04": 8531,
+     "l04_l05": 173,
+     "ref": 8531,
+     "ref_l05": 173
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-779ded-c96de2-large-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 7400,
+     "l04_l05": 0,
+     "ref": 7400,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 74,
+     "cycle_decisions_reused": 7326,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 37,
+     "score_invalidations": 200,
+     "scores_recomputed": 236,
+     "scores_reused": 7164
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 7400,
+    "quotes_executed": 550,
+    "quotes_memoized": {
+     "l04": 8531,
+     "l04_l05": 173,
+     "ref": 8531,
+     "ref_l05": 173
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-78c1b0-deadde-large-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 77000,
+     "l04_l05": 0,
+     "ref": 77000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1925,
+     "cycle_decisions_reused": 75075,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 769,
+     "score_invalidations": 3153,
+     "scores_recomputed": 3872,
+     "scores_reused": 73128
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 77000,
+    "quotes_executed": 4406,
+    "quotes_memoized": {
+     "l04": 66738,
+     "l04_l05": 4514,
+     "ref": 66738,
+     "ref_l05": 4514
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-78c1b0-deadde-large-4",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 77000,
+     "l04_l05": 0,
+     "ref": 77000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1925,
+     "cycle_decisions_reused": 75075,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 769,
+     "score_invalidations": 2845,
+     "scores_recomputed": 3612,
+     "scores_reused": 73388
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 77000,
+    "quotes_executed": 4415,
+    "quotes_memoized": {
+     "l04": 66856,
+     "l04_l05": 4298,
+     "ref": 66856,
+     "ref_l05": 4298
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-cda86a-deadde-low-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 71600,
+     "l04_l05": 0,
+     "ref": 71600,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 716,
+     "cycle_decisions_reused": 70884,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 358,
+     "score_invalidations": 200,
+     "scores_recomputed": 557,
+     "scores_reused": 71043
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 71600,
+    "quotes_executed": 1745,
+    "quotes_memoized": {
+     "l04": 53895,
+     "l04_l05": 1558,
+     "ref": 53895,
+     "ref_l05": 1558
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "emp-cda86a-deadde-low-3",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 71600,
+     "l04_l05": 0,
+     "ref": 71600,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 716,
+     "cycle_decisions_reused": 70884,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 358,
+     "score_invalidations": 200,
+     "scores_recomputed": 557,
+     "scores_reused": 71043
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 71600,
+    "quotes_executed": 1745,
+    "quotes_memoized": {
+     "l04": 53895,
+     "l04_l05": 1558,
+     "ref": 53895,
+     "ref_l05": 1558
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "nod-09bc4e-c96de2-medium-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 25000,
+     "l04_l05": 0,
+     "ref": 25000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 2,
+     "cycle_checks_executed": 250,
+     "cycle_decisions_reused": 24750,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 241,
+     "score_invalidations": 1800,
+     "scores_recomputed": 2032,
+     "scores_reused": 22968
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 25000,
+    "quotes_executed": 2554,
+    "quotes_memoized": {
+     "l04": 25447,
+     "l04_l05": 1093,
+     "ref": 25447,
+     "ref_l05": 1093
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "nod-09bc4e-c96de2-medium-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 25000,
+     "l04_l05": 0,
+     "ref": 25000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 2,
+     "cycle_checks_executed": 250,
+     "cycle_decisions_reused": 24750,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 245,
+     "score_invalidations": 1000,
+     "scores_recomputed": 1240,
+     "scores_reused": 23760
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 25000,
+    "quotes_executed": 1790,
+    "quotes_memoized": {
+     "l04": 26066,
+     "l04_l05": 1118,
+     "ref": 26066,
+     "ref_l05": 1118
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "bnd-78c1b0-201eba-round_at",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 91202,
+     "l04_l05": 0,
+     "ref": 91202,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 0,
+     "cycle_checks_executed": 469,
+     "cycle_decisions_reused": 90733,
+     "score_amounts_evicted": 193,
+     "score_entries_peak": 938,
+     "score_invalidations": 0,
+     "scores_recomputed": 91202,
+     "scores_reused": 0
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 90986,
+    "quotes_executed": 50000,
+    "quotes_memoized": {
+     "l04": 9548,
+     "l04_l05": 9548,
+     "ref": 9548,
+     "ref_l05": 9548
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "bnd-201eba-779ded-round_at",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 528,
+     "l04_l05": 0,
+     "ref": 528,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 2,
+     "cycle_checks_executed": 352,
+     "cycle_decisions_reused": 176,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 352,
+     "score_invalidations": 33,
+     "scores_recomputed": 363,
+     "scores_reused": 165
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 528,
+    "quotes_executed": 369,
+    "quotes_memoized": {
+     "l04": 972,
+     "l04_l05": 918,
+     "ref": 972,
+     "ref_l05": 918
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "bnd-09bc4e-201eba-dust",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 340,
+     "l04_l05": 0,
+     "ref": 340,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 2,
+     "cycle_checks_executed": 340,
+     "cycle_decisions_reused": 0,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 340,
+     "score_invalidations": 26,
+     "scores_recomputed": 340,
+     "scores_reused": 0
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 340,
+    "quotes_executed": 79,
+    "quotes_memoized": {
+     "l04": 338,
+     "l04_l05": 338,
+     "ref": 338,
+     "ref_l05": 338
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "bnd-09bc4e-201eba-liq_at",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 68000,
+     "l04_l05": 0,
+     "ref": 68000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 6,
+     "cycle_checks_executed": 1360,
+     "cycle_decisions_reused": 66640,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 665,
+     "score_invalidations": 4458,
+     "scores_recomputed": 5082,
+     "scores_reused": 62918
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 68000,
+    "quotes_executed": 7095,
+    "quotes_memoized": {
+     "l04": 56691,
+     "l04_l05": 2694,
+     "ref": 56691,
+     "ref_l05": 2694
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "bnd-1bdd88-78c1b0-dust",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 18,
+     "l04_l05": 0,
+     "ref": 18,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 0,
+     "cycle_checks_executed": 18,
+     "cycle_decisions_reused": 0,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 18,
+     "score_invalidations": 0,
+     "scores_recomputed": 18,
+     "scores_reused": 0
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 18,
+    "quotes_executed": 4,
+    "quotes_memoized": {
+     "l04": 7,
+     "l04_l05": 7,
+     "ref": 7,
+     "ref_l05": 7
+    },
+    "semantic_baseline_equal": true,
+    "status": "no_route"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "full_source/matrix",
+    "case": "bnd-1bdd88-78c1b0-round_below",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 198,
+     "l04_l05": 0,
+     "ref": 198,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 36,
+     "cycle_decisions_reused": 162,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 36,
+     "score_invalidations": 11,
+     "scores_recomputed": 45,
+     "scores_reused": 153
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 198,
+    "quotes_executed": 36,
+    "quotes_memoized": {
+     "l04": 101,
+     "l04_l05": 74,
+     "ref": 101,
+     "ref_l05": 74
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/sentinel",
+    "case": "quote-9295f3683423",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 42000,
+     "l04_l05": 0,
+     "ref": 42000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 3,
+     "cycle_checks_executed": 630,
+     "cycle_decisions_reused": 41370,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 210,
+     "score_invalidations": 225,
+     "scores_recomputed": 433,
+     "scores_reused": 41567
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 42000,
+    "quotes_executed": 1568,
+    "quotes_memoized": {
+     "l04": 41067,
+     "l04_l05": 1140,
+     "ref": 41067,
+     "ref_l05": 1140
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-09bc4e-201eba-large-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 42000,
+     "l04_l05": 0,
+     "ref": 42000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1050,
+     "cycle_decisions_reused": 40950,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 419,
+     "score_invalidations": 706,
+     "scores_recomputed": 1124,
+     "scores_reused": 40876
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 42000,
+    "quotes_executed": 2827,
+    "quotes_memoized": {
+     "l04": 42147,
+     "l04_l05": 1432,
+     "ref": 42147,
+     "ref_l05": 1432
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-09bc4e-201eba-large-3",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 42000,
+     "l04_l05": 0,
+     "ref": 42000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1050,
+     "cycle_decisions_reused": 40950,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 419,
+     "score_invalidations": 662,
+     "scores_recomputed": 1080,
+     "scores_reused": 40920
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 42000,
+    "quotes_executed": 2815,
+    "quotes_memoized": {
+     "l04": 42182,
+     "l04_l05": 1418,
+     "ref": 42182,
+     "ref_l05": 1418
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-09bc4e-201eba-low-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 42000,
+     "l04_l05": 0,
+     "ref": 42000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 6,
+     "cycle_checks_executed": 840,
+     "cycle_decisions_reused": 41160,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 408,
+     "score_invalidations": 3223,
+     "scores_recomputed": 3615,
+     "scores_reused": 38385
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 42000,
+    "quotes_executed": 5383,
+    "quotes_memoized": {
+     "l04": 39582,
+     "l04_l05": 2173,
+     "ref": 39582,
+     "ref_l05": 2173
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-09bc4e-201eba-low-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 42000,
+     "l04_l05": 0,
+     "ref": 42000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1050,
+     "cycle_decisions_reused": 40950,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 406,
+     "score_invalidations": 1831,
+     "scores_recomputed": 2139,
+     "scores_reused": 39861
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 42000,
+    "quotes_executed": 3747,
+    "quotes_memoized": {
+     "l04": 40922,
+     "l04_l05": 1606,
+     "ref": 40922,
+     "ref_l05": 1606
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-1bdd88-78c1b0-low-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 200,
+     "l04_l05": 0,
+     "ref": 200,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 2,
+     "cycle_decisions_reused": 198,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 1,
+     "score_invalidations": 200,
+     "scores_recomputed": 200,
+     "scores_reused": 0
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 200,
+    "quotes_executed": 200,
+    "quotes_memoized": {
+     "l04": 4,
+     "l04_l05": 4,
+     "ref": 4,
+     "ref_l05": 4
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-1bdd88-78c1b0-low-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 200,
+     "l04_l05": 0,
+     "ref": 200,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 2,
+     "cycle_decisions_reused": 198,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 1,
+     "score_invalidations": 200,
+     "scores_recomputed": 200,
+     "scores_reused": 0
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 200,
+    "quotes_executed": 200,
+    "quotes_memoized": {
+     "l04": 4,
+     "l04_l05": 4,
+     "ref": 4,
+     "ref_l05": 4
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-779ded-78c1b0-large-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 8400,
+     "l04_l05": 0,
+     "ref": 8400,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 3,
+     "cycle_checks_executed": 126,
+     "cycle_decisions_reused": 8274,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 83,
+     "score_invalidations": 228,
+     "scores_recomputed": 310,
+     "scores_reused": 8090
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 8400,
+    "quotes_executed": 988,
+    "quotes_memoized": {
+     "l04": 10052,
+     "l04_l05": 975,
+     "ref": 10052,
+     "ref_l05": 975
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-779ded-78c1b0-large-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 8400,
+     "l04_l05": 0,
+     "ref": 8400,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 3,
+     "cycle_checks_executed": 126,
+     "cycle_decisions_reused": 8274,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 42,
+     "score_invalidations": 236,
+     "scores_recomputed": 277,
+     "scores_reused": 8123
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 8400,
+    "quotes_executed": 938,
+    "quotes_memoized": {
+     "l04": 10086,
+     "l04_l05": 972,
+     "ref": 10086,
+     "ref_l05": 972
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-779ded-78c1b0-low-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 8400,
+     "l04_l05": 0,
+     "ref": 8400,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 4,
+     "cycle_checks_executed": 126,
+     "cycle_decisions_reused": 8274,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 74,
+     "score_invalidations": 1984,
+     "scores_recomputed": 2048,
+     "scores_reused": 6352
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 8400,
+    "quotes_executed": 1370,
+    "quotes_memoized": {
+     "l04": 9710,
+     "l04_l05": 2566,
+     "ref": 9710,
+     "ref_l05": 2566
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-779ded-78c1b0-low-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 8400,
+     "l04_l05": 0,
+     "ref": 8400,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 3,
+     "cycle_checks_executed": 126,
+     "cycle_decisions_reused": 8274,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 83,
+     "score_invalidations": 633,
+     "scores_recomputed": 715,
+     "scores_reused": 7685
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 8400,
+    "quotes_executed": 1141,
+    "quotes_memoized": {
+     "l04": 9941,
+     "l04_l05": 1314,
+     "ref": 9941,
+     "ref_l05": 1314
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-779ded-c96de2-large-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 1600,
+     "l04_l05": 0,
+     "ref": 1600,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 16,
+     "cycle_decisions_reused": 1584,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 8,
+     "score_invalidations": 200,
+     "scores_recomputed": 207,
+     "scores_reused": 1393
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 1600,
+    "quotes_executed": 331,
+    "quotes_memoized": {
+     "l04": 2243,
+     "l04_l05": 54,
+     "ref": 2243,
+     "ref_l05": 54
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-779ded-c96de2-large-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 1600,
+     "l04_l05": 0,
+     "ref": 1600,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 16,
+     "cycle_decisions_reused": 1584,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 8,
+     "score_invalidations": 200,
+     "scores_recomputed": 207,
+     "scores_reused": 1393
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 1600,
+    "quotes_executed": 331,
+    "quotes_memoized": {
+     "l04": 2243,
+     "l04_l05": 54,
+     "ref": 2243,
+     "ref_l05": 54
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-78c1b0-deadde-large-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 43600,
+     "l04_l05": 0,
+     "ref": 43600,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1090,
+     "cycle_decisions_reused": 42510,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 435,
+     "score_invalidations": 1592,
+     "scores_recomputed": 2009,
+     "scores_reused": 41591
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 43600,
+    "quotes_executed": 3352,
+    "quotes_memoized": {
+     "l04": 46444,
+     "l04_l05": 2787,
+     "ref": 46444,
+     "ref_l05": 2787
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-78c1b0-deadde-large-4",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 43600,
+     "l04_l05": 0,
+     "ref": 43600,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 7,
+     "cycle_checks_executed": 1090,
+     "cycle_decisions_reused": 42510,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 435,
+     "score_invalidations": 1594,
+     "scores_recomputed": 2027,
+     "scores_reused": 41573
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 43600,
+    "quotes_executed": 3406,
+    "quotes_memoized": {
+     "l04": 46457,
+     "l04_l05": 2828,
+     "ref": 46457,
+     "ref_l05": 2828
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-cda86a-deadde-low-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 40000,
+     "l04_l05": 0,
+     "ref": 40000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 400,
+     "cycle_decisions_reused": 39600,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 200,
+     "score_invalidations": 200,
+     "scores_recomputed": 399,
+     "scores_reused": 39601
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 40000,
+    "quotes_executed": 1289,
+    "quotes_memoized": {
+     "l04": 34012,
+     "l04_l05": 978,
+     "ref": 34012,
+     "ref_l05": 978
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "emp-cda86a-deadde-low-3",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 40000,
+     "l04_l05": 0,
+     "ref": 40000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 1,
+     "cycle_checks_executed": 400,
+     "cycle_decisions_reused": 39600,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 200,
+     "score_invalidations": 200,
+     "scores_recomputed": 399,
+     "scores_reused": 39601
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 40000,
+    "quotes_executed": 1289,
+    "quotes_memoized": {
+     "l04": 34012,
+     "l04_l05": 978,
+     "ref": 34012,
+     "ref_l05": 978
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "nod-09bc4e-c96de2-medium-1",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 9200,
+     "l04_l05": 0,
+     "ref": 9200,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 2,
+     "cycle_checks_executed": 92,
+     "cycle_decisions_reused": 9108,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 84,
+     "score_invalidations": 1600,
+     "scores_recomputed": 1676,
+     "scores_reused": 7524
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 9200,
+    "quotes_executed": 2008,
+    "quotes_memoized": {
+     "l04": 12421,
+     "l04_l05": 1333,
+     "ref": 12421,
+     "ref_l05": 1333
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "nod-09bc4e-c96de2-medium-2",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 9200,
+     "l04_l05": 0,
+     "ref": 9200,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 2,
+     "cycle_checks_executed": 92,
+     "cycle_decisions_reused": 9108,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 90,
+     "score_invalidations": 400,
+     "scores_recomputed": 488,
+     "scores_reused": 8712
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 9200,
+    "quotes_executed": 1398,
+    "quotes_memoized": {
+     "l04": 13030,
+     "l04_l05": 358,
+     "ref": 13030,
+     "ref_l05": 358
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "bnd-78c1b0-201eba-round_at",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 51600,
+     "l04_l05": 0,
+     "ref": 51600,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 3,
+     "cycle_checks_executed": 516,
+     "cycle_decisions_reused": 51084,
+     "score_amounts_evicted": 198,
+     "score_entries_peak": 516,
+     "score_invalidations": 40,
+     "scores_recomputed": 51600,
+     "scores_reused": 0
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 51600,
+    "quotes_executed": 32303,
+    "quotes_memoized": {
+     "l04": 7353,
+     "l04_l05": 7353,
+     "ref": 7353,
+     "ref_l05": 7353
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "bnd-201eba-779ded-round_at",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 144,
+     "l04_l05": 0,
+     "ref": 144,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 2,
+     "cycle_checks_executed": 96,
+     "cycle_decisions_reused": 48,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 96,
+     "score_invalidations": 33,
+     "scores_recomputed": 107,
+     "scores_reused": 37
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 144,
+    "quotes_executed": 144,
+    "quotes_memoized": {
+     "l04": 304,
+     "l04_l05": 285,
+     "ref": 304,
+     "ref_l05": 285
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "bnd-09bc4e-201eba-dust",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 210,
+     "l04_l05": 0,
+     "ref": 210,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 2,
+     "cycle_checks_executed": 210,
+     "cycle_decisions_reused": 0,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 210,
+     "score_invalidations": 19,
+     "scores_recomputed": 210,
+     "scores_reused": 0
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 210,
+    "quotes_executed": 61,
+    "quotes_memoized": {
+     "l04": 233,
+     "l04_l05": 233,
+     "ref": 233,
+     "ref_l05": 233
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "bnd-09bc4e-201eba-liq_at",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 42000,
+     "l04_l05": 0,
+     "ref": 42000,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 6,
+     "cycle_checks_executed": 840,
+     "cycle_decisions_reused": 41160,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 408,
+     "score_invalidations": 3562,
+     "scores_recomputed": 3939,
+     "scores_reused": 38061
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 42000,
+    "quotes_executed": 5733,
+    "quotes_memoized": {
+     "l04": 39261,
+     "l04_l05": 2241,
+     "ref": 39261,
+     "ref_l05": 2241
+    },
+    "semantic_baseline_equal": true,
+    "status": "ok"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "bnd-1bdd88-78c1b0-dust",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 1,
+     "l04_l05": 0,
+     "ref": 1,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 0,
+     "cycle_checks_executed": 1,
+     "cycle_decisions_reused": 0,
+     "score_amounts_evicted": 0,
+     "score_entries_peak": 1,
+     "score_invalidations": 0,
+     "scores_recomputed": 1,
+     "scores_reused": 0
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 1,
+    "quotes_executed": 1,
+    "quotes_memoized": {
+     "l04": 2,
+     "l04_l05": 2,
+     "ref": 2,
+     "ref_l05": 2
+    },
+    "semantic_baseline_equal": true,
+    "status": "no_route"
+   },
+   {
+    "baseline_equal": true,
+    "bundle": "sor_compatible/matrix",
+    "case": "bnd-1bdd88-78c1b0-round_below",
+    "cl_calls_equal": true,
+    "control_equal": true,
+    "creates_cycle_calls": {
+     "l04": 11,
+     "l04_l05": 0,
+     "ref": 11,
+     "ref_l05": 0
+    },
+    "graph_reuse_l04_l05": {
+     "closure_edges_added": 0,
+     "cycle_checks_executed": 1,
+     "cycle_decisions_reused": 10,
+     "score_amounts_evicted": 9,
+     "score_entries_peak": 2,
+     "score_invalidations": 0,
+     "scores_recomputed": 11,
+     "scores_reused": 0
+    },
+    "graph_reuse_ref_l05_equal": true,
+    "paths_scored": 11,
+    "quotes_executed": 11,
+    "quotes_memoized": {
+     "l04": 2,
+     "l04_l05": 2,
+     "ref": 2,
+     "ref_l05": 2
+    },
+    "semantic_baseline_equal": true,
+    "status": "no_route"
+   }
+  ],
+  "settings": {
+   "bin_capacity": 4096,
+   "max_checkpoints": 262144,
+   "max_keys": 4096,
+   "tick_capacity": 16384
+  },
+  "totals": {
+   "cpu_seconds_instrumented_l04": 14.70145,
+   "cpu_seconds_instrumented_l04_l05": 12.70161,
+   "cpu_seconds_instrumented_ref": 33.083583,
+   "cpu_seconds_instrumented_ref_l05": 31.112502,
+   "creates_cycle_calls_l04": 1537052,
+   "creates_cycle_calls_l04_l05": 0,
+   "creates_cycle_calls_ref": 1537052,
+   "creates_cycle_calls_ref_l05": 0,
+   "l04_l05_closure_edges_added": 158,
+   "l04_l05_cycle_checks_executed": 28157,
+   "l04_l05_cycle_decisions_reused": 1508895,
+   "l04_l05_score_entries_peak_max": 938,
+   "l04_l05_score_invalidations": 47198,
+   "l04_l05_scores_recomputed": 202209,
+   "l04_l05_scores_reused": 1334843,
+   "paths_rejected_cycle_logical": 0,
+   "paths_scored_logical": 1536836,
+   "quotes_executed": 173396,
+   "quotes_memoized_l04": 1249288,
+   "quotes_memoized_l04_l05": 78242,
+   "quotes_memoized_ref": 1249288,
+   "quotes_memoized_ref_l05": 78242
+  }
+ },
+ "kind": "L05 compact work summary (both case orders; rows trimmed to equality + counters)",
+ "reverse": {
+  "all_baseline_equal": true,
+  "all_cl_calls_equal": true,
+  "all_control_equal": true,
+  "all_semantic_baseline_equal": true,
+  "environment": {
+   "cpu_count": 10,
+   "git_dirty": false,
+   "git_revision": "0963f4da1c2305ad7b71bc559d4112fd657765bb",
+   "loadavg_start": [
+    4.5693359375,
+    23.84716796875,
+    31.638671875
+   ],
+   "python": "3.13.13 (main, May 10 2026, 19:20:37) [Clang 22.1.3 ]"
+  },
+  "experiment": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer/data/latency-012/whi-1503/20260926T090434484129Z-d5061563",
+  "experiment_source": "bbda6e2f47872fbd4dcb4cca88da816240c4a1cd",
+  "kind": "L05 work diagnostic (instrumented; ref / ref_l05 / l04 / l04_l05, cold per solve)",
+  "order": "reverse",
+  "records": 50,
+  "rows_counters_equal_to_fixed": true,
+  "settings": {
+   "bin_capacity": 4096,
+   "max_checkpoints": 262144,
+   "max_keys": 4096,
+   "tick_capacity": 16384
+  },
+  "totals": {
+   "cpu_seconds_instrumented_l04": 14.745178,
+   "cpu_seconds_instrumented_l04_l05": 12.530203,
+   "cpu_seconds_instrumented_ref": 33.191597,
+   "cpu_seconds_instrumented_ref_l05": 31.252414,
+   "creates_cycle_calls_l04": 1537052,
+   "creates_cycle_calls_l04_l05": 0,
+   "creates_cycle_calls_ref": 1537052,
+   "creates_cycle_calls_ref_l05": 0,
+   "l04_l05_closure_edges_added": 158,
+   "l04_l05_cycle_checks_executed": 28157,
+   "l04_l05_cycle_decisions_reused": 1508895,
+   "l04_l05_score_entries_peak_max": 938,
+   "l04_l05_score_invalidations": 47198,
+   "l04_l05_scores_recomputed": 202209,
+   "l04_l05_scores_reused": 1334843,
+   "paths_rejected_cycle_logical": 0,
+   "paths_scored_logical": 1536836,
+   "quotes_executed": 173396,
+   "quotes_memoized_l04": 1249288,
+   "quotes_memoized_l04_l05": 78242,
+   "quotes_memoized_ref": 1249288,
+   "quotes_memoized_ref_l05": 78242
+  }
+ }
+}

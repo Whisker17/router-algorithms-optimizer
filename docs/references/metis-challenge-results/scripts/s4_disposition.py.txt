@@ -1,0 +1,159 @@
+"""WHI-1449 S4 tractability disposition (memo §10.6) from the original measured records
+(write-once output). Arms: A0 (prior S2/S3 run), M4 (label_hops 4, pruning on), M4-off
+(label_hops 4, pruning off = exhaustive per-chunk enumeration). Nothing is tuned; a
+last_valid_candidate is never counted as ok; missing values stay null."""
+import hashlib, json, statistics, sys
+from pathlib import Path
+from benchmark.results import load_case_records, load_manifest
+from snapshot.bundle import load_bundle, sha256_file
+
+bundle = load_bundle(sys.argv[1])
+dirs = {"A0": Path(sys.argv[2]), "M4": Path(sys.argv[3]), "M4-off": Path(sys.argv[4])}
+out = Path(sys.argv[5])
+if out.exists():
+    raise SystemExit(f"refusing to overwrite {out}")
+expected = {"A0": "incremental_graph", "M4": "metis_inspired", "M4-off": "metis_inspired"}
+ids = [c.case_id for c in bundle.cases]
+runs = {}
+for arm, d in dirs.items():
+    m = load_manifest(d)  # strict: complete + cases checksum
+    recs = load_case_records(d)
+    got = [r["case_id"] for r in recs]
+    problems = []
+    if m.bundle_hash != bundle.bundle_hash: problems.append("bundle")
+    if m.algorithms != (expected[arm],): problems.append("algorithm")
+    if m.git_revision != "446674e80e66ad93834786e1493f223dc38de3eb" or m.git_dirty is not False: problems.append("revision")
+    if sorted(got) != sorted(ids) or len(set(got)) != len(got): problems.append("coverage")
+    if any(r["algorithm"] != expected[arm] for r in recs): problems.append("record algorithm")
+    if problems:
+        raise SystemExit(f"{arm} {d}: {problems}")
+    graph = m.resolved_profile.get("graph", {})
+    runs[arm] = {"manifest": m, "records": {r["case_id"]: r for r in recs}, "graph": graph,
+                 "identity": {"run_id": m.run_id, "run_dir": str(d), "manifest_sha256": sha256_file(d / "manifest.json"),
+                              "cases_sha256": m.cases_sha256, "status_counts": m.status_counts, "graph": graph,
+                              "search": m.resolved_profile.get("search"), "budget": m.resolved_profile.get("budget"),
+                              "created_at": m.created_at, "finished_at": m.finished_at,
+                              "total_seconds": m.timing.get("total_seconds")}}
+assert runs["M4"]["graph"] == {"chunks": 50, "label_hops": 4, "label_pruning": True}
+assert runs["M4-off"]["graph"] == {"chunks": 50, "label_hops": 4, "label_pruning": False}
+assert runs["A0"]["graph"] == {"chunks": 50}
+
+def gross(r):
+    ev = r.get("evaluation") if r.get("status") == "ok" else None
+    return int(ev["gross_output"]) if isinstance(ev, dict) and ev.get("gross_output") is not None else None
+
+def trace(r):
+    ev = r.get("evaluation") if r.get("status") == "ok" else None
+    if not isinstance(ev, dict):
+        return None
+    return [[t["pool_id"], t["token_in"], t["token_out"], str(t["amount_in"]), str(t["amount_out"])] for t in ev.get("trace", [])]
+
+def view(arm, r):
+    s = r.get("search") or {}
+    hops = s.get("chunk_path_hops")
+    sec = (r.get("measurement") or {}).get("solve_seconds") or []
+    return {"status": r.get("status"), "limit_hit": r.get("limit_hit"), "truncated_by": s.get("truncated_by"),
+            "error": r.get("error"), "last_valid_candidate": r.get("last_valid_candidate") is not None,
+            "gross": gross(r), "chosen_source": s.get("chosen_source"), "topology": s.get("topology"),
+            "incremental_status": s.get("incremental_status"),
+            "incremental_evaluated_gross": s.get("incremental_evaluated_gross"),
+            "path_split_score": s.get("path_split_score"),
+            "chunk_path_hops": hops,
+            "four_hop_chunks": (int(hops.get("4", 0)) if isinstance(hops, dict) else None),
+            "quotes_executed": s.get("quotes_executed"), "quotes_counted": (r.get("quotes") or {}).get("counted"),
+            "label_relaxations": s.get("label_relaxations"), "paths_scored": s.get("paths_scored"),
+            "paths_enumerated": s.get("paths_enumerated"), "candidates_considered": r.get("candidates_considered"),
+            "candidates_truncated": r.get("candidates_truncated"),
+            "solve_seconds": sec[0] if sec else None}
+
+rows = []
+for cid in ids:
+    row = {"case_id": cid}
+    for arm, run in runs.items():
+        row[arm] = view(arm, run["records"][cid])
+    t4, toff = trace(runs["M4"]["records"][cid]), trace(runs["M4-off"]["records"][cid])
+    g0, g4, goff = row["A0"]["gross"], row["M4"]["gross"], row["M4-off"]["gross"]
+    row["m4_vs_m4off_same_gross"] = None if g4 is None or goff is None else g4 == goff
+    row["m4_vs_m4off_same_plan"] = None if t4 is None or toff is None else t4 == toff
+    row["m4_minus_a0_gross"] = None if g4 is None or g0 is None else g4 - g0
+    row["m4off_minus_a0_gross"] = None if goff is None or g0 is None else goff - g0
+    row["m4_minus_m4off_gross"] = None if g4 is None or goff is None else g4 - goff
+    row["m4_minus_a0_bps"] = None if row["m4_minus_a0_gross"] is None or not g0 else 1e4 * row["m4_minus_a0_gross"] / g0
+    row["m4_final_plan_uses_4hop_chunk"] = (row["M4"]["chosen_source"] == "metis_inspired" and (row["M4"]["four_hop_chunks"] or 0) > 0) if g4 is not None else None
+    row["m4off_final_plan_uses_4hop_chunk"] = (row["M4-off"]["chosen_source"] == "metis_inspired" and (row["M4-off"]["four_hop_chunks"] or 0) > 0) if goff is not None else None
+    rows.append(row)
+
+def counts(pred):
+    return sum(1 for r in rows if pred(r))
+
+def q(xs):
+    xs = sorted(x for x in xs if x is not None)
+    if not xs:
+        return None
+    pick = lambda p: xs[min(len(xs) - 1, int(p * (len(xs) - 1)))]
+    return {"n": len(xs), "min": xs[0], "p25": pick(.25), "median": statistics.median(xs), "p75": pick(.75), "p95": pick(.95), "max": xs[-1]}
+
+per_arm = {}
+for arm in runs:
+    per_arm[arm] = {
+        "statuses": dict(sorted({s: counts(lambda r, s=s, a=arm: r[a]["status"] == s) for s in {r[arm]["status"] for r in rows}}.items())),
+        "timeouts": counts(lambda r, a=arm: r[a]["status"] == "timeout"),
+        "limit_hit": {l: counts(lambda r, l=l, a=arm: r[a]["limit_hit"] == l) for l in {r[arm]["limit_hit"] for r in rows} if l},
+        "declared_truncation": {t: counts(lambda r, t=t, a=arm: r[a]["truncated_by"] == t) for t in {r[arm]["truncated_by"] for r in rows} if t},
+        "last_valid_candidates": counts(lambda r, a=arm: r[a]["last_valid_candidate"]),
+        "quotes_executed": q(r[arm]["quotes_executed"] for r in rows),
+        "solve_seconds_secondary": q(r[arm]["solve_seconds"] for r in rows),
+        "work_counter": q(r[arm]["label_relaxations"] if arm == "M4" else r[arm]["paths_scored"] for r in rows),
+        "work_unit": "label_relaxations" if arm == "M4" else "paths_scored",
+        "work_unknown": [r["case_id"] for r in rows if (r[arm]["label_relaxations"] if arm == "M4" else r[arm]["paths_scored"]) is None],
+        "cases_with_4hop_chunks": None if arm == "A0" else counts(lambda r, a=arm: (r[a]["four_hop_chunks"] or 0) > 0),
+        "cases_final_plan_uses_4hop_chunk": None if arm == "A0" else counts(lambda r, a=arm: r[f"{'m4' if a == 'M4' else 'm4off'}_final_plan_uses_4hop_chunk"] is True),
+        "chosen_source": dict(sorted({s: counts(lambda r, s=s, a=arm: r[a]["chosen_source"] == s) for s in {str(r[arm]["chosen_source"]) for r in rows}}.items())),
+    }
+both_ok = [r for r in rows if r["M4"]["status"] == "ok" and r["M4-off"]["status"] == "ok"]
+m4_a0_ok = [r for r in rows if r["M4"]["status"] == "ok" and r["A0"]["status"] == "ok"]
+all_off_ok = per_arm["M4-off"]["statuses"] == {"ok": 96} and not per_arm["M4-off"]["declared_truncation"] and not per_arm["M4-off"]["limit_hit"]
+same_gross_all = len(both_ok) == 96 and all(r["m4_vs_m4off_same_gross"] for r in both_ok)
+doc = {
+    "gate": "S4 tractability (memo §10.6), tuning split, report-only (no values tuned)",
+    "bundle": {"bundle_id": bundle.bundle_id, "bundle_hash": bundle.bundle_hash, "cases": len(ids)},
+    "runs": {arm: run["identity"] for arm, run in runs.items()},
+    "per_arm": per_arm,
+    "m4_vs_m4off": {
+        "paired_both_ok": len(both_ok),
+        "same_gross": sum(1 for r in both_ok if r["m4_vs_m4off_same_gross"]),
+        "different_gross": [ {"case_id": r["case_id"], "m4_minus_m4off": r["m4_minus_m4off_gross"]} for r in both_ok if not r["m4_vs_m4off_same_gross"]],
+        "same_plan": sum(1 for r in both_ok if r["m4_vs_m4off_same_plan"]),
+        "m4_higher": sum(1 for r in both_ok if (r["m4_minus_m4off_gross"] or 0) > 0),
+        "m4off_higher": sum(1 for r in both_ok if (r["m4_minus_m4off_gross"] or 0) < 0),
+    },
+    "m4off_finished_all_96_within_caps": all_off_ok,
+    "m4off_same_gross_as_m4_on_all_96": same_gross_all,
+    "registered_rule_4hop_gain_not_attributable_to_label_mechanism": all_off_ok and same_gross_all,
+    "m4_more_timeouts_than_a0": per_arm["M4"]["timeouts"] > per_arm["A0"]["timeouts"],
+    "m4_vs_a0_tuning_descriptive_not_the_verdict": {
+        "paired_both_ok": len(m4_a0_ok),
+        "m4_higher": sum(1 for r in m4_a0_ok if r["m4_minus_a0_gross"] > 0),
+        "equal": sum(1 for r in m4_a0_ok if r["m4_minus_a0_gross"] == 0),
+        "m4_lower": sum(1 for r in m4_a0_ok if r["m4_minus_a0_gross"] < 0),
+        "bps": q(r["m4_minus_a0_bps"] for r in m4_a0_ok),
+        "m4_wins_whose_final_plan_uses_4hop_chunk": sum(1 for r in m4_a0_ok if r["m4_minus_a0_gross"] > 0 and r["m4_final_plan_uses_4hop_chunk"]),
+    },
+    "m4off_vs_a0_tuning_descriptive": {
+        "paired_both_ok": sum(1 for r in rows if r["M4-off"]["status"] == "ok" and r["A0"]["status"] == "ok"),
+        "m4off_higher": sum(1 for r in rows if (r["m4off_minus_a0_gross"] or 0) > 0),
+        "m4off_lower": sum(1 for r in rows if (r["m4off_minus_a0_gross"] or 0) < 0),
+    },
+    "units": {"label_relaxations": "M4 quote-backed relaxations summed over chunks", "paths_scored": "A0 / M4-off paths scored summed over chunks",
+              "gross": "exact integer target-token output of the runner's independent evaluation (ok records only)",
+              "solve_seconds_secondary": "single-shot wall seconds; host-load-sensitive, no speed claim"},
+    "per_case": rows,
+}
+out.write_text(json.dumps(doc, indent=1) + "\n")
+out.chmod(0o444)
+summary = {k: doc[k] for k in ("m4_vs_m4off", "m4off_finished_all_96_within_caps", "m4off_same_gross_as_m4_on_all_96",
+                               "registered_rule_4hop_gain_not_attributable_to_label_mechanism", "m4_more_timeouts_than_a0",
+                               "m4_vs_a0_tuning_descriptive_not_the_verdict", "m4off_vs_a0_tuning_descriptive")}
+summary["m4_vs_m4off"] = {k: v for k, v in summary["m4_vs_m4off"].items() if k != "different_gross"} | {"n_different": len(doc["m4_vs_m4off"]["different_gross"])}
+print(json.dumps({"per_arm": {a: {k: v for k, v in p.items() if k in ("statuses", "timeouts", "limit_hit", "declared_truncation", "last_valid_candidates", "cases_with_4hop_chunks", "cases_final_plan_uses_4hop_chunk", "chosen_source")} for a, p in per_arm.items()}, **summary}, indent=1))
+print(out, hashlib.sha256(out.read_bytes()).hexdigest())

@@ -1,0 +1,21 @@
+{
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "bundle_id": "routing-mantle-mixed-101057678",
+  "checksums": {
+    "cases.jsonl": "70426a80434f0456b9c99658c4fb3caa31200b349bab1d4eb17b1438b0e36b50",
+    "pools.json": "913190f91c8ce1a8af21dc97587e95505fa882277ece0c89ab107b4f918b5b29",
+    "provenance.json": "c00de6f745b148847a20c5ff7ec6f92120b1ae450d8753e70382a321acc813ea"
+  },
+  "files": {
+    "cases": "cases.jsonl",
+    "pools": "pools.json",
+    "provenance": "provenance.json"
+  },
+  "kind": "real",
+  "schema_version": 1
+}

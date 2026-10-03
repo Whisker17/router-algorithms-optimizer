@@ -1,0 +1,43 @@
+# Corpus smoke profile for `path_split` vs `direct`, `single_path` and `direct_split`
+# (WHI-1440): one isolated pass over the frozen five-source corpus
+# (data/corpus/mantle-5src-101082044) to check that the multi-hop pool-disjoint
+# allocation runs end-to-end on real mixed-family state, next to the three simpler
+# baselines under the same budget. See config/README.md and docs/DESIGN.md §2.12.
+#
+# gross-only: no cost model is calibrated yet (docs/DESIGN.md §2.9), so nothing here
+# is a net-output claim.
+#
+# Every search/budget/measurement/worker value below is SMOKE-SCALE and UNVALIDATED.
+# `max_hops: 2` (not the DESIGN §2.12 trial value 3) keeps the whole four-algorithm pass
+# well under 30 minutes without any truncation: at 3 hops a 12-case sample measured
+# ~6.7 s mean / 16.5 s max per path_split case (up to ~52k executed quotes, dominated
+# by large concentrated-liquidity swaps crossing many ticks), i.e. roughly an hour for
+# the corpus; at 2 hops the same sample took ~0.5 s mean. They are not universal
+# defaults; the calibrated daily/full profiles (docs/ISSUE_PLAN.md I21)
+# declare their own values measured on the reference machine (DESIGN §2.12).
+schema_version: 2
+algorithms:
+  - direct
+  - single_path
+  - direct_split
+  - path_split
+objective:
+  mode: gross_only
+search:
+  max_hops: 2               # smoke-scale (DESIGN §2.12 trial value is 3; see above)
+  max_splits: 4             # DESIGN §2.12 initial trial value (unvalidated)
+  percent_step: 5           # DESIGN §2.12 initial trial value (unvalidated)
+budget:
+  time_limit_seconds: 120   # hard per-attempt wall clock
+  max_quotes: 100000        # hard per-attempt quote cap; every algorithm stops before it
+  max_candidates: null      # explicitly no candidate cap declared
+measurement:
+  warmup: 0                 # smoke: no discarded attempts
+  repeats: 1                # smoke: one measured attempt per case
+  seed: 1440
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

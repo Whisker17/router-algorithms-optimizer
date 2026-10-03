@@ -1,227 +1,172 @@
 ---
 name: orchestrate
-description: "Drive a set of tracker issues to merged-and-closed through implementer subagents, verifying every claim independently."
+description: "Drive one tracker Release from issues to release-ready: schedule by real dependencies, verify and merge serially, then run the bounded release review loop."
 disable-model-invocation: true
 ---
 
-You are the **orchestrator**. You do not implement. You set up gates an implementer cannot
-fake, verify every claim yourself, intervene at the points where a wrong result would look
-right, and carry what each issue learns into the next one.
+You are the **ORCHESTRATOR** (`docs/agents/runtime.md`). You schedule, verify and merge;
+you do not implement features, and you never declare a review passed on the reviewer's
+behalf. Implementers follow `/implement`; reviews follow `/code-review`; neither is
+restated here. `docs/GIT_WORKFLOW.md` and `docs/agents/issue-tracker.md` are authoritative
+wherever this skill summarises them.
 
-Pairs with `/implement`, which is the *implementer's* contract, and `/code-review`, which
-defines how review is dispatched — do not restate either here. You spawn implementers; they
-follow `/implement`, which in turn drives `/code-review`.
+Nothing counts as evidence unless it is in Git, a PR, the tracker or a check's output: not
+chat, not a running process, not an agent saying "done".
 
-**The least valuable thing you can do is manage progress.** An implementer that says "still
-running" needs a sentinel, not a reply. Spend your attention on what follows, not on
-progress narration.
+## 1. Preflight
 
-## Before the first issue: three gates
+Input is an explicit Linear project **and** Release. Never guess from a similar title or a
+milestone.
 
-**G1 — Prove the reviewer works, with a real dispatch.** `scripts/agent-dispatch.sh --probe`
-only checks that a binary resolves; `config/agent-roles.conf` documents a configuration where
-probe said `ok` and every real call returned `503 auth_unavailable`. So:
+0. If this session is not running `ORCHESTRATOR_MODEL`, start one that is and hand off.
+1. Read the whole Release (`docs/agents/issue-tracker.md` § Reading a release — every page).
+2. For each issue, check its version signals and resolve the Git base
+   (`docs/GIT_WORKFLOW.md` § Resolving the base branch). A missing version branch is a
+   blocker to report, never something to create.
+3. Check for external blockers, dependency cycles, unmeetable acceptance criteria and
+   missing `## Execution` data. A cycle or a version-signal mismatch blocks those issues;
+   fix the issue set, do not pick an order anyway.
+4. Mark issues that hit high-risk paths, and pairs whose expected scopes share a module,
+   schema, public interface or generated file.
+5. Check GitHub, Linear and the project's real verification commands. Make one real
+   `DISPATCH-OK` call per role you will use (`docs/agents/runtime.md` § Preflight) — once
+   per release, again only after a config change or an auth/call error.
+6. Create or reuse the `Release X.Y.Z — orchestration` document. Record the planned issue
+   set, the integration branch, the contract version (`v0.2`) and the fixed baseline
+   **B**: the verified commit this version starts from. When taking over a release in
+   progress, establish B from the record — never from today's HEAD, which would hide work
+   already merged. If you cannot establish it, recover that evidence first. Issues already
+   running under an older contract finish or pause with a handoff before the switch.
 
+A canceled blocker is not a satisfied one: an issue that needed its output needs an
+explicit substitute or a corrected relation. An unfinished external blocker blocks only
+the issues that depend on it.
+
+## 2. Schedule and integrate
+
+- An issue may start only when every real dependency is satisfied. If it builds on a
+  predecessor's code, that PR must already be merged.
+- Shared module, schema, public interface or generated file ⇒ **serial**, even with no
+  `blocks` edge. A clean Git merge is not proof of independence.
+- Independent issues run in parallel: one `IMPLEMENTER` dispatch, one worktree and one PR
+  per issue, up to the runtime's existing concurrency limit. If capacity is unknown, run
+  serially.
+- Dispatch with `scripts/agent-dispatch.sh IMPLEMENTER <prompt> --effort <medium|high>`
+  (or a native sub-agent honouring the same model and effort). Effort comes from the
+  issue's `Complexity`. You may raise it to `high` on evidence — record why on the issue —
+  never lower it. The prompt is [`implementer-prompt.md`](implementer-prompt.md), filled.
+- Tracker: `In Progress` when you dispatch, `In Review` as soon as you see the PR, `Done`
+  after merge and cleanup. Waiting for a human or failed verification stays `In Review`
+  with the reason. On resume, reconcile against real PR states before doing anything.
+- If a scope conflict appears mid-flight, pause the conflicting task and re-sequence. Do
+  not widen an issue, and do not let two agents produce the same result.
+
+### Verify, then merge (serially)
+
+At every completion claim, check it yourself:
+
+```bash
+git fetch origin --prune
+gh pr view <N> --repo <owner/repo> --json number,state,baseRefName,headRefName,headRefOid,mergeable,body
+git diff --stat origin/<base>...<head-sha>     # scope vs the issue's expected scope
+git log --oneline <branch-point>..origin/<base> # what landed on the base meanwhile
 ```
-printf 'Reply with exactly: DISPATCH-OK\n' > /tmp/p.txt
-scripts/agent-dispatch.sh REVIEWER /tmp/p.txt     # must print DISPATCH-OK, exit 0
-```
 
-If this fails, **no issue in the set can self-merge** (`docs/agents/runtime.md` § Degraded
-mode). Say so to the user before starting — it changes the whole plan, not one step. Run this
-same real one-line dispatch again before each issue that needs REVIEWER/ESCALATOR, not just
-once at the start of the set — a role that worked for issue 1 can fail mid-set (auth expiry,
-a config edit). A failed real dispatch mid-set routes that issue to § Degraded mode and forces
-a re-plan of the remaining set, exactly as if it had failed at G1. Roles and models come from
-`config/agent-roles.conf`, not from a name stated in this skill or its launch prompt — a model
-name written into a skill is the drift `docs/agents/runtime.md` warns against.
+- Base, head and commits match the issue; the diff stays inside the expected scope; any
+  missing artifact or doc section counts as an unmet criterion.
+- The required project checks and the relevant issue checks
+  (`docs/GIT_WORKFLOW.md` § 2 Implement) are green, and the evidence belongs to the
+  **current** head SHA. For ordinary version and bootstrap issues, do not ask for the
+  full suite per issue; it runs at the candidate. Governance and hotfix PRs keep their own
+  full-suite gate. If the base moved in a way that conflicts textually or semantically, the
+  implementer updates the branch and reruns the affected checks.
+- MERGEABLE/CLEAN proves no textual conflict, nothing more.
 
-**G2 — Resolve each issue's base, and refuse rather than guess.** Per
-`docs/GIT_WORKFLOW.md` § Resolving the base branch: the title prefix `[X.Y.Z]` and the
-linked release entity must **agree**; if either is missing while the other exists, refuse.
-Check the **bootstrap** clause before expecting a `release/v*` branch — with no production
-tag (`git tag` *and* `git ls-remote --tags origin` both empty) the version-scoped row
-resolves to `dev`, which is a resolved value, not a fallback. Never create a release branch
-as a side effect. Governance issues (carve-out files only) carry no version and target `dev`.
-This is a compressed summary, not the rule itself — `docs/GIT_WORKFLOW.md` is authoritative
-if the two ever disagree; re-read it, don't rely on this paragraph alone.
+Then merge per `docs/GIT_WORKFLOW.md` § Merge authorization, **one PR at a time from the
+primary clone**. Do the post-merge cleanup and fan-out. Tracker → `Done`. Human-gated PRs
+wait. Rerun a check only if its evidence is missing, the HEAD changed, or you have a
+concrete doubt.
 
-**G3 — Order the set.** Enumerate the issues, build the real dependency graph, and default
-to **serial**. Two issues are serial if either holds:
-- they write the same files (a shared new module is the common case), or
-- one's output becomes the other's *committed evidence* (a report, a number, a label).
+Feed forward before the next issue starts. Put anything a later issue depends on (a
+measured value, an invalidated design, a trap that cost time) into that issue as a marked
+amendment that cites committed evidence. Put a trap in the next prompt directly, and in
+`docs/TRAPS.md` if it will outlive the release.
 
-The second is the one people miss. Parallelism that ships a known-wrong artifact into
-the repo costs more than the wall-clock it saved. If the graph has a cycle, the issue set
-itself is mis-specified — surface that to the user and get it fixed rather than picking an
-order anyway.
+## 3. Release review
 
-## The loop, per issue
+Starts when every planned issue is integrated, external dependencies are met, and the
+project's **full** acceptance (including any existing full E2E) passes on the integration
+branch. Freeze that commit as candidate **H**. No new feature merges into the candidate
+branch during review.
 
-1. Flip the tracker to `In Progress` **before** spawning. You own this transition; by
-   convention on this project the implementer owns `In Review` and `Done`. That specific
-   ownership split is this skill's own convention, not something
-   `docs/agents/issue-tracker.md` assigns — what that doc actually requires is that the flip
-   happen as the literal next action at each git milestone, because tracker state and git
-   history are independently-updatable systems that can drift (`docs/agents/issue-tracker.md`
-   § Decisions #2).
-2. Spawn one implementer subagent using [`implementer-prompt.md`](implementer-prompt.md) in
-   this directory. Fill every placeholder — especially the trap list, which is the
-   highest-leverage part.
-3. On each notification: **verify state yourself**, then choose exactly one of — intervene,
-   set a sentinel and wait, or resume. Never all three.
-4. On a claimed completion: run every check in § Verify, never accept below. A self-report
-   is not evidence.
-5. Feed forward, then next issue.
+Dispatch a **fresh** `REVIEWER` with effort `high` via `/code-review` release mode. Give it
+B, H, `git diff B...H`, every issue's acceptance criteria, the spec, the check artifacts,
+and all earlier findings with their fixes. First confirm that `B..H` contains the claimed
+work: an empty or partial diff where new work is claimed is a scope error, not a pass.
 
-Everything the next issue depends on — a measured number, an invalidated design, a new trap —
-lives in the tracker (an amendment) or in this registry, never only in your own context. A
-fresh orchestrator with no memory of this session must be able to pick up the remaining set
-from those two places alone.
+| Stage | What happens |
+| --- | --- |
+| Review 1 | Review H1. No blocking finding → ready. Otherwise → fix batch 1 |
+| Fix batch 1 | Fix issues (version fixes in the **same Release**; governance fixes via `dev`, below), implemented and integrated → verified H2 |
+| Review 2 | Review H2: the original findings and any regressions. Blocking → fix batch 2 |
+| Fix batch 2 | Same routing → verified H3 |
+| Review 3 | Review H3. Passes → ready. Still blocking → **blocked**, hand to a human |
 
-## Verify, never accept
+- **Budget:** at most 3 complete reviews and 2 automatic fix batches. Only a completed
+  review of a candidate snapshot counts. An auth failure or empty output is neither a
+  pass nor a review: record it and do not retry without end. After review 3 there is no
+  fourth round and no unreviewed fix batch. Its open blocking findings still get fix issues
+  created or updated.
+- **Findings:** remove duplicates and check each is in scope. Do not close a finding just
+  because the implementer disagrees. A real disagreement goes back to the reviewer, then to
+  a human. Suggestions do not block and do not become tasks automatically. Out-of-scope
+  ones go in `docs/DEFERRED_ISSUES.md` with the reason. Never relabel a blocking finding
+  as a suggestion.
+- **Fix issues** follow the normal lane rules (`docs/GIT_WORKFLOW.md` § Resolving the base
+  branch). Never create a patch Release for a review round.
+  - **Version fix** (touches anything outside the carve-out): stays in the **original
+    Release** with its `[X.Y.Z]` prefix, and targets the integration branch.
+  - **Governance fix** (touches only carve-out files, e.g. `AGENTS.md` or a skill): no
+    prefix, no Release, targets `dev`. Record it in the orchestration document as an
+    external governance blocker of this release. A version fix that depends on it gets a
+    native `blocked-by`. It needs its one independent pre-merge review, then fan-out into
+    the integration branch. That moves the candidate, which is then re-verified and
+    re-reviewed without resetting the round count.
+  - A fix that spans both lanes is split exactly as the lane rules require.
 
-Run these yourself at every completion claim. An implementer's report can be honest and
-still wrong.
+  One fix issue per independent root cause (findings sharing a root cause may share one),
+  built from the standard issue template with complexity. The body carries
+  `Review round`, the finding ids, the candidate SHA and the review evidence. Look up the
+  existing finding → issue mapping in the orchestration document before creating one;
+  retries and resumes must never duplicate. Fixes go implement → PR → handoff → verify →
+  merge like any issue. The original issues stay `Done`.
+- After each fix batch, run the full acceptance again on the new candidate.
+- **Pass** = no unresolved blocking finding and acceptance valid on **that** SHA.
+- **Moved HEAD:** if a required fan-out or other authorized change moves the candidate,
+  earlier results apply only to the old SHA. The new candidate is verified and reviewed
+  again, and the round count does not reset. Once the budget is spent, a human takes over.
+- **Reviewer unavailable:** the release is blocked. It never advances.
 
-```
-git fetch origin --prune                         # origin/<base> is stale without this
-gh pr view <N> --repo <owner/repo> --json number,state,baseRefName,mergeCommit,body
-git rev-parse <base> origin/<base>               # must be equal, AFTER the fetch above
-git show --stat <merge-sha>                      # squash lanes only (dev, release/v*) --
-                                                  # the only lanes an issue self-merges into --
-                                                  # so the merge commit's own diff against its
-                                                  # one parent IS the entire PR; check it
-                                                  # against the issue's own scope list
-git worktree list; git branch --list '*<issue>*' # cleanup actually happened
-```
-plus the tracker state, fetched — not inferred from the report.
+Release ready = the evidence is bound to H. Merging the integration branch into `dev` is a
+human gate (`docs/GIT_WORKFLOW.md`). If that merge brings a new conflict resolution or code
+change, verify the merged result and review what changed. Then follow the normal release
+cut, `main` human gate, tag and publish flow.
 
-Check the diff scope against what the issue *said* it would touch, not against your memory
-of it. And read what did **not** appear: a missing committed artifact or an absent doc
-section is an unmet criterion that no report will volunteer.
-
-`MERGEABLE`/`CLEAN` from `gh pr view` proves there is no textual git conflict — it says
-nothing about a **semantic** collision with whatever else landed on the base since this
-branch was cut. Diff the base's own history since branch point and check it against this
-issue's scope, not just the merge state.
-
-The **rung report** lives in the PR body (`body` from the `gh pr view` above),
-not in the implementer's message. It must match
-`.claude/skills/ponytail/SKILL.md` § Completion criterion.
-Missing = unmet criterion. Cross-check against the merge, not just presence:
-every new module (`git show --stat <merge-sha>`) and every added line in the
-deps manifest (`git show <merge-sha> -- pyproject.toml package.json`) must
-appear as a row. A new module with no row, a new dependency claimed at rung 5
-that the manifest does not show, or a rung claim the merge contradicts, is an
-unmet criterion. An explicit "no new module/dep/abstraction, touched: …" claim
-is checked the same way — if the merge added one, the claim is false.
-
-The shrink-pass deletions in that report are a self-report with no post-squash
-artifact to check. Read them for signal; do not treat them as evidence, and do
-not gate on them.
-
-Re-run the implementer's "no hits" greps against the merge's **parent**, never
-the merge itself: `git grep -n '<term>' <merge-sha>^ -- <paths>`. The merge
-tree already contains the new code and will poison a pre-write search;
-`<merge-sha>^` is the base as it stood before this PR. A hit there falsifies a
-rung-2/3/4 "nothing to reuse" claim. (If the hit landed on the base while the
-PR was open, that is still a reusable thing that existed at merge time — raise
-it.)
+Record every round in the orchestration document: H, reviewer model and effort, outcome,
+and the finding → issue map.
 
 ## When to intervene
 
-Interrupt for **epistemic risk**, not for slow progress. The cases that have actually
-mattered:
+Step in for **epistemic risk**, not slow progress:
 
-- **A number that looks too good.** Compare it to the nearest already-known number. A large
-  jump from a small change in inputs is a red flag, not a win.
-- **"Tolerating" a failure so a run can finish.** Tolerance is not diagnosis. Ask which it
-  is: the mechanism is broken, or the check is miscalibrated. Averaging over the cases that
-  did not fail is selection bias, and it produces plausible wrong numbers.
-- **An unverified run environment.** Liveness is not correctness. `ps` showing high CPU tells
-  you nothing about whether the binary is the intended build or the cwd is right.
-- **A gate whose evidence could be vacuous.** A review of an empty diff returns "no
-  findings," which is indistinguishable from a clean pass. Ask what the reviewer actually saw.
-- **A pre-registration whose ordering could be wrong.** A rule recorded after the measurement
-  is not a rule. This cannot be fixed retroactively — check it while the run is still going.
-- **An about-to-be-patched finding.** Suppressing a panic or clamping an output to make a run
-  complete silently changes what is being measured. Say so before it lands.
-- **A fix declared expensive or out of reach.** That is a claim, not a fact — verify it before
-  it closes off a measurement.
+- a number that looks too good next to the nearest known one;
+- a failure being "tolerated" so a run can finish: diagnose it, do not average over it;
+- liveness offered as correctness (a process is running ≠ the right build, the right cwd);
+- a gate that could pass vacuously (empty diff, empty reviewer output);
+- a finding about to be suppressed or clamped so a run completes;
+- a fix declared too expensive without evidence.
 
-Do **not** intervene when the implementer is waiting on a process you have verified alive
-(set a sentinel), or when it yielded with an accurate statement of remaining work (resume,
-don't lecture).
-
-**Conflicting-looking criteria are not automatically a problem.** An issue can have a
-pre-registered rule that says proceed and an acceptance criterion that reads as unmet, both
-legitimately true at once. An unmet criterion that is disclosed and reasoned through is a
-legitimate outcome; one that is papered over is not. Your job is to tell which one you are
-looking at, not to force every criterion to read "met."
-
-## Sentinels beat re-prompting
-
-Long runs exceed the tool's foreground timeout, so an implementer will yield mid-wait. That
-is structural, not disobedience. Rather than waking it repeatedly, wait on the real thing:
-
-```
-until ! kill -0 <pid> 2>/dev/null; do sleep 15; done; echo DONE
-```
-
-as a background command, and resume the implementer once when it fires.
-
-## Feed forward before the next issue starts
-
-The highest-value orchestration step. After each issue closes, ask what it *measured* that
-changes a later issue's spec — then amend that issue **before** anyone picks it up, as a
-clearly-marked appended section that preserves the original text and says what changed and
-why. Two things always qualify:
-
-- a result that invalidates a later issue's design (a variant measured structurally invalid
-  cannot serve as another issue's control), and
-- a trap that cost time — this propagates two ways: append it to `docs/TRAPS.md` (durable,
-  read by whoever runs `/orchestrate` next), and put it directly in the *next* implementer's
-  launch prompt (immediate — that prompt needs no commit at all to take effect).
-
-An amendment is binding spec for whoever picks the issue up next, which makes it worth the
-same scrutiny you'd want turned on you: cite committed evidence for it — a report file, a
-`NOTES.md` section, a commit sha — never a paraphrase of what you believe happened. If the
-amendment rests on reasoning rather than a measurement, say so explicitly and put it in the
-next prompt's "Verify the premise before building on it" section instead of stating it as
-settled.
-
-## Your own failure modes
-
-Observed, not hypothetical:
-
-- **Summing cumulative counters.** Task durations may be cumulative; check monotonicity
-  before reporting elapsed time. Reporting 8h of work that was 3.5h misinforms a real
-  decision.
-- **Criticizing a structural limit as disobedience.** Verify the constraint before pushing.
-- **Demanding removal of something load-bearing.** Ask why an artifact exists before
-  demanding it be deleted. A stray worktree may be the documented workaround.
-- **Specifying a gate that can be satisfied vacuously.** Read your own instructions the way
-  a literal-minded implementer will.
-- **Checking liveness instead of correctness.** "Is it running?" is the easy question and
-  rarely the useful one.
-- **Prescribing a fix for one failure mode that quietly reintroduces a worse one.** The
-  three-dot vs two-dot trap in `docs/TRAPS.md` is a case actually made this way: the first
-  fix proposed for "empty diff looks like a clean pass" was itself wrong, and worse than
-  the problem it replaced. Checking a proposed correction against this project's own
-  canonical answer (here, `/code-review`'s three-dot form) is what catches this before it
-  reaches an implementer — do that check before shipping a fix, not after.
-
-Tell implementers to treat **your** claims as unverified assertions and check them. They
-have caught false orchestrator claims and one bad gate instruction that way. That channel is
-a feature; do not close it by being authoritative.
-
-## Trap registry — append-only, repo-specific
-
-Disclosed to `docs/TRAPS.md` — pure on-demand reference, not
-something the orchestrator's own step-by-step loop needs inline. Carry every entry from
-there into each launch prompt; cost is why they exist. Each entry is cited against the repo
-so it stays checkable; an entry that stops being true belongs in `docs/DEFERRED_ISSUES.md`'s
-own resolved section, not silently deleted from `docs/TRAPS.md`. Trimming it is self-declaring —
-`docs/TRAPS.md`'s own header states the rule; not restated here. [`traps.md`](traps.md) in this
-directory is a pointer, not the registry — do not append entries there.
+An implementer waiting on a process you have verified is alive needs a sentinel
+(`until ! kill -0 <pid>; do sleep 15; done`), not a prompt. An implementer that yielded
+with an accurate statement of remaining work needs a resume. Treat your own claims as
+checkable too, and tell implementers to verify them.

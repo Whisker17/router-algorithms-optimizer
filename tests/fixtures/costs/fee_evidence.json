@@ -1,0 +1,387 @@
+{
+ "config_sha256": "d3405b7987f9e8868a3e280ae53938333b10bd79d05cb6d53c782ee9cbee45db",
+ "fee_doc": "https://docs.mantle.xyz/network/system-information/fee-mechanism/fee-model-handbook-after-arsia.md",
+ "param_checkpoints": [
+  {
+   "base_fee_per_gas": "0xba43b7400",
+   "block_hash": "0xf06d4bbfda1452d9921839f5a7377d12aec335b07b460b30bc9fe2ca6755103f",
+   "block_number": 100779644,
+   "operator_fee_constant": "0x0000000000000000000000000000000000000000000000000000000000000000",
+   "operator_fee_scalar": "0x0000000000000000000000000000000000000000000000000000000005f5e100",
+   "timestamp": 1789689600
+  },
+  {
+   "base_fee_per_gas": "0xba43b7400",
+   "block_hash": "0xc87aca88fa8b3c5c52e78fca36cfbb7c99591e34626610dfaf7fc2b6eb333b7b",
+   "block_number": 100822844,
+   "operator_fee_constant": "0x0000000000000000000000000000000000000000000000000000000000000000",
+   "operator_fee_scalar": "0x0000000000000000000000000000000000000000000000000000000005f5e100",
+   "timestamp": 1789776000
+  },
+  {
+   "base_fee_per_gas": "0xba43b7400",
+   "block_hash": "0xd3648565b9d1290e43017c5652c66b6bc82e7078c9b850ef5c13efcd08c17b9d",
+   "block_number": 100866044,
+   "operator_fee_constant": "0x0000000000000000000000000000000000000000000000000000000000000000",
+   "operator_fee_scalar": "0x0000000000000000000000000000000000000000000000000000000005f5e100",
+   "timestamp": 1789862400
+  },
+  {
+   "base_fee_per_gas": "0xba43b7400",
+   "block_hash": "0x3c0367ea0eb178902c65b94fa19786caaf60a6dc266f755d50879570733aada9",
+   "block_number": 100909244,
+   "operator_fee_constant": "0x0000000000000000000000000000000000000000000000000000000000000000",
+   "operator_fee_scalar": "0x0000000000000000000000000000000000000000000000000000000005f5e100",
+   "timestamp": 1789948800
+  },
+  {
+   "base_fee_per_gas": "0xba43b7400",
+   "block_hash": "0xfd9018065ba9d20b658dd8111a7d335e8ebde0c07d1c592dfc3e016a6b9f4ac2",
+   "block_number": 100952444,
+   "operator_fee_constant": "0x0000000000000000000000000000000000000000000000000000000000000000",
+   "operator_fee_scalar": "0x0000000000000000000000000000000000000000000000000000000005f5e100",
+   "timestamp": 1790035200
+  },
+  {
+   "base_fee_per_gas": "0xba43b7400",
+   "block_hash": "0x66aa1590f3b031819d2e46e645a78cbc9c82c37edaea3c23c8379280f85289df",
+   "block_number": 100995644,
+   "operator_fee_constant": "0x0000000000000000000000000000000000000000000000000000000000000000",
+   "operator_fee_scalar": "0x0000000000000000000000000000000000000000000000000000000005f5e100",
+   "timestamp": 1790121600
+  },
+  {
+   "base_fee_per_gas": "0xba43b7400",
+   "block_hash": "0x056ac48d91de59f8ec257c7b24781ef92d95871258f9a2f835214828f207c42e",
+   "block_number": 101038844,
+   "operator_fee_constant": "0x0000000000000000000000000000000000000000000000000000000000000000",
+   "operator_fee_scalar": "0x0000000000000000000000000000000000000000000000000000000005f5e100",
+   "timestamp": 1790208000
+  },
+  {
+   "base_fee_per_gas": "0xba43b7400",
+   "block_hash": "0x091b0759c9d3031f30658cdfa8bf4cd5ed311ece986e3c91eb1eeb121b2b65c4",
+   "block_number": 101082044,
+   "operator_fee_constant": "0x0000000000000000000000000000000000000000000000000000000000000000",
+   "operator_fee_scalar": "0x0000000000000000000000000000000000000000000000000000000005f5e100",
+   "timestamp": 1790294400
+  }
+ ],
+ "receipts": [
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "50037820156",
+    "gas_used": 196396,
+    "gasfees_tx_fee_raw": "9935379251375836",
+    "l1_fee": "108151524018060"
+   },
+   "key": "0036f75e",
+   "receipt": {
+    "blockHash": "0xb8ac9e6658ea2b78fc9fb6f30cb53fc258108ba071a29cfe57c0e87ae4402777",
+    "blockNumber": "0x603c525",
+    "effectiveGasPrice": "0xba67c8afc",
+    "gasUsed": "0x2ff2c",
+    "l1Fee": "0x625cfd2bc78c",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x575229dcc62cdab8b02e5c2115aa2725c35aafdf"
+   },
+   "sender_balance_after": "0x2cc4021188007c98",
+   "sender_balance_before": "0x2cee487459245b74",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0x6c5d42acb963d7da99f5aa024495aab74fb27ca021656bdc0163955e91628be5",
+   "tx_value": "0x0"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "75454453776",
+    "gas_used": 154508,
+    "gasfees_tx_fee_raw": "11728380643773564",
+    "l1_fee": "70063899751356"
+   },
+   "key": "005ee5fd",
+   "receipt": {
+    "blockHash": "0xae0833f4fe7d0f24c11c529730b6c98ae33ae976ab0cbcc5359a5512f3a7e182",
+    "blockNumber": "0x603ae0c",
+    "effectiveGasPrice": "0x11916f9810",
+    "gasUsed": "0x25b8c",
+    "l1Fee": "0x3fb905db33bc",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x1ebe31504ac2e49006b3b5a80304270d2b11b3b4"
+   },
+   "sender_balance_after": "0x17a6ccc8809b01884b",
+   "sender_balance_before": "0x17a6fbf0a4fd9e44c7",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0xc809bce1c5388e47c382035c3a2703670361c8b483ba5a0079a3afbb147465cb",
+   "tx_value": "0x0"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "60466442648",
+    "gas_used": 258378,
+    "gasfees_tx_fee_raw": "16622093351523380",
+    "l1_fee": "998894833018436"
+   },
+   "key": "03a61b36",
+   "receipt": {
+    "blockHash": "0x0bff257a42c8fe7444463b3dba4f55d6be2af16278abef9d11c9df6c0bd40cd3",
+    "blockNumber": "0x6053d09",
+    "effectiveGasPrice": "0xe1414b198",
+    "gasUsed": "0x3f14a",
+    "l1Fee": "0x38c7d53b0a644",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x013e138ef6008ae5fdfde29700e3f2bc61d21e3a"
+   },
+   "sender_balance_after": "0x566ebbf818abfbb88",
+   "sender_balance_before": "0x5672ffb256577b7bc",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0xcf575d23481129cab7c32b121c2ab75523319deab3f22c7de47167d6548122b0",
+   "tx_value": "0x0"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "60341723171",
+    "gas_used": 248736,
+    "gasfees_tx_fee_raw": "16232657244833936",
+    "l1_fee": "1223498390172080"
+   },
+   "key": "0605151c",
+   "receipt": {
+    "blockHash": "0xdc043485d39b10aa9a64deef40424c2d3b48c2a5971b5dff2a19b956b036ff0d",
+    "blockNumber": "0x602de33",
+    "effectiveGasPrice": "0xe0ca5a023",
+    "gasUsed": "0x3cba0",
+    "l1Fee": "0x458c3eaedf1b0",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x013e138ef6008ae5fdfde29700e3f2bc61d21e3a"
+   },
+   "sender_balance_after": "0x5676bd776da009f7f",
+   "sender_balance_before": "0x567ae59388411e80f",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0xc8563cc88ae90d74b2a1a14baa2653c04a036a7e5e4bc78cee790fd5330c23bf",
+   "tx_value": "0x0"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "95887113634",
+    "gas_used": 259374,
+    "gasfees_tx_fee_raw": "27230692372657068",
+    "l1_fee": "2360068160951952"
+   },
+   "key": "01dcfbee",
+   "receipt": {
+    "blockHash": "0xc75172ef4d40ca3b24448daca43dc921ebca5efc465d5cccb745dbfaa15f5de3",
+    "blockNumber": "0x6057639",
+    "effectiveGasPrice": "0x1653513da2",
+    "gasUsed": "0x3f52e",
+    "l1Fee": "0x8627830611690",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x1424c0f03ba26cdbe5eff5900be434d589ef68cc"
+   },
+   "sender_balance_after": "0x22ef096209d3aff1b",
+   "sender_balance_before": "0x22f5a8b4a666e2ac7",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0x0ac376b2526fb90ffe2b61df1636dea7cac51a10bcc928f1827baf53463789ca",
+   "tx_value": "0x0"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "50330873659",
+    "gas_used": 1026065,
+    "gasfees_tx_fee_raw": "51954131389597305",
+    "l1_fee": "311383508675470"
+   },
+   "key": "15b44688",
+   "receipt": {
+    "blockHash": "0xcb2cffd9098f2133783f4103959a20d899dc96b6cc69f56f47ff6928ae6f1e8d",
+    "blockNumber": "0x604eb4b",
+    "effectiveGasPrice": "0xbb7f42f3b",
+    "gasUsed": "0xfa811",
+    "l1Fee": "0x11b339f6c6b8e",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x575229dcc62cdab8b02e5c2115aa2725c35aafdf"
+   },
+   "sender_balance_after": "0x2709958dc04e3e9c",
+   "sender_balance_before": "0x27e69d9158cfa915",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0x22198eacfe797df08f9d11a8bdffd66f9370cfb2a7d2d0f90309f57b5a4ea633",
+   "tx_value": "0x0"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "68663849417",
+    "gas_used": 501018,
+    "gasfees_tx_fee_raw": "199518163366078606",
+    "l1_fee": "165116338858872100"
+   },
+   "key": "031b7117",
+   "receipt": {
+    "blockHash": "0xd819305f61247fe1f9abe65c58e03763a1d9ebb1993c1b4029cf3b6cf2a34a4d",
+    "blockNumber": "0x606362b",
+    "effectiveGasPrice": "0xffcaf31c9",
+    "gasUsed": "0x7a51a",
+    "l1Fee": "0x24a9c6f744bcd24",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x1231deb6f5749ef6ce6943a275a1d3e7486f4eae"
+   },
+   "sender_balance_after": "0x880b4f1dfd7ae25333",
+   "sender_balance_before": "0xa3290a96523f07e3c1",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0xa22ac87aed6cbc9083fdec8e04e18b31bf4761ecb5a83ebb9eff1219286433b4",
+   "tx_value": "0x1b1ae4d6e2ef500000"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "52500000000",
+    "gas_used": 682820,
+    "gasfees_tx_fee_raw": "36642006856721138",
+    "l1_fee": "793956856721138"
+   },
+   "key": "0b56d6a5",
+   "receipt": {
+    "blockHash": "0x02803ce3c0bef2dca96a3b125344b8afc4075de67f541885250c00a0eac4c38b",
+    "blockNumber": "0x6064053",
+    "effectiveGasPrice": "0xc393e6d00",
+    "gasUsed": "0xa6b44",
+    "l1Fee": "0x2d2197c696ef2",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x3397cc74547b79f2f704952dc553750f10cb2524"
+   },
+   "sender_balance_after": "0x3a6f35657ac25d1c3",
+   "sender_balance_before": "0x3a78dc643ea27c4b5",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0x87f8c3ac87f01b3da58f85e15bb911cb4c992fcf31e45b03d9898b2d061ff9c8",
+   "tx_value": "0x0"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "101000000000",
+    "gas_used": 114153,
+    "gasfees_tx_fee_raw": "11672557094962913",
+    "l1_fee": "143104094962913"
+   },
+   "key": "0a4fc217",
+   "receipt": {
+    "blockHash": "0x4bd2f72dafb1b6b7452968e425a872a407cbf4346fd6c845836270077f3f45bc",
+    "blockNumber": "0x6029cc0",
+    "effectiveGasPrice": "0x178411b200",
+    "gasUsed": "0x1bde9",
+    "l1Fee": "0x822704bf04e1",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0xeaee7ee68874218c3558b40063c42b82d3e7232a"
+   },
+   "sender_balance_after": "0x511610af1670cf615",
+   "sender_balance_before": "0x513ee52ba27df74c5",
+   "sender_txs_in_block": 7,
+   "tx_hash": "0x8f02472366cded22ee3393e85fe07e4a31cd8d288ae1aadc1e115672029b69f5",
+   "tx_value": "0x0"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "100000200000",
+    "gas_used": 118736,
+    "gasfees_tx_fee_raw": "14171528690177129",
+    "l1_fee": "2297904942977129"
+   },
+   "key": "15f54246",
+   "receipt": {
+    "blockHash": "0xfa869eed76c94b221f9dbaf367531f9a9ce12aab51599913cbd24040de82cb32",
+    "blockNumber": "0x6061f6c",
+    "effectiveGasPrice": "0x174879f540",
+    "gasUsed": "0x1cfd0",
+    "l1Fee": "0x829eeafda9069",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0xeaee7ee68874218c3558b40063c42b82d3e7232a"
+   },
+   "sender_balance_after": "0x3b3fea2f05d3263991",
+   "sender_balance_before": "0x3e18b637b197ae0dfa",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0xf0b7d0e94d5f2411c775b4563fa216c929c34eec2943a6dc1430106997ff7a99",
+   "tx_value": "0x2d89577d7d4020000"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "50000100000",
+    "gas_used": 541712,
+    "gasfees_tx_fee_raw": "27440586898381203",
+    "l1_fee": "354932727181203"
+   },
+   "key": "295ba789",
+   "receipt": {
+    "blockHash": "0x44397c1bdbe83529be9365e6b54293b9b8a92e561dbf05dea1e2eedf9c4774f7",
+    "blockNumber": "0x6038714",
+    "effectiveGasPrice": "0xba43cfaa0",
+    "gasUsed": "0x84410",
+    "l1Fee": "0x142cf371f6f93",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x45a62b090df48243f12a21897e7ed91863e2c86b"
+   },
+   "sender_balance_after": "0x1b7df6b4adc254572",
+   "sender_balance_before": "0x1b8542733e7f51f05",
+   "sender_txs_in_block": 1,
+   "tx_hash": "0xb82a86097d2d54f3d994e6f03e08d6a16354de88291b6f1bb40efc2e5696f03c",
+   "tx_value": "0x0"
+  },
+  {
+   "block_base_fee": "0xba43b7400",
+   "dune": {
+    "gas_price": "51000000000",
+    "gas_used": 636780,
+    "gasfees_tx_fee_raw": "33009750979802264",
+    "l1_fee": "533970979802264"
+   },
+   "key": "37643110",
+   "receipt": {
+    "blockHash": "0x4dc8b5ef5d6ecbd31e6a339ddf78efb6f83d3ff7c5907734c8cc2c21c5b495b0",
+    "blockNumber": "0x603a200",
+    "effectiveGasPrice": "0xbdfd63e00",
+    "gasUsed": "0x9b76c",
+    "l1Fee": "0x1e5a4ce924c98",
+    "operatorFeeConstant": "0x0",
+    "operatorFeeScalar": "0x5f5e100",
+    "status": "0x1",
+    "to": "0x8754bc615047de01228a7527b712806a71a8dc9a"
+   },
+   "sender_balance_after": "0x34c3aefa55394e6696",
+   "sender_balance_before": "0x34c4521c084f09fa4e",
+   "sender_txs_in_block": 2,
+   "tx_hash": "0x6fc61bb722144fb7e092b313e82883c299bdb935338d4268127f23ff40d6dbe9",
+   "tx_value": "0x0"
+  }
+ ],
+ "rpc_url": "https://rpc.mantle.xyz",
+ "samples_export_sha256": "de91abedf0f36a822b3ad1426ddc8c7a35a4b1f92a4152afac19fc40d7cd0389",
+ "schema": "fee-evidence/1"
+}

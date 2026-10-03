@@ -1,0 +1,19 @@
+{
+  "block": {
+    "chain_id": 0,
+    "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "number": 0,
+    "timestamp": 0
+  },
+  "bundle_id": "synthetic-direct-v1",
+  "checksums": {
+    "cases.jsonl": "5d06937b705648e973f9db926e0a3f045b47c2189134ad6c9ddd1c3e4d983825",
+    "pools.json": "fa93415aa871eee7204e9760f582c5a65835ff3b31f3448693f1f6e0ca6c287b"
+  },
+  "files": {
+    "cases": "cases.jsonl",
+    "pools": "pools.json"
+  },
+  "kind": "synthetic",
+  "schema_version": 1
+}

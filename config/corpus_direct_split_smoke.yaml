@@ -1,0 +1,36 @@
+# Corpus smoke profile for `direct_split` vs `direct` (WHI-1439): one isolated pass over
+# the frozen five-source corpus (data/corpus/mantle-5src-101082044) to check that the
+# discrete direct-pool allocation runs end-to-end on real mixed-family state. See
+# config/README.md and docs/DESIGN.md §2.12.
+#
+# gross-only: no cost model is calibrated yet (docs/DESIGN.md §2.9), so nothing here
+# is a net-output claim.
+#
+# Every budget/measurement/worker value below is SMOKE-SCALE and UNVALIDATED -- sized
+# so the 5% grid with up to 4 legs completes without truncation on this corpus
+# (observed: at most ~1.1k executed quotes and ~1.5 s per case). They are not universal
+# defaults; the calibrated daily/full profiles (docs/ISSUE_PLAN.md I21) declare their
+# own values measured on the reference machine (DESIGN §2.12).
+schema_version: 2
+algorithms:
+  - direct
+  - direct_split
+objective:
+  mode: gross_only
+search:
+  max_splits: 4             # DESIGN §2.12 initial trial value (unvalidated)
+  percent_step: 5           # DESIGN §2.12 initial trial value (unvalidated)
+budget:
+  time_limit_seconds: 120   # hard per-attempt wall clock
+  max_quotes: 50000         # hard per-attempt quote cap; direct_split stops before it
+  max_candidates: null      # explicitly no candidate cap declared
+measurement:
+  warmup: 0                 # smoke: no discarded attempts
+  repeats: 1                # smoke: one measured attempt per case
+  seed: 1439
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

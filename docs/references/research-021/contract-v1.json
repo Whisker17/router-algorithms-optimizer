@@ -1,0 +1,247 @@
+{
+  "_comment": "Machine-readable vocabulary of the 0.2.1 comparison contract (contract.md). The prose in contract.md is authoritative; tests/docs/test_research_021_contract.py checks that the two agree and that every example record in fixtures/examples.json is accepted or rejected exactly as declared.",
+  "contract": "R021-C",
+  "version": 1,
+  "publication_key": "R021-P01",
+  "issue": "WHI-1547",
+  "baseline_sha": "81559ab16376cf46416a69727c3ca0b45e72771a",
+  "hash_rule": "sha256 hex of json.dumps(obj, sort_keys=True).encode() (benchmark/results.py experiment_identity convention)",
+  "existing_identities": {
+    "direct": {
+      "group": "base",
+      "max_candidates_unit": "pools_evaluated",
+      "governing": {
+        "search.*": "none (one pool, full input)"
+      }
+    },
+    "single_path": {
+      "group": "base",
+      "max_candidates_unit": "paths_evaluated",
+      "governing": {
+        "search.max_hops": "path length"
+      }
+    },
+    "direct_split": {
+      "group": "base",
+      "max_candidates_unit": "finalist_plans_evaluated",
+      "governing": {
+        "search.max_splits": "nonzero legs",
+        "search.percent_step": "grid",
+        "pool_order": "remainder leg"
+      }
+    },
+    "path_split": {
+      "group": "base",
+      "max_candidates_unit": "per_stage_candidates_evaluated",
+      "governing": {
+        "search.max_hops": "path length",
+        "search.max_splits": "disjoint legs",
+        "search.percent_step": "grid"
+      }
+    },
+    "incremental_graph": {
+      "group": "base",
+      "max_candidates_unit": "paths_scored_per_chunk",
+      "governing": {
+        "graph.chunks": "incremental plan",
+        "search.max_hops": "candidate paths and fallback",
+        "search.max_splits": "embedded path_split fallback only",
+        "search.percent_step": "embedded path_split fallback only"
+      }
+    },
+    "uni_sor_port": {
+      "group": "base",
+      "max_candidates_unit": "enumerated_routes_threshold",
+      "governing": {
+        "search.max_hops": "route length",
+        "search.max_splits": "routes per plan",
+        "search.percent_step": "grid"
+      }
+    },
+    "uni_sor_adaptive": {
+      "group": "optimized",
+      "max_candidates_unit": "enumerated_routes_threshold",
+      "governing": {
+        "search.max_hops": "route length",
+        "search.max_splits": "routes per plan",
+        "search.percent_step": "grid",
+        "strategies.uni_sor_adaptive": "pinned L08 H3 recipe"
+      }
+    },
+    "uni_sor_optimized": {
+      "group": "optimized",
+      "max_candidates_unit": "enumerated_routes_threshold",
+      "governing": {
+        "search.max_hops": "route length",
+        "search.max_splits": "routes per plan",
+        "search.percent_step": "grid",
+        "strategies.uni_sor_optimized": "pinned L08 H4 recipe"
+      }
+    },
+    "metis_inspired": {
+      "group": "custom",
+      "max_candidates_unit": "label_relaxations_per_chunk",
+      "governing": {
+        "graph.label_hops": "chunk search depth",
+        "graph.chunks": "incremental plan",
+        "graph.label_pruning": "mechanism switch",
+        "search.max_hops": "retained path_split fallback",
+        "search.max_splits": "retained path_split fallback only",
+        "search.percent_step": "retained path_split fallback only"
+      }
+    }
+  },
+  "identities": [
+    {
+      "id": "metis_history",
+      "order": 1,
+      "group": "custom",
+      "research_issue": "WHI-1549",
+      "implementation_issue": "WHI-1550",
+      "reference_controls": ["metis_inspired", "incremental_graph"],
+      "protocols_ceiling": ["constant_product", "concentrated", "liquidity_book"],
+      "objectives": "as metis_inspired",
+      "max_candidates_unit": "label_relaxations_per_chunk",
+      "governing": {
+        "graph.label_hops": "chunk search depth",
+        "graph.chunks": "incremental plan",
+        "search.max_hops": "retained path_split fallback",
+        "search.max_splits": "retained path_split fallback only",
+        "search.percent_step": "retained path_split fallback only"
+      },
+      "separate_caps": "state/frontier caps as algorithm_options (names fixed by WHI-1549)"
+    },
+    {
+      "id": "direct_split_certified",
+      "order": 2,
+      "group": "custom",
+      "research_issue": "WHI-1551",
+      "implementation_issue": "WHI-1552",
+      "reference_controls": ["direct_split"],
+      "protocols_ceiling": ["constant_product"],
+      "objectives": ["gross_only"],
+      "max_candidates_unit": "finalist_plans_evaluated",
+      "governing": {
+        "search.max_splits": "nonzero legs",
+        "search.percent_step": "grid (repository_grid mode)",
+        "pool_order": "remainder leg (repository_grid mode)"
+      },
+      "separate_caps": "max_bound_nodes and any memory cap as algorithm_options (WHI-1551)",
+      "all_mode_grid": "repository_grid"
+    },
+    {
+      "id": "incremental_graph_repair",
+      "order": 3,
+      "group": "custom",
+      "research_issue": "WHI-1553",
+      "implementation_issue": "WHI-1554",
+      "reference_controls": ["incremental_graph"],
+      "protocols_ceiling": ["constant_product", "concentrated", "liquidity_book"],
+      "objectives": "as incremental_graph",
+      "max_candidates_unit": "paths_scored_per_chunk",
+      "governing": {
+        "graph.chunks": "incremental plan and rebuilt suffix",
+        "search.max_hops": "candidate paths and fallback",
+        "search.max_splits": "embedded path_split fallback only",
+        "search.percent_step": "embedded path_split fallback only"
+      },
+      "separate_caps": "repair windows/attempts as algorithm_options (WHI-1553)"
+    },
+    {
+      "id": "uni_sor_cycle_safe",
+      "order": 4,
+      "group": "custom",
+      "research_issue": "WHI-1555",
+      "implementation_issue": "WHI-1556",
+      "reference_controls": ["uni_sor_port"],
+      "protocols_ceiling": ["constant_product", "concentrated"],
+      "objectives": "as uni_sor_port",
+      "max_candidates_unit": "enumerated_routes_threshold",
+      "governing": {
+        "search.max_hops": "route length",
+        "search.max_splits": "routes per plan",
+        "search.percent_step": "grid"
+      },
+      "separate_caps": "none initially (no unrelated quality knobs, WHI-1555)"
+    },
+    {
+      "id": "cfmm_dual",
+      "order": 5,
+      "group": "custom",
+      "research_issue": "WHI-1557",
+      "implementation_issue": "WHI-1558",
+      "extension_issue": "WHI-1559",
+      "reference_controls": ["path_split", "incremental_graph"],
+      "protocols_ceiling": ["constant_product", "concentrated"],
+      "objectives": ["gross_only"],
+      "max_candidates_unit": "fallback_paths_evaluated",
+      "governing": {
+        "search.max_hops": "market universe: pools on some simple token_in -> token_out path of <= max_hops admitted pools (simple_path_union)",
+        "search.max_splits": "unused (splits.governs none; one merged step per market)",
+        "search.percent_step": "unused"
+      },
+      "separate_caps": "max_iterations and max_function_evaluations (one numeric budget per solve attempt, shared by the restricted re-solve, evaluation cap guarded) and max_recovery_attempts as algorithm_options (cfmm-dual.md section 9)",
+      "row_fill": {
+        "issue": "WHI-1557",
+        "spec": "cfmm-dual.md section 9.2",
+        "replaces": "WHI-1547 placeholder declared_by_research in max_candidates_unit and all three governing entries"
+      }
+    }
+  ],
+  "domain_fields": ["schema", "universe", "protocols", "pool_order", "hops", "splits", "amount_grid", "zero_output_leg", "token_reuse", "pool_reuse", "dag_admission", "full_fill"],
+  "grid_kinds": ["single_leg", "repository_grid", "chunk_grid", "raw_integer", "recovered_continuous"],
+  "token_reuse": ["simple_path"],
+  "pool_reuse": ["single_pool", "disjoint", "shared_merged", "shared_sequential"],
+  "zero_output_leg": ["infeasible"],
+  "dag_admission": ["plan_token_dag"],
+  "full_fill": ["v1_full_fill"],
+  "hops_params": [null, "search.max_hops", "graph.label_hops"],
+  "splits_governs": ["allocation", "fallback_only", "none"],
+  "comparison_classes": ["same_domain", "expanded_domain", "expanded_protocol", "incomparable_domain", "objective_mismatch"],
+  "bound_kinds": ["certified", "estimate", "unknown"],
+  "terminations": ["complete", "node_cap", "state_cap", "candidate_cap", "quote_budget", "wall_budget", "iteration_cap", "converged", "not_converged", "recovery_failed", "unsupported_scope"],
+  "certificate_unavailable_reasons": ["hard_timeout", "worker_error", "not_produced"],
+  "work_units": {
+    "quotes_executed": "quote",
+    "quotes_memoized": "quote",
+    "exact_replay_quotes": "quote",
+    "internal_evaluations": "validation",
+    "paths_scored": "search",
+    "label_relaxations": "search",
+    "labels_discarded_dominance": "search",
+    "labels_retained_unknown": "search",
+    "state_comparisons": "search",
+    "peak_frontier_labels": "memory",
+    "bb_nodes_expanded": "search",
+    "bound_evaluations": "search",
+    "peak_open_nodes": "memory",
+    "admission_checks": "search",
+    "combinations_rejected_cycle": "search",
+    "repair_attempts": "search",
+    "checkpoint_restores": "search",
+    "market_oracle_calls": "numeric",
+    "objective_evaluations": "numeric",
+    "gradient_evaluations": "numeric",
+    "optimizer_iterations": "numeric",
+    "recovery_attempts": "numeric"
+  },
+  "splits": {
+    "tuning": {
+      "bundles": ["bundle_tuning", "sor_cohort_tuning"],
+      "use": "exploration and nominee selection only"
+    },
+    "report": {
+      "bundles": ["bundle_report", "sor_cohort_report"],
+      "use": "one frozen comparison per pre-registered claim",
+      "holdout_exposure": "previously_exposed",
+      "previously_exposed_by": ["WHI-1447", "WHI-1503-WHI-1510", "WHI-1449"]
+    }
+  },
+  "registered_exploration": ["E3", "E4", "L3", "L4", "S3", "S4", "same_grid_allocation", "repair_off_on", "matched_sor_cycle_safe", "cfmm_cpmm_vs_cl", "max_splits_scan"],
+  "max_splits_scan_values": [1, 2, 4, 8],
+  "research_outcomes": ["go", "narrow_go", "blocked", "no_go"],
+  "implementation_dispositions": ["keep_experimental", "reject", "inconclusive", "not_implemented"],
+  "timing_verdicts": ["faster", "slower", "no_worthwhile_change", "insufficient_cases"],
+  "lane_verdicts": ["adopt_eligible", "opt_in_only", "inconclusive", "reject"],
+  "heuristic_default_loss_tolerance": null
+}

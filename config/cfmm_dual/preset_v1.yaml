@@ -1,0 +1,25 @@
+# Bounded comparison preset `cfmm_dual/1` of `cfmm_dual` (WHI-1558, R021-P12; CPMM stage;
+# docs/references/research-021/cfmm-dual.md §9.3, §10; contract R021-C/1 §7.1).
+# Frozen: its sha256 is pinned in routing/algorithms/cfmm_dual.py (`PRESET`) and a changed
+# file is refused. It holds only this identity's algorithm_options; search.max_hops (the
+# market universe bound) and the wall/quote/candidate budget come from the run profile.
+# `--strategies all` writes these values out for a source that does not configure it.
+# Settings sha256 63b62554234ac5ac3f03639bc4069fca8a3e39e053a026b88a6f5d9f48d3e3ac
+# (the canonical hash of the cfmm-dual.md `preset` block). The CL stage (WHI-1559) adds its
+# own preset version; this file is never rewritten.
+key: R021-P12-cfmm_dual
+version: 1
+algorithm: cfmm_dual
+options:
+  market_protocols: constant_product
+  max_iterations: 200
+  max_function_evaluations: 600
+  lbfgs_memory: 10
+  pgtol: 1.0e-9
+  ftol: 1.0e-15
+  residual_tolerance: 1.0e-5
+  log_price_bound: 50.0
+  min_split_share: 1.0e-6
+  max_recovery_attempts: 8
+  cycle_resolve: true
+  fallback: single_path

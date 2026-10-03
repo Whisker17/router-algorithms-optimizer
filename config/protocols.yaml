@@ -1,0 +1,557 @@
+# Verified five-source admission catalog (WHI-1426 / I01).
+#
+# Machine-readable half of the catalog: chain/contract identity, per-contract
+# Keccak-256 code hashes (pinned at the candidate block below; `snapshot/
+# preflight.py` re-checks every run and rejects on drift), and known evidence
+# blockers. The narrative (how each fact was established, Solidity->Python
+# migration plans, license audits, Dune-emitter-to-pool validation strategy,
+# tick/bin recovery method) lives in docs/references/protocol-admission.md —
+# read that file first; this one is the checkable data it cites.
+#
+# Revision note (2026-09-24, second pass): the first pass of this catalog wrongly
+# concluded explorer-verified source was unavailable ("api.mantlescan.xyz requires
+# a paid key") and left Agni v3/FusionX v3 as unconfirmed "candidate" upstream pins
+# and Merchant Moe Classic v1 as `confidence: unmatched`. A supervisor review
+# pointed at a free, keyless Etherscan-compatible endpoint
+# (api.routescan.io/v2/network/mainnet/evm/5000/etherscan/api) that *is* reachable
+# and returns verified source for nearly every contract below, plus two
+# first-party GitHub repos (merchant-moe/moe-core, agni-protocol/contracts,
+# FusionX-Finance/v3-contracts) this pass had not searched for. Every address
+# below was then re-verified against explorer-verified source and/or an
+# independent local `forge build` bytecode comparison (documented per source in
+# protocol-admission.md). This revision corrects every confidence level and
+# removes the now-resolved "explorer access blocked" blockers; it does not
+# silently expand scope beyond the five configured sources.
+
+version: 1
+
+network:
+  name: mantle
+  chain_id: 5000
+  default_rpc_url: "https://rpc.mantle.xyz"
+  # Read-batching helper for fixed-block collection (WHI-1436): prepare configs that set
+  # `rpc.use_multicall3: true` send their block-hash-pinned eth_calls as
+  # `aggregate3((address,bool,bytes)[])` batches through this contract. The reader
+  # re-checks this exact code hash at the frozen block and cross-checks one aggregated
+  # sub-call against a direct eth_call before trusting any aggregated result.
+  multicall3:
+    address: "0xcA11bde05977b3631167028862bE2a173976CA11"
+    code_hash: "0x8ec8aa5d07a37e47597b3a254f5cbf39fa2080526ae34db3a564fffed82b99ad"
+    verification: >
+      routescan_explorer_verified (2026-09-25): ContractName Multicall3, solc
+      v0.8.12+commit.f00d7308, optimizer runs=10000000 -- the canonical mds1/multicall
+      Multicall3 at its deterministic cross-chain address. Code hash computed at block
+      101082044. Only `aggregate3` is used, with allowFailure=true so every sub-call's
+      own success flag is checked individually.
+
+# A *candidate* common block for the future five-source corpus (DESIGN §2.2 asks
+# I01 to "identify a common candidate block", not to freeze the final one — final
+# selection/verification happens once all five collectors exist, I04-I08/M2).
+candidate_block:
+  number: 101057678
+  hash: "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354"
+  timestamp: 1790245668
+  captured_at: "2026-09-24T11:26:23Z"
+  status: candidate_only
+  note: >
+    latest-1000 blocks on the public RPC at catalog-authoring time (chain head was
+    101058675..101058873 across this session), chosen only to be a fixed,
+    non-"latest" point with a little reorg margin; it is not an archive-node or
+    finality guarantee. Every contract's code hash below was computed at exactly
+    this block. Re-run `python -m snapshot.preflight` immediately before reusing
+    this block for anything else: the public RPC has no documented retention SLA
+    and may have pruned it by the time you read this.
+
+sources:
+  - key: uniswap_v3
+    display_name: "Uniswap v3 (Mantle)"
+    protocol_family: v3_concentrated_liquidity
+    confidence: high
+    contracts:
+      factory:
+        address: "0x0d922Fb1Bc191F64970ac40376643808b4B74Df9"
+        code_hash: "0xde76db50667744def5d2fd1edc36bb8396bfd3d764f99f480e94ef2c4417ec93"
+        verification: >
+          routescan_explorer_verified: UniswapV3Factory, solc v0.7.6+commit.7338295f,
+          optimizer runs=800, 33 files, matches Uniswap/v3-core@v1.0.0 exactly (same
+          ContractName, same file layout). local_recompile_match (WHI-1431,
+          tools/cl_evidence/rebuild_uniswap_v3.sh): solc 0.7.6, runs=800, istanbul,
+          bytecodeHash none (v3-core's own hardhat.config.ts) reproduces all 24535
+          runtime bytes outside the 1 `NoDelegateCall.original` immutable site. There
+          is no separate pool deployer: UniswapV3Factory inherits UniswapV3PoolDeployer
+          and CREATE2-deploys every pool itself (cl_collection.factory_deploys_pools).
+      example_pool:
+        address: "0x4cdFc22bF05209de87Ee564746Dc7E5174631d2b" # USDT/WMNT 0.05%
+        code_hash: "0x3ca1ddb051776c121bd6e0916ffa297804b2467b059b786e6afe6417560a04e2"
+        verification: >
+          routescan_explorer_verified: UniswapV3Pool, same compiler/settings as
+          factory. local_recompile_match (WHI-1431): the pinned
+          contracts/UniswapV3Pool.sol rebuilds to these 22142 runtime bytes exactly
+          outside the 27 immutable sites; keccak256 of that build equals
+          cl_collection.pool_code_normalized_hash below, and keccak256 of the build's
+          creation code is 0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54,
+          the canonical v3-periphery POOL_INIT_CODE_HASH.
+      quoter_v2:
+        address: "0xdD489C75be1039ec7d843A6aC2Fd658350B067Cf"
+        code_hash: "0xa7f3aac9363bb8acf5b9bbdae738c973127cfc72d9c0ab20afac24cfe3339bcc"
+        verification: >
+          routescan_explorer_verified: QuoterV2, solc v0.7.6+commit.7338295f,
+          optimizer runs=1000000, evm=istanbul, 21 files.
+      tick_lens:
+        address: "0x38EB9e62ABe4d3F70C0e161971F29593b8aE29FF"
+        code_hash: "0xbf1bb07babb013f146395ed6e1127f8f48d598f1765bc660a91d7b164cf93ff8"
+        verification: >
+          routescan_explorer_verified: TickLens, solc v0.7.6+commit.7338295f,
+          optimizer runs=1000000, evm=istanbul, 9 files. Byte-identical code hash to
+          fusionx_v3's tick_lens (both are the unmodified upstream TickLens.sol).
+    tokens:
+      # WHI-1431 correction: the first pass listed these reversed; the pool's own
+      # token0()/token1() (sorted by address, as every v3 factory orders them) are:
+      token0: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
+      token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
+    pool_fee: 500
+    expected_fee_tiers: { 100: 1, 500: 10, 3000: 60, 10000: 200 }
+    sor_protocol: V3
+    upstream:
+      repo: "https://github.com/Uniswap/v3-core"
+      ref: "tag v1.0.0, commit e3589b192d0be27e100cd0daaf6c97204fdb1899"
+      license: >
+        BUSL-1.1 at publication, Change Date 2023-04-01 (already passed) ->
+        automatically GPL-2.0-or-later since that date per the LICENSE file at the
+        pinned tag; treat as GPL-2.0-or-later for this 2026 migration.
+      confidence_basis: >
+        Explorer-verified source (Routescan, an Etherscan-compatible service) for
+        factory/pool/quoter_v2/tick_lens all confirms the exact upstream
+        ContractName and compiler settings. Independently corroborated by Uniswap
+        Labs' own signed deployments feed (developers.uniswap.org/deployments.json,
+        source repo Uniswap/contracts), the canonical fee-tier fingerprint
+        (100->1, 500->10, 3000->60, 10000->200 — unlike both Mantle-native v3-style
+        forks below), and a CBOR metadata trailer containing only `solc=0x000706`
+        (0.7.6) with no ipfs hash, matching v1.0.0's hardhat.config.ts
+        `metadata.bytecodeHash: "none"` setting. WHI-1431 adds an independent
+        local recompile of the pinned tag (factory and pool byte-identical outside
+        immutables, tools/cl_evidence/rebuild_uniswap_v3.sh).
+    # Fixed-block collection admission (WHI-1431), same mechanism as agni_v3/fusionx_v3
+    # below but Uniswap's own evidence: its own pool fingerprint, its own pools.
+    cl_collection:
+      admitted: true
+      factory_deploys_pools: true
+      pool_code_normalized_hash: "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+      pool_immutables: [factory, token0, token1, fee, tickSpacing, maxLiquidityPerTick, original]
+      verification: >
+        Computed 2026-09-25 at the candidate block (101057678) over every non-zero
+        UniswapV3Factory.getPool result for USDT/WMNT, USDC/WMNT, USDC/USDT,
+        WETH/WMNT, WETH/USDT, mETH/WETH and mETH/WMNT (8 pools, including
+        example_pool, whose exact code_hash is pinned above): each is 22142 bytes
+        (not AgniPool's 22964 or FusionXV3Pool's 22718), and zeroing the PUSH32
+        sites equal to its own factory/token0/token1/fee/tickSpacing/
+        maxLiquidityPerTick getters plus its own address (`original`, v3-core's
+        NoDelegateCall immutable, which has no getter; 3/6/6/4/4/3/1 sites for all
+        eight) yields this same hash -- which is also exactly keccak256 of the
+        independent upstream recompile (immutables zero,
+        tools/cl_evidence/rebuild_uniswap_v3.sh). Any other code, including a
+        genuine AgniPool or FusionXV3Pool, fails closed. Uniswap v3 pools have no LM
+        hook (`lmPool` does not exist) and use the uint8 4-bit-denominator
+        `feeProtocol` (pools.concentrated UNISWAP_V3_DENOMINATOR).
+
+  - key: agni_v3
+    display_name: "Agni Finance v3"
+    protocol_family: v3_concentrated_liquidity
+    confidence: high
+    contracts:
+      factory:
+        address: "0x25780dc8Fc3cfBD75F33bFDAB65e969b603b2035"
+        code_hash: "0x2ae0e620e5883be43cb47e869bbdf3aba25f9744ed5b837a6cc5f4056ada6147"
+        verification: >
+          routescan_explorer_verified: AgniFactory, solc v0.7.6+commit.7338295f,
+          optimizer runs=200, 10 files; matches
+          agni-protocol/contracts@7278c3a (core/contracts/AgniFactory.sol).
+          agni-protocol/contracts' own core/deployments/mantleMainnet.json lists
+          this exact address as "AgniFactory".
+      pool_deployer:
+        address: "0xe9827B4EBeB9AE41FC57efDdDd79EDddC2EA4d03"
+        code_hash: "0xd42f50af5ca343c25c4b6648c664db0a51412b44a9ecc386868d0e5d1396fc03"
+        verification: >
+          routescan_explorer_verified: AgniPoolDeployer, same compiler/settings as
+          factory, 32 files. agni-protocol/contracts' mantleMainnet.json lists this
+          exact address as "AgniPoolDeployer".
+      example_pool:
+        address: "0x1858d52cf57c07a018171d7a1e68dc081f17144f" # USDC/WMNT 0.05%
+        code_hash: "0x8d13ccf6c0d122161b7f7b837bc14a1cea5d4becbcff966e8238ff11e4303053"
+        verification: >
+          routescan_explorer_verified: AgniPool, same compiler/settings as factory,
+          31 files, matches agni-protocol/contracts@7278c3a
+          (core/contracts/AgniPool.sol, single commit "add code", never modified
+          since).
+    tokens:
+      token0: "0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9" # USDC
+      token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
+    pool_fee: 500
+    expected_fee_tiers: { 100: 1, 500: 10, 2500: 50, 10000: 200 }
+    sor_protocol: V3
+    upstream:
+      repo: "https://github.com/agni-protocol/contracts"
+      ref: "main, core/contracts/{AgniFactory,AgniPool,AgniPoolDeployer}.sol @ commit 7278c3aafba82db83bbb85e5c0f5554f77ec3db4"
+      license: "GPL-2.0-or-later (SPDX header in AgniPool.sol/AgniFactory.sol)"
+      confidence_basis: >
+        Upgraded from `moderate` (first pass) to `high`: (1) explorer-verified
+        source on Routescan for all three contracts, with ContractName
+        `AgniFactory`/`AgniPool`/`AgniPoolDeployer` exactly; (2) Agni's own
+        first-party repo, agni-protocol/contracts, has a checked-in
+        core/deployments/mantleMainnet.json that names these *exact* addresses.
+        Agni is architecturally a PancakeSwap-V3-core-family fork, not a raw
+        Uniswap-v3-core deployment: the verified AgniPool.sol source imports
+        `IAgniLmPool` (a liquidity-mining pool hook with no Uniswap-v3-core
+        equivalent — the same concept as PancakeSwap V3's `ILMPool`), and the
+        Factory/PoolDeployer split plus the {100,500,2500,10000} (no 3000) fee-tier
+        set matches PancakeV3Factory.sol's constructor at
+        pancakeswap/pancake-v3-contracts@ffa4fb2 token-for-token. Treat the core
+        swap-math libraries (SwapMath/TickMath/SqrtPriceMath/LiquidityMath/Tick/
+        TickBitmap — file names identical to Uniswap/Pancake's) as
+        Uniswap-V3-core-equivalent math *plus* an LmPool hook call
+        (`lmPool.accumulateReward`/`lmPool.crossLmTick`, present in the sibling
+        FusionX source below and structurally identical in Agni's) that must be
+        explicitly modeled as a no-op (or excluded with a documented reason) since
+        it is outside the admitted Exact Input domain.
+    # Fixed-block collection admission (WHI-1429). The shared collector
+    # (snapshot/collectors/concentrated.py) collects only sources carrying their own
+    # block: agni_v3 here, fusionx_v3 (WHI-1430) below and uniswap_v3 (WHI-1431) above,
+    # each on its own admission evidence -- sharing the code does not admit a source.
+    cl_collection:
+      admitted: true
+      pool_code_normalized_hash: "0xa93640452f9b3201654ddacbb0f783268f327af4de3b70d22f7d64a24ffb015f"
+      pool_immutables: [factory, token0, token1, fee, tickSpacing, maxLiquidityPerTick]
+      verification: >
+        Computed 2026-09-24 at the candidate block (101057678) over all four
+        USDC/WMNT AgniFactory.getPool results (fee 100/500/2500/10000 ->
+        0x7b3a4b36..., 0x1858d52c... [example_pool, whose exact code_hash is pinned
+        above], 0x9cae9b5d..., 0x8e2c009e...): each is 22964 bytes, differs from the
+        example pool only inside PUSH32 immediates, and zeroing the PUSH32 sites
+        equal to its own factory/token0/token1/fee/tickSpacing/maxLiquidityPerTick
+        getters (7/6/6/8/4/3 sites -- identical counts for all four) yields this same
+        hash. Solidity 0.7.6 embeds every `immutable` as a PUSH32, so this is "the
+        verified AgniPool runtime code, instantiated with this pool's own
+        immutables". Any other code fails closed.
+
+  - key: fusionx_v3
+    display_name: "FusionX v3"
+    protocol_family: v3_concentrated_liquidity
+    confidence: high
+    contracts:
+      factory:
+        address: "0x530d2766D1988CC1c000C8b7d00334c14B69AD71"
+        code_hash: "0x701e4c703248a80761e6e105efd8e30e64bd0cad8ed817e24588203884894c57"
+        verification: >
+          routescan_explorer_verified: FusionXV3Factory, solc v0.7.6+commit.7338295f,
+          optimizer runs=20, 10 files. Matches docs.fusionx.finance's own published
+          address and FusionX-Finance/v3-contracts@7f7406e
+          (projects/v3-core/contracts/FusionXV3Factory.sol). local_recompile_match
+          (WHI-1430, tools/cl_evidence/rebuild_fusionx.sh): solc 0.7.6, runs=20,
+          istanbul, bytecodeHash none reproduces all 3806 runtime bytes outside the 2
+          `poolDeployer` immutable sites.
+      pool_deployer:
+        address: "0x8790c2C3BA67223D83C8FCF2a5E3C650059987b4"
+        code_hash: "0x13e05651129765463ff6a98f3f68e9c56d99a0793d290aa00938a9b469001d1e"
+        verification: >
+          routescan_explorer_verified: FusionXV3PoolDeployer, same compiler/settings
+          as factory, 32 files. Matches docs.fusionx.finance's published address.
+          local_recompile_match (WHI-1430): 24461/24461 runtime bytes identical
+          (no immutables), i.e. it embeds exactly the upstream pool creation code.
+      example_pool:
+        address: "0x262255f4770aebe2d0c8b97a46287dcecc2a0aff" # WMNT/USDT 0.05%
+        code_hash: "0x5760b2fc07eb3ff5cf65ca4089d1f8bd59635849386c53afd2e12340859e2ac0"
+        verification: >
+          routescan_explorer_verified: FusionXV3Pool, same compiler/settings as
+          factory. Verified as a single flattened file (not a multi-file
+          standard-JSON submission); the flattened file's own import comment
+          ("File @fusionx/v3-lm-pool/contracts/interfaces/IFusionXV3LmPool.sol@v1.0.0")
+          shows FusionX's own npm/foundry package namespace and confirms the same
+          LmPool-hook architecture as agni_v3 (`lmPool.accumulateReward(...)` at
+          swap start, `lmPool.crossLmTick(...)` on every tick crossing).
+          local_recompile_match (WHI-1430): the upstream FusionXV3Pool.sol at the
+          pinned commit rebuilds to these 22718 runtime bytes exactly outside the 34
+          immutable sites; keccak256 of that build equals
+          cl_collection.pool_code_normalized_hash below.
+      quoter_v2:
+        address: "0x90f72244294E7c5028aFd6a96E18CC2c1E913995"
+        code_hash: "0xbe18d6666afa32d193068e0a3a7f346c2c2c35082b087dfa572724844ba2e509"
+        verification: >
+          routescan_explorer_verified: QuoterV2, solc v0.7.6+commit.7338295f,
+          optimizer runs=1000000, evm=istanbul, 21 files.
+      tick_lens:
+        address: "0xE80EE7e19Dd06365111471E1478bA671CAd024C0"
+        code_hash: "0xbf1bb07babb013f146395ed6e1127f8f48d598f1765bc660a91d7b164cf93ff8"
+        verification: >
+          routescan_explorer_verified: TickLens, same compiler/settings as
+          uniswap_v3's tick_lens; byte-identical code hash (unmodified upstream
+          TickLens.sol reused as-is).
+    tokens:
+      token0: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
+      token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
+    pool_fee: 500
+    expected_fee_tiers: { 100: 1, 500: 10, 2500: 50, 10000: 200 }
+    sor_protocol: V3
+    upstream:
+      repo: "https://github.com/FusionX-Finance/v3-contracts"
+      ref: "main, projects/v3-core/contracts/{FusionXV3Factory,FusionXV3Pool,FusionXV3PoolDeployer}.sol @ commit 7f7406e5fbdf610acf0fedac815c29fbca69925a"
+      license: "GPL-2.0-or-later (SPDX header in FusionXV3Factory.sol)"
+      confidence_basis: >
+        Explorer-verified source on Routescan for factory/pool_deployer/pool/
+        quoter_v2/tick_lens; FusionX-Finance/v3-contracts mirrors
+        pancake-v3-contracts' own `projects/{v3-core,v3-periphery,v3-lm-pool}`
+        monorepo layout under the `@fusionx/*` package scope, and
+        docs.fusionx.finance's own current documentation
+        (developers/smart-contracts-mantle-mainnet/v3-smart-contracts.md)
+        publishes the factory/pool_deployer addresses verbatim. Same
+        PancakeSwap-V3-core-family lineage and LmPool-hook caveat as agni_v3.
+        The first pass left FusionX not independently recompiled; WHI-1430 closed
+        that: solc-js 0.7.6 (runs=20, istanbul, bytecodeHash none) builds of the
+        pinned FusionXV3Factory/FusionXV3Pool/FusionXV3PoolDeployer are
+        byte-identical to the deployed runtime code outside compiler-reported
+        immutable sites (tools/cl_evidence/rebuild_fusionx.sh). The pinned commit
+        ships only projects/v3-core, so the one imported interface
+        (IFusionXV3LmPool: two signatures) is taken from the verified source.
+    # Fixed-block collection admission (WHI-1430), same mechanism as agni_v3 above but
+    # FusionX's own evidence: its own pool bytecode fingerprint, its own pools.
+    cl_collection:
+      admitted: true
+      pool_code_normalized_hash: "0x7ba898ca845dddf5aa6085d74a3a186d0f25ee3fd9c1f276346a653b242bf293"
+      pool_immutables: [factory, token0, token1, fee, tickSpacing, maxLiquidityPerTick]
+      verification: >
+        Computed 2026-09-24 at the candidate block (101057678) over all four
+        USDT/WMNT FusionXV3Factory.getPool results (fee 100/500/2500/10000 ->
+        0x4a313244..., 0x262255f4... [example_pool, whose exact code_hash is pinned
+        above], 0xed3ee32b..., 0xe39688f2...): each is 22718 bytes (not AgniPool's
+        22964 -- different optimizer runs, 20 vs 200, so a distinct fingerprint),
+        and zeroing the PUSH32 sites equal to its own
+        factory/token0/token1/fee/tickSpacing/maxLiquidityPerTick getters
+        (7/6/6/8/4/3 sites for all four) yields this same hash -- which is also
+        exactly keccak256 of the independent upstream recompile (immutables zero,
+        tools/cl_evidence/rebuild_fusionx.sh). Any other code,
+        including a genuine AgniPool or UniswapV3Pool, fails closed. The 0.05% pool
+        has a live LM hook (lmPool 0x19170a0f..., whose pool() round-trips); the
+        collector records the hook's code hash, and the simulator models its
+        accumulateReward/crossLmTick calls as no-ops (WHI-1428 D3) -- validated at
+        the block by fork execution of the real hook, not assumed.
+
+  - key: moe_classic_v1
+    display_name: "Merchant Moe Classic v1"
+    protocol_family: v2_classic
+    confidence: high
+    contracts:
+      factory:
+        address: "0x5bEf015CA9424A7C07B68490616a4C1F094BEdEc"
+        code_hash: "0x67d999ab19b15f5b4233f167453abadfc7e580942291af8c395d0b50ab39e6c0"
+        verification: >
+          forge_recompile_match: merchant-moe/moe-core @ 460bf55b8330f31d31d356634d0129fd78b4fd07
+          (src/dex/MoeFactory.sol), compiled with the repo's own foundry.toml
+          (solc 0.8.20, optimizer runs=600, evm_version=paris). Runtime bytecode is
+          byte-identical to the on-chain code except for the embedded
+          `moePairImplementation` immutable (three occurrences, each exactly
+          `08477e01a19d44c31e4c11dc2ac86e3bbe69c28b` on-chain vs. a zero placeholder
+          in the unlinked build artifact) and the trailing CBOR metadata hash
+          (differs only because absolute build paths differ, as expected). Not
+          independently explorer-verified (Routescan returns no source for this
+          address); this `forge build` diff is the primary evidence.
+      example_pool:
+        address: "0x4e7685df06201521f35a182467feefe02c53d847" # USDT/WMNT
+        code_hash: "0x984b80b03c251d7d850fb6d583101eafbe483cdb31dff9d741ac1b2e52cfa531"
+        verification: >
+          A 95-byte `ImmutableClone` (lib/dexv2 src/libraries/ImmutableClone.sol, the
+          0age-style minimal proxy with appended immutable args that
+          MoeFactory.createPair deploys) whose embedded delegatecall target is
+          `pair_implementation` below and whose appended args are this pair's own
+          `token0 ++ token1`. WHI-1432 correction: the first pass said every Moe
+          Classic pool shares this exact code hash; it does not -- the token
+          addresses are part of the runtime code, so each pair's code hash is
+          pair-specific. The Classic collector therefore verifies every pair by
+          rebuilding its exact expected clone runtime (and CREATE2 address) from the
+          pinned implementation and its tokens (classic_collection below); this pin
+          is the USDT/WMNT instance of that rule, recomputed identically at the block.
+      pair_implementation:
+        address: "0x08477e01A19d44C31E4C11Dc2aC86E3BBE69c28B"
+        code_hash: "0xb7969f45e694a2f22a645a3ce42e240669e09ebbd800925260fa3c3856160d87"
+        verification: >
+          forge_recompile_match: merchant-moe/moe-core @ 460bf55 (src/dex/MoePair.sol),
+          same build settings as factory. Byte-identical modulo two embedded
+          immutables (`moePairImplementation`'s own address, appearing as a
+          self-reference, and the `factory` address) and the metadata hash. Also
+          confirmed by merchant-moe/moe-core's own
+          script/mantle/Addresses.sol, which hardcodes
+          `moePairImplementation = 0x08477e01A19d44C31E4C11Dc2aC86E3BBE69c28B`.
+      router:
+        address: "0xeaEE7EE68874218c3558b40063c42B82D3E7232a"
+        code_hash: "0x566a0de9f04097861602d59ad600c8d4504b6ad395d99deb24fc717a58a4a06e"
+        verification: >
+          routescan_explorer_verified: MoeRouter, solc v0.8.20+commit.a1b79de6,
+          optimizer runs=600, evm=paris, 13 files. merchant-moe/moe-core's own
+          script/mantle/Addresses.sol hardcodes this exact address as `moeRouter`.
+    tokens:
+      token0: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
+      token1: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
+    # Uniswap SOR V2 (docs/references/uni-sor-port-contract.md §2): one pair per token
+    # pair from one factory (v2PoolProvider's identity model) with a fixed 0.3% fee;
+    # SOR quotes come from the benchmark simulator's migrated MoePair math.
+    sor_protocol: V2
+    # Fixed-block collection admission (WHI-1432, snapshot/collectors/classic.py).
+    classic_collection:
+      admitted: true
+      swap_fee_bps: 30
+      verification: >
+        Read from the forge-rebuilt source (merchant-moe/moe-core@460bf55): MoePair.swap
+        enforces `(balance0 * 1000 - amount0In * 3) * (balance1 * 1000 - amount1In * 3)
+        >= reserve0 * reserve1 * 1000**2` -- a hardcoded 0.3% input fee with no per-pair
+        parameter, no factory setter and no swap-time protocol fee (MoeFactory.feeTo only
+        mints LP shares in mint/burn via _sendFee; it is non-zero at the candidate block,
+        0x03183940..., which affects no swap). MoeLibrary.getAmountOut / MoeRouter use
+        the matching 997/1000 formula. On-chain at block 101057678: all 10 pairs of the
+        5-token universe are ImmutableClones of pair_implementation with sorted
+        (token0, token1) args at their CREATE2 addresses, balances equal reserves, and
+        the fork evidence (tools/cl_evidence/test/CaptureMoeClassicReplay.t.sol) shows
+        MoeRouter.getAmountsOut is the largest output each pair accepts (one more wei
+        reverts `Moe: K`) in both directions and across a sequential second swap, and
+        `Moe: OVERFLOW` past uint112.
+    upstream:
+      repo: "https://github.com/merchant-moe/moe-core"
+      ref: "main, src/dex/{MoeFactory,MoePair}.sol @ commit 460bf55b8330f31d31d356634d0129fd78b4fd07"
+      license: "GPL-3.0 (SPDX header in src/dex/MoeFactory.sol and MoePair.sol)"
+      confidence_basis: >
+        RESOLVED from `unmatched` (first pass) to `high`. The first pass correctly
+        rejected lfj-gg/joe-core (architecturally incompatible: full-bytecode
+        CREATE2 vs. this deployment's minimal-proxy clones; solc 0.6.12 vs. this
+        deployment's 0.8.20) but did not find the real source because it never
+        searched for a Merchant-Moe-owned repository. merchant-moe/moe-core's
+        `src/dex/MoeFactory.sol` imports `ImmutableClone` and takes a
+        `moePairImplementation_` constructor immutable — exactly the clone
+        architecture observed on-chain — and its own
+        `script/mantle/Addresses.sol` hardcodes all three addresses above
+        verbatim. An independent local `forge build` of that exact commit
+        reproduces the on-chain factory/pair-implementation bytecode
+        byte-for-byte outside of immutables and metadata (see each contract's
+        `verification` field for the precise diff). This is now the
+        strongest-possible non-explorer evidence class this catalog uses.
+
+  - key: moe_lb_v2_2
+    display_name: "Merchant Moe Liquidity Book v2.2"
+    protocol_family: liquidity_book_v2
+    confidence: high
+    contracts:
+      factory:
+        address: "0xa6630671775c4EA2743840F9A5016dCf2A104054"
+        code_hash: "0x24760bc3bcdceb37006bed0ee363ff2f93f79242e14c19dcd135d606cad3d249"
+        verification: >
+          routescan_explorer_verified: LBFactory, solc v0.8.20+commit.a1b79de6,
+          optimizer runs=800, evm=paris, 26 files. Independently confirmed by a
+          local `forge build` of lfj-gg/joe-v2 (both tag v2.2.0 @ 1297c382 and the
+          moe-core-pinned branch `v2.2` head @ 24efde2 give byte-identical
+          output for this file): the on-chain runtime bytecode is 100%
+          byte-identical to the compiled artifact, including the CBOR metadata
+          trailer — no immutable substitution was even needed.
+      example_pair:
+        address: "0xf6c9020c9e915808481757779edb53daceae2415" # WMNT/USDT, binStep 15
+        code_hash: "0xb5d12ab2b36748a7996c827c10c70490ea32d41c9bb54d693e79da60299c0d0e"
+        verification: >
+          Structural match only (see pair_implementation): a 97-byte
+          EIP-1167-style minimal-proxy clone; Routescan correctly reports no
+          source for this address (a raw clone has no independently meaningful
+          bytecode of its own).
+      pair_implementation:
+        address: "0xf6863Db7323aaC43fE8AEF0B3eF63AA6b32DDB3B"
+        code_hash: "0x4b7e74d0e7b8738bc0a95199fdfb27a3e8bb7578d034e5ff15034f0158be508a"
+        verification: >
+          routescan_explorer_verified: LBPair, solc v0.8.20+commit.a1b79de6,
+          optimizer **runs=300** (notably different from LBFactory/LBRouter/
+          LBQuoter's runs=800 — a genuine per-contract override, not a mistake).
+          Independently confirmed: a local `forge build --optimizer-runs 300` of
+          lfj-gg/joe-v2 (tag v2.2.0) reproduces the on-chain runtime bytecode
+          byte-for-byte outside of two embedded immutables (this contract's own
+          address and the LBFactory address, 7 occurrences total) and the CBOR
+          metadata hash; building with the repo's *default* runs=800 instead
+          produces bytecode of the wrong *length* entirely (24321 on-chain vs.
+          25224 default-build bytes), which is what first made the runs=300
+          override discoverable.
+      router:
+        address: "0x013e138EF6008ae5FDFDE29700e3f2Bc61d21E3a"
+        code_hash: "0x827ec4f0e64daa0406a3ce838d85e10bc8bf2b77cbd8d3d69cb96d480245787e"
+        verification: >
+          routescan_explorer_verified: LBRouter, solc v0.8.20+commit.a1b79de6,
+          optimizer runs=800, evm=paris, 33 files. Despite matching compiler
+          settings, a local `forge build` of lfj-gg/joe-v2 (either commit above)
+          produces different-length bytecode (21003 vs. this address's 21011
+          bytes) -- Merchant Moe's LBRouter carries real source changes on top of
+          vanilla joe-v2. Not in the `quote_exact_in` critical path (LBPair owns
+          swap math); recorded so a future router-level integration does not
+          assume vanilla joe-v2 Router behavior.
+      quoter:
+        address: "0x501b8AFd35df20f531fF45F6f695793AC3316c85"
+        code_hash: "0x59b0f082bb2508333c981242c847bbfb13a2b8a718f4a93469e350a38914562f"
+        verification: >
+          routescan_explorer_verified: LBQuoter, solc v0.8.20+commit.a1b79de6,
+          optimizer runs=800, evm=paris, 24 files. Same caveat as router: local
+          `forge build` output is a different length (14792 vs. this address's
+          18102 bytes) -- a real Merchant-Moe-specific LBQuoter (plausibly
+          quoting both Classic and LB routes in one contract). Not in the
+          `quote_exact_in` critical path.
+    tokens:
+      token_x: "0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8" # WMNT
+      token_y: "0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE" # USDT
+    # No `sor_protocol`: Uniswap SOR routes V2/V3 pools only (docs/references/
+    # uni-sor-port-contract.md §2), so LB pools never enter the matched SOR cohort and an
+    # LB-only case is `unsupported` for SOR there (D-4).
+    # Fixed-block collection admission (WHI-1434, snapshot/collectors/liquidity_book.py).
+    lb_collection:
+      admitted: true
+      swap_hooks:
+        - implementation: "0xDc0e38cBD08fa532847BAECbF26c8b09eD9008A7"
+          code_hash: "0xdd87fa75c271222cfa4546c788de02d5c4cde26708659364d3a91c75bf921369"
+          contract: LBHooksRewarder
+          verification: >
+            routescan_explorer_verified: LBHooksRewarder, solc v0.8.20+commit.a1b79de6,
+            optimizer runs=600, evm=paris (16969 runtime bytes, code hash at block
+            101057678). Every hooked admitted pair's getLBHooksParameters() points at a
+            107-byte ImmutableClone of this implementation with args (pair, pid). Its
+            _beforeSwap only runs _updateAccruedRewardsPerShare (MasterChef.deposit(pid,
+            0) + its own storage + pair views) and then forwards to its own
+            _extraHooksParameters; the pair calls it after reading amountsLeft and under
+            its nonReentrant lock, so it cannot change the swap's amounts or pair state
+            (pools.liquidity_book module docstring; WHI-1433 fork evidence runs it live).
+      extra_swap_hooks:
+        - implementation: "0x2D4BF9f668e5B7C7fE33c8F116ae190669304676"
+          code_hash: "0xb98cf49205f9f8cff629c453c08863e145bd13d138b1fd6fda01d1947ba89326"
+          contract: LBHooksExtraRewarder
+          verification: >
+            routescan_explorer_verified: LBHooksExtraRewarder, solc
+            v0.8.20+commit.a1b79de6, optimizer runs=600, evm=paris (11579 runtime bytes,
+            code hash at block 101057678). Reached only through an admitted rewarder's
+            getExtraHooksParameters(): a 115-byte ImmutableClone with args (pair, reward
+            token, parent rewarder). It does not override LBHooksBaseRewarder._beforeSwap
+            (accounting only: its own rewards-per-second and bin accumulators, pair
+            views) and forwards to no further hook. Five of the seven hooked pairs at
+            block 101057678 carry one; the WHI-1434 fork evidence executes them live.
+      verification: >
+        LB pairs are discovered through LBFactory.getAllLBPairs and verified per pair
+        (snapshot/collectors/liquidity_book.py): exact ImmutableClone runtime of
+        pair_implementation with args tokenX ++ tokenY ++ uint16 binStep at the CREATE2
+        address LBFactory.createLBPair deploys it to (lfj-gg/joe-v2 v2.2.0
+        LBFactory.sol:365), getLBPairInformation round trip, getters, declared token
+        decimals, balances equal to the pair's reserves + protocol fees, and approved
+        swap / extra hooks from the lists above. The swap semantics are
+        pools.liquidity_book (WHI-1433).
+    upstream:
+      repo: "https://github.com/lfj-gg/joe-v2"
+      ref: "tag v2.2.0, commit 1297c3822f0605e643155c35948959c0a0d05e17 (LBFactory.sol, LBPair.sol -- see pair_implementation.verification for the required optimizer-runs=300 override)"
+      license: "MIT (repo-root LICENSE at the pinned tag; per-file SPDX headers agree)"
+      confidence_basis: >
+        The swap-math-critical contracts (LBFactory identity, LBPair
+        implementation) are now independently confirmed two ways: Routescan
+        explorer verification *and* our own local `forge build` byte-for-byte
+        match (once LBPair's non-default optimizer runs=300 was accounted for —
+        discovered from Routescan's own compiler metadata, not guessed).
+        merchant-moe/moe-core's pinned submodule commit for `lib/dexv2`
+        (24efde2, on branch `v2.2`, itself a rename-tracked continuation of
+        `traderjoe-xyz/dexv2`) gives the same LBFactory/LBPair bytecode as the
+        `v2.2.0` tag, so either commit is an equally valid pin for those two
+        files specifically. LBRouter/LBQuoter are real Merchant-Moe-specific
+        forks of the vanilla periphery contracts (see their own `verification`
+        fields) — downgrade any future claim of "vanilla joe-v2 Router/Quoter"
+        accordingly; this does not affect swap-math admission.

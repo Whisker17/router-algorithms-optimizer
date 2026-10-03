@@ -1,0 +1,384 @@
+{
+  "cases": [
+    {
+      "case_id": "c01_corpus_usdc_fbtc_mixed",
+      "categories": [
+        "G-4",
+        "G-2"
+      ],
+      "golden": "c01_corpus_usdc_fbtc_mixed.golden.json",
+      "golden_sha256": "a1e8d6db8731c2be7726f4c2b607aae885129620acbf3b8617354e246b9e215e",
+      "input": "c01_corpus_usdc_fbtc_mixed.input.json",
+      "input_sha256": "fd1ff387060d861641cd74a85ba3a8ed5a618b56cf73066efeffc8f4371d814d"
+    },
+    {
+      "case_id": "c02_corpus_meth_weth_parallel_pools",
+      "categories": [
+        "G-2",
+        "G-1"
+      ],
+      "golden": "c02_corpus_meth_weth_parallel_pools.golden.json",
+      "golden_sha256": "e92f0b163cabbcfc3e653fd576df006a041df6d5c6ce5bf271952076eff02c4b",
+      "input": "c02_corpus_meth_weth_parallel_pools.input.json",
+      "input_sha256": "c0f9a76f052c9a4d3fbbe35b7efb2559cfa3e16fbabe3471ea83da5a8689bd0e"
+    },
+    {
+      "case_id": "g01_all_quotes_null",
+      "categories": [
+        "G-1"
+      ],
+      "golden": "g01_all_quotes_null.golden.json",
+      "golden_sha256": "499e7ab07c4bf08fe8429b46a93ac58f47af393c4c2b69f9ec2543145cae02c2",
+      "input": "g01_all_quotes_null.input.json",
+      "input_sha256": "54f2a9fcc2d44655f386ae248b090653542cc0c3b31759c626d38da81cb63896"
+    },
+    {
+      "case_id": "g01_disconnected_tokens",
+      "categories": [
+        "G-1"
+      ],
+      "golden": "g01_disconnected_tokens.golden.json",
+      "golden_sha256": "7ec19994188a1990dd0db4db342613f440971fc7da6e3245b843b678e4bc1479",
+      "input": "g01_disconnected_tokens.input.json",
+      "input_sha256": "ed841e583144c90c3879ac3962f1f984cedc2a575563753f82115211a54344a9"
+    },
+    {
+      "case_id": "g02_dfs_order_and_hop_bound",
+      "categories": [
+        "G-2",
+        "G-12"
+      ],
+      "golden": "g02_dfs_order_and_hop_bound.golden.json",
+      "golden_sha256": "e695e6df33d08f55beadda6472473b817c09ca8b0f0b379ebe8e3fd14571f648",
+      "input": "g02_dfs_order_and_hop_bound.input.json",
+      "input_sha256": "e0922794c37281cd8a565b44598b2e8513418b9bfc6103b43b453caa80325b80"
+    },
+    {
+      "case_id": "g02_hop_bound_two",
+      "categories": [
+        "G-2"
+      ],
+      "golden": "g02_hop_bound_two.golden.json",
+      "golden_sha256": "52e90c851941dc7338d040184c7031abdd9b15aeb5daa4ab3d7c3962aca9934c",
+      "input": "g02_hop_bound_two.input.json",
+      "input_sha256": "6e15baa050fe534167e58c899ff75b3e548ade13a7c42f5ad9032ad996a1c752"
+    },
+    {
+      "case_id": "g03_terminal_and_cycle_rules",
+      "categories": [
+        "G-3",
+        "G-2"
+      ],
+      "golden": "g03_terminal_and_cycle_rules.golden.json",
+      "golden_sha256": "81b54fa46c5dc9a2d739a73156a8f296f2dede4c14ac68634485400266efb5aa",
+      "input": "g03_terminal_and_cycle_rules.input.json",
+      "input_sha256": "337cc663bdc7ec6bca4a3eacbf6191ab59cce4d964422e555ddb4b92491c2d46"
+    },
+    {
+      "case_id": "g04_list_order_v3_v2_mixed",
+      "categories": [
+        "G-4",
+        "G-12"
+      ],
+      "golden": "g04_list_order_v3_v2_mixed.golden.json",
+      "golden_sha256": "a5cf052a6714d0bb967b9ce594b8a6b3364bb586e6da12a4f9b208c3db7de92d",
+      "input": "g04_list_order_v3_v2_mixed.input.json",
+      "input_sha256": "1245e4492759decca2d9a447c26c1d44940affd9f6345302a37c46c526d35597"
+    },
+    {
+      "case_id": "g04_mixed_candidate_order",
+      "categories": [
+        "G-4",
+        "G-12"
+      ],
+      "golden": "g04_mixed_candidate_order.golden.json",
+      "golden_sha256": "7baf17ceb6e5cbb358846b2629fca99002698bd4c6d26aca00d507db35629828",
+      "input": "g04_mixed_candidate_order.input.json",
+      "input_sha256": "3d6940d31824b9b1cd99b66aece632edc45416ddb11a3baa8422d0de12a32346"
+    },
+    {
+      "case_id": "g05_competing_percentages",
+      "categories": [
+        "G-5"
+      ],
+      "golden": "g05_competing_percentages.golden.json",
+      "golden_sha256": "95fd18e93c687b224e19431b950a3b4f9ca54dd6a64fdf47ae35b6f95479839a",
+      "input": "g05_competing_percentages.input.json",
+      "input_sha256": "4b6b4aba7a20d17753433a0ede137532bafa6da486b0f8934833c86b97858d07"
+    },
+    {
+      "case_id": "g06_second_best_seed",
+      "categories": [
+        "G-6",
+        "G-12"
+      ],
+      "golden": "g06_second_best_seed.golden.json",
+      "golden_sha256": "a39e088a93c96dd2bb9d8365dcae78d18bb7b63b2a17261f32e58f1334d753f4",
+      "input": "g06_second_best_seed.input.json",
+      "input_sha256": "97a446b6c985098c1c2f69d898a1595c2cd8105fbf0d09e1ba03b5d555d1ef6b"
+    },
+    {
+      "case_id": "g07_greedy_first_non_overlapping",
+      "categories": [
+        "G-7",
+        "G-12"
+      ],
+      "golden": "g07_greedy_first_non_overlapping.golden.json",
+      "golden_sha256": "6db061c9e7e65fdedfe1a4d1e5865067644e595fa9dd037f48267758490906ed",
+      "input": "g07_greedy_first_non_overlapping.input.json",
+      "input_sha256": "585fddab768fb97f6bcd38502b7ca745e712cbaec7010b6c784ecf37fc9b6927"
+    },
+    {
+      "case_id": "g08_shared_first_hop_vs_disjoint_same_token",
+      "categories": [
+        "G-8",
+        "G-12"
+      ],
+      "golden": "g08_shared_first_hop_vs_disjoint_same_token.golden.json",
+      "golden_sha256": "479f91096bfe2721178675f22d8b4d018042363fc9029a6edd84ef17e631516a",
+      "input": "g08_shared_first_hop_vs_disjoint_same_token.input.json",
+      "input_sha256": "869db0fac9ea5f84e83d104e0e9e06288ff41d4df057c7cd1604845bdf9055d3"
+    },
+    {
+      "case_id": "g08_shared_intermediate_pool",
+      "categories": [
+        "G-8"
+      ],
+      "golden": "g08_shared_intermediate_pool.golden.json",
+      "golden_sha256": "f82df40d20ba553a898318b0716370362498faafa22bae576610d05a56440223",
+      "input": "g08_shared_intermediate_pool.input.json",
+      "input_sha256": "a04c8f7b79787c021b41d1e03322f4f4499378d54a782f51cad49dec46ec13f5"
+    },
+    {
+      "case_id": "g09_same_key_physical_pools",
+      "categories": [
+        "G-9",
+        "G-12"
+      ],
+      "golden": "g09_same_key_physical_pools.golden.json",
+      "golden_sha256": "0203ead93093d5cadb2e329936faaaaf81d914066664894350f21a99a1fc92f4",
+      "input": "g09_same_key_physical_pools.input.json",
+      "input_sha256": "89c1ca0ac519979af9025b9eb553893129cba40c323dad020368fc86d3d44553"
+    },
+    {
+      "case_id": "g10_max_splits_one",
+      "categories": [
+        "G-10"
+      ],
+      "golden": "g10_max_splits_one.golden.json",
+      "golden_sha256": "06920332080be8aade90d078ae7309200c0a22837cc33482ab973f6abbf02e9d",
+      "input": "g10_max_splits_one.input.json",
+      "input_sha256": "6c2a786031e51936e4847a3ac2f5599be36949b30eb798f84f3f77eec6f90469"
+    },
+    {
+      "case_id": "g10_max_splits_two_blocks_three_way",
+      "categories": [
+        "G-10",
+        "G-12"
+      ],
+      "golden": "g10_max_splits_two_blocks_three_way.golden.json",
+      "golden_sha256": "48f4270aeaec9695e8a7e4cede1d4774fe69e8cd4d94c8b437803c032bee1610",
+      "input": "g10_max_splits_two_blocks_three_way.input.json",
+      "input_sha256": "74e7b770aedbb7efbcd8641daede268ba48528c7f7f0afc684696ffdca5ea192"
+    },
+    {
+      "case_id": "g10_min_splits_three",
+      "categories": [
+        "G-10",
+        "G-12"
+      ],
+      "golden": "g10_min_splits_three.golden.json",
+      "golden_sha256": "5f292af7d5e2179bc9285748231bba8f3bb58c467839790b8a6d96ab0e343cc6",
+      "input": "g10_min_splits_three.input.json",
+      "input_sha256": "3a7e120b27bf071959f50a2f3a6b2dda806356c667fce580f2fc5129edf39024"
+    },
+    {
+      "case_id": "g10_min_splits_two_suppresses_better_single",
+      "categories": [
+        "G-10",
+        "G-12"
+      ],
+      "golden": "g10_min_splits_two_suppresses_better_single.golden.json",
+      "golden_sha256": "6a041f6b42582cb05817feba5f5a77bf9adbfcd146e508cc7e24f9f13b27551c",
+      "input": "g10_min_splits_two_suppresses_better_single.input.json",
+      "input_sha256": "768fc455e8a1d0f0a377dd6d9bff25e6b2ae5694d87ca9bd600e3ee4fb686a05"
+    },
+    {
+      "case_id": "g10_min_splits_unsatisfiable",
+      "categories": [
+        "G-10",
+        "G-1"
+      ],
+      "golden": "g10_min_splits_unsatisfiable.golden.json",
+      "golden_sha256": "577071f7dec26039d7d5db3747040b463567d3c481ab0abdf89ad7a8f6fe4e0c",
+      "input": "g10_min_splits_unsatisfiable.input.json",
+      "input_sha256": "100d04641de702a8596d1cb1650b420f422a5c4640a630597563b0f0a9aa503b"
+    },
+    {
+      "case_id": "g10_pruning_blocks_better_three_way",
+      "categories": [
+        "G-10"
+      ],
+      "golden": "g10_pruning_blocks_better_three_way.golden.json",
+      "golden_sha256": "e483fabbaebb245d028c0afe1edf1ad2c053e8f790e5dff7834da28ca26d654f",
+      "input": "g10_pruning_blocks_better_three_way.input.json",
+      "input_sha256": "d9686374cb4c13e3c278ddeb2ba9d1496b8bb7dc59129c60f35a7b2a43616cc0"
+    },
+    {
+      "case_id": "g11_101_wei_even_split",
+      "categories": [
+        "G-11",
+        "G-12"
+      ],
+      "golden": "g11_101_wei_even_split.golden.json",
+      "golden_sha256": "6a52cffde8668e38c0582aecf03423fd3b8a1372a78152d6afe4d628439cf995",
+      "input": "g11_101_wei_even_split.input.json",
+      "input_sha256": "c946d979d48d32c01bd5a6062a678bf739de4dbd0955fa97e4fec9a1ed824ac6"
+    },
+    {
+      "case_id": "g11_7_wei_5pct_grid",
+      "categories": [
+        "G-11",
+        "G-14",
+        "G-12"
+      ],
+      "golden": "g11_7_wei_5pct_grid.golden.json",
+      "golden_sha256": "e48a85e414992725b72dfee034842c83a4421a1ea9e1522cd31c144cca142040",
+      "input": "g11_7_wei_5pct_grid.input.json",
+      "input_sha256": "496444c7a1b9f6e8f3bf7a20c5ca462793c3eb9737552d33d527dbe5b29c877d"
+    },
+    {
+      "case_id": "g11_three_way_residual_two",
+      "categories": [
+        "G-11"
+      ],
+      "golden": "g11_three_way_residual_two.golden.json",
+      "golden_sha256": "c9ad1695880f8e15b7a26b0f2e0163ca10315bd5596cad36bfdb1309f7dd1d2c",
+      "input": "g11_three_way_residual_two.input.json",
+      "input_sha256": "16f3666b4c792436f14cabf8bbe6321f72f9c9e4e9ea10eec155516b3428357c"
+    },
+    {
+      "case_id": "g12_baseline_wins_equal_split",
+      "categories": [
+        "G-12"
+      ],
+      "golden": "g12_baseline_wins_equal_split.golden.json",
+      "golden_sha256": "75118b986bb85a6cc26f2297e224721cbec2fe062dbc03f6b0bf6aaf092a94eb",
+      "input": "g12_baseline_wins_equal_split.input.json",
+      "input_sha256": "cffc098d515ad32185205deea7d70b308eb3d71b6a77a02116890e5ebf2f91de"
+    },
+    {
+      "case_id": "g12_first_found_equal_totals",
+      "categories": [
+        "G-12"
+      ],
+      "golden": "g12_first_found_equal_totals.golden.json",
+      "golden_sha256": "b9d7a2d175d5cf118291525e8724299fec7f5abdd24a960b21f39c6b4ca18f91",
+      "input": "g12_first_found_equal_totals.input.json",
+      "input_sha256": "ad5119a943a6c14ecf9de5ac7be3901b82619ff9605e3d6441023d10f6d2b206"
+    },
+    {
+      "case_id": "g12_stable_tie_within_percent",
+      "categories": [
+        "G-12"
+      ],
+      "golden": "g12_stable_tie_within_percent.golden.json",
+      "golden_sha256": "45256e707b918affd865e422e7e645a07ad6be166e18e26396ddbf1342c49075",
+      "input": "g12_stable_tie_within_percent.input.json",
+      "input_sha256": "5e32e5e468401216e73da2ce7153d5bfbf0651e56ef15e6f4f7890543689590a"
+    },
+    {
+      "case_id": "g12_v8_four_way_all_equal",
+      "categories": [
+        "G-12",
+        "G-10"
+      ],
+      "golden": "g12_v8_four_way_all_equal.golden.json",
+      "golden_sha256": "a4fa48704b327068c21dd8b170e9d24566aff990b73877bdcd0189cebc7a58ca",
+      "input": "g12_v8_four_way_all_equal.input.json",
+      "input_sha256": "f17a9ff9203e1636e2d14553d84ca26e441a2500bba3ff3f5811fd908a3a294b"
+    },
+    {
+      "case_id": "g12_v8_three_way_leading_equal",
+      "categories": [
+        "G-12"
+      ],
+      "golden": "g12_v8_three_way_leading_equal.golden.json",
+      "golden_sha256": "ea57d623731550b72f7576ec0445bfa61c44f021a9eaaa197c499bbb8398836e",
+      "input": "g12_v8_three_way_leading_equal.input.json",
+      "input_sha256": "0a72e230ab003868b8d9e3fb75633097a5f99b66abf95ef1487cf236f8405a71"
+    },
+    {
+      "case_id": "g12_v8_three_way_trailing_equal",
+      "categories": [
+        "G-12",
+        "G-10"
+      ],
+      "golden": "g12_v8_three_way_trailing_equal.golden.json",
+      "golden_sha256": "f9db1840e4dda349b71f2b7fd9b0d7189869571be0dd9ed3cc94e998b13a5f5c",
+      "input": "g12_v8_three_way_trailing_equal.input.json",
+      "input_sha256": "cb937ab173edddec16b69c5090485b0d61a1f124b768d6f339f80c9054f269b4"
+    },
+    {
+      "case_id": "g13_gas_flips_winner",
+      "categories": [
+        "G-13",
+        "G-4"
+      ],
+      "golden": "g13_gas_flips_winner.golden.json",
+      "golden_sha256": "4760f4ca77cbe3e371fc18937bbe2fdeac180d1779080f2ba20a80497acc9cf0",
+      "input": "g13_gas_flips_winner.input.json",
+      "input_sha256": "443fc7a9500bb7fdd8d17d4d20d10eb06023c5a1768ca5b9d96690111965ef0c"
+    },
+    {
+      "case_id": "g13_negative_adjusted_quote",
+      "categories": [
+        "G-13"
+      ],
+      "golden": "g13_negative_adjusted_quote.golden.json",
+      "golden_sha256": "71049cf2f713c98f83c48b8c402af629c6b59dede6738bd400ceb31d16866f57",
+      "input": "g13_negative_adjusted_quote.input.json",
+      "input_sha256": "9079584b414c94f2a813323c717dcc9fa6a09942d88758f7864b13e07fca9b56"
+    },
+    {
+      "case_id": "g13_zero_quote_kept",
+      "categories": [
+        "G-13"
+      ],
+      "golden": "g13_zero_quote_kept.golden.json",
+      "golden_sha256": "cc74003a39e6c5ab0b29af7a3000c9dd316aa09582e812835356e9589c8553b2",
+      "input": "g13_zero_quote_kept.input.json",
+      "input_sha256": "ea8ef443fbba76919417934c3f351b4e0d1a93aad50aee7ea76a7c64150e4084"
+    },
+    {
+      "case_id": "g14_step_not_dividing_100",
+      "categories": [
+        "G-14",
+        "G-1"
+      ],
+      "golden": "g14_step_not_dividing_100.golden.json",
+      "golden_sha256": "e5333e40d993eef0558c83157da9d361632a0a343b0af238d2451db43d230e48",
+      "input": "g14_step_not_dividing_100.input.json",
+      "input_sha256": "caf53005f4a25161c42b6dc9ec3ecc8d69787a772ef233fa30c6b9a05dbb3f97"
+    },
+    {
+      "case_id": "g14_zero_quotient_percent_dropped",
+      "categories": [
+        "G-14",
+        "G-11"
+      ],
+      "golden": "g14_zero_quotient_percent_dropped.golden.json",
+      "golden_sha256": "ec5a61945411611a1ab2e1713251abb82cbd429d235bf72de9dc7cd68232e5c8",
+      "input": "g14_zero_quotient_percent_dropped.input.json",
+      "input_sha256": "df04a0a2b5e547c4000ea4c28a541fa24d1e8859c063d0632edddc90ec2c0721"
+    }
+  ],
+  "command": "tools/upstream/uni_sor/regen.sh",
+  "contract": "docs/references/uni-sor-port-contract.md",
+  "node": "v24.16.0",
+  "npm": "11.13.0",
+  "npm_integrity": "sha512-Bmg46KXDSfE1AAf1tPg+vDzMngVoGfzdohekhjJ1hIQG13tXcjEykqapQy+CrJUqXLL3lQvZj2uVEKfzCNH74Q==",
+  "package_lock_sha256": "e04f7ad106046830c1f4d482be9b17248f04ac435e59164537764ea179d30eff",
+  "schema": "uni-sor-golden-manifest/1",
+  "upstream_commit": "04c7c0b4d85ac2a19a3ff53987d21f9c8f1fe647"
+}

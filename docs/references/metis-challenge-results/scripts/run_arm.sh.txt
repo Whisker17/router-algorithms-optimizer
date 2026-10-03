@@ -1,0 +1,19 @@
+#!/bin/sh
+# WHI-1449 S4: run one measured arm in the foreground of this wrapper and record the
+# ACTUAL exit status durably. usage: run_arm.sh <campaign dir> <arm> <command...>
+set -u
+dir=$1; arm=$2; shift 2
+[ -e "$dir/$arm.completion.json" ] && { echo "refusing: $arm already has a completion record" >&2; exit 97; }
+[ -e "$dir/$arm.start.json" ] && { echo "refusing: $arm was already started" >&2; exit 98; }
+start=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+"$@" > "$dir/$arm.log" 2>&1 &
+child=$!
+printf '{"arm": "%s", "wrapper_pid": %s, "child_pid": %s, "cwd": "%s", "started_utc": "%s", "head": "%s", "command": "%s"}\n' \
+  "$arm" "$$" "$child" "$PWD" "$start" "$(git rev-parse HEAD)" "$*" > "$dir/$arm.start.json"
+wait "$child"; rc=$?
+end=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+printf '{"arm": "%s", "wrapper_pid": %s, "child_pid": %s, "started_utc": "%s", "ended_utc": "%s", "exit_code": %s}\n' \
+  "$arm" "$$" "$child" "$start" "$end" "$rc" > "$dir/$arm.completion.json.tmp"
+mv "$dir/$arm.completion.json.tmp" "$dir/$arm.completion.json"
+chmod 444 "$dir/$arm.start.json" "$dir/$arm.completion.json" "$dir/$arm.log"
+exit "$rc"

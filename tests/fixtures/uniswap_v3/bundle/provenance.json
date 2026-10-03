@@ -1,0 +1,1209 @@
+{
+  "admission": [
+    {
+      "case_id": "usdt_wmnt_small",
+      "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_medium",
+      "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_wmnt_large",
+      "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_small",
+      "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_medium",
+      "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdt_large",
+      "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_wmnt_small",
+      "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_wmnt_medium",
+      "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_wmnt_large",
+      "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdc_small",
+      "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_usdc_medium",
+      "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_usdc_large",
+      "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_small",
+      "pool_id": "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_small",
+      "pool_id": "0x082a6df295d9efeedd2838d154a2bbc255fa0745",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_small",
+      "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_medium",
+      "pool_id": "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_medium",
+      "pool_id": "0x082a6df295d9efeedd2838d154a2bbc255fa0745",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_medium",
+      "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_large",
+      "pool_id": "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_weth_large",
+      "pool_id": "0x082a6df295d9efeedd2838d154a2bbc255fa0745",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_weth_large",
+      "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_small",
+      "pool_id": "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_small",
+      "pool_id": "0x082a6df295d9efeedd2838d154a2bbc255fa0745",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_small",
+      "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_medium",
+      "pool_id": "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_medium",
+      "pool_id": "0x082a6df295d9efeedd2838d154a2bbc255fa0745",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_medium",
+      "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_large",
+      "pool_id": "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_wmnt_large",
+      "pool_id": "0x082a6df295d9efeedd2838d154a2bbc255fa0745",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "weth_wmnt_large",
+      "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_meth_small",
+      "pool_id": "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_small",
+      "pool_id": "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_meth_medium",
+      "pool_id": "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_medium",
+      "pool_id": "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686",
+      "status": "ok"
+    },
+    {
+      "case_id": "wmnt_meth_large",
+      "pool_id": "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "wmnt_meth_large",
+      "pool_id": "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_small",
+      "pool_id": "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_small",
+      "pool_id": "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_medium",
+      "pool_id": "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_medium",
+      "pool_id": "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_wmnt_large",
+      "pool_id": "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_wmnt_large",
+      "pool_id": "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_weth_small",
+      "pool_id": "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_weth_medium",
+      "pool_id": "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_weth_large",
+      "pool_id": "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_meth_small",
+      "pool_id": "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_meth_medium",
+      "pool_id": "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_meth_large",
+      "pool_id": "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_meth_small",
+      "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_meth_small",
+      "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_meth_medium",
+      "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_meth_medium",
+      "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdc_meth_large",
+      "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "usdc_meth_large",
+      "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdc_small",
+      "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdc_small",
+      "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdc_medium",
+      "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdc_medium",
+      "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+      "status": "ok"
+    },
+    {
+      "case_id": "meth_usdc_large",
+      "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdc_large",
+      "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_weth_small",
+      "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_weth_medium",
+      "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_weth_large",
+      "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_small",
+      "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_medium",
+      "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+      "status": "ok"
+    },
+    {
+      "case_id": "weth_usdt_large",
+      "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_meth_small",
+      "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_meth_medium",
+      "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+      "status": "ok"
+    },
+    {
+      "case_id": "usdt_meth_large",
+      "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdt_small",
+      "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdt_medium",
+      "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+      "status": "insufficient_liquidity"
+    },
+    {
+      "case_id": "meth_usdt_large",
+      "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+      "status": "insufficient_liquidity"
+    }
+  ],
+  "block": {
+    "chain_id": 5000,
+    "hash": "0xa2195dd2b8bf76e093509e7cdf013223ee2127b002be568284f989811a339354",
+    "number": 101057678,
+    "timestamp": 1790245668
+  },
+  "block_verification": "resolved by number, <= finalized head, every state read EIP-1898 pinned to the hash with requireCanonical, header re-read by number and hash after collection",
+  "catalog": {
+    "factory": {
+      "address": "0x0d922fb1bc191f64970ac40376643808b4b74df9",
+      "code_hash": "0xde76db50667744def5d2fd1edc36bb8396bfd3d764f99f480e94ef2c4417ec93"
+    },
+    "pool_code_normalized_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca",
+    "pool_deployer": "factory",
+    "pool_immutables": [
+      "factory",
+      "token0",
+      "token1",
+      "fee",
+      "tickSpacing",
+      "maxLiquidityPerTick",
+      "original"
+    ],
+    "upstream": {
+      "license": "BUSL-1.1 at publication, Change Date 2023-04-01 (already passed) -> automatically GPL-2.0-or-later since that date per the LICENSE file at the pinned tag; treat as GPL-2.0-or-later for this 2026 migration.\n",
+      "ref": "tag v1.0.0, commit e3589b192d0be27e100cd0daaf6c97204fdb1899",
+      "repo": "https://github.com/Uniswap/v3-core"
+    }
+  },
+  "collector": "snapshot.collectors.concentrated",
+  "discovery": {
+    "admitted": [
+      {
+        "fee": 500,
+        "pool_id": "0x4cdfc22bf05209de87ee564746dc7e5174631d2b",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "0x086f766b336dfb0f705dc030db01993b22d81266",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 500,
+        "pool_id": "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "0x082a6df295d9efeedd2838d154a2bbc255fa0745",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 10000,
+        "pool_id": "0xc64639501bcee4c48ef05a46f7bedf00b3529a99",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 10000,
+        "pool_id": "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 100,
+        "pool_id": "0x48ef5640e71001cac842f5627a0bfec1ef09deb7",
+        "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "0x2c7c187e3990053c265f8a8d599b4323c6239ae8",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 10000,
+        "pool_id": "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 500,
+        "pool_id": "0x076eb72e74c16b208c692eeab3750978d76b8f28",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "0xcff260aea6b7cc472db5e7abb15272605a4d859b",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      }
+    ],
+    "method": "factory.getPool over configured pairs x catalog fee tiers",
+    "omitted": [
+      {
+        "fee": 100,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 3000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 10000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 100,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 500,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 10000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8"
+      },
+      {
+        "fee": 100,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 100,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 500,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 500,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 3000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 10000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0xcda86a272531e8640cd7f1a92c01839911b90bb0",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 100,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 500,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 100,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 3000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 10000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 100,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 500,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 10000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae",
+        "token1": "0xcda86a272531e8640cd7f1a92c01839911b90bb0"
+      },
+      {
+        "fee": 100,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 500,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 3000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 10000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111"
+      },
+      {
+        "fee": 500,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "fee": 3000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "fee": 10000,
+        "pool_id": null,
+        "reason": "factory.getPool returned the zero address",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      },
+      {
+        "fee": 100,
+        "pool_id": "0x8cfee38ab8b8f4bc2ff662e8cc8bdfb0439c9d2c",
+        "reason": "excluded by prepare config: USDC/USDT 0.01% (0x8cfee38ab8b8f4bc2ff662e8cc8bdfb0439c9d2c, tickSpacing 1) has liquidity() == 0 at block 101057678 and holds only dust (0.211714 USDC, 0.007531 USDT), so any USDC/USDT case on it is a partial fill whose proof of exhaustion must walk the empty bitmap from the current word (-1, tick -26) to MIN_TICK/MAX_TICK: 3,465 words per direction, far beyond collection.max_words_per_direction. Its envelope cannot be complete within the declared bound, so it is declared out of this admission universe instead of truncating the envelope (the pair has no other pool; it carries no cases).",
+        "token0": "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+        "token1": "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae"
+      }
+    ]
+  },
+  "pools": {
+    "0x076eb72e74c16b208c692eeab3750978d76b8f28": {
+      "code_hash": "0x6a6227b00bce8fd37b1cc70a7f464276bb466bc626bec1ac2abe30f796e19a76",
+      "completeness": {
+        "bitmap_word_range": [
+          73,
+          83
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "10000000000000000",
+            "end_tick": 212082,
+            "end_word": 82,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "20000000",
+            "end_tick": 191850,
+            "end_word": 74,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 3,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          186880,
+          215039
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "1917569901783203986719870431555990",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0x082a6df295d9efeedd2838d154a2bbc255fa0745": {
+      "code_hash": "0x24e57e96f41af7f73f4f1b1f6587e949c54cc2f7971d80a1e3773f03a16eed6d",
+      "completeness": {
+        "bitmap_word_range": [
+          -58,
+          57
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "10000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "zero_for_one": {
+            "amount_in": "100000000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "initialized_ticks": 0,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          -890880,
+          890879
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "11505743598341114571880798222544994",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0x086f766b336dfb0f705dc030db01993b22d81266": {
+      "code_hash": "0x23584bbec445e44fbb0f790da85dd6e0f645883e71721044d3f6491c0b2376f1",
+      "completeness": {
+        "bitmap_word_range": [
+          15,
+          57
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "100000000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "zero_for_one": {
+            "amount_in": "20000000",
+            "end_tick": 258099,
+            "end_word": 16,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 2,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          230400,
+          890879
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "11505743598341114571880798222544994",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0x2c7c187e3990053c265f8a8d599b4323c6239ae8": {
+      "code_hash": "0x45e3ca5753802a85c4f7dde77c2db5a2a1504f5d46db787d30cbb3d998f21824",
+      "completeness": {
+        "bitmap_word_range": [
+          -58,
+          57
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "200000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "zero_for_one": {
+            "amount_in": "500000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "initialized_ticks": 2,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          -890880,
+          890879
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "11505743598341114571880798222544994",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0x48ef5640e71001cac842f5627a0bfec1ef09deb7": {
+      "code_hash": "0x736874a2a654cb9a70ac29f5d2748c3d49b6e174f7dcd379d9eee66c4889fc3d",
+      "completeness": {
+        "bitmap_word_range": [
+          -2,
+          6
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "100000000000000000",
+            "end_tick": 1399,
+            "end_word": 5,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "200000000000000000",
+            "end_tick": -84,
+            "end_word": -1,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 6,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          -512,
+          1791
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "191757530477355301479181766273477",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0x4cdfc22bf05209de87ee564746dc7e5174631d2b": {
+      "code_hash": "0x3ca1ddb051776c121bd6e0916ffa297804b2467b059b786e6afe6417560a04e2",
+      "completeness": {
+        "bitmap_word_range": [
+          54,
+          158
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "100000000000000000000",
+            "end_tick": 403359,
+            "end_word": 157,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "20000000",
+            "end_tick": 143131,
+            "end_word": 55,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 6,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          138240,
+          407039
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "1917569901783203986719870431555990",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0x5d637c5c1ddda97fc6115fa68ca66e444c0f2686": {
+      "code_hash": "0x29ae7ac42f070d3574934e2ba54b0d542091d03d197f25f9630ee377cecd5d71",
+      "completeness": {
+        "bitmap_word_range": [
+          -3,
+          -1
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "500000000000000000",
+            "end_tick": -82603,
+            "end_word": -2,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "1000000000000000000000",
+            "end_tick": -84290,
+            "end_word": -2,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 16,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          -153600,
+          -1
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "38350317471085141830651933667504588",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0x9df1e55e6281b2c8c9211ce7fadcfbf49c7afd32": {
+      "code_hash": "0x018a7d4838db42c1be88022351f5593638b5daa1bae623fe580602b2199a89d4",
+      "completeness": {
+        "bitmap_word_range": [
+          2,
+          4
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "200000000000000000",
+            "end_tick": 198196,
+            "end_word": 3,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "500000000",
+            "end_tick": 195071,
+            "end_word": 3,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 5,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          102400,
+          255999
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "38350317471085141830651933667504588",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0xc64639501bcee4c48ef05a46f7bedf00b3529a99": {
+      "code_hash": "0xc6c8ebb02a922b1cf376651a9517c5c1e1eebcecf25aa115ab4c766046bc588b",
+      "completeness": {
+        "bitmap_word_range": [
+          -18,
+          -1
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "10000000000000000",
+            "end_tick": -82339,
+            "end_word": -2,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "100000000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "initialized_ticks": 6,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          -921600,
+          -1
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "38350317471085141830651933667504588",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0xcff260aea6b7cc472db5e7abb15272605a4d859b": {
+      "code_hash": "0xdf790fd555e44c3ffe3518a03dbe12562bbac6aae2981f85ef32c4c58ab797a8",
+      "completeness": {
+        "bitmap_word_range": [
+          -58,
+          57
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "50000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "zero_for_one": {
+            "amount_in": "20000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "initialized_ticks": 6,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          -890880,
+          890879
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "11505743598341114571880798222544994",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0xeaf42c2ba326b37530b7f67d20ac1e7ec9ccd77b": {
+      "code_hash": "0x052d20cd9fff4d9cdadb8a2af3d4ef5245a5fa33f83f4d27fe56e96195c7ec04",
+      "completeness": {
+        "bitmap_word_range": [
+          -58,
+          57
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "500000000000000000",
+            "status": "insufficient_liquidity"
+          },
+          "zero_for_one": {
+            "amount_in": "1000000000000000000000",
+            "status": "insufficient_liquidity"
+          }
+        },
+        "initialized_ticks": 0,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          -890880,
+          890879
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "11505743598341114571880798222544994",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    },
+    "0xfc60a4d05ac8c93f62276e046ad5a098f5c7820a": {
+      "code_hash": "0x41e4ba225c74663814d50cb9a53e727a58f5794ea03b2f4256c3056ed0ec13d0",
+      "completeness": {
+        "bitmap_word_range": [
+          -45,
+          22
+        ],
+        "envelope": {
+          "one_for_zero": {
+            "amount_in": "10000000000000000",
+            "end_tick": 54689,
+            "end_word": 21,
+            "status": "ok"
+          },
+          "zero_for_one": {
+            "amount_in": "100000000000000000000",
+            "end_tick": -111615,
+            "end_word": -44,
+            "status": "ok"
+          }
+        },
+        "initialized_ticks": 1,
+        "limits": {
+          "initial_margin_words": 1,
+          "margin_words": 1,
+          "max_words_per_direction": 128
+        },
+        "tick_range": [
+          -115200,
+          58879
+        ]
+      },
+      "immutable_sites": {
+        "factory": 3,
+        "fee": 4,
+        "maxLiquidityPerTick": 3,
+        "original": 1,
+        "tickSpacing": 4,
+        "token0": 6,
+        "token1": 6
+      },
+      "lm_pool": null,
+      "max_liquidity_per_tick": "1917569901783203986719870431555990",
+      "normalized_code_hash": "0x625b6d8f5997d0c283ff977419660c618cb36c48553129d0ecbb8c7bcde0c9ca"
+    }
+  },
+  "prepare_config": {
+    "path": "config/prepare/uniswap_v3.yaml",
+    "sha256": "d068c464819d1fe9b38dd32690512f0e8230589ede28aea92d3b3e9bcc1b4429"
+  },
+  "rpc_endpoint": "https://rpc.mantle.xyz",
+  "schema": "cl-collection/1",
+  "source_capability": {
+    "protocol_family": "v3_concentrated_liquidity",
+    "sor_protocol": "V3"
+  },
+  "source_key": "uniswap_v3",
+  "token_labels": {
+    "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": "USDC",
+    "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": "USDT",
+    "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": "WMNT",
+    "0xcda86a272531e8640cd7f1a92c01839911b90bb0": "METH",
+    "0xdeaddeaddeaddeaddeaddeaddeaddeaddead1111": "WETH"
+  }
+}

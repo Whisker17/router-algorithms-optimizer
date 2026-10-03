@@ -1,0 +1,40 @@
+# direct_split_certified GRID profile: the bounded preset v1 next to its same-grid reference
+# direct_split (WHI-1552, R021-P06; docs/references/research-021/integer-allocation.md §6,
+# §11 "same_grid_allocation"). Both run under ONE shared objective, search grid and budget,
+# so their values must be equal where the certified identity is supported (Proposition P1);
+# the certified row adds the domain, bound and termination. Replay it literally with
+# `main.py run|quote --strategies profile`.
+#
+# search/budget repeat config/corpus_direct_split_smoke.yaml (4 splits, 5% grid, 50000
+# quotes). SMOKE-SCALE and UNVALIDATED here (one measured attempt, no warmup): the profile
+# exists for the run/quote CLI checks and the bounded preset demonstration, not as a
+# performance campaign (that is WHI-1562's); no speed claim. The scope is all-CPMM direct
+# pool sets under gross_only: every other case is a visible `unsupported` row.
+schema_version: 2
+algorithms:
+  - direct_split
+  - direct_split_certified
+objective:
+  mode: gross_only
+search:
+  max_splits: 4
+  percent_step: 5
+budget:
+  time_limit_seconds: 120
+  max_quotes: 50000
+  max_candidates: null      # explicitly no cap (it would cap finalist_plans_evaluated)
+algorithm_options:
+  direct_split_certified:            # = preset_v1.yaml, so it resolves as {kind: preset}
+    domain: repository_grid
+    max_bound_nodes: 100000
+    max_open_nodes: 100000
+measurement:
+  warmup: 0
+  repeats: 1
+  seed: 1552
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

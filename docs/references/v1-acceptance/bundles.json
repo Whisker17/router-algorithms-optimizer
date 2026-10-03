@@ -1,0 +1,60 @@
+{
+ "_comment": "WHI-1447 acceptance bundles, cut deterministically from the frozen WHI-1436 corpus by `main.py corpus cohort` / `main.py corpus split` (docs/references/v1-acceptance.md \u00a72). The corpus bundle itself is unchanged.",
+ "source": {
+  "bundle_id": "mantle-5src-101082044-091b0759",
+  "bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+  "path": "data/corpus/mantle-5src-101082044/bundle"
+ },
+ "bundles": {
+  "sor_cohort": {
+   "bundle_id": "mantle-5src-101082044-091b0759-sor-cohort",
+   "bundle_hash": "7a4341dd1045f276303bfa767b8c67d8e34e88c2f24c7b64341e02fe47074c6f",
+   "pools": 98,
+   "cases": 398,
+   "cohort": "sor_compatible",
+   "split": "all",
+   "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+   "command": "uv run python main.py corpus cohort --bundle data/corpus/mantle-5src-101082044/bundle --output data/corpus/mantle-5src-101082044/sor_cohort"
+  },
+  "bundle_tuning": {
+   "bundle_id": "mantle-5src-101082044-091b0759-tuning-split",
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "pools": 143,
+   "cases": 96,
+   "cohort": "full_source",
+   "split": "tuning",
+   "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+   "command": "uv run python main.py corpus split --bundle data/corpus/mantle-5src-101082044/bundle --split tuning --output data/corpus/mantle-5src-101082044/bundle_tuning"
+  },
+  "bundle_report": {
+   "bundle_id": "mantle-5src-101082044-091b0759-report-split",
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "pools": 143,
+   "cases": 302,
+   "cohort": "full_source",
+   "split": "report",
+   "subset_of": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+   "command": "uv run python main.py corpus split --bundle data/corpus/mantle-5src-101082044/bundle --split report --output data/corpus/mantle-5src-101082044/bundle_report"
+  },
+  "sor_cohort_tuning": {
+   "bundle_id": "mantle-5src-101082044-091b0759-sor-cohort-tuning-split",
+   "bundle_hash": "b900b866d4a0ef6a3b33546f1d262ed3fc836847ef30da9e975c5bae75107ade",
+   "pools": 98,
+   "cases": 96,
+   "cohort": "sor_compatible",
+   "split": "tuning",
+   "subset_of": "7a4341dd1045f276303bfa767b8c67d8e34e88c2f24c7b64341e02fe47074c6f",
+   "command": "uv run python main.py corpus split --bundle data/corpus/mantle-5src-101082044/sor_cohort --split tuning --output data/corpus/mantle-5src-101082044/sor_cohort_tuning"
+  },
+  "sor_cohort_report": {
+   "bundle_id": "mantle-5src-101082044-091b0759-sor-cohort-report-split",
+   "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+   "pools": 98,
+   "cases": 302,
+   "cohort": "sor_compatible",
+   "split": "report",
+   "subset_of": "7a4341dd1045f276303bfa767b8c67d8e34e88c2f24c7b64341e02fe47074c6f",
+   "command": "uv run python main.py corpus split --bundle data/corpus/mantle-5src-101082044/sor_cohort --split report --output data/corpus/mantle-5src-101082044/sor_cohort_report"
+  }
+ }
+}

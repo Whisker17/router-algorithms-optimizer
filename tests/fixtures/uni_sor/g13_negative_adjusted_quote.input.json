@@ -1,0 +1,147 @@
+{
+  "adaptations": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7",
+    "A-8"
+  ],
+  "amount_in_raw": "1000",
+  "behaviours": [
+    "B-Q4",
+    "B-S2",
+    "B-S8",
+    "B-S11"
+  ],
+  "case_id": "g13_negative_adjusted_quote",
+  "categories": [
+    "G-13"
+  ],
+  "chain_id": 1,
+  "description": "Every gas-adjusted quote is negative; they still compare as exact integers and the least negative single route (-10) wins over a -84 split.",
+  "expect": {
+    "naive_selection": [
+      {
+        "percent": 100,
+        "pool_ids": [
+          "p1"
+        ]
+      }
+    ],
+    "quote_gas_adjusted": "-10",
+    "selection": [
+      {
+        "percent": 100,
+        "pool_ids": [
+          "p2"
+        ]
+      }
+    ]
+  },
+  "gas_score_provider": "synthetic table (abstract A-3 scores)",
+  "naive_alternative": "dropping non-positive adjusted quotes (null) or selecting on raw quote (p1)",
+  "origin": {
+    "kind": "synthetic"
+  },
+  "pools": {
+    "V2": [],
+    "V3": [
+      {
+        "fee": 500,
+        "pool_id": "p1",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "fee": 3000,
+        "pool_id": "p2",
+        "token0": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "token1": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  },
+  "quotes": [
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "100",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "200000",
+      "percent": 50,
+      "raw_quote": "30",
+      "route_pool_ids": [
+        "p1"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "100",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "200000",
+      "percent": 100,
+      "raw_quote": "50",
+      "route_pool_ids": [
+        "p1"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "20",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "60000",
+      "percent": 50,
+      "raw_quote": "6",
+      "route_pool_ids": [
+        "p2"
+      ]
+    },
+    {
+      "family": "V3",
+      "gas_cost_in_quote_token": "20",
+      "gas_cost_usd_raw": "0",
+      "gas_estimate": "60000",
+      "percent": 100,
+      "raw_quote": "10",
+      "route_pool_ids": [
+        "p2"
+      ]
+    }
+  ],
+  "routing": {
+    "max_hops": 3,
+    "max_splits": 2,
+    "min_splits": 1,
+    "percent_step": 50
+  },
+  "schema": "uni-sor-golden-input/1",
+  "token_in": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "token_out": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "tokens": [
+    {
+      "address": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "decimals": 18,
+      "symbol": "TKA"
+    },
+    {
+      "address": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "decimals": 18,
+      "symbol": "TKB"
+    },
+    {
+      "address": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "decimals": 18,
+      "symbol": "TKC"
+    },
+    {
+      "address": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "decimals": 18,
+      "symbol": "TKD"
+    },
+    {
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+      "symbol": "TKE"
+    }
+  ]
+}

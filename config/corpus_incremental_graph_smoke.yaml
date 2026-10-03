@@ -1,0 +1,45 @@
+# Corpus smoke profile for `incremental_graph` vs `direct`, `single_path`, `direct_split`
+# and `path_split` (WHI-1441): one isolated pass over the frozen five-source corpus
+# (data/corpus/mantle-5src-101082044) to check that the shared-pool chunked heuristic
+# runs end-to-end on real mixed-family state next to the four baselines under one
+# budget. See config/README.md and docs/DESIGN.md §2.12.
+#
+# gross-only: no cost model is calibrated yet (docs/DESIGN.md §2.9), so nothing here
+# is a net-output claim.
+#
+# Every search/graph/budget/measurement/worker value below is SMOKE-SCALE and
+# UNVALIDATED. The `search.*` values repeat config/corpus_path_split_smoke.yaml
+# (`max_hops: 2`, not the §2.12 trial value 3, for the reason recorded there) so the
+# embedded `path_split` candidate is the same one. `graph.chunks: 20` matches the 5%
+# percentage granularity; the chunk/percentage sweep is calibration work (I21). A
+# 20-case in-process sample measured ~0.56 s mean / 2.3 s max per incremental_graph case
+# (including its embedded path_split), well inside the per-attempt limit.
+schema_version: 2
+algorithms:
+  - direct
+  - single_path
+  - direct_split
+  - path_split
+  - incremental_graph
+objective:
+  mode: gross_only
+search:
+  max_hops: 2               # smoke-scale (DESIGN §2.12 trial value is 3; see above)
+  max_splits: 4             # DESIGN §2.12 initial trial value (unvalidated)
+  percent_step: 5           # DESIGN §2.12 initial trial value (unvalidated)
+graph:
+  chunks: 20                # smoke-scale; matches percent_step 5 (unvalidated)
+budget:
+  time_limit_seconds: 120   # hard per-attempt wall clock
+  max_quotes: 100000        # hard per-attempt quote cap; every algorithm stops before it
+  max_candidates: null      # explicitly no candidate cap declared
+measurement:
+  warmup: 0                 # smoke: no discarded attempts
+  repeats: 1                # smoke: one measured attempt per case
+  seed: 1441
+  order: fixed
+  memory_pass: false
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120

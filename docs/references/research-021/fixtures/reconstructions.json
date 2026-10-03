@@ -1,0 +1,180 @@
+{
+  "_comment": "WHI-1547 NEW reconstructions (sources.md §4). Inputs come from the archived external report (sources/research-report.md, cited section) or from repository fixtures/artifacts; every expected value was derived by this issue's own hand integer formula, not by the external author's absent verify_research.py/results.json and not by the solver under test. tests/docs/test_research_021_contract.py recomputes each value and, where stated, checks the repository evaluator/solver against it. fee_bps 30 is the 997/1000 factor of the report and of the only admitted CPMM source (Merchant Moe Classic v1).",
+  "R1_prefix_merge_vs_cycle": {
+    "source": "research-report.md §2.1",
+    "amount_in": 10000,
+    "token_in": "A",
+    "token_out": "T",
+    "max_hops": 4,
+    "fee_bps": 30,
+    "pools": {
+      "ab": ["A", "B", 1000000000, 1000000000],
+      "bc1": ["B", "C", 1000000000, 1200000000],
+      "ad": ["A", "D", 1000000000, 990000000],
+      "dc": ["D", "C", 1000000000, 1000000000],
+      "cb2": ["C", "B", 1000000000, 2000000000],
+      "bt": ["B", "T", 1000000000, 1000000000]
+    },
+    "layer2_amount_at_C": {
+      "via_B": 11926,
+      "via_D": 9840
+    },
+    "single_label_result": {
+      "path": ["ab", "bt"],
+      "tokens": ["A", "B", "T"],
+      "gross": 9938
+    },
+    "best_simple_path": {
+      "path": ["ad", "dc", "cb2", "bt"],
+      "tokens": ["A", "D", "C", "B", "T"],
+      "gross": 19560,
+      "evaluator": "ok"
+    },
+    "repeated_token_walk": {
+      "path": ["ab", "bc1", "cb2", "bt"],
+      "tokens": ["A", "B", "C", "B", "T"],
+      "gross_if_allowed": 23708,
+      "evaluator": "invalid_plan"
+    },
+    "classification": "legal_prefix_loss (best simple path lost by merging); the 23708 walk is a genuinely cyclic, out-of-domain candidate"
+  },
+  "R2_integer_marginals": {
+    "source": "research-report.md §2.3",
+    "reserves": [1000, 1000],
+    "fee_bps": 30,
+    "outputs_x0_to_x6": [0, 0, 1, 2, 3, 4, 5],
+    "repository_note": "x=1 is a positive input with zero output: INSUFFICIENT_OUTPUT_AMOUNT, so a plan with that leg is invalid_plan in the repository (the report's q(1)=0 is not a feasible leg here)"
+  },
+  "R3_plateau": {
+    "source": "research-report.md §2.3",
+    "amount_in": 53,
+    "pool1": [134, 190],
+    "pool2": [76, 172],
+    "fee_bps": 30,
+    "G": {
+      "0": 70,
+      "1": 70,
+      "2": 70,
+      "3": 72,
+      "15": 76
+    },
+    "raw_integer_max": 76
+  },
+  "R4_shared_pool": {
+    "source": "research-report.md §2.4",
+    "reserves": [1000, 1000],
+    "fee_bps": 30,
+    "chunk": 100,
+    "static_sum": 180,
+    "sequential_two_steps": 165,
+    "merged_single_step": 166
+  },
+  "R5_multihop_rounding": {
+    "source": "research-report.md §2.5",
+    "amount_in": 2,
+    "hop1": [1000, 1000],
+    "hop2": [1000000000, 100000000000],
+    "fee_bps": 30,
+    "stepwise_integer": 99,
+    "continuous_bounds": ["198.40", "198.41"]
+  },
+  "R6_grid_order_and_bounds": {
+    "source": "NEW (WHI-1547); pools reuse the reserves of research-report.md §2.3",
+    "amount_in": 38,
+    "pool1": [134, 190],
+    "pool2": [76, 172],
+    "fee_bps": 30,
+    "percent_step": 5,
+    "max_splits": 2,
+    "grid_optimum_order_p1_p2": 58,
+    "grid_optimum_order_p2_p1": 59,
+    "raw_integer_optimum": 59,
+    "raw_integer_argmax_pool1": [10],
+    "single_pool_incumbent": 57,
+    "tangent_point": 10,
+    "tangent_upper_floor": 59,
+    "continuous_optimum_bounds": ["59.36", "59.37"],
+    "reverse_request": {
+      "note": "a different request on the same pools and domain whose repository-grid optimum is also 58 (example N-REQUEST-TRANSFER)",
+      "token_in": "T",
+      "token_out": "S",
+      "amount_in": 135,
+      "grid_optimum_order_p1_p2": 58
+    }
+  },
+  "R7_X4": {
+    "source": "tests/routing/test_metis_inspired.py REVISIT fixture; docs/references/routing-algorithms.md §10.5 step 8",
+    "amount_in": 1000000000,
+    "fee_bps": 5,
+    "pools": {
+      "sy": ["S", "Y", 1000000000000000, 1000000000000000],
+      "sa": ["S", "A", 1000000000000000, 1000000000000000],
+      "ax": ["A", "X", 1000000000000000, 10000000000000000],
+      "yx": ["Y", "X", 1000000000000000, 20000000000000000],
+      "xy": ["X", "Y", 5000000000000000, 1000000000000000],
+      "yd": ["Y", "D", 1000000000000000, 1000000000000000]
+    },
+    "via_Y_at_X": 19979965070,
+    "via_A_at_X": 9989982535,
+    "best_four_hop": {
+      "tokens": ["S", "A", "X", "Y", "D"],
+      "gross": 1995991039
+    },
+    "returned_two_hop": {
+      "tokens": ["S", "Y", "D"],
+      "gross": 998998253
+    },
+    "published_loss_bps": "4994.98",
+    "classification": "legal_prefix_loss: the lost best path repeats no token; the dominant label at X had already visited Y"
+  },
+  "R8_X4b": {
+    "source": "tests/routing/test_metis_inspired.py ADMISSION fixture; docs/references/metis-challenge-results.md §4",
+    "amount_in": 2000000000,
+    "fee_bps": 5,
+    "pools": {
+      "sx": ["S", "X", 8000000000, 8000000000],
+      "xa": ["X", "A", 1000000000000000, 2000000000000000],
+      "ad": ["A", "D", 1000000000000000, 2000000000000000],
+      "xd": ["X", "D", 1000000000000000, 1000000000000000],
+      "sa": ["S", "A", 1000000000000000, 1000000000000000],
+      "av": ["A", "V", 1000000000000000, 1100000000000000],
+      "sb": ["S", "B", 1000000000000000, 1000000000000000],
+      "bv": ["B", "V", 1000000000000000, 1000000000000000],
+      "vx": ["V", "X", 1000000000000000, 3000000000000000]
+    },
+    "accepted_union": [
+      ["sx", "xa", "ad"],
+      ["sb", "bv", "vx", "xd"]
+    ],
+    "rejected_union": [
+      ["sx", "xa", "ad"],
+      ["sa", "av", "vx", "xd"]
+    ],
+    "classification": "prefix_admission_loss: the lost continuation is legal; only the dominant label's continuation closes the committed token cycle X->A->V->X"
+  },
+  "R9_D1_p95": {
+    "source": "docs/references/v1-acceptance/report-full/paired_gross.csv",
+    "row": {
+      "run_id": "20260925T160801076875Z-32d039fb",
+      "cohort": "full_source",
+      "algorithm": "path_split",
+      "baseline": "uni_sor_port",
+      "comparison": "coverage"
+    },
+    "p95": "31.3109408425428",
+    "mean": "1598.628979702259",
+    "run": "F1 (full_gross, bundle_report, v1-acceptance.md §4)"
+  },
+  "R10_D2_L08": {
+    "source": "docs/references/latency-results/final-dbac5a10.json",
+    "decision_comparisons": 7,
+    "decision_verdicts": ["inconclusive"],
+    "informational_comparisons": 5,
+    "clean_informational": {
+      "id": "L07-sampling-ablation",
+      "baseline": "H1",
+      "candidate": "H2",
+      "verdict": "opt_in_only"
+    }
+  }
+}

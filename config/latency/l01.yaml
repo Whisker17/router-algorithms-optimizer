@@ -1,0 +1,113 @@
+# L01 (WHI-1503): the pre-registered latency / quality measurement protocol for the 0.1.2
+# optimization experiments (docs/references/latency-baseline.md explains every value).
+# Registered BEFORE any candidate tuning. Changing a value is a new protocol `version`
+# (and a new protocol sha256 in every experiment), never an in-place reinterpretation of an
+# earlier baseline. Read by `python -m benchmark.latency` and `python -m report.latency`.
+schema: latency-protocol/1
+key: L01
+version: 1
+
+# Frozen inputs. The driver refuses a parent bundle or profile whose identity differs.
+parent_bundle:
+  bundle_id: mantle-5src-101082044-091b0759
+  bundle_hash: 717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143
+profile:
+  # Unchanged calibrated daily gross-only profile (six algorithms, max_hops 2, max_splits 4,
+  # percent_step 5, graph.chunks 200, 120 s / 50,000-quote budget, seed 1447, spawn). Only
+  # its algorithms/objective/search/graph/budget/seed/worker values are used; this protocol
+  # replaces its measurement section (warmup/repeats/order/memory pass) below.
+  path: config/daily_gross.yaml
+  sha256: 577b43ebc2d23f1d4d896501471b104013ca86e4d33f2b8315722f3bb5680c11
+
+# The owner's exploratory case, run as a derived single-request bundle (quote semantics).
+sentinel:
+  token_in: USDC
+  token_out: USDT
+  amount: "1000"
+
+# Compact matrix of frozen corpus cases. `split` must equal the corpus descriptor's split
+# (tuning <-> tuning, held_out <-> report); the driver refuses otherwise. Candidates are
+# tuned on `tuning` only; adoption decisions use `held_out` only. Each tuning cell has a
+# held-out twin: the lexicographically smallest report case of the same (pair, stratum).
+matrix:
+  # USDC -> USDT (sentinel pair; dense 12-pool CL/CPMM/LB direct set)
+  - {case: emp-09bc4e-201eba-low-2, split: tuning, covers: [sentinel_pair, small, dense, cl, cpmm, lb]}
+  - {case: emp-09bc4e-201eba-low-1, split: held_out, covers: [sentinel_pair, small, dense, cl, cpmm, lb]}
+  - {case: emp-09bc4e-201eba-large-3, split: tuning, covers: [sentinel_pair, large, dense]}
+  - {case: emp-09bc4e-201eba-large-1, split: held_out, covers: [sentinel_pair, large, dense]}
+  # USDT0 -> WMNT (highest-activity pair; CL + LB)
+  - {case: emp-779ded-78c1b0-low-2, split: tuning, covers: [representative, small, cl, lb]}
+  - {case: emp-779ded-78c1b0-low-1, split: held_out, covers: [representative, small, cl, lb]}
+  - {case: emp-779ded-78c1b0-large-2, split: tuning, covers: [representative, large, cl, lb]}
+  - {case: emp-779ded-78c1b0-large-1, split: held_out, covers: [representative, large, cl, lb]}
+  # WMNT -> WETH (densest pair, 16 direct pools of all five sources; heaviest SOR work)
+  - {case: emp-78c1b0-deadde-large-4, split: tuning, covers: [dense, large, cl, cpmm, lb, heavy]}
+  - {case: emp-78c1b0-deadde-large-1, split: held_out, covers: [dense, large, cl, cpmm, lb, heavy]}
+  # METH -> WETH (LST pair, CL-dominated)
+  - {case: emp-cda86a-deadde-low-3, split: tuning, covers: [representative, small, cl]}
+  - {case: emp-cda86a-deadde-low-1, split: held_out, covers: [representative, small, cl]}
+  # USDT0 -> FBTC (sparse: one CL + one LB pool)
+  - {case: emp-779ded-c96de2-large-2, split: tuning, covers: [sparse, large, cl]}
+  - {case: emp-779ded-c96de2-large-1, split: held_out, covers: [sparse, large, cl]}
+  # CATI -> WMNT (sparse, CPMM-selected)
+  - {case: emp-1bdd88-78c1b0-low-1, split: tuning, covers: [sparse, small, cpmm]}
+  - {case: emp-1bdd88-78c1b0-low-2, split: held_out, covers: [sparse, small, cpmm]}
+  # USDC -> FBTC (no direct pool: multi-hop only; direct/direct_split no_route)
+  - {case: nod-09bc4e-c96de2-medium-2, split: tuning, covers: [no_direct_pool, multi_hop, failure_no_route]}
+  - {case: nod-09bc4e-c96de2-medium-1, split: held_out, covers: [no_direct_pool, multi_hop, failure_no_route]}
+  # State-derived boundary cases (all corpus boundary cases are report/held-out)
+  - {case: bnd-09bc4e-201eba-dust, split: held_out, covers: [boundary, dust]}
+  - {case: bnd-09bc4e-201eba-liq_at, split: held_out, covers: [boundary, liquidity_edge, sentinel_pair]}
+  - {case: bnd-78c1b0-201eba-round_at, split: held_out, covers: [boundary, tick_rounding, fixed_budget_truncation]}
+  - {case: bnd-201eba-779ded-round_at, split: held_out, covers: [boundary, bin_rounding, lb]}
+  - {case: bnd-1bdd88-78c1b0-dust, split: held_out, covers: [boundary, failure_no_route]}
+  - {case: bnd-1bdd88-78c1b0-round_below, split: held_out, covers: [boundary, failure_no_route, lb_only_route]}
+
+# Full five-source universe and the matched V2/V3 (SOR-compatible) cohort.
+cohorts: [full_source, sor_compatible]
+
+# Headline (uninstrumented) timing: warm process = one worker per algorithm per run (the
+# first case of each algorithm follows a fresh prepare); per case `warmup` recorded-but-
+# excluded attempts, then `repeats` measured attempts. Every run is executed once per order;
+# `reverse` reverses the whole algorithm x case schedule and the bundle sequence (ABBA).
+timing:
+  warmup: 1
+  repeats: 5
+  orders: [fixed, reverse]
+
+# Cold process: a fresh spawned worker (start-up + prepare charged) for every
+# (algorithm, case), one attempt -- the single-request condition. Followed, in the same run,
+# by the separate tracemalloc memory pass (instrumented; never headline latency).
+cold:
+  cohorts: [full_source]
+
+# Complete single-request response: `python main.py quote` for the sentinel, as separate
+# sequential processes (unchanged quote semantics: one solve per algorithm per invocation).
+quote_cli:
+  invocations: 5
+
+# Host-load control. A run is load-contaminated if any sampled 1-minute load average exceeds
+# this fraction of the logical CPU count. Contaminated timing is retained and labelled; it
+# cannot support an adopt verdict.
+load:
+  max_loadavg_1m_per_cpu: 0.5
+
+# Acceptance rules applied by `python -m report.latency compare` (see the reference doc).
+acceptance:
+  # Timing decisions use held-out cases only; tuning cases are for tuning.
+  decision_split: held_out
+  # Per-case median solve below this (seconds) is too close to scheduler jitter to form a
+  # timing ratio; such cases stay in every semantic/status check.
+  min_timed_solve_seconds: 0.02
+  # Minimum worthwhile improvement: 1 - geometric-mean(candidate/baseline per-case median).
+  minimum_worthwhile_improvement: 0.10
+  # The improvement must also exceed this multiple of the larger A/A noise floor
+  # (|ln geomean(reverse/fixed)|) of the two experiments.
+  noise_multiplier: 2.0
+  # Exact lane: every scheduled record's semantic fields must be identical in both orders
+  # and both cohorts; work counters may differ but are reported.
+  exact_semantic_fields: [status, evaluation, score, error, limit_hit, solver_reported]
+  work_fields: [quotes_counted, candidates_considered, candidates_truncated, search]
+  # Heuristic lane: no default quality-loss tolerance. Regret is reported against the
+  # same-scope reference; adoption as a default needs explicit owner acceptance.
+  heuristic_default_loss_tolerance: null

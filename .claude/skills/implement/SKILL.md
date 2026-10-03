@@ -1,58 +1,66 @@
 ---
 name: implement
-description: "Implement a piece of work based on a spec or set of tickets."
+description: "Implement one tracker issue in its own worktree: ponytail, relevant checks, PR and handoff."
 disable-model-invocation: true
 ---
 
-Implement the work described by the user in the spec or tickets.
+Implement one issue (or the bounded work the user describes) end to end. You are the
+`IMPLEMENTER` role (`docs/agents/runtime.md`).
 
-Use /tdd where possible, at pre-agreed seams.
+## Start
 
-Before writing code, read `.claude/skills/ponytail/SKILL.md` and apply it. Done when its completion criterion holds — the rung report, not a paraphrase. Put that report in the PR body.
+1. Read the whole issue, including amendments and its `## Execution` section, the spec
+   sections it cites, and only the other docs the task needs. If complexity or expected
+   scope is missing, get it fixed before starting.
+2. Resolve the base and create the worktree exactly as `docs/GIT_WORKFLOW.md`
+   § Resolving the base branch says — fail closed, never a defaulted `dev`, never create
+   `release/v*`. Assert the base, enable hooks in the worktree.
+3. Tracker → `In Progress` (standalone). Under `/orchestrate` the orchestrator owns the
+   tracker; you report facts.
 
-Run typechecking regularly, single test files regularly, and the full test suite once at the end.
+## Build and verify
 
-After the implementation is in place and **before** you start reviewing, apply `.claude/skills/ponytail/review.md` as a shrink pass: delete what it flags. This is not a review round and does not authorize merge.
+- Apply `.claude/skills/ponytail/SKILL.md` while writing.
+- Stay inside the issue's expected scope. If the work needs more, stop and report
+  instead of widening it.
+- Fix the acceptance target before coding; you do not have to write every test first.
+- While working, run the affected tests, lint/type checks and any targeted E2E. Do not
+  rerun the full E2E suite over and over.
+- Changes with branching, parsing, concurrency, money or security logic leave a runnable
+  check that would fail if the behaviour broke. Prefer checks of external behaviour over
+  assertions that restate the implementation. E2E and module tests are both fine.
+- On the final HEAD, use the three tiers of `docs/GIT_WORKFLOW.md` § 2 Implement:
+  - the **required project checks** (CI, and what `AGENTS.md` marks for every merge)
+    always;
+  - the **relevant issue checks** always;
+  - the **full suite** for standalone, governance and hotfix work. Only an ordinary
+    version or bootstrap issue under `/orchestrate` defers it to the release candidate.
+- If the base advanced, update the branch and rerun the affected checks. An earlier
+  HEAD's pass does not count.
 
-Before you start reviewing, confirm the review path exists:
-`scripts/agent-dispatch.sh --probe REVIEWER ESCALATOR`. Exit `3` means the loop below
-cannot run — go straight to § Degraded mode in `docs/agents/runtime.md` (finish the
-implementation, open the PR, stop at `In Review`). Do not substitute self-review.
+## PR and handoff
 
-Once done, use /code-review to review the work (it dispatches the `REVIEWER` role in a fresh context — no separate manual review pass is needed afterwards).
+1. Commit, `git push -u origin HEAD`, `gh pr create --base <resolved-base>`. The body
+   (`.github/pull_request_template.md`) carries the issue id, the resolved base and its
+   signals, the evidence (SHA, commands, real results, artifacts), the role/model/effort
+   you ran as, and why any new dependency or significant abstraction is needed. Tracker →
+   `In Review` (standalone).
+2. Write a handoff with `/handoff`: its durable facts belong in the PR or issue.
 
-Then close the loop, bounded at **three review rounds** followed by an escalation pass:
+## Merge
 
-1. **Round 1** — fix the findings from the first review (or consciously decide not to, with a reason).
-2. **Round 2** — re-run /code-review to verify the round-1 fixes didn't miss the point or introduce new issues; fix what it reports.
-3. **Round 3** — re-run /code-review once more; fix what it reports. This is the **last** review round — do not run a fourth.
-4. **Escalation** — if any finding is still open after round 3, it goes to the **`ESCALATOR` role** (`docs/agents/runtime.md`) to resolve rather than straight to the deferred registry. Run it inline only if this session already *is* the escalator model; otherwise dispatch it — natively (one `general-purpose` sub-agent with `model:` from `ESCALATOR_MODEL`) or as a subprocess (`scripts/agent-dispatch.sh ESCALATOR <prompt-file>`). Hand it the diff command, the open findings verbatim, and the standards/spec sources, and have it fix them. Then rerun the full test suite and lint.
-5. The escalation pass is **single and terminal** — it fixes, it does not trigger another review round. Only a finding the escalator judges genuinely out of scope for this issue gets recorded in `docs/DEFERRED_ISSUES.md` (with that reason) per AGENTS.md.
+Authority comes only from `docs/GIT_WORKFLOW.md` § Merge authorization.
 
-Commit your work to the current branch.
-
-A completed review loop means the work is ready to merge — take the PR all the way, unless the change is **gated** (below):
-
-1. Push and open the PR: `git push -u origin HEAD`, then
-   `gh pr create --base <resolved-base>` (title/body include `{{ISSUE_PREFIX}}-NNN`
-   **and the resolved base plus the signals it was derived from** — see
-   `docs/GIT_WORKFLOW.md` § Resolving the base branch). Tracker → `In Review`.
-   Version-scoped work targets `release/v{version}`; repo-wide governance
-   (carve-out file list) targets `dev`; `hotfix` targets `main`. Never
-   default to `dev`.
-2. Verify the PR reads **MERGEABLE / CLEAN** (if the resolved base advanced,
-   `git merge origin/<resolved-base>`, resolve, rerun affected tests, push)
-   and that the full test suite and lint pass.
-3. `gh pr merge <N> --squash --delete-branch`, then run the post-merge
-   cleanup from AGENTS.md (remove worktree, delete local branch, fast-forward
-   the resolved base, **fan out `dev` into live `release/v*` integration
-   branches when that base was `dev`**). Tracker → `Done`.
-
-**Gated changes stop at `In Review` and wait for a human** — do steps 1–2, skip 3:
-
-- Anything touching **{{HIGH_RISK_PATHS}}** (`docs/GIT_WORKFLOW.md` § Agent / automation constraints #6 — it overrides this skill's merge authorization).
-- Any `release/*` → `main` promotion.
-- A finished version-integration `release/v*` → `dev` (the merge-back that
-  makes `dev` shippable again).
-
-The completed three-round review loop — plus the escalation pass, when round 3 left findings open — is what authorizes the self-merge. Work that skipped the loop must also stop at `In Review`, **including work that skipped it because `REVIEWER` was unavailable**. The authorization comes from the review having actually happened, never from the intention to review.
+- **Under `/orchestrate`:** stop at PR + handoff. The orchestrator verifies and merges.
+- **Standalone** (no release orchestration takes over): run one independent PR review with
+  `/code-review` in PR mode (`REVIEWER`, effort `high`, a real dispatch — not your own
+  context). Fix accepted blocking findings; a suggestion you consciously leave that is
+  worth remembering goes in `docs/DEFERRED_ISSUES.md` with its reason. If you changed anything after the review, the
+  reviewer checks the final commit before merge. Then, unless a human-gated row applies:
+  PR MERGEABLE/CLEAN, checks green on the final HEAD, `gh pr merge <N> --squash
+  --delete-branch`, post-merge cleanup and fan-out per `docs/GIT_WORKFLOW.md`, tracker →
+  `Done`.
+- **Human-gated** (high-risk paths, hotfix → `main`, `release/*` → `main`, finished
+  `release/v*` → `dev`): stop at `In Review`.
+- `REVIEWER` unavailable or the dispatch failed: stay at `In Review` and say which role
+  was missing. Never substitute a self-review.

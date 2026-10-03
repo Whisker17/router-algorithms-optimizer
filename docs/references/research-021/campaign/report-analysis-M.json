@@ -1,0 +1,1848 @@
+{
+ "analysis_source": {
+  "analysis_py_sha256": "311a92988ffdc42901de65adc6199e16d5a0faa849447a12ed6accff562b2288",
+  "campaign_py_sha256": "2307d801d5f25fdd742208cf7c8b16483853e5a3e80351187121574b797c65c4",
+  "git_dirty": false,
+  "git_revision": "aa5726c5706ea7fb8c5a9c4dc49243fdd1570136",
+  "manifest_sha256": "85b382b4d6f57febf0e69546af48983516b001257c4a52f2cd43ac2020786fdc"
+ },
+ "comparisons": [],
+ "host_samples": 664,
+ "host_sleep_log": "sleep/wake log: /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-021/whi-1562/aa5726c5706ea7fb8c5a9c4dc49243fdd1570136/M/pmset-sleep-wake.txt",
+ "host_sleep_transitions": 0,
+ "inventory": {
+  "cells": 336,
+  "invocations": [
+   {
+    "algorithms": [
+     "direct",
+     "single_path",
+     "direct_split",
+     "path_split",
+     "incremental_graph",
+     "uni_sor_port",
+     "uni_sor_adaptive",
+     "uni_sor_optimized",
+     "metis_inspired",
+     "metis_history",
+     "direct_split_certified",
+     "incremental_graph_repair",
+     "uni_sor_cycle_safe",
+     "cfmm_dual"
+    ],
+    "bundle": "{dir:L-R}/bundles/full_source-matrix",
+    "cases": 24,
+    "cells": 336,
+    "depends": [
+     "L-R"
+    ],
+    "expect_exit": 0,
+    "id": "M-roster",
+    "kind": "run",
+    "profile": "memory_gross",
+    "strategies": "all"
+   },
+   {
+    "depends": [
+     "M-roster"
+    ],
+    "id": "M-roster.report",
+    "kind": "report",
+    "of": "M-roster"
+   }
+  ],
+  "stage": "M",
+  "stage_rules": {
+   "caffeinate": true,
+   "lanes": 1,
+   "owner": "component B, after R",
+   "pmset_capture": true,
+   "split": "mixed (L01 full-source matrix)"
+  }
+ },
+ "invocations": {
+  "M-roster": {
+   "arms": [
+    {
+     "memory": {
+      "algorithm": "direct",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 92.0,
+       "mean": 92.0,
+       "median": 92.0,
+       "min": 92.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 1128503.0,
+       "mean": 74542.25,
+       "median": 25053.5,
+       "min": 1720.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "direct",
+      "arm": "M-roster/direct",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 3,
+       "ok": 21
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/direct",
+      "evaluation_seconds": {
+       "max": 0.000463625,
+       "mean": 8.620658333333333e-05,
+       "median": 5.945850000000001e-05,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.002068958
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 5.83e-07,
+       "mean": 5.83e-07,
+       "median": 5.83e-07,
+       "min": 5.83e-07,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 0.010142125,
+       "mean": 0.0031280104166666665,
+       "median": 0.0002719375,
+       "min": 1.7959e-05,
+       "n": 24,
+       "sum": 0.07507225
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.170730584,
+       "mean": 0.170730584,
+       "median": 0.170730584,
+       "min": 0.170730584,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/direct",
+      "runner_quotes_counted": {
+       "max": 16.0,
+       "mean": 7.125,
+       "median": 4.0,
+       "min": 0.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 171.0
+      },
+      "units": {}
+     }
+    },
+    {
+     "memory": {
+      "algorithm": "single_path",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 37008.0,
+       "mean": 37008.0,
+       "median": 37008.0,
+       "min": 37008.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 179695531.0,
+       "mean": 64284575.333333336,
+       "median": 33501457.5,
+       "min": 7744.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "single_path",
+      "arm": "M-roster/single_path",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 1,
+       "ok": 23
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/single_path",
+      "evaluation_seconds": {
+       "max": 0.000598333,
+       "mean": 0.00018883158333333333,
+       "median": 0.000126229,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.004531958
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.000110875,
+       "mean": 0.000110875,
+       "median": 0.000110875,
+       "min": 0.000110875,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 3.918456333,
+       "mean": 1.50023386125,
+       "median": 0.8980532290000001,
+       "min": 0.000561959,
+       "n": 24,
+       "sum": 36.00561267
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.162349333,
+       "mean": 0.162349333,
+       "median": 0.162349333,
+       "min": 0.162349333,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/single_path",
+      "runner_quotes_counted": {
+       "max": 5139.0,
+       "mean": 2660.2916666666665,
+       "median": 2561.5,
+       "min": 4.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 63847.0
+      },
+      "units": {}
+     }
+    },
+    {
+     "memory": {
+      "algorithm": "direct_split",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 140.0,
+       "mean": 140.0,
+       "median": 140.0,
+       "min": 140.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 62676485.0,
+       "mean": 3888446.2916666665,
+       "median": 406779.0,
+       "min": 3634.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "direct_split",
+      "arm": "M-roster/direct_split",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 3,
+       "ok": 21
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/direct_split",
+      "evaluation_seconds": {
+       "max": 0.000477542,
+       "mean": 0.000118340375,
+       "median": 5.94165e-05,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.002840169
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 1.4084e-05,
+       "mean": 1.4084e-05,
+       "median": 1.4084e-05,
+       "min": 1.4084e-05,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 0.674587416,
+       "mean": 0.14501534020833332,
+       "median": 0.004178916499999999,
+       "min": 2.1791e-05,
+       "n": 24,
+       "sum": 3.480368165
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.164202125,
+       "mean": 0.164202125,
+       "median": 0.164202125,
+       "min": 0.164202125,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/direct_split",
+      "runner_quotes_counted": {
+       "max": 855.0,
+       "mean": 300.8333333333333,
+       "median": 170.5,
+       "min": 0.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 7220.0
+      },
+      "units": {}
+     }
+    },
+    {
+     "memory": {
+      "algorithm": "path_split",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 37008.0,
+       "mean": 37008.0,
+       "median": 37008.0,
+       "min": 37008.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 1012109278.0,
+       "mean": 364404353.875,
+       "median": 375063779.5,
+       "min": 117181.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "path_split",
+      "arm": "M-roster/path_split",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 1,
+       "ok": 23
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/path_split",
+      "evaluation_seconds": {
+       "max": 0.001293833,
+       "mean": 0.000381126625,
+       "median": 0.00020943750000000002,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.009147039000000001
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.000106333,
+       "mean": 0.000106333,
+       "median": 0.000106333,
+       "min": 0.000106333,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 9.468869667,
+       "mean": 4.192404545208333,
+       "median": 4.809051146,
+       "min": 0.000983125,
+       "n": 24,
+       "sum": 100.617709085
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.161131583,
+       "mean": 0.161131583,
+       "median": 0.161131583,
+       "min": 0.161131583,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/path_split",
+      "runner_quotes_counted": {
+       "max": 30258.0,
+       "mean": 13737.166666666666,
+       "median": 17465.5,
+       "min": 4.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 329692.0
+      },
+      "units": {}
+     }
+    },
+    {
+     "memory": {
+      "algorithm": "incremental_graph",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 37008.0,
+       "mean": 37008.0,
+       "median": 37008.0,
+       "min": 37008.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 2781320469.0,
+       "mean": 732532082.625,
+       "median": 435458686.0,
+       "min": 117909.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "incremental_graph",
+      "arm": "M-roster/incremental_graph",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 1,
+       "ok": 23
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/incremental_graph",
+      "evaluation_seconds": {
+       "max": 0.002013834,
+       "mean": 0.0006672760416666667,
+       "median": 0.0002908335,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.016014625
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.000114083,
+       "mean": 0.000114083,
+       "median": 0.000114083,
+       "min": 0.000114083,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 19.726447208,
+       "mean": 8.059636326541666,
+       "median": 9.2250206665,
+       "min": 0.002152917,
+       "n": 24,
+       "sum": 193.431271837
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.166057,
+       "mean": 0.166057,
+       "median": 0.166057,
+       "min": 0.166057,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/incremental_graph",
+      "runner_quotes_counted": {
+       "max": 111668.0,
+       "mean": 26514.958333333332,
+       "median": 25555.0,
+       "min": 4.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 636359.0
+      },
+      "units": {}
+     }
+    },
+    {
+     "memory": {
+      "algorithm": "uni_sor_port",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 482756.0,
+       "mean": 482756.0,
+       "median": 482756.0,
+       "min": 482756.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 2529418003.0,
+       "mean": 768387617.25,
+       "median": 530807812.0,
+       "min": 17303.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "uni_sor_port",
+      "arm": "M-roster/uni_sor_port",
+      "failures": 3,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "invalid_plan": 3,
+       "no_route": 2,
+       "ok": 19
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/uni_sor_port",
+      "evaluation_seconds": {
+       "max": 0.001283042,
+       "mean": 0.00022372225,
+       "median": 9.07715e-05,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.005369334
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.014369834,
+       "mean": 0.014369834,
+       "median": 0.014369834,
+       "min": 0.014369834,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 54.239742208,
+       "mean": 16.530623303791668,
+       "median": 10.881137187,
+       "min": 0.00013225,
+       "n": 24,
+       "sum": 396.734959291
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.179109375,
+       "mean": 0.179109375,
+       "median": 0.179109375,
+       "min": 0.179109375,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/uni_sor_port",
+      "runner_quotes_counted": {
+       "max": 60111.0,
+       "mean": 26593.583333333332,
+       "median": 19439.0,
+       "min": 1.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 638246.0
+      },
+      "units": {}
+     }
+    },
+    {
+     "memory": {
+      "algorithm": "uni_sor_adaptive",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 484283.0,
+       "mean": 484283.0,
+       "median": 484283.0,
+       "min": 484283.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 1770607398.0,
+       "mean": 435722311.5,
+       "median": 176482886.5,
+       "min": 28620.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "uni_sor_adaptive",
+      "arm": "M-roster/uni_sor_adaptive",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 2,
+       "ok": 22
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/uni_sor_adaptive",
+      "evaluation_seconds": {
+       "max": 0.0009785,
+       "mean": 0.00024911975,
+       "median": 0.0001083335,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.005978874
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.019993375,
+       "mean": 0.019993375,
+       "median": 0.019993375,
+       "min": 0.019993375,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 12.949092333,
+       "mean": 4.624617440833333,
+       "median": 4.2750874375,
+       "min": 0.00021625,
+       "n": 24,
+       "sum": 110.99081858
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.187381209,
+       "mean": 0.187381209,
+       "median": 0.187381209,
+       "min": 0.187381209,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/uni_sor_adaptive",
+      "runner_quotes_counted": {
+       "max": 36729.0,
+       "mean": 12526.5,
+       "median": 6259.0,
+       "min": 1.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 300636.0
+      },
+      "units": {}
+     }
+    },
+    {
+     "memory": {
+      "algorithm": "uni_sor_optimized",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 484835.0,
+       "mean": 484835.0,
+       "median": 484835.0,
+       "min": 484835.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 265038290.0,
+       "mean": 84042128.95833333,
+       "median": 54079397.5,
+       "min": 31085.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "uni_sor_optimized",
+      "arm": "M-roster/uni_sor_optimized",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 2,
+       "ok": 22
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/uni_sor_optimized",
+      "evaluation_seconds": {
+       "max": 0.000996583,
+       "mean": 0.00027572050000000003,
+       "median": 0.00010285399999999999,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.006617292
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.019965042,
+       "mean": 0.019965042,
+       "median": 0.019965042,
+       "min": 0.019965042,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 0.560014291,
+       "mean": 0.20571080895833335,
+       "median": 0.162807708,
+       "min": 0.000200125,
+       "n": 24,
+       "sum": 4.937059415
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.187675292,
+       "mean": 0.187675292,
+       "median": 0.187675292,
+       "min": 0.187675292,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/uni_sor_optimized",
+      "runner_quotes_counted": {
+       "max": 6370.0,
+       "mean": 2937.5416666666665,
+       "median": 2103.0,
+       "min": 1.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 70501.0
+      },
+      "units": {}
+     }
+    },
+    {
+     "memory": {
+      "algorithm": "metis_inspired",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 37008.0,
+       "mean": 37008.0,
+       "median": 37008.0,
+       "min": 37008.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 1017584347.0,
+       "mean": 182442856.45833334,
+       "median": 88499638.0,
+       "min": 88952.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "metis_inspired",
+      "arm": "M-roster/metis_inspired",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 1,
+       "ok": 23
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/metis_inspired",
+      "evaluation_seconds": {
+       "max": 0.001904166,
+       "mean": 0.0006448959166666667,
+       "median": 0.0006772505000000001,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.015477502
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.000114792,
+       "mean": 0.000114792,
+       "median": 0.000114792,
+       "min": 0.000114792,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 10.921564833,
+       "mean": 4.961376984458333,
+       "median": 5.3395363745,
+       "min": 0.00169925,
+       "n": 24,
+       "sum": 119.073047627
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.161161875,
+       "mean": 0.161161875,
+       "median": 0.161161875,
+       "min": 0.161161875,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/metis_inspired",
+      "runner_quotes_counted": {
+       "max": 37751.0,
+       "mean": 15581.708333333334,
+       "median": 17843.5,
+       "min": 4.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 373961.0
+      },
+      "units": {}
+     }
+    },
+    {
+     "certificate": {
+      "arm": "M-roster/metis_history",
+      "bound_kinds": {
+       "none (not_produced)": 24
+      },
+      "certified_claims": 0,
+      "invalid_certificate_codes": {},
+      "runner_check_states": {
+       "unavailable": 24
+      },
+      "terminations": {}
+     },
+     "domain": {
+      "arm": "M-roster/metis_history",
+      "distinct_domain_hashes": 1,
+      "rules": {
+       "{\"amount_grid\": {\"chunks\": 50, \"kind\": \"chunk_grid\"}, \"full_fill\": \"v1_full_fill\", \"hops\": {\"max\": 4, \"param\": \"graph.label_hops\"}, \"pool_reuse\": \"shared_merged\", \"protocols\": [\"constant_product\", \"concentrated\", \"liquidity_book\"], \"splits\": {\"governs\": \"allocation\", \"max\": 50, \"param\": \"graph.chunks\"}, \"token_reuse\": \"simple_path\", \"zero_output_leg\": \"infeasible\"}": 24
+      }
+     },
+     "history": {
+      "arm": "M-roster/metis_history",
+      "chunks_state_capped": {
+       "max": 50.0,
+       "mean": 37.666666666666664,
+       "median": 50.0,
+       "min": 0.0,
+       "n": 24
+      },
+      "labels_dropped_frontier_cap": 0,
+      "truncated_by": {
+       "None": 4,
+       "state_cap": 20
+      }
+     },
+     "memory": {
+      "algorithm": "metis_history",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 50229.0,
+       "mean": 50229.0,
+       "median": 50229.0,
+       "min": 50229.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 995274829.0,
+       "mean": 195618634.25,
+       "median": 94209955.0,
+       "min": 145677.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "metis_history",
+      "arm": "M-roster/metis_history",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 1,
+       "ok": 23
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/metis_history",
+      "evaluation_seconds": {
+       "max": 0.001995583,
+       "mean": 0.0006802275,
+       "median": 0.0006759795,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.01632546
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.00027825,
+       "mean": 0.00027825,
+       "median": 0.00027825,
+       "min": 0.00027825,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 11.204949,
+       "mean": 5.288824605958333,
+       "median": 5.4601380835,
+       "min": 0.001115916,
+       "n": 24,
+       "sum": 126.93179054299999
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.163564375,
+       "mean": 0.163564375,
+       "median": 0.163564375,
+       "min": 0.163564375,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/metis_history",
+      "runner_quotes_counted": {
+       "max": 37774.0,
+       "mean": 16272.666666666666,
+       "median": 18253.5,
+       "min": 4.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 390544.0
+      },
+      "units": {
+       "admission_checks": {
+        "max": 37450.0,
+        "mean": 20555.833333333332,
+        "median": 23467.5,
+        "min": 4.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 493340.0
+       },
+       "internal_evaluations": {
+        "max": 6779.0,
+        "mean": 2883.8333333333335,
+        "median": 3220.0,
+        "min": 4.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 69212.0
+       },
+       "label_relaxations": {
+        "max": 37450.0,
+        "mean": 17841.291666666668,
+        "median": 17777.0,
+        "min": 4.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 428191.0
+       },
+       "labels_discarded_dominance": {
+        "max": 7687.0,
+        "mean": 351.125,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 8427.0
+       },
+       "labels_retained_unknown": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 0.0
+       },
+       "peak_frontier_labels": {
+        "max": 24.0,
+        "mean": 16.416666666666668,
+        "median": 18.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 394.0
+       },
+       "quotes_executed": {
+        "max": 37774.0,
+        "mean": 16272.666666666666,
+        "median": 18253.5,
+        "min": 4.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 390544.0
+       },
+       "quotes_memoized": {
+        "max": 155306.0,
+        "mean": 51831.416666666664,
+        "median": 57397.5,
+        "min": 7.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 1243954.0
+       },
+       "state_comparisons": {
+        "max": 15500.0,
+        "mean": 5475.75,
+        "median": 4175.5,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 131418.0
+       }
+      }
+     }
+    },
+    {
+     "certificate": {
+      "arm": "M-roster/direct_split_certified",
+      "bound_kinds": {
+       "none (not_produced)": 24
+      },
+      "certified_claims": 0,
+      "invalid_certificate_codes": {},
+      "runner_check_states": {
+       "unavailable": 24
+      },
+      "terminations": {}
+     },
+     "domain": {
+      "arm": "M-roster/direct_split_certified",
+      "distinct_domain_hashes": 9,
+      "rules": {
+       "{\"amount_grid\": {\"kind\": \"repository_grid\", \"percent_step\": 5, \"remainder\": \"last_leg_all_remaining\"}, \"full_fill\": \"v1_full_fill\", \"hops\": {\"max\": 1, \"param\": null}, \"pool_reuse\": \"disjoint\", \"protocols\": [\"constant_product\"], \"splits\": {\"governs\": \"allocation\", \"max\": 4, \"param\": \"search.max_splits\"}, \"token_reuse\": \"simple_path\", \"zero_output_leg\": \"infeasible\"}": 24
+      }
+     },
+     "memory": {
+      "algorithm": "direct_split_certified",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 8208.0,
+       "mean": 8208.0,
+       "median": 8208.0,
+       "min": 8208.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 8404.0,
+       "mean": 6706.041666666667,
+       "median": 6258.0,
+       "min": 5363.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "direct_split_certified",
+      "arm": "M-roster/direct_split_certified",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 2,
+       "unsupported": 22
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {
+       "non_constant_product_direct_pool": 22
+      }
+     },
+     "timing": {
+      "arm": "M-roster/direct_split_certified",
+      "evaluation_seconds": {
+       "max": 0.0,
+       "mean": 0.0,
+       "median": 0.0,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.0
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.000115542,
+       "mean": 0.000115542,
+       "median": 0.000115542,
+       "min": 0.000115542,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 8.35e-05,
+       "mean": 3.193220833333333e-05,
+       "median": 2.7125000000000002e-05,
+       "min": 2.4041e-05,
+       "n": 24,
+       "sum": 0.000766373
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.164472041,
+       "mean": 0.164472041,
+       "median": 0.164472041,
+       "min": 0.164472041,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/direct_split_certified",
+      "runner_quotes_counted": {
+       "max": 0.0,
+       "mean": 0.0,
+       "median": 0.0,
+       "min": 0.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 0.0
+      },
+      "units": {
+       "bb_nodes_expanded": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 0.0
+       },
+       "bound_evaluations": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 0.0
+       },
+       "internal_evaluations": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 0.0
+       },
+       "peak_open_nodes": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 0.0
+       },
+       "quotes_executed": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 0.0
+       },
+       "quotes_memoized": {
+        "max": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 0.0
+       }
+      }
+     }
+    },
+    {
+     "certificate": {
+      "arm": "M-roster/incremental_graph_repair",
+      "bound_kinds": {
+       "none (not_produced)": 24
+      },
+      "certified_claims": 0,
+      "invalid_certificate_codes": {},
+      "runner_check_states": {
+       "unavailable": 24
+      },
+      "terminations": {}
+     },
+     "domain": {
+      "arm": "M-roster/incremental_graph_repair",
+      "distinct_domain_hashes": 1,
+      "rules": {
+       "{\"amount_grid\": {\"chunks\": 50, \"kind\": \"chunk_grid\", \"remainder\": \"floor_chunks\"}, \"full_fill\": \"v1_full_fill\", \"hops\": {\"max\": 3, \"param\": \"search.max_hops\"}, \"pool_reuse\": \"shared_merged\", \"protocols\": [\"constant_product\", \"concentrated\", \"liquidity_book\"], \"splits\": {\"governs\": \"allocation\", \"max\": 50, \"param\": \"graph.chunks\"}, \"token_reuse\": \"simple_path\", \"zero_output_leg\": \"infeasible\"}": 24
+      }
+     },
+     "memory": {
+      "algorithm": "incremental_graph_repair",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 44029.0,
+       "mean": 44029.0,
+       "median": 44029.0,
+       "min": 44029.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 5210724740.0,
+       "mean": 1096529653.6666667,
+       "median": 441909643.0,
+       "min": 117933.0,
+       "n": 24
+      }
+     },
+     "repair": {
+      "accepted": 5,
+      "arm": "M-roster/incremental_graph_repair",
+      "consistency_failures": 0,
+      "records_with_repair_block": 24,
+      "stop": {
+       "complete": 23,
+       "no_trace": 1
+      }
+     },
+     "status": {
+      "algorithm": "incremental_graph_repair",
+      "arm": "M-roster/incremental_graph_repair",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 1,
+       "ok": 23
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/incremental_graph_repair",
+      "evaluation_seconds": {
+       "max": 0.001977167,
+       "mean": 0.0006843837083333333,
+       "median": 0.000282333,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.016425209
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.000172041,
+       "mean": 0.000172041,
+       "median": 0.000172041,
+       "min": 0.000172041,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 38.547978792,
+       "mean": 13.405757668375001,
+       "median": 17.4373176465,
+       "min": 0.002524459,
+       "n": 24,
+       "sum": 321.738184041
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.161239208,
+       "mean": 0.161239208,
+       "median": 0.161239208,
+       "min": 0.161239208,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/incremental_graph_repair",
+      "runner_quotes_counted": {
+       "max": 111668.0,
+       "mean": 33727.083333333336,
+       "median": 29703.5,
+       "min": 4.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 809450.0
+      },
+      "units": {
+       "admission_checks": {
+        "max": 3207960.0,
+        "mean": 1294946.7916666667,
+        "median": 1417139.0,
+        "min": 469.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 31078723.0
+       },
+       "checkpoint_restores": {
+        "max": 4.0,
+        "mean": 2.0833333333333335,
+        "median": 1.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 50.0
+       },
+       "internal_evaluations": {
+        "max": 6781.0,
+        "mean": 2887.0416666666665,
+        "median": 3222.0,
+        "min": 4.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 69289.0
+       },
+       "paths_scored": {
+        "max": 1768383.0,
+        "mean": 933979.6666666666,
+        "median": 1392053.0,
+        "min": 469.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 22415512.0
+       },
+       "quotes_executed": {
+        "max": 111668.0,
+        "mean": 33727.083333333336,
+        "median": 29703.5,
+        "min": 4.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 809450.0
+       },
+       "quotes_memoized": {
+        "max": 1086608.0,
+        "mean": 555826.375,
+        "median": 736341.0,
+        "min": 7.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 13339833.0
+       },
+       "repair_attempts": {
+        "max": 8.0,
+        "mean": 3.9166666666666665,
+        "median": 2.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 94.0
+       }
+      }
+     }
+    },
+    {
+     "certificate": {
+      "arm": "M-roster/uni_sor_cycle_safe",
+      "bound_kinds": {
+       "none (not_produced)": 2,
+       "unknown": 22
+      },
+      "certified_claims": 0,
+      "invalid_certificate_codes": {},
+      "runner_check_states": {
+       "unavailable": 2,
+       "unknown": 22
+      },
+      "terminations": {
+       "complete": 22
+      }
+     },
+     "domain": {
+      "arm": "M-roster/uni_sor_cycle_safe",
+      "distinct_domain_hashes": 1,
+      "rules": {
+       "{\"amount_grid\": {\"kind\": \"repository_grid\", \"percent_step\": 5, \"remainder\": \"sor_d1_last_b_f1_route_all_remaining\", \"route_order\": \"sor_a1_b_r1_b_q1\"}, \"full_fill\": \"v1_full_fill\", \"hops\": {\"max\": 3, \"param\": \"search.max_hops\"}, \"pool_reuse\": \"disjoint\", \"protocols\": [\"constant_product\", \"concentrated\"], \"splits\": {\"governs\": \"allocation\", \"max\": 4, \"param\": \"search.max_splits\"}, \"token_reuse\": \"simple_path\", \"zero_output_leg\": \"infeasible\"}": 24
+      }
+     },
+     "memory": {
+      "algorithm": "uni_sor_cycle_safe",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 483819.0,
+       "mean": 483819.0,
+       "median": 483819.0,
+       "min": 483819.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 2529435611.0,
+       "mean": 768398152.9583334,
+       "median": 530821948.0,
+       "min": 34321.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "uni_sor_cycle_safe",
+      "arm": "M-roster/uni_sor_cycle_safe",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 2,
+       "ok": 22
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/uni_sor_cycle_safe",
+      "evaluation_seconds": {
+       "max": 0.001174084,
+       "mean": 0.0003010312916666667,
+       "median": 0.000112354,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.007224751
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.013812958,
+       "mean": 0.013812958,
+       "median": 0.013812958,
+       "min": 0.013812958,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 55.164963625,
+       "mean": 16.627104831416666,
+       "median": 10.9171285,
+       "min": 0.000182458,
+       "n": 24,
+       "sum": 399.050515954
+      },
+      "solver_stage_seconds": {},
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.21487825,
+       "mean": 0.21487825,
+       "median": 0.21487825,
+       "min": 0.21487825,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/uni_sor_cycle_safe",
+      "runner_quotes_counted": {
+       "max": 60114.0,
+       "mean": 26593.958333333332,
+       "median": 19439.0,
+       "min": 1.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 638255.0
+      },
+      "units": {
+       "admission_checks": {
+        "max": 3046.0,
+        "mean": 750.25,
+        "median": 200.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 18006.0
+       },
+       "combinations_rejected_cycle": {
+        "max": 1654.0,
+        "mean": 211.75,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 5082.0
+       },
+       "internal_evaluations": {
+        "max": 1.0,
+        "mean": 0.9166666666666666,
+        "median": 1.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 22.0
+       },
+       "quotes_executed": {
+        "max": 60114.0,
+        "mean": 26593.958333333332,
+        "median": 19439.0,
+        "min": 1.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 638255.0
+       },
+       "quotes_memoized": {
+        "max": 126440.0,
+        "mean": 62876.708333333336,
+        "median": 41750.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 1509041.0
+       }
+      }
+     }
+    },
+    {
+     "certificate": {
+      "arm": "M-roster/cfmm_dual",
+      "bound_kinds": {
+       "estimate": 2,
+       "none (not_produced)": 2,
+       "unknown": 20
+      },
+      "certified_claims": 0,
+      "invalid_certificate_codes": {},
+      "runner_check_states": {
+       "estimate": 2,
+       "unavailable": 2,
+       "unknown": 20
+      },
+      "terminations": {
+       "converged": 2,
+       "not_converged": 12,
+       "recovery_failed": 8
+      }
+     },
+     "cfmm": {
+      "arm": "M-roster/cfmm_dual",
+      "estimate_present": 2,
+      "estimate_rule_violations": [],
+      "estimate_withheld": {
+       "fallback_used": 8,
+       "initial_not_converged": 12
+      },
+      "fallbacks": {
+       "empty_support": 8,
+       "resolve_failed": 2
+      },
+      "gate": "pass",
+      "recovered_over_estimate": {
+       "max": 1.0000000000000198,
+       "mean": 1.0000000000000182,
+       "median": 1.0000000000000182,
+       "min": 1.0000000000000164,
+       "n": 2
+      },
+      "recovery_failures": {
+       "empty_support": 8,
+       "resolve_failed": 2
+      },
+      "stage": {
+       "constant_product+concentrated": 24
+      },
+      "termination": {
+       "converged": 2,
+       "not_converged": 12,
+       "recovery_failed": 10
+      }
+     },
+     "domain": {
+      "arm": "M-roster/cfmm_dual",
+      "distinct_domain_hashes": 4,
+      "rules": {
+       "{\"amount_grid\": {\"kind\": \"recovered_continuous\", \"min_split_share\": \"0.001\", \"recovery\": \"cfmm_share_projection/1\", \"remainder\": \"last_leg_all_remaining\"}, \"full_fill\": \"v1_full_fill\", \"hops\": {\"max\": 3, \"param\": \"search.max_hops\"}, \"pool_reuse\": \"shared_merged\", \"protocols\": [\"constant_product\", \"concentrated\"], \"splits\": {\"governs\": \"none\", \"max\": null, \"param\": null}, \"token_reuse\": \"simple_path\", \"zero_output_leg\": \"infeasible\"}": 24
+      }
+     },
+     "memory": {
+      "algorithm": "cfmm_dual",
+      "memory_statuses": {
+       "measured": 24
+      },
+      "prepare_peak_bytes": {
+       "max": 32185862.0,
+       "mean": 32185862.0,
+       "median": 32185862.0,
+       "min": 32185862.0,
+       "n": 1
+      },
+      "solve_peak_bytes": {
+       "max": 37575481.0,
+       "mean": 7337122.666666667,
+       "median": 1955541.0,
+       "min": 105420.0,
+       "n": 24
+      }
+     },
+     "status": {
+      "algorithm": "cfmm_dual",
+      "arm": "M-roster/cfmm_dual",
+      "failures": 0,
+      "last_valid_candidates": 0,
+      "scheduled": 24,
+      "statuses": {
+       "no_route": 2,
+       "ok": 22
+      },
+      "timeout_by_limit": {},
+      "unsupported_reasons": {}
+     },
+     "timing": {
+      "arm": "M-roster/cfmm_dual",
+      "evaluation_seconds": {
+       "max": 0.002822292,
+       "mean": 0.00048489933333333333,
+       "median": 0.0004086875,
+       "min": 0.0,
+       "n": 24,
+       "sum": 0.011637584
+      },
+      "prepare_seconds": {
+       "events": 1,
+       "max": 0.406205125,
+       "mean": 0.406205125,
+       "median": 0.406205125,
+       "min": 0.406205125,
+       "n": 1
+      },
+      "solve_seconds": {
+       "max": 1.148975334,
+       "mean": 0.15872978129166668,
+       "median": 0.027500229,
+       "min": 0.000716042,
+       "n": 24,
+       "sum": 3.809514751
+      },
+      "solver_stage_seconds": {
+       "fallback": {
+        "max": 1.1408505830040667,
+        "mean": 0.3410324999975273,
+        "median": 0.17273512498650234,
+        "min": 5.1125010941177607e-05,
+        "n": 10
+       },
+       "initial_solve": {
+        "max": 0.03446283400990069,
+        "mean": 0.011100112790397057,
+        "median": 0.007983770497958176,
+        "min": 0.0004450000124052167,
+        "n": 24
+       },
+       "prepare_cl_indexes": {
+        "max": 0.0830389579932671,
+        "mean": 0.0830389579932671,
+        "median": 0.0830389579932671,
+        "min": 0.0830389579932671,
+        "n": 24
+       },
+       "prepare_numeric_import": {
+        "max": 0.3119167090044357,
+        "mean": 0.3119167090044357,
+        "median": 0.3119167090044357,
+        "min": 0.3119167090044357,
+        "n": 24
+       },
+       "recovery": {
+        "max": 0.003076499968301505,
+        "mean": 0.0005675956684475144,
+        "median": 0.00026791701384354383,
+        "min": 7.95800588093698e-06,
+        "n": 24
+       },
+       "restricted_resolve": {
+        "max": 0.01059983397135511,
+        "mean": 0.004031874831222619,
+        "median": 0.0031166035041678697,
+        "min": 0.0011498329986352473,
+        "n": 12
+       }
+      },
+      "startup_including_prepare_seconds": {
+       "events": 1,
+       "max": 0.570661083,
+       "mean": 0.570661083,
+       "median": 0.570661083,
+       "min": 0.570661083,
+       "n": 1
+      }
+     },
+     "work": {
+      "arm": "M-roster/cfmm_dual",
+      "runner_quotes_counted": {
+       "max": 1368.0,
+       "mean": 265.7916666666667,
+       "median": 14.0,
+       "min": 1.0,
+       "missing": 0,
+       "n": 24,
+       "sum": 6379.0
+      },
+      "units": {
+       "admission_checks": {
+        "max": 28.0,
+        "mean": 3.2083333333333335,
+        "median": 1.5,
+        "min": 1.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 77.0
+       },
+       "combinations_rejected_cycle": {
+        "max": 27.0,
+        "mean": 2.2083333333333335,
+        "median": 0.5,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 53.0
+       },
+       "exact_replay_quotes": {
+        "max": 37.0,
+        "mean": 6.958333333333333,
+        "median": 1.5,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 167.0
+       },
+       "gradient_evaluations": {
+        "max": 473.0,
+        "mean": 171.83333333333334,
+        "median": 163.5,
+        "min": 15.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 4124.0
+       },
+       "internal_evaluations": {
+        "max": 3363.0,
+        "mean": 420.4166666666667,
+        "median": 1.0,
+        "min": 1.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 10090.0
+       },
+       "market_oracle_calls": {
+        "max": 34644.0,
+        "mean": 12086.25,
+        "median": 13875.5,
+        "min": 15.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 290070.0
+       },
+       "objective_evaluations": {
+        "max": 473.0,
+        "mean": 171.83333333333334,
+        "median": 163.5,
+        "min": 15.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 4124.0
+       },
+       "optimizer_iterations": {
+        "max": 130.0,
+        "mean": 41.875,
+        "median": 38.5,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 1005.0
+       },
+       "paths_scored": {
+        "max": 3363.0,
+        "mean": 419.8333333333333,
+        "median": 0.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 10076.0
+       },
+       "quotes_executed": {
+        "max": 1368.0,
+        "mean": 265.7916666666667,
+        "median": 14.0,
+        "min": 1.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 6379.0
+       },
+       "quotes_memoized": {
+        "max": 4212.0,
+        "mean": 609.3333333333334,
+        "median": 14.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 14624.0
+       },
+       "recovery_attempts": {
+        "max": 1.0,
+        "mean": 0.5833333333333334,
+        "median": 1.0,
+        "min": 0.0,
+        "missing": 0,
+        "n": 24,
+        "sum": 14.0
+       }
+      }
+     }
+    }
+   ],
+   "bundle_hash": "72f4f4e4c08d4c34e8480ee56ca8eebab005bb15eb3865349d7df12ba59cfb04",
+   "exit_code": 0,
+   "expected_exit": 0,
+   "git_dirty": false,
+   "git_revision": "aa5726c5706ea7fb8c5a9c4dc49243fdd1570136",
+   "holdout_exposure": "previously_exposed (L01 matrix = tuning cases + held-out report twins)",
+   "host": {
+    "max_load1": 22.55322265625,
+    "samples": 662,
+    "samples_over": 12,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "process_wall_seconds": 19881.752321720123,
+   "profile_sha256": "1f41039be09aece96d0775833f8fe2e66966a07571211a39ca1917f5728913fd",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-021/whi-1562/aa5726c5706ea7fb8c5a9c4dc49243fdd1570136/L/L-R/20261001T234920919385Z-92fd1dcb/bundles/full_source-matrix --profile /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-021/whi-1562/aa5726c5706ea7fb8c5a9c4dc49243fdd1570136/M/M-roster/20261002T101035986037Z-e3992bd6/profile.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-021/whi-1562/aa5726c5706ea7fb8c5a9c4dc49243fdd1570136/M/M-roster --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-021/whi-1562/aa5726c5706ea7fb8c5a9c4dc49243fdd1570136/M/M-roster/20261002T101035986037Z-e3992bd6",
+   "started": 1790935835.6554382,
+   "t": 1790955717.40776,
+   "timing_verdict": "inconclusive (host load, host sleep or no load sample)"
+  },
+  "M-roster.report": {
+   "exit_code": 0,
+   "expected_exit": 0,
+   "holdout_exposure": "not_a_corpus_split",
+   "result": "ok",
+   "run_dir": null,
+   "started": 1790955717.9219682,
+   "t": 1790955718.4363468
+  }
+ },
+ "latency_comparisons": {},
+ "reconciled": true,
+ "reconciliation_problems": [],
+ "schema": "r021.campaign-analysis/1",
+ "stage": "M"
+}
