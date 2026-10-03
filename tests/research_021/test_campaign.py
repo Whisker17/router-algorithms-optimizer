@@ -86,7 +86,7 @@ def _bounded_test() -> Iterator[None]:
 
 
 @pytest.fixture
-def the_021_roster(monkeypatch: pytest.MonkeyPatch) -> None:
+def the_021_roster(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """The preregistered 0.2.1 campaign (WHI-1562) freezes `--strategies all` as the 14
     identities of that release. WHI-1599's `R022_ADDITIONS` (0.2.2) are not part of it, so the
     tests that compare the frozen manifest with an in-process derivation run with them switched
@@ -97,8 +97,14 @@ def the_021_roster(monkeypatch: pytest.MonkeyPatch) -> None:
     0.2.2 strategy that carries one (`metis_history_bounded`, WHI-1600) is taken out of the
     registry here too: the 0.2.1 record regenerates from the 0.2.1 registry."""
     monkeypatch.setattr(strategies_module, "R022_ADDITIONS", ())
+    saved = dict(ALGORITHMS)
     for name in R022:
-        monkeypatch.delitem(ALGORITHMS, name)
+        del ALGORITHMS[name]
+    try:
+        yield
+    finally:  # restore the registry in its original order (a later test pins that order)
+        ALGORITHMS.clear()
+        ALGORITHMS.update(saved)
 
 
 @pytest.fixture(scope="module")
