@@ -2419,6 +2419,9 @@ def real_state_walkthrough() -> dict[str, Any]:
         "metis_inspired",
         "metis_history",
         "incremental_graph_repair",
+        # WHI-1600: the exact accelerations return their reference's plan (pruning contract §8)
+        "incremental_graph_bounded",
+        "metis_history_bounded",
     ):
         expected[name] = sum(split)
     expected["direct_split_certified"] = None  # unsupported: the pair's direct pools are CL/LB

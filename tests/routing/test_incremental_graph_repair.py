@@ -370,8 +370,9 @@ def test_stress_values_never_reach_an_ordinary_all_comparison() -> None:
     ):
         doc = yaml.safe_load((REPO / "config" / name).read_text())
         document, profile = derive(doc, "all", source_path=name, source_sha256="0" * 64)
-        assert document["algorithms"][-4:] == [  # later identities follow (WHI-1556/1558/1599)
-            NAME, "uni_sor_cycle_safe", "cfmm_dual", "single_path_bounded"
+        assert document["algorithms"][-6:] == [  # later identities follow (WHI-1556/1558/1599/1600)
+            NAME, "uni_sor_cycle_safe", "cfmm_dual", "single_path_bounded",
+            "incremental_graph_bounded", "metis_history_bounded",
         ]
         assert document["algorithm_options"][NAME] == PRESET  # beside metis_history's (WHI-1550)
         assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
