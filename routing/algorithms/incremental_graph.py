@@ -74,6 +74,21 @@ budget abandons the incremental plan (declared truncation, `truncated_by`).
 truncated first; `paths_truncated`), besides `path_split`'s own use of it. The time
 limit is the runner's; every new best plan goes to `SolveContext.report_candidate`.
 
+**Bound pruning** (WHI-1600, `docs/references/research-022/pruning-contract.md` §5, rule I1;
+default **off**). `solve(..., bound_pruning=True)` -- reached only through the registered
+strategy `incremental_graph_bounded`, never by a profile or the reference factory -- skips a
+path whose chain bound `floor(rate * m + slack)` (`routing.algorithms.chunk_pruning`, the
+`pools.bounds` rates and chunk slacks on the pools' **original** states at the committed
+aggregate input, from the path's longest memoized prefix) is at most the chunk's best marginal
+so far. Replacement is strict (`m > choice`), so the chunk's choice, the carry, `commit`, the
+merged plan and the final comparison are the reference's. A skipped path is still *scored*
+(`chunk_scored`), so a `max_candidates` truncation point is the reference's; it makes no quote
+and leaves no `memo` entry; the failure disclosures never contain it. Pruning is enabled only
+when the retained `path_split` candidate exists (P0: a skipped path could otherwise have been the
+only `incomplete_snapshot` evidence). `graph_reuse=True` is refused with it, and the parameter is
+not forwarded to the embedded `path_split`. No `U_h` table: the exact-path chain bound is never
+looser. With the parameter off there is no `bound_pruning` key and no extra prepared object.
+
 **Experimental exact reuse (WHI-1507 / L05), default off.** `solve(...,
 graph_reuse=True)` -- selected only by an explicit caller; the registry, runner and every
 profile run the reference loop -- keeps each path's chunk result per actual amount until a
@@ -95,8 +110,9 @@ import dataclasses
 from collections.abc import Iterable
 from typing import Any
 
+from pools.bounds import BoundTable, build_bounds
 from pools.result import QuoteStatus, SwapResult
-from routing.algorithms import path_split
+from routing.algorithms import chunk_pruning, path_split
 from routing.algorithms.base import (
     AlgorithmConfig,
     AlgorithmFactory,
@@ -113,6 +129,7 @@ from routing.search import Edge, Path, QuoteCache, enumerate_paths, path_label
 from snapshot.models import Case, PoolState, SnapshotBundle
 
 NAME = "incremental_graph"
+BOUND_CONTRACT = "R022-Q02/1"  # the pruning contract rule I1 comes from
 
 CAPABILITIES = Capabilities(multi_hop=True, split=True, shared_pools=True)
 SEARCH_PARAMS = path_split.SEARCH_PARAMS
@@ -134,6 +151,20 @@ class PreparedIncrementalGraph:
         self.chunks = chunks
 
 
+class PreparedBoundedIncrementalGraph(PreparedIncrementalGraph):
+    """`PreparedIncrementalGraph` plus the eagerly built, immutable output-bound table of the
+    frozen bundle (`pools.bounds`). Only `prepare_bounded` returns it; the reference `prepare`
+    never does (contract §10.2: no new object in the prepared result with the parameter off)."""
+
+    __slots__ = ("bound_table",)
+
+    def __init__(
+        self, split: path_split.PreparedPathSplit, chunks: int, bound_table: BoundTable
+    ) -> None:
+        super().__init__(split, chunks)
+        self.bound_table = bound_table
+
+
 def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedIncrementalGraph:
     refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     chunks = config.params.get("chunks")
@@ -146,6 +177,15 @@ def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedIncremen
     except path_split.PathSplitConfigError as exc:
         raise IncrementalGraphConfigError(f"{NAME}: {exc}") from exc
     return PreparedIncrementalGraph(split, chunks)
+
+
+def prepare_bounded(
+    bundle: SnapshotBundle, config: AlgorithmConfig
+) -> PreparedBoundedIncrementalGraph:
+    """The reference preparation plus every pool direction's output bound (charged to the
+    preparation step, contract §10.3)."""
+    base = prepare(bundle, config)
+    return PreparedBoundedIncrementalGraph(base.path_split, base.chunks, build_bounds(bundle))
 
 
 def chunk_amounts(amount_in: int, chunks: int) -> list[int]:
@@ -406,16 +446,57 @@ class _ExactReuse:
             self.version += 1
 
 
+def _bound_start(path: Path, amount: int, memo: dict[Path, Any]) -> tuple[int, int] | None:
+    """Where rule I1's chain bound starts: `(i, m)` for the longest *successfully* memoized
+    prefix of `i` hops with exact marginal `m` (`(0, amount)` for none). `None` if the longest
+    memoized prefix is a failure: the reference answers that candidate for free."""
+    for i in range(len(path) - 1, 0, -1):
+        hit = memo.get(path[:i])
+        if hit is not None:
+            return None if isinstance(hit, _Failure) else (i, hit[0])
+    return 0, amount
+
+
+def budget_exactness(*truncated_by: str | None) -> dict[str, Any]:
+    """The `exactness` record of a bounded chunk search (contract §8.2): `exact` unless a declared
+    budget truncated the run at any stage -- then no claim, naming what cut it. Pass the chunk
+    stage's own `truncated_by` and the embedded `path_split`'s (which names a limit or, for a cut
+    of its `single_path` / `direct_split` finalist, that stage). A `state_cap` is a cap, not a
+    budget, and never makes the label inexact."""
+    binding = list(dict.fromkeys(b for b in truncated_by if b not in (None, "state_cap")))
+    return {"label": "not_exact_budget_binding" if binding else "exact", "binding": binding}
+
+
 def solve(
-    case: Case, context: SolveContext, budget: Budget, *, graph_reuse: bool = False
+    case: Case,
+    context: SolveContext,
+    budget: Budget,
+    *,
+    graph_reuse: bool = False,
+    bound_pruning: bool = False,
 ) -> SolveResult:
     """`graph_reuse=True` explicitly selects the exact score/admission reuse of
     `_ExactReuse` (default off: the reference loop). It returns the same plan,
     evaluation and search counters, except the physical `quotes_memoized`, and adds
-    its own physical counters as `search_stats["graph_reuse"]`."""
+    its own physical counters as `search_stats["graph_reuse"]`. `bound_pruning=True` enables
+    rule I1 (module docstring); it needs the `PreparedBoundedIncrementalGraph` of
+    `prepare_bounded` and is incompatible with `graph_reuse` (pruning-contract §5.3)."""
     prepared = context.prepared
     if not isinstance(prepared, PreparedIncrementalGraph):
         raise TypeError(f"{NAME}.solve needs the PreparedIncrementalGraph returned by prepare()")
+    table: BoundTable | None = None
+    if bound_pruning:
+        if graph_reuse:
+            raise ValueError(
+                f"{NAME}: bound_pruning and graph_reuse cannot be combined (the L05 reuse "
+                "assumes every path is scored; pruning-contract §5.3)"
+            )
+        if not isinstance(prepared, PreparedBoundedIncrementalGraph):
+            raise TypeError(
+                f"{NAME}.solve(bound_pruning=True) needs the PreparedBoundedIncrementalGraph "
+                "returned by prepare_bounded()"
+            )
+        table = prepared.bound_table
     bundle, objective = context.bundle, context.objective
     ps_prepared = prepared.path_split
     max_hops = ps_prepared.single_path.max_hops
@@ -510,6 +591,9 @@ def solve(
         return m, updates
 
     reuse = _ExactReuse(paths) if graph_reuse else None
+    # Rule I1 runs only if the retained simpler candidate exists (P0, contract §5.2).
+    prune = table is not None and best is not None
+    pruned_bound = bound_evaluations = bound_no_bound = 0
 
     def reused_marginal(
         j: int, path: Path, amount: int, memo: dict[Path, Any]
@@ -560,7 +644,19 @@ def solve(
                 if creates_cycle(token_edges, path) if reuse is None else reuse.cyclic(j, path):
                     rejected_cycle += 1
                     continue
-                chunk_scored += 1
+                chunk_scored += 1  # a skipped path is still scored: budget points stay put
+                if table is not None and prune and choice is not None:  # rule I1
+                    start = _bound_start(path, amount, memo)
+                    if start is not None:
+                        bound_evaluations += 1
+                        upper = chunk_pruning.chain_bound(
+                            table.bounds, flows, path[start[0] :], start[1]
+                        )
+                        if upper is None:
+                            bound_no_bound += 1
+                        elif upper <= choice[0]:
+                            pruned_bound += 1
+                            continue
                 try:
                     if reuse is None:
                         m, updates = marginal(path, amount, memo)
@@ -677,6 +773,19 @@ def solve(
     }
     if reuse is not None:
         stats["graph_reuse"] = dict(reuse.stats)
+    if table is not None:
+        stats["bound_pruning"] = {
+            "contract": BOUND_CONTRACT,
+            "reference": NAME,
+            "rule": "I1",
+            "pruned_bound": pruned_bound,
+            "bound_evaluations": bound_evaluations,
+            "bound_no_bound": bound_no_bound,
+            "bound_table_cost": 0,
+            "prepare": table.prepare_record(),
+            "p0": prune,
+            "exactness": budget_exactness(truncated_by, ps_truncated),
+        }
     common: dict[str, Any] = {
         "case_id": case.case_id,
         "algorithm": NAME,

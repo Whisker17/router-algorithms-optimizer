@@ -458,7 +458,7 @@ def test_registered_as_a_custom_opt_in_identity_with_the_references_capabilities
     assert factory.options_validator is None and factory.options_preset is None
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES
     assert strategy_group(NAME) == "custom"
-    assert R022_ADDITIONS == (NAME,) and NAME not in R021_ADDITIONS
+    assert R022_ADDITIONS[0] == NAME and NAME not in R021_ADDITIONS  # WHI-1600 appends two more
     prov = dict(factory.provenance or {})
     assert prov["experimental"] is True and prov["opt_in"] is True
     assert prov["reference"] == "single_path" and prov["issue"] == "WHI-1599"
@@ -488,8 +488,10 @@ def test_all_appends_it_after_the_021_identities_and_profile_replays_literally()
     source = yaml.safe_load((REPO / "config" / "daily_gross.yaml").read_text())
     document, profile = derive(source, "all", source_path="s", source_sha256="x")
     names = list(profile.algorithms)
-    assert names[-1 - len(R021_ADDITIONS) : -1] == list(R021_ADDITIONS) and names[-1] == NAME
-    assert document["selection"]["groups"]["custom"][-1] == NAME
+    after = len(R022_ADDITIONS) - 1  # WHI-1600's two bounded identities follow this one
+    assert names[-1 - after - len(R021_ADDITIONS) : -1 - after] == list(R021_ADDITIONS)
+    assert names[-1 - after] == NAME and names[-after:] == list(R022_ADDITIONS[1:])
+    assert document["selection"]["groups"]["custom"][-1 - after] == NAME
     assert "algorithm_options" in document and NAME not in document["algorithm_options"]
     config = profile.resolved()["algorithm_config"][NAME]
     assert config["provenance"]["reference"] == "single_path"

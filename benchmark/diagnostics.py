@@ -163,6 +163,8 @@ IDENTITIES: dict[str, Identity] = {
     "uni_sor_optimized": Identity("enumerated_routes_threshold"),
     "metis_inspired": Identity("label_relaxations_per_chunk"),
     "metis_history": Identity("label_relaxations_per_chunk", None, PROTOCOLS),
+    # WHI-1600: the exact acceleration of metis_history keeps its `r021` block (same unit)
+    "metis_history_bounded": Identity("label_relaxations_per_chunk", None, PROTOCOLS),
     "direct_split_certified": Identity(
         "finalist_plans_evaluated", ("gross_only",), ("constant_product",)
     ),

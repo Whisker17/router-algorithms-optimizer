@@ -62,6 +62,12 @@ It is
 `custom`, accepts no `algorithm_options`; `--strategies all` appends it after the 0.2.1 identities
 (`benchmark.strategies.R022_ADDITIONS`).
 
+`incremental_graph_bounded` and `metis_history_bounded` (WHI-1600, R022-Q02/1 §5-§6) are the same
+kind of exact acceleration for the two chunk searches: `incremental_graph` with rule I1 and
+`metis_history` with rule M1 (and M2 behind its structural gate). Both are `custom` and follow
+`single_path_bounded` in `R022_ADDITIONS`; `metis_history_bounded` takes exactly `metis_history`'s
+`algorithm_options` (its own copy of the preset file), `incremental_graph_bounded` none.
+
 `cfmm_dual` (WHI-1558, R021-C/1 §2 row 5) is the CFMM dual-decomposition router
 (arXiv:2302.04938v1; CFMMRouter.jl pin, MIT notice in routing/cfmm/NOTICE.md) over the
 admitted markets of its stage (`market_protocols`: constant-product, the WHI-1558 CPMM stage,
@@ -81,8 +87,10 @@ from routing.algorithms import (
     direct_split,
     direct_split_certified,
     incremental_graph,
+    incremental_graph_bounded,
     incremental_graph_repair,
     metis_history,
+    metis_history_bounded,
     metis_inspired,
     path_split,
     single_path,
@@ -116,6 +124,8 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     cfmm_dual.NAME: cfmm_dual.FACTORY,  # WHI-1558 (CPMM stage), WHI-1559 (CL stage)
     # 0.2.2 exact bound-pruned acceleration (R022-Q02/1 §10), `custom` group.
     single_path_bounded.NAME: single_path_bounded.FACTORY,  # WHI-1599
+    incremental_graph_bounded.NAME: incremental_graph_bounded.FACTORY,  # WHI-1600
+    metis_history_bounded.NAME: metis_history_bounded.FACTORY,  # WHI-1600
 }
 
 # The comparison groups, in their deterministic run order (base first, then optimized).

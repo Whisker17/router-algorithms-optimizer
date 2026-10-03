@@ -83,6 +83,10 @@ IMPLEMENTED = (
     "uni_sor_cycle_safe",
     "cfmm_dual",
 )
+# WHI-1600: the one 0.2.2 addition that takes options (exactly `metis_history`'s, from its own
+# copy of the preset file); `--strategies all` writes its preset out like the 0.2.1 identities.
+OPTIONED_022 = ("metis_history_bounded",)
+BOUNDED_PRESETS = {name: preset_options(ALGORITHMS[name]) for name in OPTIONED_022}
 NEW_PROFILES = (
     {
         f"config/incremental_graph_repair/{name}.yaml"
@@ -266,7 +270,7 @@ def test_every_options_factory_refuses_reserved_and_unknown_keys_in_prepare(
     """Applies to every registered options factory (the implemented 0.2.1 identities; none of
     the nine) and the fixtures."""
     factories = [f for f in ALGORITHMS.values() if f.options_validator is not None]
-    assert {f.name for f in factories} == {A, B, *IMPLEMENTED}
+    assert {f.name for f in factories} == {A, B, *IMPLEMENTED, *OPTIONED_022}
     for factory in factories:
         assert factory.prepare is not None
         for bad in ({"max_hops": 1}, {"__unknown__": 1}):
@@ -351,7 +355,7 @@ def test_changed_or_mismatching_preset_files_are_refused(
 
 def test_tampered_effective_document_never_claims_the_preset(added_a: None) -> None:
     document, profile = _derive(_doc(["direct"]), "all")
-    assert document["algorithm_options"] == {A: PRESET}  # the preset, written out
+    assert document["algorithm_options"] == {A: PRESET, **BOUNDED_PRESETS}  # presets, written out
     assert profile.algorithm_options[A]["source"]["kind"] == "preset"
     tampered = json.loads(json.dumps(document))
     tampered["algorithm_options"][A]["width"] = 6
@@ -374,7 +378,7 @@ def test_derivation_keeps_declared_fills_presets_and_drops_unselected(added_a: N
     document, profile = _derive(_doc(["direct", A, B], declared), "all")
     # a listed identity keeps its place (not appended twice)
     assert document["algorithms"] == ["direct", A, B, *OPTIMIZED_STRATEGIES, METIS, *R022_ADDITIONS]
-    assert document["algorithm_options"] == declared  # a declared entry wins over the preset
+    assert document["algorithm_options"] == {**declared, **BOUNDED_PRESETS}  # declared entry wins
     assert profile.algorithm_options[A]["source"] == {"kind": "override"}
     assert _derive(document, "all")[0] == document  # idempotent re-derivation
     # not listed: `all` appends A after metis_inspired with its pinned preset
@@ -382,7 +386,7 @@ def test_derivation_keeps_declared_fills_presets_and_drops_unselected(added_a: N
     assert document["algorithms"] == [
         "direct", B, *OPTIMIZED_STRATEGIES, METIS, A, *R022_ADDITIONS
     ]  # fmt: skip
-    assert document["algorithm_options"] == {B: {"width": 9}, A: PRESET}
+    assert document["algorithm_options"] == {B: {"width": 9}, A: PRESET, **BOUNDED_PRESETS}
     assert profile.algorithm_options[A]["source"]["kind"] == "preset"
     assert _derive(document, "all")[0] == document
     # a listed options identity is a required setting of the source, never defaulted
@@ -432,7 +436,7 @@ def _legacy_projection(effective: dict[str, Any]) -> dict[str, Any]:
     assert doc["selection"]["groups"]["custom"][-len(added) :] == added
     doc["selection"]["groups"]["custom"] = doc["selection"]["groups"]["custom"][: -len(added)]
     assert doc.pop("algorithm_options") == {
-        name: preset_options(ALGORITHMS[name]) for name in added
+        name: preset_options(ALGORITHMS[name]) for name in (*added, *OPTIONED_022)
     }
     return doc
 
@@ -489,14 +493,15 @@ def test_the_all_roster_is_the_nine_plus_the_implemented_0_2_1_identities() -> N
     assert R021_ADDITIONS == IMPLEMENTED
     assert list(profile.algorithms) == [*NINE, *IMPLEMENTED, *R022_ADDITIONS]
     assert list(profile.algorithms) == document["algorithms"]  # WHI-1599 appends R022_ADDITIONS
-    assert len(ALGORITHMS) == 16  # the nine + uni_sor_fast + IMPLEMENTED + single_path_bounded
+    assert len(ALGORITHMS) == 18  # the nine + uni_sor_fast + IMPLEMENTED + R022_ADDITIONS (3)
     with_options = {n for n, f in ALGORITHMS.items() if f.options_validator is not None}
-    assert with_options == set(IMPLEMENTED)
-    assert all(ALGORITHMS[n].options_preset is not None for n in IMPLEMENTED)
-    assert all(f.options_preset is None for n, f in ALGORITHMS.items() if n not in IMPLEMENTED)
+    optioned = {*IMPLEMENTED, *OPTIONED_022}
+    assert with_options == optioned
+    assert all(ALGORITHMS[n].options_preset is not None for n in optioned)
+    assert all(f.options_preset is None for n, f in ALGORITHMS.items() if n not in optioned)
     for name in NINE:
         assert dict(profile.algorithm_config(ALGORITHMS[name]).options) == {}
-    for name in IMPLEMENTED:
+    for name in (*IMPLEMENTED, *OPTIONED_022):
         assert profile.algorithm_options[name]["source"]["kind"] == "preset"
         assert dict(profile.algorithm_config(ALGORITHMS[name]).options) == preset_options(
             ALGORITHMS[name]
@@ -560,7 +565,7 @@ def test_batch_run_persists_transports_and_replays_exact_options(
     (run_dir,) = results.iterdir()
     manifest = load_manifest(run_dir)
     saved = read_profile_document(run_dir / "profile.yaml")
-    assert saved["algorithm_options"] == {B: {"width": 9}, A: PRESET}
+    assert saved["algorithm_options"] == {B: {"width": 9}, A: PRESET, **BOUNDED_PRESETS}
     entries = manifest.resolved_profile["algorithm_options"]
     assert entries[A]["source"]["kind"] == "preset"
     assert entries[B] == {"options": {"width": 9}, "source": {"kind": "override"},
@@ -677,7 +682,7 @@ def test_existing_prepares_refuse_explicit_options_and_keep_absent_parity() -> N
     bundle = load_bundle(MIXED)
     _, profile = _derive(read_profile_document(REPO / "config" / "daily_gross.yaml"), "all")
     guarded = [f for f in ALGORITHMS.values() if f.options_validator is None]
-    assert {f.name for f in guarded} == set(ALGORITHMS) - set(IMPLEMENTED)
+    assert {f.name for f in guarded} == set(ALGORITHMS) - set(IMPLEMENTED) - set(OPTIONED_022)
     for factory in guarded:
         if factory.prepare is None:  # `direct`: no public prepare, nothing to bypass
             assert factory.name == "direct"

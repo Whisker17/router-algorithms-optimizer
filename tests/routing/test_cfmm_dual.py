@@ -260,7 +260,12 @@ def _model_case(cid: str) -> tuple[SnapshotBundle, Case, dict[str, Any]]:
 def test_registered_once_after_uni_sor_cycle_safe_and_appended_by_all() -> None:
     assert ALGORITHMS[NAME] is cd.FACTORY is FACTORY
     names = list(ALGORITHMS)
-    assert names.count(NAME) == 1 and names[-2:] == [NAME, "single_path_bounded"]  # WHI-1599 last
+    assert names.count(NAME) == 1 and names[-4:] == [  # the 0.2.2 bounded identities come last
+        NAME,
+        "single_path_bounded",
+        "incremental_graph_bounded",
+        "metis_history_bounded",
+    ]
     assert names.index(uni_sor_cycle_safe.NAME) + 1 == names.index(NAME)
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES
     assert profile_module.strategy_group(NAME) == "custom"
@@ -294,10 +299,11 @@ def test_registered_once_after_uni_sor_cycle_safe_and_appended_by_all() -> None:
             source_path=f"config/{name}",
             source_sha256="x",
         )
-        assert list(profile.algorithms)[-3:] == [
-            uni_sor_cycle_safe.NAME, NAME, "single_path_bounded"
+        assert list(profile.algorithms)[-5:] == [
+            uni_sor_cycle_safe.NAME, NAME, "single_path_bounded", "incremental_graph_bounded",
+            "metis_history_bounded",
         ]  # fmt: skip
-        assert len(profile.algorithms) == 15  # WHI-1599 appends single_path_bounded
+        assert len(profile.algorithms) == 17  # WHI-1599/1600 append the bounded identities
         # WHI-1559: `all` writes out the CURRENT preset, cfmm_dual/2 (the CL stage)
         assert document["algorithm_options"][NAME] == preset_options(FACTORY) != PRESET
         assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
@@ -1240,7 +1246,13 @@ def test_saved_pre_whi_1558_profiles_replay_literally() -> None:
         "metis_inspired",
     ]
     for k in range(len(later) + 1):
-        drop = [NAME, "single_path_bounded", *later[:k]]  # WHI-1599 is added after this identity
+        drop = [
+            NAME,
+            "single_path_bounded",
+            "incremental_graph_bounded",
+            "metis_history_bounded",
+            *later[:k],
+        ]  # WHI-1599/1600 are added after this identity
         saved = json.loads(json.dumps(document))
         saved["algorithms"] = [a for a in saved["algorithms"] if a not in drop]
         saved["selection"]["groups"]["custom"] = [

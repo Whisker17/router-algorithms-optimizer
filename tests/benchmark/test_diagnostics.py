@@ -88,6 +88,9 @@ def test_vocabulary_is_contract_v1() -> None:
     assert list(dx.UNAVAILABLE_REASONS) == CONTRACT["certificate_unavailable_reasons"]
     assert dx.WORK_UNITS == CONTRACT["work_units"]
     rows = {**CONTRACT["existing_identities"], **{i["id"]: i for i in CONTRACT["identities"]}}
+    # WHI-1600: the exact acceleration of metis_history keeps its `r021` block; its row is the
+    # reference's (checked below like every other row)
+    rows["metis_history_bounded"] = rows["metis_history"]
     assert set(dx.IDENTITIES) == set(rows)
     for name, row in rows.items():
         identity = dx.IDENTITIES[name]
