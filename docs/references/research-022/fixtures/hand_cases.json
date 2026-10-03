@@ -1,0 +1,73 @@
+{
+  "_comment": "WHI-1597 hand-derived rates, derived on paper from the formulae in docs/references/research-022/output-bounds.md (not computed by any bound code). tests/pools/test_output_bounds_contract.py recomputes the R2 outputs through pools.quote.quote_exact_in and compares the hand rates with the contract rate functions.",
+  "r2_cpmm": {
+    "source": "docs/references/research-021/sources.md section 5, R2 (fixtures/reconstructions.json R2_integer_marginals)",
+    "reserves": [1000, 1000],
+    "fee_bps": 30,
+    "outputs_x0_to_x6": [0, 0, 1, 2, 3, 4, 5],
+    "rate": "997/1000",
+    "derivation": "r = (10000-30)*1000 / (10000*1000) = 997/1000. Marginal q(2)-q(1) = 1 > r*1 = 0.997, so q(x+m)-q(x) <= r*m is false and a slack s >= 0.003 (the contract uses s = 1) is needed."
+  },
+  "rate_cases": [
+    {
+      "name": "cpmm 2000/500 fee 30bps",
+      "family": "cpmm",
+      "reserves": [2000, 500],
+      "fee_bps": 30,
+      "rates": {"A": "997/4000", "B": "997/250"},
+      "derivation": "A->B: 9970*500/(10000*2000) = 4985000/20000000 = 997/4000; B->A: 9970*2000/(10000*500) = 19940000/5000000 = 997/250"
+    },
+    {
+      "name": "cpmm 1000/1000 fee 5bps",
+      "family": "cpmm",
+      "reserves": [1000, 1000],
+      "fee_bps": 5,
+      "rates": {"A": "1999/2000", "B": "1999/2000"},
+      "derivation": "9995/10000 = 1999/2000"
+    },
+    {
+      "name": "cl tick 0 fee 3000 pips",
+      "family": "cl",
+      "tick": 0,
+      "fee": 3000,
+      "rates": {"A": "997/1000", "B": "997/1000"},
+      "derivation": "getSqrtRatioAtTick(0) = 2**96 exactly (Q128 ratio 2**128 >> 32), so price^2 / 2**192 = 1 and the rate is (1e6-3000)/1e6 = 997/1000 both ways"
+    },
+    {
+      "name": "cl tick 0 fee 500 pips",
+      "family": "cl",
+      "tick": 0,
+      "fee": 500,
+      "rates": {"A": "1999/2000", "B": "1999/2000"},
+      "derivation": "(1e6-500)/1e6 = 999500/1000000 = 1999/2000"
+    },
+    {
+      "name": "lb id 2**23 step 10 baseFactor 5000",
+      "family": "lb",
+      "bin_step": 10,
+      "active_id": 8388608,
+      "base_factor": 5000,
+      "rates": {"A": "1999/2000", "B": "1999/2000"},
+      "derivation": "price(2**23) = base**0 = 2**128 exactly (pow128 y == 0); baseFee = 5000*10*1e10 = 5e14; rate = (1e18-5e14)/1e18 = 1999/2000"
+    },
+    {
+      "name": "lb id 2**23 step 25 baseFactor 800",
+      "family": "lb",
+      "bin_step": 25,
+      "active_id": 8388608,
+      "base_factor": 800,
+      "rates": {"A": "4999/5000", "B": "4999/5000"},
+      "derivation": "baseFee = 800*25*1e10 = 2e14; rate = (1e18-2e14)/1e18 = 4999/5000"
+    },
+    {
+      "name": "lb id 2**23+1 step 10 baseFactor 0 (price 1.001 to 1e-30)",
+      "family": "lb",
+      "bin_step": 10,
+      "active_id": 8388609,
+      "base_factor": 0,
+      "approx": true,
+      "rates": {"A": "1001/1000", "B": "1000/1001"},
+      "derivation": "base = 1 + 10/10000 = 1.001; one bin above the unit price: X->Y rate 1.001 = 1001/1000, Y->X rate 1/1.001 = 1000/1001; the 128-bit fixed-point price differs from 1.001 by < 1e-30"
+    }
+  ]
+}
