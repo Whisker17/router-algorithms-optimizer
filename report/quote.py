@@ -535,6 +535,16 @@ def _bound_pruning_lines(record: dict[str, Any]) -> list[str]:
         block["exactness"] if isinstance(block.get("exactness"), dict) else {}
     )
     binding = exactness.get("binding") or []
+    chunk: list[str] = []
+    if "p0" in block:  # WHI-1600: the chunk searches (incremental_graph, metis_history)
+        chunk.append(
+            f"    retained simpler candidate present (P0): {block['p0']}"
+            + (
+                f"; rule M2 active: {block['m2'].get('active')} (gate {block['m2'].get('gate')})"
+                if isinstance(block.get("m2"), dict)
+                else ""
+            )
+        )
     return [
         f"  bound pruning ({block.get('contract')} rule {block.get('rule')}: exact acceleration "
         f"of {block.get('reference')}):",
@@ -544,6 +554,7 @@ def _bound_pruning_lines(record: dict[str, Any]) -> list[str]:
         f"    bound table (built in preparation): {prepare.get('pool_directions')} pool "
         f"directions, {prepare.get('bounded')} bounded, {prepare.get('rate_only')} rate only, "
         f"{prepare.get('no_bound')} no bound",
+        *chunk,
         f"    exactness: {exactness.get('label')}"
         + (f" (binding: {', '.join(map(str, binding))})" if binding else ""),
     ]

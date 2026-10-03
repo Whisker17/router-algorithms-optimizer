@@ -50,9 +50,11 @@ and drops entries of unselected algorithms; the section is omitted when empty, s
 without options derives exactly as before.
 `profile` mode copies it as is.
 
-`R022_ADDITIONS` (WHI-1599): the 0.2.2 exact bound-pruned accelerations (so far
-`single_path_bounded`, `docs/references/research-022/pruning-contract.md` §10.1) follow the
-0.2.1 identities under `all`. They carry no `algorithm_options` and no preset.
+`R022_ADDITIONS` (WHI-1599, WHI-1600): the 0.2.2 exact bound-pruned accelerations
+(`single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`,
+`docs/references/research-022/pruning-contract.md` §10.1) follow the 0.2.1 identities under
+`all`. Only `metis_history_bounded` carries `algorithm_options`: exactly `metis_history`'s, from
+its own preset file (same options, same `settings_sha256`).
 """
 
 from __future__ import annotations
@@ -76,8 +78,10 @@ from benchmark.profile import (
 from routing.algorithms import (
     cfmm_dual,
     direct_split_certified,
+    incremental_graph_bounded,
     incremental_graph_repair,
     metis_history,
+    metis_history_bounded,
     metis_inspired,
     single_path_bounded,
     uni_sor_cycle_safe,
@@ -112,11 +116,14 @@ R021_ADDITIONS: tuple[str, ...] = (
     uni_sor_cycle_safe.NAME,  # WHI-1556 (contract order 4; its empty-options preset)
     cfmm_dual.NAME,  # WHI-1558 (contract order 5; WHI-1559: its current cfmm_dual/2 CL preset)
 )
-# WHI-1599 (R022-Q02/1 §10.1): the exact bound-pruned accelerations `all` appends after
-# `R021_ADDITIONS`, in contract order; WHI-1600 appends `incremental_graph_bounded` and
-# `metis_history_bounded` here. Earlier saved profiles never gain them (`profile` replays it
-# literally).
-R022_ADDITIONS: tuple[str, ...] = (single_path_bounded.NAME,)  # WHI-1599
+# WHI-1599/WHI-1600 (R022-Q02/1 §10.1): the exact bound-pruned accelerations `all` appends after
+# `R021_ADDITIONS`, in contract order. Earlier saved profiles never gain them (`profile`
+# replays it literally).
+R022_ADDITIONS: tuple[str, ...] = (
+    single_path_bounded.NAME,  # WHI-1599
+    incremental_graph_bounded.NAME,  # WHI-1600
+    metis_history_bounded.NAME,  # WHI-1600 (its own copy of metis_history's preset)
+)
 DERIVATION_NOTE = (
     "`algorithms`, `strategies` and `selection` are derived from the source; under `all`, a "
     f"graph.label_hops / label_pruning / chunks the source does not declare is copied for {METIS} "
