@@ -52,7 +52,7 @@ from benchmark.profile import (
 )
 from benchmark.results import load_case_records, load_manifest
 from benchmark.runner import compare_runs
-from benchmark.strategies import METIS, MODES, R021_ADDITIONS, derive
+from benchmark.strategies import METIS, MODES, R021_ADDITIONS, R022_ADDITIONS, derive
 from routing.algorithms import direct
 from routing.algorithms.base import (
     RESERVED_OPTION_KEYS,
@@ -373,13 +373,15 @@ def test_derivation_keeps_declared_fills_presets_and_drops_unselected(added_a: N
     declared = {A: {**PRESET, "width": 2}, B: {"width": 9}}
     document, profile = _derive(_doc(["direct", A, B], declared), "all")
     # a listed identity keeps its place (not appended twice)
-    assert document["algorithms"] == ["direct", A, B, *OPTIMIZED_STRATEGIES, METIS]
+    assert document["algorithms"] == ["direct", A, B, *OPTIMIZED_STRATEGIES, METIS, *R022_ADDITIONS]
     assert document["algorithm_options"] == declared  # a declared entry wins over the preset
     assert profile.algorithm_options[A]["source"] == {"kind": "override"}
     assert _derive(document, "all")[0] == document  # idempotent re-derivation
     # not listed: `all` appends A after metis_inspired with its pinned preset
     document, profile = _derive(_doc(["direct", B], {B: {"width": 9}}), "all")
-    assert document["algorithms"] == ["direct", B, *OPTIMIZED_STRATEGIES, METIS, A]
+    assert document["algorithms"] == [
+        "direct", B, *OPTIMIZED_STRATEGIES, METIS, A, *R022_ADDITIONS
+    ]  # fmt: skip
     assert document["algorithm_options"] == {B: {"width": 9}, A: PRESET}
     assert profile.algorithm_options[A]["source"]["kind"] == "preset"
     assert _derive(document, "all")[0] == document
@@ -419,6 +421,11 @@ def _legacy_projection(effective: dict[str, Any]) -> dict[str, Any]:
     their pinned presets):
     the document the pre-WHI-1548 base derived. Anything else that changed stays visible."""
     doc: dict[str, Any] = json.loads(json.dumps(effective))
+    extra = len(R022_ADDITIONS)  # WHI-1599: the 0.2.2 additions (no options) follow the 0.2.1 ones
+    assert doc["algorithms"][-extra:] == list(R022_ADDITIONS)
+    doc["algorithms"] = doc["algorithms"][:-extra]
+    assert doc["selection"]["groups"]["custom"][-extra:] == list(R022_ADDITIONS)
+    doc["selection"]["groups"]["custom"] = doc["selection"]["groups"]["custom"][:-extra]
     added = list(IMPLEMENTED)
     assert doc["algorithms"][-len(added) :] == added  # appended once, last, in contract order
     doc["algorithms"] = doc["algorithms"][: -len(added)]
@@ -480,8 +487,9 @@ def test_the_all_roster_is_the_nine_plus_the_implemented_0_2_1_identities() -> N
     with its pinned preset; every other factory still accepts no options."""
     document, profile = _derive(read_profile_document(REPO / "config" / "daily_gross.yaml"), "all")
     assert R021_ADDITIONS == IMPLEMENTED
-    assert list(profile.algorithms) == [*NINE, *IMPLEMENTED] == document["algorithms"]
-    assert len(ALGORITHMS) == 15  # the nine + profile-selected uni_sor_fast + IMPLEMENTED
+    assert list(profile.algorithms) == [*NINE, *IMPLEMENTED, *R022_ADDITIONS]
+    assert list(profile.algorithms) == document["algorithms"]  # WHI-1599 appends R022_ADDITIONS
+    assert len(ALGORITHMS) == 16  # the nine + uni_sor_fast + IMPLEMENTED + single_path_bounded
     with_options = {n for n, f in ALGORITHMS.items() if f.options_validator is not None}
     assert with_options == set(IMPLEMENTED)
     assert all(ALGORITHMS[n].options_preset is not None for n in IMPLEMENTED)
@@ -568,7 +576,9 @@ def test_batch_run_persists_transports_and_replays_exact_options(
             assert "options" not in (record["search"] or {})
 
     # the printed replay command reads the saved effective profile literally
-    assert list(manifest.algorithms) == ["direct", B, *OPTIMIZED_STRATEGIES, METIS, A]
+    assert list(manifest.algorithms) == [
+        "direct", B, *OPTIMIZED_STRATEGIES, METIS, A, *R022_ADDITIONS
+    ]  # fmt: skip
     replay = next(line for line in out.splitlines() if line.startswith("replay: "))
     command = _main_argv(replay.removeprefix("replay: "))
     assert command[-2:] == ["--strategies", "profile"]

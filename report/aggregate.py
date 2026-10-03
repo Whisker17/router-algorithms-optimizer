@@ -1060,6 +1060,15 @@ def algorithm_label(run: RunData, algorithm: str) -> dict[str, Any]:
             ),
             "provenance": provenance,
         }
+    if isinstance(provenance, dict) and "R022-Q02" in str(provenance.get("contract")):
+        return {  # WHI-1599: `single_path_bounded`; the identity text is its registered claim
+            "kind": "exact_acceleration",
+            "title": (
+                f"Bound-pruned strategy — {provenance['identity']} (pruning contract "
+                f"{provenance.get('contract')}); no speedup claimed"
+            ),
+            "provenance": provenance,
+        }
     if "metis" in algorithm.lower():
         return {
             "kind": "experimental",

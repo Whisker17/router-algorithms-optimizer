@@ -56,6 +56,12 @@ cycle-safe-sor.md): never a token-cycle plan, not upstream parity. It is `custom
 no `algorithm_options` (its pinned preset is `{}`); `--strategies all` appends it after
 `incremental_graph_repair` (contract order 4). `uni_sor_port` stays the parity reference.
 
+`single_path_bounded` (WHI-1599, R022-Q02/1 §10) is `single_path` with rule S1 upper-bound pruning
+(docs/references/research-022/pruning-contract.md): an exact acceleration, not a new heuristic.
+It is
+`custom`, accepts no `algorithm_options`; `--strategies all` appends it after the 0.2.1 identities
+(`benchmark.strategies.R022_ADDITIONS`).
+
 `cfmm_dual` (WHI-1558, R021-C/1 §2 row 5) is the CFMM dual-decomposition router
 (arXiv:2302.04938v1; CFMMRouter.jl pin, MIT notice in routing/cfmm/NOTICE.md) over the
 admitted markets of its stage (`market_protocols`: constant-product, the WHI-1558 CPMM stage,
@@ -80,6 +86,7 @@ from routing.algorithms import (
     metis_inspired,
     path_split,
     single_path,
+    single_path_bounded,
     uni_sor_cycle_safe,
     uni_sor_fast,
     uni_sor_port,
@@ -107,6 +114,8 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     incremental_graph_repair.NAME: incremental_graph_repair.FACTORY,  # WHI-1554
     uni_sor_cycle_safe.NAME: uni_sor_cycle_safe.FACTORY,  # WHI-1556
     cfmm_dual.NAME: cfmm_dual.FACTORY,  # WHI-1558 (CPMM stage), WHI-1559 (CL stage)
+    # 0.2.2 exact bound-pruned acceleration (R022-Q02/1 §10), `custom` group.
+    single_path_bounded.NAME: single_path_bounded.FACTORY,  # WHI-1599
 }
 
 # The comparison groups, in their deterministic run order (base first, then optimized).
