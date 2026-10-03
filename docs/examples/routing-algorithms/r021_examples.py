@@ -2925,7 +2925,7 @@ def _print_cfmm(cf: Mapping[str, Any]) -> None:
 
 def _print_real_state(rs: Mapping[str, Any]) -> None:
     b = rs["bundle"]
-    _p("--- 17. Real-state fixed-block walkthrough: 14 rows (--strategies all, daily_gross) ---")
+    _p("--- 17. Real-state fixed-block walkthrough: 17 rows (--strategies all, daily_gross) ---")
     _p(
         f"bundle {b['bundle_id']} ({b['bundle_hash'][:12]}), block {b['block']['number']}, ",
         f"{b['pools']} pools {b['pool_protocols']}",

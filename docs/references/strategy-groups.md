@@ -21,7 +21,9 @@ The ordinary CLI compares strategies in separate groups and, by default, runs th
   optimization. Since Release 0.2.1 the group also holds the five implemented experimental
   identities `metis_history`, `direct_split_certified`, `incremental_graph_repair`,
   `uni_sor_cycle_safe` and `cfmm_dual` (below). None of them is a base reference, a default,
-  Jupiter Metis or Uniswap SOR parity.
+  Jupiter Metis or Uniswap SOR parity. Since Release 0.2.2 it also holds the three **exact
+  bound-pruned accelerations** `single_path_bounded`, `incremental_graph_bounded` and
+  `metis_history_bounded` (below): each returns its reference's plan and claims no speedup.
 
 How the two recipes search, with hand-worked and test-verified examples, is explained in
 [`routing-algorithms.md`](routing-algorithms.md) §8 (`uni_sor_adaptive`) and §9
@@ -29,7 +31,8 @@ How the two recipes search, with hand-worked and test-verified examples, is expl
 guide. Its contract is [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md) §9.2, and the
 frozen WHI-1449 results are in [`metis-challenge-results.md`](metis-challenge-results.md).
 The five 0.2.1 identities are explained, with executable worked examples, in §§14–18 of the same
-guide (shared vocabulary in §1.8), and the 14-row fixed-block walkthrough is its §11.
+guide (shared vocabulary in §1.8), and the 17-row fixed-block walkthrough is its §11. The three
+0.2.2 bounded strategies are explained the same way in §§19–22 (shared theory in §19).
 
 The owner asked for this layout: the optimized strategies are **not** default strategies
 and are kept apart from the base ones, but the CLI runs them all. The owner then asked
@@ -45,20 +48,58 @@ evidence.
 
 | mode | runs |
 | --- | --- |
-| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired`, then each implemented 0.2.1 identity in contract order (`metis_history`, `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe`, `cfmm_dual`) |
+| `all` (default) | the profile's base algorithms (and any other algorithm it lists, such as a configured `uni_sor_fast`) in profile order, then `uni_sor_adaptive`, `uni_sor_optimized`, then `metis_inspired`, then each implemented 0.2.1 identity in contract order (`metis_history`, `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe`, `cfmm_dual`), then the three 0.2.2 bounded strategies (`single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`) |
 | `base` | only the profile's base algorithms (an intentional subset stays a subset) |
 | `optimized` | only the two optimized strategies |
 | `profile` | the profile's exact algorithm selection: the pre-WHI-1528 behaviour, used for replays |
 
-A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs fourteen
+A standard six-algorithm profile such as `config/daily_gross.yaml` therefore runs seventeen
 strategies: six base, two optimized, then `metis_inspired`, `metis_history`,
-`direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`.
+`direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe`, `cfmm_dual`,
+`single_path_bounded`, `incremental_graph_bounded` and `metis_history_bounded`
+(`benchmark/strategies.py`: `R021_ADDITIONS`, then `R022_ADDITIONS`).
 They run one after the other,
 each in its own isolated worker, under the profile's own objective, budget, measurement
 (`run`), worker and `search.*` values. Every registry entry is not added automatically, and
 a name the profile already lists is not repeated. `uni_sor_fast` keeps working with its own
 `shortlist` / `sampling` sections when a profile names it; it never replaces a named
 strategy and never receives a named strategy's settings.
+
+### 0.2.2 bound-pruned strategies under `all`
+
+`single_path_bounded` (WHI-1599), `incremental_graph_bounded` and `metis_history_bounded` (WHI-1600)
+are the unchanged `single_path`, `incremental_graph` and `metis_history` searches with exact
+upper-bound pruning switched on (contract
+[`research-022/pruning-contract.md`](research-022/pruning-contract.md), R022-Q02/1; explained, with
+executable worked examples, in [`routing-algorithms.md`](routing-algorithms.md) §§19–22). They are in
+the `custom` group, are opt-in, and run last under `all`, after the 0.2.1 identities. Each receives its
+reference's `search.*` (and `graph.*`) values from the profile and returns its reference's plan
+whenever the bounded run is not budget-truncated.
+
+| Strategy | Reference | Options | Preset file |
+| --- | --- | --- | --- |
+| `single_path_bounded` | `single_path` | none | none |
+| `incremental_graph_bounded` | `incremental_graph` | none | none |
+| `metis_history_bounded` | `metis_history` | exactly `metis_history`'s | `config/metis_history_bounded/preset_v1.yaml` |
+
+- **Two preset files, identical options.** A preset file names the algorithm that pins it and
+  `benchmark.profile.preset_options` refuses a mismatch, so `metis_history` and `metis_history_bounded`
+  cannot share one file. `config/metis_history_bounded/preset_v1.yaml` carries the **same options**
+  (`dominance: history`, 1 label per signature, 1,024 frontier labels) under the bounded strategy's own
+  key `R022-Q04-metis_history_bounded`, so its `settings_sha256` is `metis_history`'s (`183bb1ff…`) and
+  paired comparisons are same-settings. The two files must stay option-identical; the bounded file's
+  sha256 is pinned in `routing/algorithms/metis_history_bounded.py` and a changed file is refused.
+- **The pruning is not an option.** It would change `settings_sha256`; the strategy ID carries it.
+- **Roster and replay.** `--strategies all` is 17 strategies; `--strategies profile` replays a saved
+  effective profile literally and never gains a bounded strategy. The preregistered 0.2.1 campaign
+  (WHI-1562) froze its own 14-ID roster (`tools/research_021/`, its tests switch the 0.2.2 additions
+  off) and is kept that way by design: replay historical 0.2.1 runs with `--strategies profile`.
+- **Where the bound counters are.** `search.bound_pruning` in each strategy's case record
+  (`cases.jsonl`) and the `bound pruning (…)` lines of `main.py quote … --details`. The batch console,
+  CSV and HTML summaries do not show them; the HTML report only labels the row as a bound-pruned strategy.
+- **No speedup is claimed.** The counters are work (candidates and quotes avoided); latency is the
+  separate WHI-1602 measurement. A bounded run whose budget truncates the search is labelled
+  `not_exact_budget_binding` and makes no exactness claim.
 
 ### 0.2.1 experimental identities under `all`
 
@@ -253,7 +294,7 @@ therefore reproduces the saved algorithms and settings, never whatever a later d
 would expand to. The replay's resolved profile equals the original. An effective profile
 saved before WHI-1540 (six base plus two optimized) replays as exactly those eight; only
 running a profile under `all` again would add `metis_inspired`. Likewise, saved eight- to
-thirteen-strategy profiles never gain a 0.2.1 identity, and a saved profile that already holds
+thirteen-strategy profiles never gain a 0.2.1 identity or a 0.2.2 bounded strategy, and a saved profile that already holds
 the historical `cfmm_dual/1` options keeps them. A profile-mode run
 keeps its old form: no `selection` record, and the manifest names the source profile. A
 programmatic `run_experiment(bundle, profile)` runs the profile's algorithms exactly and
