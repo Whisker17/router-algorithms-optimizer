@@ -719,8 +719,9 @@ def load_bundle(path: str | Path) -> SnapshotBundle:
     pools = _parse_pools_file(
         (bundle_dir / POOLS_FILE).read_text(), str(bundle_dir / POOLS_FILE), block
     )
+    derived_cohort = None
     if "provenance" in manifest["files"]:
-        _check_provenance(bundle_dir / PROVENANCE_FILE, block)
+        derived_cohort = _check_provenance(bundle_dir / PROVENANCE_FILE, block)
     cases = _parse_cases_file((bundle_dir / CASES_FILE).read_text(), str(bundle_dir / CASES_FILE))
     prices = None
     corpus = None
@@ -738,6 +739,7 @@ def load_bundle(path: str | Path) -> SnapshotBundle:
         source_path=str(bundle_dir),
         prices=prices,
         corpus=corpus,
+        derived_cohort=derived_cohort,
     )
 
 
@@ -775,7 +777,9 @@ def _load_corpus_files(
     return prices, corpus
 
 
-def _check_provenance(path: Path, block: BlockRef) -> None:
+def _check_provenance(path: Path, block: BlockRef) -> str | None:
+    """Validate the provenance block identity; return a derived request bundle's recorded
+    matched cohort (`derived_from.cohort`, WHI-1606), else None."""
     try:
         raw = json.loads(path.read_text())
     except json.JSONDecodeError as exc:
@@ -787,6 +791,11 @@ def _check_provenance(path: Path, block: BlockRef) -> None:
         raise BundleError(
             f"{path}.block: provenance block {prov_block} differs from the manifest's {block}"
         )
+    derived = raw.get("derived_from")
+    cohort = derived.get("cohort") if isinstance(derived, dict) else None
+    if cohort is not None and cohort != "sor_compatible":
+        raise BundleError(f"{path}.derived_from.cohort: expected 'sor_compatible', got {cohort!r}")
+    return cohort
 
 
 def _cp_pool_to_obj(p: ConstantProductPoolState, block: BlockRef) -> dict[str, Any]:
@@ -986,6 +995,7 @@ def write_bundle(
         source_path=str(output_dir),
         prices=bundle.prices,
         corpus=bundle.corpus,
+        derived_cohort=bundle.derived_cohort,
     )
 
 

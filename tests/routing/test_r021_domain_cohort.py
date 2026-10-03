@@ -3,14 +3,21 @@ the bundle's real corpus cohort in their `r021.domain/1` `universe.cohort` (R021
 §3.1, `contract.md`), exactly as `direct_split_certified.cohort_of` derives it for
 `direct_split_certified` and `cfmm_dual`: `fixture` for a synthetic bundle,
 `sor_compatible` for a matched-cohort cut, else `full_source`. Before the fix both
-identities hard-coded `full_source` for every non-synthetic bundle."""
+identities hard-coded `full_source` for every non-synthetic bundle.
+
+WHI-1606 (R2-F1): the single-request path too -- `main.py quote` over a matched cut records
+`sor_compatible` for all four `cohort_of` users. Before the fix the derived request bundle
+did not carry the parent's cohort, so every one of them recorded `full_source`."""
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 
 import pytest
 
+import main
 from benchmark.objective import gross_only
 from benchmark.profile import preset_options
 from routing.algorithms.base import AlgorithmConfig, Budget, SolveContext
@@ -25,6 +32,7 @@ CORPUS = REPO / "tests" / "fixtures" / "corpus" / "bundle"
 SYNTHETIC = REPO / "tests" / "fixtures" / "synthetic"
 PARAMS = {"max_hops": 2, "max_splits": 4, "percent_step": 5, "chunks": 2, "label_hops": 2}
 IDENTITIES = ("metis_history", "incremental_graph_repair")
+COHORT_OF_USERS = (*IDENTITIES, "direct_split_certified", "cfmm_dual")
 
 
 @pytest.fixture(scope="module")
@@ -59,3 +67,32 @@ def test_domain_universe_records_the_bundle_cohort(
     assert domain["universe"]["cohort"] == expected
     assert domain["universe"]["bundle"] == bundle.bundle_hash
     assert domain["universe"]["pools"] == list(bundle.pools)  # nothing else changed
+
+
+@pytest.mark.parametrize("parent", ["full_source", "sor_compatible"])
+def test_quote_records_the_parent_cohort_for_every_cohort_of_user(
+    bundles: dict[str, SnapshotBundle],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    parent: str,
+) -> None:
+    # the reviewer's reproduction (review-r2/repro_quote_cohort.sh)
+    argv = ["quote", "--bundle", bundles[parent].source_path,
+            "--profile", str(REPO / "config" / "daily_gross.yaml"),
+            "--token-in", "USDC", "--token-out", "USDT0", "--amount", "10000",
+            "--quotes-dir", str(tmp_path / "quotes"), "--strategies", "all"]  # fmt: skip
+    assert main.main(argv) == 0
+    match = re.search(r"\(run (\S+)\)", capsys.readouterr().out)
+    assert match
+    run_dir = Path(match.group(1))
+    cohorts = {}
+    for line in (run_dir / "cases.jsonl").read_text().splitlines():
+        record = json.loads(line)
+        domain = ((record.get("search") or {}).get("r021") or {}).get("domain")
+        if domain:
+            cohorts[record["algorithm"]] = domain["universe"]["cohort"]
+    assert {name: cohorts.get(name) for name in COHORT_OF_USERS} == dict.fromkeys(
+        COHORT_OF_USERS, parent
+    )
+    # the saved request bundle (the replay's --bundle) reloads with the same cohort
+    assert cohort_of(load_bundle(run_dir.parents[1] / "bundle")) == parent
