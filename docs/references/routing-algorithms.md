@@ -15,7 +15,12 @@ ordinary CLI compares. It covers:
   `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`
   (§§14–18, shared vocabulary in §1.8). With them, `--strategies all` compares **14**
   strategies. They are separately named experiments, not defaults, not adopted, and not
-  Jupiter Metis or Uniswap SOR parity.
+  Jupiter Metis or Uniswap SOR parity;
+- the three **0.2.2 bound-pruned strategies** `single_path_bounded`, `incremental_graph_bounded`
+  and `metis_history_bounded` (§§19–22; shared theory in §19). Each is an **exact acceleration** of
+  a strategy above: it skips a candidate only when a proved upper bound shows that it cannot beat the
+  incumbent, and returns the reference's plan. With them, `--strategies all` compares **17**
+  strategies. They claim no speedup: timing is a separate measurement (WHI-1602).
 
 For each strategy it describes the mathematical foundations, search mechanics, state management
 and practical trade-offs against frozen Mantle liquidity snapshots. To compare them on a single
@@ -33,12 +38,18 @@ Inspected source commits:
   WHI-1561 branch). Their worked examples are `docs/examples/routing-algorithms/r021_examples.py`,
   added at `972d19caaa2fd9f3050a704a409d5b4f2591523e`. Line numbers in Sections 14–18 are those of
   `e455c7d`; function names are the stable anchors when lines drift.
+- §§19–22 and the three 0.2.2 rows of Sections 11–13: pool, routing, benchmark and report sources at
+  `1e63a043f7023988963bf18f47fbadf5f34b26ff` (WHI-1600 merged on `dev`; PRs #80 and #81). Their
+  worked examples are `docs/examples/routing-algorithms/r022_examples.py`. Line numbers in §§19–22
+  are those of `1e63a04`; function names are the stable anchors when lines drift.
 
 All numeric traces and intermediate transitions are verified offline by
-`tests/docs/test_routing_algorithm_examples.py` and `tests/docs/test_r021_examples.py`, and can be
-run via `docs/examples/routing-algorithms/run_examples.py` (sections 1–11: the nine original
-strategies; sections 12–17: the five 0.2.1 identities and the 14-row fixed-block walkthrough).
-No example requires RPC, Dune or credentials.
+`tests/docs/test_routing_algorithm_examples.py`, `tests/docs/test_r021_examples.py` and
+`tests/docs/test_r022_examples.py`, and can be run via
+`docs/examples/routing-algorithms/run_examples.py` (sections 1–11: the nine original strategies;
+sections 12–17: the five 0.2.1 identities and the 17-row fixed-block walkthrough; sections 18–22: the
+0.2.2 upper-bound pruning examples). No example requires RPC, Dune or credentials, and none depends
+on the gitignored `data/`.
 
 ---
 
@@ -74,18 +85,22 @@ subject to:
 - **Section 8:** `uni_sor_adaptive` (optimized, recipe H3) — Coarse-to-fine percentage sampling over the unchanged SOR core, validated anytime incumbent.
 - **Section 9:** `uni_sor_optimized` (optimized, recipe H4) — Amount-aware 5 % / 100 % route shortlist, the same sampling, and the exact L02–L04 quote controls.
 - **Section 10:** `metis_inspired` (experimental, NOT Jupiter Metis) — Hop-layered, quote-driven label search replacing `incremental_graph`'s per-chunk path enumeration.
-- **Section 11:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044) — all 14 `--strategies all` rows, including the visible `unsupported` row, plus the quote/details/replay commands.
-- **Section 12:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map — for all 14 strategies.
+- **Section 11:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044) — all 17 `--strategies all` rows, including the visible `unsupported` row, plus the quote/details/replay commands.
+- **Section 12:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map — for all 17 strategies.
 - **Section 13:** Operational Boundaries, Limitations, and Known Debt.
 - **Section 14:** `metis_history` (0.2.1, experimental, NOT Jupiter Metis) — History-signature labels with proven dominance, retained unknowns and visible caps.
 - **Section 15:** `direct_split_certified` (0.2.1, experimental) — Exact-rational branch and bound over `direct_split`'s grid, with a certified lower/upper interval.
 - **Section 16:** `incremental_graph_repair` (0.2.1, experimental) — Complete checkpoints, suffix rebuilds and full-plan replay against greedy admission lock-in.
 - **Section 17:** `uni_sor_cycle_safe` (0.2.1, experimental, not SOR parity) — Plan-token-DAG admission at SOR's single combination point.
 - **Section 18:** `cfmm_dual` (0.2.1, experimental) — Dual prices, closed-form pool oracles and optimizer on CPMM and CL markets, then exact integer recovery.
+- **Section 19:** Upper-bound pruning (0.2.2) — per-pool output bounds (CPMM, CL, LB), multi-hop composition, same-direction validity, integer slack and the R2 counterexample, the pruning contract, and why BMSSP/SSSP and the SOR split tables are not used.
+- **Section 20:** `single_path_bounded` (0.2.2, experimental) — `single_path` with rule S1: skip a path whose nested-floor bound is at most the incumbent.
+- **Section 21:** `incremental_graph_bounded` (0.2.2, experimental) — `incremental_graph` with rule I1: skip a path whose chunk chain bound is at most the chunk's best marginal.
+- **Section 22:** `metis_history_bounded` (0.2.2, experimental) — `metis_history` with rule M1 (arrivals) and rule M2 (labels) behind the structural gate `G_M2`.
 
-The five 0.2.1 chapters follow Section 13 so that every earlier section number and anchor stays
-unchanged; Sections 11–13 already cover the whole 14-strategy roster. §1.8 introduces the
-vocabulary they share.
+The five 0.2.1 chapters and the four 0.2.2 chapters follow Section 13 so that every earlier section
+number and anchor stays unchanged; Sections 11–13 cover the whole 17-strategy roster. §1.8 introduces
+the vocabulary of the 0.2.1 chapters, and §19 that of the 0.2.2 chapters.
 
 ### 1.3 Terminology and Symbol Table
 
@@ -1831,9 +1846,10 @@ $1\,000$, `search.max_hops` 3, `label_hops` 3, `label_pruning` true.
 
 ## 11. Real-State Fixed-Block Walkthrough (Block 101082044)
 
-To demonstrate how these strategies behave on real blockchain liquidity, we execute all fourteen
-`--strategies all` strategies (six base, two optimized, `metis_inspired` and the five 0.2.1
-experimental identities) against the verified frozen Mantle snapshot
+To demonstrate how these strategies behave on real blockchain liquidity, we execute all seventeen
+`--strategies all` strategies (six base, two optimized, `metis_inspired`, the five 0.2.1
+experimental identities and the three 0.2.2 bound-pruned strategies) against the verified frozen
+Mantle snapshot
 `mantle-5src-101082044-091b0759-fixture`:
 - **Parent Bundle:** `mantle-5src-101082044-091b0759-fixture`
 - **Bundle Hash:** `5401b1de8c83a3527e5f9b5afae4510a760f171f2b306d49dbb5c830256c9ad0`
@@ -1853,8 +1869,9 @@ experimental identities) against the verified frozen Mantle snapshot
   ```
   `--strategies all` is the default. It runs the profile's six base strategies, then
   `uni_sor_adaptive` and `uni_sor_optimized`, then `metis_inspired`, then `metis_history`,
-  `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`,
-  one after the other, each in its own isolated worker and with exactly one solve attempt.
+  `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`, then
+  `single_path_bounded`, `incremental_graph_bounded` and `metis_history_bounded`, one after the
+  other, each in its own isolated worker and with exactly one solve attempt.
   `--strategies base` reproduces the six-row table.
 - **`metis_inspired` settings:** the profile's `search.*`, budget and `graph.chunks: 200`, plus
   `label_hops: 4` and `label_pruning: true` from the pinned arm `config/metis_challenge/m4.yaml`.
@@ -1872,14 +1889,18 @@ experimental identities) against the verified frozen Mantle snapshot
   | `uni_sor_cycle_safe` | `config/uni_sor_cycle_safe/preset_v1.yaml` v1 (`{}`) | `44136fa3…` |
   | `cfmm_dual` | `config/cfmm_dual/preset_v2.yaml` v2, the current CL stage (`constant_product+concentrated`) | `aa6eea57…` |
 
-  The historical `cfmm_dual/1` CPMM-only preset is not one of the 14 rows; it runs only through
+  The historical `cfmm_dual/1` CPMM-only preset is not one of the 17 rows; it runs only through
   the explicit profile `config/cfmm_dual/cpmm.yaml` (§11.3 item 10).
+- **0.2.2 settings:** `single_path_bounded` and `incremental_graph_bounded` accept no options.
+  `metis_history_bounded` receives `metis_history`'s preset values from its own identical preset file
+  `config/metis_history_bounded/preset_v1.yaml` (same `settings_sha256` `183bb1ff…`; §22.7) and the same
+  `chunks` and `label_hops` as `metis_history`.
 
 *Classification:* This is an **exploratory single request** evaluated on a checked-in 19-pool fixture
 subset, not a held-out corpus result. The fixture is not the full frozen corpus (whose tuning
 bundle alone has 143 pools). The `quote` command solves on a derived single-case request bundle of
 the same 19 pools (it records that bundle's own hash); `r021_examples.py` section 17 re-runs the
-same 14 rows in process on the fixture itself and checks each gross against the exact protocol
+same 17 rows in process on the fixture itself and checks each gross against the exact protocol
 quotes below.
 
 ### 11.1 Summary Comparison Table
@@ -1900,18 +1921,25 @@ quotes below.
 | `incremental_graph_repair` | `ok` | **10000.663447** | **10000663447** | 265 | Incumbent kept: one `duplicate` and one `rejected_worse` repair attempt |
 | `uni_sor_cycle_safe` | `ok` | 10000.660449 | 10000660449 | 40 | 100% Agni V3; 0 cycle rejections, `reference_trajectory: identical` |
 | `cfmm_dual` | `ok` | 10000.660449 | 10000660449 | 1 | 100% Agni V3; CL stage `cfmm_dual/2`, markets Agni V3 + one Moe Classic pool, `converged`, bound `estimate` |
+| `single_path_bounded` | `ok` | 10000.660449 | 10000660449 | 4 | `single_path`'s plan; rule S1 evaluated 2 bounds and skipped 0 |
+| `incremental_graph_bounded` | `ok` | **10000.663447** | **10000663447** | 264 | `incremental_graph`'s plan; rule I1 evaluated 400 bounds and skipped 0 |
+| `metis_history_bounded` | `ok` | **10000.663447** | **10000663447** | 264 | `metis_history`'s plan; M1 evaluated 400 bounds and skipped 0, M2 inactive (no label can exist) |
 
 The gross values are checked by `r021_examples.py` section 17 against independent exact protocol
 quotes: Agni V3 at the full input gives 10000660449, and Agni V3 at 9950000000 plus the Moe LB
 pool at 50000000 give $9950659893 + 50003554 = 10000663447$. The quote counts are the runner's
 per-row counters of this run (factory-reported, not independently derived); they are not a
-performance comparison.
+performance comparison. The three bounded rows return exactly their references' plans and counted
+quotes (4, 264 and 264): on this request no bound proves a candidate worse than the incumbent, so
+nothing is skipped (`r022_examples.py` section 22 compares each row with the reference solver and
+with the module's own rule oracles, §§20.5, 21.5 and 22.5). That is a statement about this request, not
+a general rate of pruning.
 
 ### 11.2 Execution Order and Fund Ledger Trace
 
 #### The Baseline Plan (`direct`, `single_path`, `direct_split`, `path_split`, `uni_sor_port`, `uni_sor_adaptive`, `uni_sor_optimized`)
-The 0.2.1 rows `uni_sor_cycle_safe` and `cfmm_dual` return this same one-step plan
-(`cfmm_dual` names its output fund `F1` instead of `OUT`).
+The 0.2.1 rows `uni_sor_cycle_safe` and `cfmm_dual` and the 0.2.2 row `single_path_bounded` return
+this same one-step plan (`cfmm_dual` names its output fund `F1` instead of `OUT`).
 ```
 Step 0: agni_v3 pool 0x36f66548cda219c6fc037037cee063b9f28b13ef
   Token In:  USDC (0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9)
@@ -1923,7 +1951,8 @@ Residuals: None. Reconciled exactly.
 ```
 
 #### The Incremental Split Plan (`incremental_graph`, `metis_inspired`)
-The 0.2.1 rows `metis_history` and `incremental_graph_repair` return this same two-step plan. The
+The 0.2.1 rows `metis_history` and `incremental_graph_repair` and the 0.2.2 rows
+`incremental_graph_bounded` and `metis_history_bounded` return this same two-step plan. The
 fresh replay's fund ledger: `REQUEST` produced 10000000000 and consumed 10000000000; `F1` and
 `F2` are terminal USDT0 funds of 9950659893 and 50003554.
 ```
@@ -2021,6 +2050,18 @@ smaller domain next to `direct_split` rows that use all four pools (§15.1).
       only 14410 raw units. The row is
       **14409**, equal to the best exact CPMM single path by hand. This is the limitation of the
       CPMM stage on a CL-dominated pair, not a search result.
+11. **The three bounded rows skip nothing here, and return their references' plans.**
+    - `single_path_bounded`: 4 paths are enumerated, the first (`0x1bc3…`, a Liquidity Book pool)
+      fails `insufficient_liquidity`, the second (`0x368b…`) becomes the incumbent, and the other two
+      bounds (Agni V3, Moe Classic) are above it, so all four are quoted: 2 bound evaluations, 0
+      skipped, 4 quotes, Agni V3 with 10000660449 (§20.5 item 3).
+    - `incremental_graph_bounded` and `metis_history_bounded`: 400 bound evaluations (two per
+      chunk over 200 chunks), 0 skipped, 264 quotes counted, 99.5 % Agni V3 plus 0.5 % Moe LB. For
+      `metis_history_bounded` the gate is open but no non-target label can exist (every edge leads
+      straight to USDT0), so M2 is inactive and builds no table (§22.5 item 5).
+    - A request this large for its pools gives the bound nothing to prove; the 96 fixture cases of
+      §20.5 item 4 and §21.5 item 7 are where it does skip. This is a count of work, never a
+      time, and no row here is a speed claim.
 
 ### 11.4 Reproducing the Walkthrough: `quote --details`, the Saved Replay and Explicit Profiles
 
@@ -2039,8 +2080,9 @@ smaller domain next to `direct_split` rows that use all four pools (§15.1).
    uv run python main.py run --bundle <quote dir>/bundle --profile <quote dir>/profile.yaml \
      --results-dir <quote dir>/runs --strategies profile
    ```
-   `--strategies profile` runs the saved effective profile **literally**: the same 14 algorithms,
-   preset identities and settings, never a re-expansion under a later default.
+   `--strategies profile` runs the saved effective profile **literally**: the same algorithms (17 for
+   a profile saved under `all` since Release 0.2.2), preset identities and settings, never a
+   re-expansion under a later default.
 4. **Explicit comparison profiles** (each runs literally with `--strategies profile`):
 
    | Profile | Runs | Options source |
@@ -2097,6 +2139,22 @@ current preset searches and records.
 | **Bound kind** | `unknown` | `certified` | `unknown` | `unknown` | `estimate` (converged, no fallback) or `unknown` |
 | **Bounded preset** | `metis_history/1` | `direct_split_certified/1` (`repository_grid`) | `incremental_graph_repair/1` | `uni_sor_cycle_safe/1` (`{}`) | `cfmm_dual/2` (current); `cfmm_dual/1` historical |
 
+The three 0.2.2 strategies (§§19–22) are exact accelerations: each has its reference's scope and
+differs only in which candidates it quotes. "Result" is the identity they claim, not a property they add.
+
+| Property | `single_path_bounded` | `incremental_graph_bounded` | `metis_history_bounded` |
+|---|---|---|---|
+| **Reference control** | `single_path` | `incremental_graph` | `metis_history` |
+| **Multi-Hop / Split Support** | as the reference | as the reference | as the reference |
+| **Supported Protocols** | All 5 (bound proved for CPMM, CL, LB) | All 5 | All 5 |
+| **Search Mechanism** | the reference, plus rule S1 | the reference, plus rule I1 | the reference, plus rule M1 and, behind `G_M2`, M2 |
+| **Result** | the reference's plan, score and status when not budget-truncated | same | same |
+| **Skip test** | nested-floor bound `<=` the incumbent's score | chunk chain bound `<=` the chunk's best marginal | arrival or `U_h` bound `<=` the chunk's best marginal |
+| **Needs** | an incumbent | a chunk choice and the retained `path_split` candidate (P0) | a best marginal, P0; M2 also an open gate and a label |
+| **Options** | none | none | exactly `metis_history`'s (own identical preset file) |
+| **Group / Default** | Experimental, opt-in | Experimental, opt-in | Experimental (NOT Jupiter Metis), opt-in |
+| **Where counters are** | `search.bound_pruning` in the case record; `quote --details` | same | same |
+
 ### 12.2 Asymptotic Search Complexity
 
 Let:
@@ -2131,6 +2189,9 @@ Let:
 | `incremental_graph_repair` | $\mathcal{O}((1 + C + R_a) \cdot K \cdot \sum_{\pi} \text{hops}(\pi) \cdot c_q + \text{Cost}(\text{path\_split}))$ | $\le (1 + C + R_a) \cdot K \cdot \sum_{\pi} \text{hops}(\pi) + \text{Quotes}(\text{path\_split})$ (restores are memo hits) | $\mathcal{O}(K \cdot (P + K) + \lvert \Pi_H \rvert)$ + cache |
 | `uni_sor_cycle_safe` | $\text{Cost}(\text{uni\_sor\_port}) + \text{checks} \cdot \mathcal{O}(S \cdot H)$ | $=$ `uni_sor_port`'s | as `uni_sor_port` |
 | `cfmm_dual` | $\mathcal{O}(E_f \cdot \lvert M \rvert \cdot c_o + \text{L-BFGS-B} + A_r \cdot \lvert M \rvert \cdot c_q)$, plus the charged CL index build in `prepare` | $\le A_r \cdot \lvert M \rvert$ recovery legs + fallback paths | $\mathcal{O}(\text{index segments} + \text{lbfgs\_memory} \cdot \lvert \text{tokens} \rvert)$ |
+| `single_path_bounded` | the reference's, plus $\mathcal{O}(H \cdot \lvert \Pi_H \rvert)$ exact-rational operations for the bounds and $\mathcal{O}(P)$ preparation | $\le$ the reference's (executed-quote set is a subset) | the reference's + $\mathcal{O}(P)$ rationals |
+| `incremental_graph_bounded` | the reference's, plus $\mathcal{O}(K \cdot \sum_{\pi} \text{hops}(\pi))$ rational operations for the bounds and $\mathcal{O}(P)$ preparation | $\le$ the reference's (the embedded `path_split` is unchanged) | the reference's + $\mathcal{O}(P)$ rationals |
+| `metis_history_bounded` | the reference's, plus one bound per relaxation and, when M2 can act, `bound_table_cost` $\mathcal{O}(H_L \cdot \sum_v \deg v)$ per solve | $\le$ the reference's | the reference's + $\mathcal{O}(P)$ rationals + the per-solve `U_h` table |
 
 For `cfmm_dual`, a CL oracle call locates the target price in its precomputed index by binary
 search, but that does not make the solve logarithmic: the evaluation count, not the lookup,
@@ -2160,12 +2221,16 @@ When navigating the codebase, consult these authoritative entry points:
   - `routing/algorithms/incremental_graph_repair.py`: `freeze` / `restore` (lines 214–241), `flow_key` (line 242), `_Search` (lines 309–452), `structural_checkpoints` / `alternatives` (lines 458–468), `solve` (lines 488–716), `_repair` (lines 763–860)
   - `routing/algorithms/uni_sor_cycle_safe.py`: `union_has_cycle` (line 204), `Admission` (lines 233–278), `solve` (lines 379–460)
   - `routing/algorithms/cfmm_dual.py`: `CAPABILITIES` / `STAGES` / `PRESET` / `PRESET_V1` (lines 132–176), `prepare` (line 329), `solve` (lines 457–815); `routing/cfmm/model.py` (`market_universe`, `cpmm_arb`, `cl_arb`, `dual_value`), `routing/cfmm/cl.py` (`build_cl_index`, `prepare_cl_indexes`), `routing/cfmm/optimizer.py` (`GuardedObjective`, `solve`), `routing/cfmm/recovery.py` (`recover`)
-  - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the base and optimized comparison groups; `metis_inspired` and the five 0.2.1 identities (`R021_ADDITIONS`, contract order) are added by `benchmark/strategies.py` under `--strategies all`)
+  - `pools/bounds.py` (0.2.2): `OutputBound` (line 68), `output_bound` (165), `BoundTable` (180), `build_bounds` (204)
+  - `routing/algorithms/chunk_pruning.py` (0.2.2): `hop_bound` (line 33), `chain_bound` (50), `UTable` (85), `m2_gate` (167), `LabelPruner` (196)
+  - `routing/algorithms/single_path_bounded.py`, `incremental_graph_bounded.py`, `metis_history_bounded.py` (0.2.2): `solve`, `FACTORY`; the rules live in `single_path.py` (`_path_upper_bound`, line 153; the S1 block, lines 251–259), `incremental_graph.py` (`_bound_start`, line 449; the I1 block, lines 648–660) and `metis_history.py` (`choose_history`, line 351; the gate and table in `_solve`, lines 536–551)
+  - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the base and optimized comparison groups; `metis_inspired`, the five 0.2.1 identities (`R021_ADDITIONS`, contract order) and the three 0.2.2 bounded strategies (`R022_ADDITIONS`, line 122) are added by `benchmark/strategies.py` under `--strategies all`)
 - **Contract Verification:**
   - Uniswap SOR: [`uni-sor-port-contract.md`](uni-sor-port-contract.md) and `tests/routing/test_uni_sor_parity.py`.
   - Optimized strategies: [`strategy-groups.md`](strategy-groups.md), [`latency-optimization-results.md`](latency-optimization-results.md) (L08), `tests/routing/test_uni_sor_strategies.py` and `tests/routing/test_uni_sor_fast.py`.
   - Metis-inspired: [`jupiter-metis-challenge.md`](jupiter-metis-challenge.md), [`metis-challenge-results.md`](metis-challenge-results.md) and `tests/routing/test_metis_inspired.py` (fixtures X1–X7, X4b).
   - 0.2.1 identities: the shared contract [`research-021/contract.md`](research-021/contract.md) and one memo each: [`history-labels.md`](research-021/history-labels.md), [`integer-allocation.md`](research-021/integer-allocation.md), [`suffix-repair.md`](research-021/suffix-repair.md), [`cycle-safe-sor.md`](research-021/cycle-safe-sor.md), [`cfmm-dual.md`](research-021/cfmm-dual.md). Worked examples: `docs/examples/routing-algorithms/r021_examples.py` and `tests/docs/test_r021_examples.py`.
+  - 0.2.2 bound pruning: [`research-022/output-bounds.md`](research-022/output-bounds.md) (the per-pool bounds and proofs), [`research-022/pruning-contract.md`](research-022/pruning-contract.md) (the rules, the exactness argument, the interface and its §14 amendment). Worked examples: `docs/examples/routing-algorithms/r022_examples.py` and `tests/docs/test_r022_examples.py`; strategy tests `tests/routing/test_single_path_bounded.py`, `tests/routing/test_chunk_bounded.py`, `tests/routing/test_pruning_contract.py`, `tests/pools/test_bounds.py`, `tests/pools/test_output_bounds_contract.py`.
   - Cost Model: [`cost-model.md`](cost-model.md) and `benchmark/costs.py`.
 
 ---
@@ -2282,8 +2347,26 @@ When navigating the codebase, consult these authoritative entry points:
     - The CPMM-only ablation (`config/cfmm_dual/cpmm.yaml`) shows a stage limitation, not search
       quality.
 14. **Literal Replay:** Saved effective profiles, including the pre-0.2.1 eight- and nine-strategy
-    ones, replay literally with `--strategies profile` and never gain a 0.2.1 identity; use each
-    manifest's `replay_command` (§11.4, [`strategy-groups.md`](strategy-groups.md)).
+    ones and the 14-strategy 0.2.1 ones, replay literally with `--strategies profile` and never gain
+    a 0.2.1 identity or a 0.2.2 bounded strategy; use each manifest's `replay_command` (§11.4,
+    [`strategy-groups.md`](strategy-groups.md)). The preregistered 0.2.1 campaign (WHI-1562) froze
+    its own 14-ID roster and `tools/research_021/` is kept as it was by design: do not "fix" it to 17
+    (its tests switch the 0.2.2 additions off); replay a 0.2.1 run with `--strategies profile`.
+15. **The 0.2.2 Bounded Strategies Are Exact Accelerations, Not Speedups:**
+    - `single_path_bounded`, `incremental_graph_bounded` and `metis_history_bounded` return their
+      references' plans whenever the bounded run is not budget-truncated. Under a binding
+      `max_candidates` or `max_quotes` the record is labelled `not_exact_budget_binding` and makes no
+      exactness claim.
+    - No timing is claimed anywhere in this guide for them. They avoid quotes (work); whether that
+      saves time is the WHI-1602 measurement.
+    - Pruning needs a proved bound. A direction with no bound (a stale CL tick, a missing LB fee, a
+      CL price above $2^{128}$ for the chunk strategies, an amount above $2^{127}$) is never pruned and
+      is counted in `bound_no_bound`.
+    - `incremental_graph_bounded` and `metis_history_bounded` prune only when the retained simpler
+      `path_split` candidate exists (P0); `metis_history_bounded`'s rule M2 runs only behind its gate
+      and is inactive under the shipped preset on the tracked fixture (§22).
+    - The bound counters are in each case record (`search.bound_pruning` in `cases.jsonl`) and in
+      `quote --details`; the batch console, CSV and HTML summaries do not show them.
 
 ---
 
@@ -3669,3 +3752,986 @@ Line numbers are those of `e455c7d`; function names are the stable anchors.
     matters (14409 on the §11 request, §11.3); always read `cfmm_dual` beside its stage and markets.
   - **Scope:** gross-only, single-source exact input, LB excluded, markets limited to simple paths
     of at most `search.max_hops` pools. No latency claim.
+
+---
+
+## 19. Upper-Bound Pruning: Per-Pool Output Bounds, Composition, Slack and the Pruning Contract
+
+Release 0.2.2 adds three strategies that are **exact accelerations** of strategies the guide
+already explains: `single_path_bounded` (§20), `incremental_graph_bounded` (§21) and
+`metis_history_bounded` (§22). Each skips a candidate only when a *proved upper bound* on what
+that candidate can return is no better than what the search already holds. This chapter is the
+shared theory; §§20–22 apply it. The normative sources are
+[`research-022/output-bounds.md`](research-022/output-bounds.md) (`R022-Q01/1`, the bounds and their
+proofs) and [`research-022/pruning-contract.md`](research-022/pruning-contract.md) (`R022-Q02/1`,
+the pruning rules, their equality arguments, §14 the amendment from the landed code). This guide
+restates their results and proves nothing again; every number below is asserted by
+`tests/docs/test_r022_examples.py` against `docs/examples/routing-algorithms/r022_examples.py`
+(runner sections 18–22), with an expectation that does not come from the bounded code.
+
+### 19.1 Problem and Inclusion Rationale
+`single_path` quotes every enumerated path, `incremental_graph` quotes every admissible path of
+every chunk, and `metis_history` quotes every label relaxation. Most of those quotes cannot win:
+a path through a thin or expensive pool is plainly worse than the incumbent. A quote of a
+concentrated-liquidity or Liquidity Book pool steps through ticks or bins, so skipping it saves
+real work. What is needed is a cheap number that is **never below** what the quote would return.
+
+Three properties make the acceleration *exact* rather than a heuristic:
+
+1. **The bound is proved, per pool family and direction**, against the migrated integer swap code
+   (§19.2), not estimated.
+2. **A skip needs `UB ≤ incumbent`, and every searcher replaces only on a strictly greater value.**
+   A skipped candidate could at best have tied the incumbent, and a tie never replaced it. So the
+   incumbent sequence, the final plan and the score are the reference's (§19.7).
+3. **Where no bound is proved there is no skip.** "No bound" (`None`) is never replaced by `0`, by
+   infinity or by a guess (§19.5).
+
+Inclusion is not adoption. The three strategies are in the *Experimental and other strategies*
+(`custom`) group, are opt-in, change no default and make **no speed claim**: the work they avoid
+is counted (§§20–22), and whether avoiding it saves time is a separate measurement (WHI-1602,
+which links its results from here when it lands). Nothing in this guide claims a speedup.
+
+### 19.2 Mathematical Model and Assumptions
+For one pool and one swap direction let $q(x)$ be the exact integer output of the migrated quote
+for input $x \ge 1$ (only where the quote status is `OK`). The helper `pools.bounds.output_bound`
+returns either `None` or an exact rational **rate** $\bar r$ and a **chunk slack** $s$ such that
+
+$$q(x) \le \lfloor \bar r \, x \rfloor \quad \text{(every OK } x), \qquad
+q(x + m) - q(x) \le \bar r \, m + s \quad (x + m \le 2^{127}).$$
+
+The rate depends on frozen state alone, never on the amount:
+
+| Family | Direction | Rate $\bar r$ | Chunk slack $s$ |
+|---|---|---|---|
+| CPMM (`moe_classic_v1` or generic) | either | $\dfrac{(10^4 - f)\, R_{\text{out}}}{10^4\, R_{\text{in}}}$, $f$ = `fee_bps` | $1$ |
+| CL (`uniswap_v3`, `agni_v3`, `fusionx_v3`) | token0 → token1 | $\dfrac{(10^6 - \text{fee})\,\psi^2}{10^6\, 2^{192}}$, $\psi$ = `sqrt_price_x96` | $\psi^2/2^{192} + 1 + \hat L/2^{96}$, only if $\psi < 2^{128}$ |
+| CL | token1 → token0 | $\dfrac{(10^6 - \text{fee})\, 2^{192}}{10^6\, \psi^2}$ | $\rho_0 (1 + \hat L/2^{96}) + 1$, $\rho_0 = 2^{192}/\psi^2$ |
+| LB (`moe_lb_v2_2`) | X → Y | $\dfrac{(10^{18} - \beta)\, p}{10^{18}\, 2^{128}}$, $\beta$ = **base** fee, $p$ = active-bin price | $p/2^{128} + 1$ |
+| LB | Y → X | $\dfrac{(10^{18} - \beta)\, 2^{128}}{10^{18}\, p}$ | $2^{128}/p + 1$ |
+
+$\hat L = \min(2^{128} - 1,\ \text{liquidity} + \sum \text{liquidity\_gross})$ bounds the liquidity a swap
+can see. The reasons behind the rows, each proved in `output-bounds.md` §4:
+
+- **CPMM** is the tangent at zero of the concave output curve: the denominator of
+  $\lfloor k x R_o / (D R_i + k x) \rfloor$ is at least $D R_i$.
+- **CL** is the spot price net of the pool fee. Every swap step prices at most at the starting
+  price; fee growth and the protocol fee never feed back into the output. The proof needs the
+  frozen `tick` to be consistent with the price (guard $G_{CL}$); a stale tick gives *no bound*
+  (§19.5).
+- **LB** is the active-bin price net of the **base** fee. A Liquidity Book pair's variable fee can
+  *fall* between the stored state and the first bin (the swap first updates its references), so
+  only the base fee, which the swap never writes, is a safe lower bound on the fee.
+
+Four lemmas make the bounds usable by a search:
+
+1. **Composition (multi-hop).** For hops $k = 1..n$ applying each hop's bound at the actual
+   intermediate amount gives $Q(x) \le \lfloor \bar r_n \lfloor \dots \lfloor \bar r_1 x \rfloor \dots \rfloor \rfloor$
+   (the nested floors, never looser than $x \prod \bar r_k$). Only $\bar r_k \ge 0$ is used.
+2. **Same direction is cumulative.** Any number of earlier same-direction swaps through the pool
+   leave the *original-state* bound valid (CPMM: the swapped state's rate only falls; CL and LB:
+   the price moves away from the bound's reference).
+3. **The opposite direction is not covered, and cannot occur.** After an $A \to B$ swap the
+   $B \to A$ rate *improves*, so the original-state bound is exceeded (§19.5). A plan that uses a
+   pool both ways puts $A \to B$ and $B \to A$ in its token graph, and the evaluator rejects every
+   cyclic plan before any pool call (`economic token cycle`).
+4. **Integer slack.** The bound on a *marginal* $q(x + m) - q(x)$ needs the slack because of
+   output rounding: the marginal of one extra unit can be `1` while $\bar r \cdot 1 < 1$ (the R2
+   counterexample, §19.5). Chunk strategies therefore use the **chain bound**: with a known exact
+   marginal $m_0$ into the first hop of a path and the committed aggregate input $x_j$ of each
+   hop's pool,
+
+   $$u_0 = m_0, \qquad u_j = \lfloor \bar r_j\, u_{j-1} + s_j \rfloor \quad (\text{valid iff } x_j + u_{j-1} \le 2^{127}),$$
+
+   and every real marginal satisfies $m_j \le u_j$ (`pruning-contract.md` §3.5).
+
+**Which state the bound reads.** The reference chunk searches never score a candidate against
+committed flow in the opposite direction or around a token cycle (`creates_cycle` runs first), and
+they quote a pool's **original** state at the **aggregate** input $x_p + m$. The bound is therefore
+always computed from the original frozen state. Recomputing it from the state a sequential swap
+left behind is **unsafe** here (§19.5, `pruning-contract.md` §3.3).
+
+### 19.3 Concise Pseudocode
+```python
+# prepare (all three strategies): one immutable table per bundle, built once
+def build_bounds(bundle):
+    return {(pool_id, token_in): output_bound(pool, token_in)       # OutputBound(rate, slack) | None
+            for pool_id, pool in bundle.pools.items()
+            for token_in in (pool.token0, pool.token1)}
+
+def hop_bound(bounds, edge, committed, m):                          # one chunk hop, pruning-contract §3.4
+    b = bounds[(edge.pool_id, edge.token_in)]
+    if b is None or b.slack is None or committed + m > 2**127:
+        return None                                                  # "no bound": never prune
+    return floor(b.rate * m + b.slack)
+
+def skip_rule(upper, incumbent):                                    # the only place a candidate is dropped
+    return upper is not None and upper <= incumbent                 # equality is safe: replacement is strict
+```
+The three rules built on it, each in its own chapter:
+
+| Rule | Searcher | Skips a candidate when |
+|---|---|---|
+| **S1** | `single_path` | the nested-floor path bound from its longest evaluated prefix is `≤` the incumbent's score |
+| **I1** | `incremental_graph` | the chain bound from its longest memoized prefix is `≤` the chunk's best marginal so far |
+| **M1 / M2** | `metis_history` | a relaxation's bound (one hop into the target, or the `U_h` walk bound) is `≤` the chunk's best marginal, M2 only behind the structural gate `G_M2` |
+
+### 19.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart LR
+    Bundle[(Frozen bundle<br>immutable pools)] --> Prep[prepare_bounded<br>build_bounds, once]
+    Prep --> Table[(BoundTable<br>OutputBound or None<br>per pool direction)]
+    Table --> S1[S1: single_path_bounded]
+    Table --> I1[I1: incremental_graph_bounded]
+    Table --> M[M1 / M2: metis_history_bounded]
+    S1 --> Same{{"same plan, evaluation,<br>score as the reference<br>(not budget-truncated)"}}
+    I1 --> Same
+    M --> Same
+    Same --> Eval[Independent evaluator<br>routing.evaluator.evaluate]
+```
+
+The bound table is built **eagerly in `prepare`** and charged to the preparation step. It is
+immutable (a `MappingProxyType`), pure, and takes no part in the metered quote seam, so a bounded
+strategy's quote counter counts only real pool quotes.
+
+### 19.5 Hand-Worked Numeric Example
+All values are checked by `r022_examples.py` section 18 (`example_bounds`). The CPMM numbers come
+from the module's own integer `getAmountOut` and fund ledger, the rate cells from the pinned
+hand-derived fixture `research-022/fixtures/hand_cases.json` (derived on paper before any bound
+code existed) and from the module's own `rate_of` (written from `output-bounds.md` §1), and every
+CL and LB quote from the exact seam `pools.quote.quote_exact_in`.
+
+1. **Hand-derived rates.** The fixture holds 7 pools and 14 rate cells (both directions), for
+   example CPMM `2000/500` at 30 bps: $9970 \cdot 500 / (10^4 \cdot 2000) = 997/4000$ (A→B) and
+   $997/250$ (B→A); CL at tick 0, fee 3000: $997/1000$ both ways (the price is exactly 1); LB at
+   `active_id` $2^{23}$, bin step 10, `baseFactor` 5000: $\beta = 5000 \cdot 10 \cdot 10^{10}$ and
+   rate $1999/2000$. The helper, the module's formulae and the hand values agree on all 14.
+2. **R2: the slack is needed.** A CPMM pool `1000/1000`, 30 bps, rate $\bar r = 997/1000$. The exact
+   outputs for $x = 0, \dots, 6$ are $q = 0, 0, 1, 2, 3, 4, 5$ (the $x = 1$ quote is a dust quote:
+   output 0, `insufficient_output_amount`), and $\lfloor 0.997\,x \rfloor$ is also
+   $0, 0, 1, 2, 3, 4, 5$, so the rate bound holds and is tight. But the marginal of one more unit
+   after one unit is $q(2) - q(1) = 1 > 0.997 = \bar r \cdot 1$: a chunk bound **without slack is
+   false**. With the CPMM slack $s = 1$ the chunk bound is $\lfloor 0.997 + 1 \rfloor = 1 \ge 1$; the
+   slack-free bound is $\lfloor 0.997 \rfloor = 0$.
+3. **Real pools never exceed the rate bound.** On the tracked 19-pool fixture (USDC in, USDT0 out,
+   every quote `ok`; the bound is $\lfloor \bar r\, x \rfloor$):
+
+   | Input $x$ | CPMM `0x69a7…` ($\bar r$ = 1.008548) | CL Agni `0x36f6…` (1.000121) | LB `0x368b…` (1.000099) |
+   |---:|---:|---:|---:|
+   | 10000 | 5933 ≤ 10085 | 10001 ≤ 10001 | 10000 ≤ 10000 |
+   | 1000000 | 14207 ≤ 1008548 | 1000121 ≤ 1000121 | 1000099 ≤ 1000099 |
+   | 100000000 | 14407 ≤ 100854826 | 100012068 ≤ 100012123 | 100003452 ≤ 100009996 |
+   | 10000000000 | 14409 ≤ 10085482625 | 10000660449 ≤ 10001212335 | 9999983351 ≤ 10000999699 |
+   | 100000000000 | 14409 ≤ 100854826254 | 99956962148 ≤ 100012123358 | 99985554791 ≤ 100009996999 |
+
+   The CPMM pool is nearly drained of USDT0 (reserve 14410), so the spot-rate bound is loose; the
+   CL and LB bounds are tight for small inputs and loosen with price impact. A bound is a ceiling,
+   not an estimate.
+4. **Composition and the chunk chain.** Two CPMM hops $A \to B \to C$: pool $p_1$ `1000000/1500000`
+   (rate $2991/2000$) and $p_2$ `2000000/1000000` (rate $997/2000$), 30 bps. Input 10000: the exact
+   hops give 14807 then 7327. The nested bound is $\lfloor \tfrac{997}{2000} \lfloor \tfrac{2991}{2000} \cdot 10000 \rfloor \rfloor = 7455$
+   (the product form $\lfloor \bar r_1 \bar r_2 \cdot 10000 \rfloor$ is also 7455), and $7327 \le 7455$.
+   For the chunk chain, let the pools already carry 40000 and 30000 aggregate input and add
+   $m = 10000$: the exact marginals are 13699 into $p_1$ and 6585 into $p_2$, and the chain bound is
+   $u = (10000,\ 14956,\ 7456)$, so $13699 \le 14956$ and $6585 \le 7456$; the path-slack product
+   form $\lfloor \bar r_1 \bar r_2\, m + s_{\text{path}} \rfloor$ is also 7456, and the nested chain is never looser.
+5. **Same direction is fine; the opposite direction breaks the bound, and the evaluator excludes
+   it.** One pool `1000000/1000000`, 30 bps (rate 997/1000 both ways). A first swap of 200000
+   A→B returns 166249. A second same-direction swap of 100000 on the swapped reserves returns
+   63957, within the *original-state* bound $\lfloor 0.997 \cdot 100000 \rfloor = 99700$. The
+   opposite direction improves: 100000 B→A on the swapped reserves returns **128169 > 99700**.
+   A plan that uses the pool both ways is `invalid_plan` (`economic token cycle: A -> B -> A`)
+   before any pool call; a plan that uses it twice in the *same* direction is admitted, and its
+   replay shows the second leg on the threaded state: 166249 then 63957.
+6. **Why the bound is not recomputed from the swapped state.** Pool `100000000/100000000`, 30 bps,
+   committed aggregate input $x = 100000000$, a chunk $m = 100000$. The aggregate marginal on the
+   original state is $f(x + m) - f(x) = 24987$. The original-state chunk bound is
+   $\lfloor \bar r\, m + 1 \rfloor = 99701 \ge 24987$. A bound recomputed from the swapped state's
+   smaller rate is 24963 and **underestimates the marginal by 24**: pruning on it would be wrong.
+7. **"No bound" is a closed list.** Each state below makes the helper return `None`, and the
+   module's own `rate_of` agrees. The last column is what the *exact* quote does, to show that
+   "no bound" is about the proof's domain, not about whether the pool works:
+
+   | State | Bound | Exact quote at 100 |
+   |---|---|---|
+   | CPMM with a zero reserve | none | `insufficient_liquidity` |
+   | CPMM with an unknown `source_key` | none | `unsupported` |
+   | `moe_classic_v1` with a fee other than its fixed 30 bps | none | `unsupported` |
+   | CPMM with `fee_bps` = 10000 | none | the seam raises `ValueError` |
+   | CL with the frozen tick one above the price (guard $G_{CL}$) | none | **`ok`** |
+   | CL with `lm_pool` set on `uniswap_v3` (no such hook) | none | `unsupported` |
+   | LB without collected static fee parameters | none | `incomplete_snapshot` |
+   | LB with base fee above the 10 % `MAX_FEE` | none | `insufficient_liquidity` |
+   | LB with an active bin so far from $2^{23}$ that $p \notin [2^{38}, 2^{218}]$ | none | `insufficient_liquidity` |
+   | CL token0→token1 with $\psi \ge 2^{128}$ | **rate only** (no slack) | – |
+
+   The stale-tick CL row is the instructive one: the pool still quotes, but the proof does not
+   cover it, so no strategy prunes on it. The rate-only row exists in the real fixture: its bound
+   table has 38 pool directions, of which 37 are bounded, 1 is rate only (the FusionX pool
+   `0x283f…` at its price ceiling, token `0xcda8…` in) and 0 have no bound. Single-path pruning
+   needs only the rate; the chunk strategies need the slack and do not prune on it.
+
+### 19.6 Implementation Map
+Source pins are `dev` @ `1e63a043f7023988963bf18f47fbadf5f34b26ff` (PRs #80 and #81); the symbol
+is the stable anchor.
+- `pools/bounds.py`: `OutputBound` (line 68), `bound_out` (76), `_cpmm` (88), `_cl` (103), `_lb`
+  (144), `output_bound` (165), `BoundTable` (180), `build_bounds` (204). The module mirrors the
+  quote code's own gates (`constant_product.quote_exact_in`, `concentrated._source`,
+  `liquidity_book.get_price_from_id`) and holds the only copy of the formulae.
+- `routing/algorithms/chunk_pruning.py`: `hop_bound` (33), `chain_bound` (50), `UTable` (85),
+  `walk_counts` (145), `m2_gate` (167), `LabelPruner` (196). It holds none of the rate or slack
+  formulae.
+- Normative text: `research-022/output-bounds.md` §§1, 4, 5, 7; `research-022/pruning-contract.md`
+  §§3–10 and the §14 amendment.
+- Tests of the helper: `tests/pools/test_bounds.py`, `tests/pools/test_output_bounds_contract.py`.
+- Worked examples: `r022_examples.py`, `example_bounds` (runner section 18).
+
+### 19.7 Parameters, Budgets, and Ties
+- **The default-off parameter.** `bound_pruning: bool = False`, keyword-only, on
+  `single_path.solve`, `incremental_graph.solve` and `metis_history.solve`. Only the three bounded
+  strategy IDs pass `True`; the reference factories, the runner and every profile never do. With
+  it off there is no `bound_pruning` key in `search_stats` and no extra object in the prepared
+  result, so reference records are unchanged.
+- **Options.** `single_path_bounded` and `incremental_graph_bounded` accept none.
+  `metis_history_bounded` accepts exactly `metis_history`'s options (§22.7). The pruning is not an
+  option: it would change `settings_sha256`, so the strategy ID carries it.
+- **Ties.** Every skip is `UB ≤ incumbent`. The incumbent is replaced only on a strictly greater
+  value (`score > best`, `m > choice`), so skipping on equality changes nothing observable. The
+  worked examples show an equality skip (§20.5 item 2, §21.5 item 3).
+- **Objectives.** `single_path_bounded` supports `gross_only`, `synthetic_fixed_cost` and
+  `empirical_cost` (each score is at most the gross output because every cost is non-negative); any
+  other mode is `unsupported`, and an evaluated plan with a negative estimated cost raises
+  (`ValueError`, which the runner records as `algorithm_error`). The chunk strategies compare gross
+  marginals, so the objective only enters the final comparison, which is untouched.
+- **Budgets and the exactness label.** A skipped candidate makes no quote and is still *counted*
+  where the reference counts it, so budget truncation points are the reference's. The record's
+  `bound_pruning.exactness.label` is `exact` when neither stage of the solve was truncated by
+  `max_candidates` or `max_quotes`, and `not_exact_budget_binding` otherwise, with `binding`
+  listing every cause (for the chunk strategies the chunk stage's and the embedded `path_split`'s,
+  which can name a stage; a `state_cap` is a cap, not a budget, and never makes the label inexact:
+  `pruning-contract.md` §14 A1.2). A truncated run carries **no** exactness claim.
+- **Where the counters are.** `search_stats["bound_pruning"]` holds `pruned_bound` (never added to
+  a failure or to dead-prefix pruning), `bound_evaluations`, `bound_no_bound`, `bound_table_cost`,
+  `prepare` (integers: `pool_directions`, `bounded`, `rate_only`, `no_bound`), `exactness` and the
+  rule-specific `p0` / `m2`. A reader finds them in two places only: each strategy's case record in
+  the run's `cases.jsonl` (`search.bound_pruning`) and `main.py quote … --details`
+  (`bound pruning (R022-Q02/1 rule …)` lines, `report/quote.py::_bound_pruning_lines`).
+  The batch console, CSV and HTML summaries do not show them: HTML and `report` only label the row
+  "Bound-pruned strategy … no speedup claimed". Bound-preparation *time* is not in the record (it
+  would break literal replay): it is on the prepared object and in the runner's preparation event.
+- **Roster.** `--strategies all` is **17** strategies: the fourteen 0.2.1 rows, then
+  `single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`, in that order
+  (`benchmark/strategies.py::R022_ADDITIONS`). `--strategies profile` replays a saved
+  profile literally and never gains them. The preregistered 0.2.1 campaign (WHI-1562) froze its
+  own 14-ID roster and its tool (`tools/research_021/`) is left as it was by design, with the 0.2.2
+  additions switched off in its tests: do not "fix" it to 17. Replay a 0.2.1 run with
+  `--strategies profile`.
+
+### 19.8 Computational and Memory Cost
+- **Preparation.** One `output_bound` per pool direction: $\mathcal{O}(P + \sum \text{ticks})$ exact-rational
+  operations, plus one `pow128` per Liquidity Book pool and two `get_sqrt_ratio_at_tick` per CL pool.
+  It runs once per bundle, in `prepare`.
+- **Per candidate.** One exact-rational multiplication and floor per hop (S1, I1) or one table
+  lookup (M2). A skip replaces one quote per hop by that arithmetic; a candidate that is not
+  skipped pays the bound **and** its quote.
+- **Memory.** $\mathcal{O}(P)$ rationals. The `U_h` table of §22 is per solve.
+- **Work, not time.** The deterministic counts are quotes avoided and `pruned_bound`; they are
+  reported with the cost of the bound beside them (`bound_evaluations`, `bound_table_cost`),
+  never netted. How many seconds that is worth is **not** measured here and not claimed;
+  WHI-1602 measures it under the L01 rules.
+
+### 19.9 Guarantees and Limitations
+- **Guarantees.** When the bounded run is not budget-truncated, status, plan (every step and fund),
+  evaluation, score and error equal the reference's, for every supported objective (`pruning-contract.md`
+  §8.2 Lemma B). The final plan is always replayed by the independent evaluator.
+- **Limitations.**
+  - **Spot-rate looseness.** A skip needs the candidate's *spot-rate ceiling* to be below the
+    incumbent's *realized* output, so a request that is large for its pools skips little. On the
+    §11 request the three strategies skip nothing (§§20.5, 21.5, 22.5).
+  - **Slack carries the rate.** For a token with a large rate the chunk slack is large; small
+    chunk amounts in raw units do not prune.
+  - **Domain.** The bounds cover the four admitted sources and amounts with
+    $x + m \le 2^{127}$ for chunk statements; outside it a hop has no bound.
+  - **Exact input only**, acyclic plans only, no bound for any other source.
+  - **No optimality, no certificate.** The bounded strategies are as good as their references,
+    not better; they claim no bound on the *best* plan.
+- **Why BMSSP / single-source shortest-path was not adopted.** It was considered as a way to speed
+  up path search. The decision rests only on this repository's own measurements:
+  1. *The graph is small.* The frozen corpus has **8 tokens** and **143 pools** at block 101082044
+     ([`research-021/history-labels.md`](research-021/history-labels.md) §1, the `bundle_tuning` row;
+     [`corpus.md`](corpus.md) §3), and every token is already an intermediary: "the Mantle lever is the
+     **hop bound**, not the token set" ([`jupiter-metis-challenge.md`](jupiter-metis-challenge.md) §6, row
+     C4). With `search.max_hops` of 2 or 3 the enumeration of simple paths is tiny.
+  2. *Quoting dominates the CPU.* In the cProfile diagnostic of an `uni_sor_port` solve
+     ([`latency-optimization-research.md`](latency-optimization-research.md) §3.1)
+     `pools.quote.quote_exact_in` accounts for about 98.9 % of the solver's cumulative CPU and
+     route enumeration about 0.05 %. That attribution is instrumented and diagnostic, not a latency
+     benchmark, but it rejects "rewrite the graph search first".
+  3. *Edge weights are not numbers.* A shortest-path algorithm needs a fixed non-negative weight
+     per edge. An AMM edge's output depends on the amount and on the committed flow of every other
+     path through the pool (§1.5): there is no weight to relax, only a function to quote.
+  A shortest-path algorithm would speed up the one step measurement shows to be cheap. Upper-bound
+  pruning attacks the expensive one: it avoids *quotes* (and, behind them, tick and bin traversals).
+- **Why the SOR route × percent tables are excluded.** `uni_sor_port`, `uni_sor_fast`,
+  `uni_sor_adaptive`, `uni_sor_optimized` and `uni_sor_cycle_safe` rank *route × percent* samples
+  and then combine them with a chooser; that is not a maximum over independent candidates, the
+  parity contract forbids changing the ported results, and no equality argument against the pinned
+  TypeScript exists (`pruning-contract.md` §9). Also excluded: `path_split` (own sampled-output
+  bound), `direct_split` and `direct_split_certified` (grid allocation), `cfmm_dual` (a convex
+  solve, no candidate to skip), `metis_inspired` and `incremental_graph_repair`, and `graph_reuse`
+  together with pruning (unproved interaction; refused).
+
+---
+
+## 20. Algorithm 15: `single_path_bounded` (`single_path` with Rule S1 Upper-Bound Pruning)
+
+### 20.1 Problem and Inclusion Rationale
+`single_path` (§3) evaluates every enumerated path at the full input and keeps the first best.
+When a direct pool already returned a good output, a later path whose *ceiling* is lower cannot
+become the new best, yet `single_path` still quotes it. `single_path_bounded` (WHI-1599) is
+`single_path` with **rule S1** switched on: it skips such a path before quoting it. It is an
+**exact acceleration**, not a new heuristic: with a non-binding budget its status, plan,
+evaluation and score are `single_path`'s (`pruning-contract.md` §4, §8.2).
+
+- **Identity:** experimental, `custom` group, opt-in, no `algorithm_options`, `single_path`'s
+  capabilities and `search.max_hops` key. Contract `R022-Q02/1`.
+- **What is claimed:** the reference result and the reference's `candidates_considered`,
+  `paths_enumerated`, `truncated_by`, `best_hops` and `report_candidate` sequence. It is **not**
+  claimed to be faster, to have the same work counters (`paths_evaluated`, `quotes_executed`
+  differ by design), to be exact under a binding budget, or to be optimal.
+
+### 20.2 Mathematical Model and Assumptions
+Enumeration is `single_path`'s: hop-major, then depth first in pool insertion order. For a
+candidate path $\pi = (e_1, \dots, e_n)$ that is not dead-pruned, **while an incumbent exists**:
+
+1. Let $k$ be the length of the longest *evaluated* prefix of $\pi$ and $y$ its exact output
+   ($y = A$ when $k = 0$).
+2. $\text{UB}(\pi) = \lfloor \bar r_n \lfloor \dots \lfloor \bar r_{k+1}\, y \rfloor \dots \rfloor \rfloor$
+   (the nested floors of §19.2; `None` if any remaining hop has no bound).
+3. **Skip $\pi$ iff** $\text{UB}(\pi) \ne \text{None}$ and $\text{UB}(\pi) \le$ the incumbent's score.
+
+A skipped candidate is counted `pruned_bound`. It is **not** `paths_pruned` (that counts dead
+prefixes), **not** evaluated, makes no quote and records no prefix output or dead prefix.
+
+*Why it is exact (incumbent induction).* Replacement is strict (`score > best`) and
+$\text{score} \le \text{gross} \le \text{UB}$ for every supported objective, so a skipped candidate
+could at most have tied the incumbent, which never replaced it. If the bounded run does not skip, it
+evaluates exactly as the reference does. Hence the incumbent after every candidate is the
+reference's.
+
+Three consequences to keep in mind:
+- **No incumbent, no skip.** The first valid candidate always becomes the incumbent, so a run with
+  no valid candidate is `no_route` / `timeout` / `incomplete_snapshot` exactly as the reference's.
+- **Direct-first.** Every 1-hop candidate precedes every 2-hop one, so a direct pool usually sets
+  the first incumbent and later paths are measured against it.
+- **A skipped candidate leaves a shorter evaluated prefix** for later candidates: their bound is
+  looser, never unsound.
+
+### 20.3 Concise Pseudocode
+```python
+def solve_single_path_bounded(case, bundle, bounds, max_hops, cache, budget):
+    best_plan, best_score = None, None
+    prefix_out, dead = {}, {}                      # evaluated prefix -> output, failed prefix -> status
+    for path in enumerate_paths(index, case.token_in, case.token_out, max_hops):
+        if any(path[:k] in dead for k in range(1, len(path))):
+            paths_pruned += 1; continue            # dead prefix: unchanged from single_path
+        if best_score is not None:                 # rule S1: only while an incumbent exists
+            bound_evaluations += 1
+            k, y = longest_evaluated_prefix(path, prefix_out, case.amount_in)
+            ub = nested_floors(bounds, path[k:], y)          # None if any hop has no bound
+            if ub is None:
+                bound_no_bound += 1                # evaluate it: never prune without a bound
+            elif ub <= best_score:
+                pruned_bound += 1; continue        # safe: a tie never replaces the incumbent
+        if budget_would_be_exceeded(path, budget, cache):    # budget checks come AFTER the skip
+            record_truncation(); continue
+        evaluation = evaluate(bundle, case, path_plan(case, path), objective, quote=cache)
+        ...                                        # prefix_out, dead, failures: unchanged
+        if evaluation.ok and objective.score(evaluation) > best_score:   # strict
+            best_plan, best_score = path_plan(case, path), objective.score(evaluation)
+    return format_result(best_plan, best_score)
+```
+
+### 20.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart TD
+    P["next enumerated path"] --> Dead{"dead prefix?"}
+    Dead -- yes --> PP["paths_pruned += 1"] --> P
+    Dead -- no --> Inc{"incumbent exists?"}
+    Inc -- no --> Q["budget check, then evaluate"]
+    Inc -- yes --> UB["UB from longest evaluated prefix<br>(nested floors)"]
+    UB --> None{"any hop without a bound?"}
+    None -- yes --> NB["bound_no_bound += 1"] --> Q
+    None -- no --> Le{"UB <= incumbent score?"}
+    Le -- yes --> Skip["pruned_bound += 1<br>no quote, no prefix recorded"] --> P
+    Le -- no --> Q
+    Q --> Better{"score > incumbent?"}
+    Better -- yes --> New["new incumbent<br>report_candidate"] --> P
+    Better -- no --> P
+```
+
+### 20.5 Hand-Worked Numeric Example
+All values are checked by `r022_examples.py` section 19 (`example_single_path_bounded`). Each CPMM
+case is run through both registered factories (`single_path`, `single_path_bounded`) and compared
+with `s1_oracle`, the module's own implementation of rule S1 from its hand rates and hand quotes.
+The reference and bounded factories must return the same plan and replay, the factory counters and
+quote counts must equal the oracle's, and the plan's gross must equal the hand fund ledger.
+
+1. **A safe prune, a tie that is *not* pruned, a prefix bound and an incumbent change.** Request
+   10000000 A → B (`max_hops` 2) through ten pools of reserve $10^9$ on the input side: direct pools
+   `ab1` (output reserve $10^9$), `ab2` ($9 \cdot 10^8$) and `ab3` (an exact twin of `ab1`); routes
+   `ac→cb1` (`ac` `10^9/2·10^9`, `cb1` output $5 \cdot 10^8$), `ac→cb2` (`cb2` output $2 \cdot 10^8$),
+   `ad→db` (`db` output 1050000000) and `ae→eb` (`eb` output $8 \cdot 10^8$). The enumeration order and
+   every decision:
+
+   | # | Candidate | Hand output | Bound `UB` (from prefix) | Incumbent | Decision |
+   |---|---|---:|---:|---:|---|
+   | 1 | `ab1` | 9871580 | – (no incumbent yet) | – | evaluated: first valid candidate becomes the incumbent |
+   | 2 | `ab2` | – | 8973000 (from the request) | 9871580 | **skipped**: $\text{UB} \le$ incumbent |
+   | 3 | `ab3` | 9871580 | 9970000 | 9871580 | evaluated: the bound (a spot rate) is above the incumbent; exact **tie**, the incumbent stays `ab1` |
+   | 4 | `ac→cb1` | 9651976 | 9940090 | 9871580 | evaluated: the spot-rate ceiling is looser than the real output, so it is not provably worse; it loses |
+   | 5 | `ac→cb2` | – | 3936786 (from the exact `ac` output) | 9871580 | **skipped**: the bound starts from the evaluated prefix `ac` |
+   | 6 | `ad→db` | 10233347 | 10437094 | 9871580 | evaluated: **new incumbent** |
+   | 7 | `ae→eb` | – | 7952072 (from the request) | 10233347 | **skipped** against the new incumbent |
+
+   The reference evaluates all 7 candidates and executes 10 quotes; the bounded run evaluates 4,
+   skips 3 and executes 6, with 6 bound evaluations (`pruned_bound` 3, `bound_no_bound` 0). The
+   winner is `ad→db` with **10233347** in both. The 6 bound evaluations are the 6 candidates after
+   the first, because the first valid candidate has no incumbent to be measured against. Row 3 is
+   the honest limit of the method: an equal twin is *not* skipped, because a spot-rate ceiling
+   cannot see price impact.
+2. **Equality with the incumbent is skipped, and that is safe.** Request 1000 A → B,
+   `max_hops` 1: `first` (`10^9/10^9`) and `tie` (`10^9/999500000`). `first` returns 996. The tie
+   pool's bound is $\lfloor 0.99650\ldots \cdot 1000 \rfloor = 996$, equal to the incumbent, so it is
+   skipped. Its exact output is also 996, so the reference *would* have evaluated it, found an exact
+   tie, and kept `first` (replacement is strict). The reference evaluates 2 candidates, the bounded
+   run 1; both return `first`.
+3. **No bound: evaluated, never pruned.** The real 19-pool fixture, 10000 USDC → USDT0,
+   `max_hops` 3. Four candidate paths exist, all direct, in the order `0x1bc3…` (a Liquidity Book
+   pool that fails `insufficient_liquidity`), `0x368b…` (LB), `0x36f6…` (Agni V3) and `0x69a7…`
+   (Moe Classic). The first valid candidate (`0x368b…`) becomes the incumbent, so two bounds are
+   evaluated, and neither prunes: every alternative's ceiling is above the incumbent. All four are
+   quoted and the winner is Agni V3 with 10000660449. Now give the Agni pool a frozen tick one
+   above its price (guard $G_{CL}$ fails, §19.5 item 7): its bound is `None`, the bounded run counts
+   1 evaluation without a bound (`bound_no_bound` 1), evaluates that candidate normally, and returns
+   the same winner and score.
+4. **Identical results on the tracked fixture.** All 96 cases of the tracked real fixture return
+   the reference's status, plan and replay. The oracle's S1 count equals the factory's, including
+   the CL and Liquidity Book rates of every real pool: 160 candidates are skipped in 68 of the
+   cases, and the quotes executed fall from 582 (reference) to 422 (bounded), both matching the
+   oracle's own count of distinct quote keys. This is a count of avoided work, not a time.
+5. **On the §11 request nothing is skipped.** 10000 USDC → USDT0 with `daily_gross.yaml`'s values
+   (`max_hops` 2): 2 bound evaluations, 0 skipped, 4 quotes counted, the same as `single_path`'s 4
+   (§11.1). The request is large for the pools involved and the alternatives' spot ceilings exceed
+   the incumbent.
+
+### 20.6 Implementation Map
+Pins: `dev` @ `1e63a043f7023988963bf18f47fbadf5f34b26ff` (PR #80).
+- File: `routing/algorithms/single_path_bounded.py`: `solve` (line 58) calls
+  `single_path.solve(…, bound_pruning=True)` and relabels the result `single_path_bounded`;
+  `FACTORY` (line 62) is a module-level function (workers pickle it by reference), with
+  `prepare=single_path.prepare_bounded` and `PROVENANCE` (line 30; `claims` and `not_claimed`).
+- File: `routing/algorithms/single_path.py`: `BOUND_OBJECTIVES` (line 103),
+  `PreparedBoundedSinglePath` (124), `prepare_bounded` (146: the reference preparation plus
+  `build_bounds`), `_path_upper_bound` (153: the nested floors from the longest evaluated prefix),
+  and the rule-S1 block of `solve` (lines 251–259: after the dead-prefix check, before both budget
+  checks) with its `bound_pruning` stats (line 310).
+- Shared: `pools/bounds.py` (`build_bounds`, `bound_out`); `benchmark/strategies.py::R022_ADDITIONS`;
+  `report/quote.py::_bound_pruning_lines`.
+- Contract and tests: `pruning-contract.md` §4, §7, §8, §10; `tests/routing/test_single_path_bounded.py`.
+- Worked examples: `r022_examples.py`, `example_single_path_bounded` (runner section 19).
+
+### 20.7 Parameters, Budgets, and Ties
+- **Parameters:** `search.max_hops` only (as `single_path`). No `algorithm_options`.
+- **Objectives:** `gross_only`, `synthetic_fixed_cost`, `empirical_cost`. Any other mode returns
+  `unsupported` naming the mode; a negative estimated cost on an evaluated plan raises.
+- **Budgets:** the skip is placed before both budget checks, so a skipped candidate is never
+  counted as truncated; candidates after a truncation are untouched. With a binding
+  `max_candidates` or `max_quotes` the label is `not_exact_budget_binding` and the run carries no
+  exactness claim (§19.7).
+- **Ties:** the incumbent is replaced only on `score > best`. Equality with the bound is skipped;
+  equality of two evaluated outputs keeps the first.
+
+### 20.8 Computational and Memory Cost
+- **Bound:** at most $n - k$ exact-rational multiply-and-floor operations per candidate that has an
+  incumbent to be measured against; a skip avoids up to $n - k$ pool quotes.
+- **Quotes:** at most the reference's; the bounded run's executed-quote set is a subset of the
+  reference's (a skipped candidate quotes nothing and records nothing).
+- **Preparation:** one bound table per bundle (§19.8). **Time** is not claimed here (WHI-1602).
+
+### 20.9 Guarantees and Limitations
+- **Guarantees:** the reference's result under a non-binding budget; `candidates_considered` equals
+  evaluated + dead-pruned + skipped, so it equals the reference's; a skip never appears as a
+  failure.
+- **Limitations:**
+  - **Spot-rate looseness.** An equal twin and a slightly worse route are evaluated (rows 3 and 4
+    of the table in §20.5 item 1); only paths whose ceiling is clearly below the incumbent are
+    skipped.
+  - **Counters differ by design:** `paths_evaluated`, `paths_pruned`, `quotes_executed`,
+    `quotes_memoized`, `failed_candidates` and `paths_incomplete` are allowed to differ from the
+    reference's.
+  - A budget corner (`pruning-contract.md` §8.2) can make the bounded run *report* a truncation the
+    reference did not; it can never make it claim an exactness it lacks.
+
+---
+
+## 21. Algorithm 16: `incremental_graph_bounded` (`incremental_graph` with Rule I1 Chunk-Marginal Pruning)
+
+### 21.1 Problem and Inclusion Rationale
+`incremental_graph` (§6) splits the request into `graph.chunks` chunks and, for every chunk, scores
+**every admissible path**: the marginal output of the chunk on the pools' committed aggregate state.
+Most paths are scored again and again, chunk after chunk, and lose every time.
+`incremental_graph_bounded` (WHI-1600) adds **rule I1**: before it quotes a path, it computes the
+largest marginal the path could possibly have and skips the path if that is no better than the
+chunk's best marginal so far. It is an exact acceleration: with a non-binding budget the chunk
+choices, the carry, the commits, the merged plan and the final comparison are `incremental_graph`'s.
+
+- **Identity:** experimental, `custom` group, opt-in, no options, `incremental_graph`'s capabilities
+  and its `search.*` and `graph.*` keys. Contract `R022-Q02/1`.
+- **Not built here:** no `U_h` table (the exact-path chain bound is never looser than any `U_h`
+  bound, so the table would be pure overhead); `graph_reuse=True` is **refused** with pruning (the
+  L05 reuse assumes every path is scored); the embedded `path_split` is **not** pruned (the
+  parameter is not forwarded: it shares the solve's quote cache and meter).
+
+### 21.2 Mathematical Model and Assumptions
+Within one chunk of amount $a$ (carry included) the candidates arrive in `enumerate_paths` order
+and the reference keeps the first path of strictly greatest marginal (`m > choice`).
+
+**Rule I1.** After cycle admission and after counting the path as *scored* (`chunk_scored`), if the
+chunk already has a choice:
+
+1. Take the longest **successfully memoized** proper prefix of the path (of $i$ hops, with exact
+   marginal $m_i$; $i = 0$, $m_0 = a$ when none). If that prefix is a memoized *failure*, do not
+   bound the path: the reference answers it for free.
+2. Compute the chain bound $u_j = \lfloor \bar r_j u_{j-1} + s_j \rfloor$ from $m_i$ over the remaining hops,
+   on the pools' **original** states and their committed aggregate inputs (§19.2). Any hop with no
+   rate, no slack, or $x_j + u_{j-1} > 2^{127}$ makes the whole bound `None`: do not skip.
+3. **Skip iff** $u_n \le$ the chunk's best marginal so far. No quote, no memo entry.
+
+*Why it is exact.* The skipped path's true marginal is at most $u_n \le \text{choice}$, and
+replacement is strict, so the choice is unchanged; by induction over candidates and chunks, so are
+the committed flows, the token edges, the carry and every later admission decision. A skipped path is
+still counted as scored, so `max_candidates` truncation points are the reference's.
+
+**P0: the retained simpler candidate must exist.** A skipped path might have been the *only*
+source of an `incomplete_snapshot` disclosure, which decides the final status only when nothing else
+is valid. Pruning is therefore enabled only if the embedded `path_split` returned an `ok` plan (so
+a plan exists and the status is `ok` in both runs). Otherwise the strategy runs the reference loop
+unchanged (`bound_pruning.p0` is `false`).
+
+**Why original-state bounds.** The marginal charged is $f(x + m) - f(x)$ on the pool's original
+state. A bound recomputed from a swapped state's smaller rate underestimates it (§19.5 item 6).
+
+### 21.3 Concise Pseudocode
+```python
+def choose_chunk(paths, amount, flows, token_edges, bounds, retained):
+    choice, memo = None, {}                                  # memo: prefix -> (marginal, update) | failure
+    for path in paths:
+        if creates_cycle(token_edges, path):  continue       # not scored
+        chunk_scored += 1                                    # a skipped path is still scored
+        if retained and choice is not None:                  # rule I1 (P0: retained candidate exists)
+            start = longest_successful_memoized_prefix(path, memo, amount)
+            if start is not None:                            # a memoized failure is not bounded
+                bound_evaluations += 1
+                i, m = start
+                u = chain_bound(bounds, flows, path[i:], m)  # floor(rate*u + slack) per hop, or None
+                if u is None:
+                    bound_no_bound += 1                      # never prune without a bound
+                elif u <= choice.marginal:
+                    pruned_bound += 1; continue              # safe: replacement is strict
+        try:
+            m = marginal(path, amount, memo)                 # exact, original state at x_pool + m
+        except ChunkFailed:
+            continue
+        if choice is None or m > choice.marginal:            # strict: ties keep the first
+            choice = (m, path)
+    return choice
+```
+
+### 21.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart LR
+    A((A)) -->|ab1| B((B))
+    A -->|ab2| B
+    A -->|ac| C((C))
+    C -->|cb| B
+    C -->|cb2| B
+    A -->|ad| D((D))
+    D -->|db| B
+```
+
+The graph of §21.5 item 1. The paths `ac>cb` and `ac>cb2` share the hop `ac`: once `ac>cb` has been
+scored in a chunk its prefix marginal is memoized, and the bound of `ac>cb2` starts from that exact
+marginal instead of from the chunk amount.
+
+```mermaid
+flowchart TD
+    S["scored path (not cycle-rejected)"] --> C{"choice exists and P0?"}
+    C -- no --> E["exact marginal"]
+    C -- yes --> M{"longest memoized prefix"}
+    M -- failure --> E
+    M -- "none or success" --> U["chain bound u"]
+    U --> N{"u is None?"}
+    N -- yes --> NB["bound_no_bound += 1"] --> E
+    N -- no --> L{"u <= choice?"}
+    L -- yes --> K["pruned_bound += 1<br>no quote, no memo"]
+    L -- no --> E
+    E --> R{"m > choice?"}
+    R -- yes --> NC["new choice"]
+    R -- no --> X["keep choice"]
+```
+
+### 21.5 Hand-Worked Numeric Example
+All values are checked by `r022_examples.py` section 20 (`example_incremental_graph_bounded`). Every
+scenario runs `incremental_graph` and `incremental_graph_bounded` through the registered factories
+and compares them with `i1_oracle`, the module's own implementation of the chunk loop and rule I1 from
+hand CPMM quotes and hand rates (and `r021_examples.greedy_chunks` as the independent unpruned
+chunk oracle). The factories must return the same plan and replay, the factory counters must equal the
+oracle's (`pruned_bound`, `bound_evaluations`, `bound_no_bound`, `paths_scored`, accounted gross), and
+the plan's gross must equal the hand fund ledger.
+
+1. **A safe prune across four chunks.** Request 400000 A → B, 4 chunks of 100000, `max_hops` 2, pools
+   `ab1` `1000000/1000000`, `ab2` `500000/480000`, `ac` `1000000/2000000`, `cb` `1000000/600000`,
+   `cb2` `1000000/300000`, `ad` `800000/800000`, `db` `800000/700000`. Per chunk, `evaluated`
+   shows the exact marginal and `skipped` the chain bound that was at most the choice at that
+   moment:
+
+   | Chunk | `ab1` | `ab2` | `ac>cb` | `ac>cb2` | `ad>db` | Choice |
+   |---|---:|---:|---:|---|---|---|
+   | 1 | 90661 | 79799 | **91860** | skipped, bound 54234 | skipped, bound 86977 | `ac>cb` (91860) |
+   | 2 | **90661** | 79799 | 57520 | skipped, bound 45218 | skipped, bound 86977 | `ab1` (90661) |
+   | 3 | 75588 | **79799** | 57520 | skipped, bound 45218 | 69642 | `ab2` (79799) |
+   | 4 | **75588** | 57049 | 57520 | skipped, bound 45218 | 69642 | `ab1` (75588) |
+
+   The choices and their marginals are exactly the unpruned greedy oracle's, and the accounted gross is
+   $91860 + 90661 + 79799 + 75588 = 337908$. Of 20 scored paths, 16 are bounded and 6 are skipped
+   (`pruned_bound` 6, `bound_evaluations` 16, `bound_no_bound` 0). Two things to read in the table:
+   the bound of `ac>cb2` is computed from the **exact marginal of its memoized prefix `ac`**, and
+   `ad>db` is skipped in chunks 1 and 2 (bound 86977 is at most 91860 and 90661) but *evaluated* in
+   chunks 3 and 4, where the choice has fallen to 79799 and 75588 and the bound no longer proves it
+   worse. A bound prunes more while the choice is high and less as the pools fill: the skip
+   fraction depends on the chunk size relative to the pools' depth.
+2. **The slack is required: a case where omitting it prunes wrongly.** Pools `p0` `1024/1334` and
+   `p1` `1023/1442`, request 106 A → B in 40 chunks, `max_hops` 1. With the contract's bound the
+   run skips 1 of 80 scored paths and its accounted gross is **134**, equal to the greedy oracle's.
+   Dropping the slack from every hop's bound (the unsafe rule `pruning-contract.md` §3.5 forbids) skips 28
+   and reaches gross **133**: from chunk 6 on it prefers `p0` where the exact rule takes `p1`,
+   because a candidate whose rounded marginal is $\lfloor \bar r\, m \rfloor + 1$ is skipped against a
+   choice equal to $\lfloor \bar r\, m \rfloor$. The slack-free run is the module's own oracle; the factory
+   uses the contract's bound.
+3. **Ties and equality.** Pools `p1`, `p2` (both `10^12/10^12`), `p3` (`10^12/998500000000`) and `p4`
+   (`10^12/990000000000`), request 1001 A → B in one chunk, `max_hops` 1. `p1` returns 997 and becomes the
+   choice. `p2` is an exact twin: its bound (998) is above the choice, so it is **evaluated**, ties at 997
+   and the first pool keeps the chunk. `p3`'s bound is 997, **equal** to the choice: skipped (replacement is
+   strict). `p4`'s bound is 989: skipped. `pruned_bound` 2 of 3 bound evaluations; the plan is `p1`.
+4. **Refusal: a memoized failure is not bounded.** `ovf` is a Moe Classic pool whose reserve sits 10
+   below the `uint112` ceiling $2^{112}$, so 1000 more input reverts. Pools `ab` `10^9/10^9`, `ovf`,
+   `cb1` `10^9/10^9` and `cb2` `10^9/9·10^8`; request 1000 A → B, one chunk, `max_hops` 2. Candidates:
+   `ab` (evaluated, 996, becomes the choice), `ovf>cb1` (bounded: the `ovf` bound is huge, so it is not
+   skipped; evaluated, fails at hop 1; the failure is memoized) and `ovf>cb2` (its longest memoized prefix
+   is that failure, so **no bound is computed**; the reference answers it from the memo for free). So 3
+   paths are scored but only 1 bound is evaluated (`bound_evaluations` 1, `pruned_bound` 0), and the
+   failure is disclosed once (`marginal_failures` `{"reverted": 1}`), identically in both runs.
+5. **Refusal: P0, no retained simpler candidate.** Two Moe Classic pools `m1`, `m2` with reserve
+   $2^{112} - 100$ on the input side and $10^{40}$ output: the whole 150 reverts on either pool, but 75
+   fits. With `max_splits` 1 `path_split` has no plan (`no_route`), so pruning is off: `p0` is `false`,
+   0 bound evaluations; the incremental allocation is the final plan (`chosen_source`
+   `incremental_graph`), two chunks of 75 on `m1` and `m2`, gross 288022822 (twice the hand quote of
+   75). With `max_splits` 2 `path_split` finds that split (`ok`), `p0` is `true`, 1 bound is evaluated,
+   0 skipped, and the final plan is the same, from `direct_split`. Same plan, same gross either way.
+6. **Refusal: no bound outside the proved domain, and none without a slack.** Pools `ab1`
+   `10^45/10^45` and `ab2` `10^45/8·10^44`, one chunk, `max_hops` 1. For 10^37 (below $2^{127} \approx 1.7 \cdot 10^{38}$)
+   the bound skips `ab2` (`pruned_bound` 1). For 10^39 (above $2^{127}$) the hop has no bound:
+   `bound_no_bound` 1, `pruned_bound` 0, and the result is still the reference's. The same holds for a
+   rate-only direction: the tracked fixture's FusionX pool `0x283f…` (token `0xcda8…` in), next to a
+   CPMM pool, is evaluated by both chunk strategies with 0 skipped and 2 evaluations without a bound; its
+   rate is about $3.4 \cdot 10^{38}$ because its price sits at the ceiling of its range, so even
+   `single_path_bounded`, which can use the rate, skips nothing there. A valid bound is not always a
+   useful one.
+7. **Identical results on the tracked fixture.** All 96 cases (`max_hops` 3, `max_splits` 2,
+   `percent_step` 25, 8 chunks) return the reference's status, plan and replay, with the retained
+   candidate present in all 96. The oracle's counts equal the factory's: of 4418 scored paths, 2922 are
+   bounded and 1233 skipped.
+8. **On the §11 request nothing is skipped.** 10000 USDC → USDT0 with `daily_gross.yaml`'s values
+   (200 chunks, `max_hops` 2): 400 bound evaluations, 0 skipped, 264 quotes counted, the same as
+   `incremental_graph` (§11.1). The request is large for its pools: every alternative's spot ceiling
+   (slack included) stays above the chunk's choice.
+
+### 21.6 Implementation Map
+Pins: `dev` @ `1e63a043f7023988963bf18f47fbadf5f34b26ff` (PR #81).
+- File: `routing/algorithms/incremental_graph_bounded.py`: `solve` (line 62) calls
+  `incremental_graph.solve(…, bound_pruning=True)` and relabels the result; `FACTORY` (68) with
+  `prepare=incremental_graph.prepare_bounded` and `PROVENANCE` (32).
+- File: `routing/algorithms/incremental_graph.py`: `PreparedBoundedIncrementalGraph` (line 154),
+  `prepare_bounded` (182), `_bound_start` (449: the longest successfully memoized prefix, `None` for a
+  memoized failure), `budget_exactness` (460), the `prune` switch (594: P0) and the rule-I1 block of
+  `solve` (lines 648–660), `bound_pruning` stats (777).
+- Shared: `routing/algorithms/chunk_pruning.py::hop_bound` (33) and `chain_bound` (50);
+  `pools/bounds.py`.
+- Contract and tests: `pruning-contract.md` §3.5, §5, §8, §10; `tests/routing/test_chunk_bounded.py`,
+  `tests/routing/test_pruning_contract.py`.
+- Worked examples: `r022_examples.py`, `example_incremental_graph_bounded` (runner section 20).
+
+### 21.7 Parameters, Budgets, and Ties
+- **Parameters:** `incremental_graph`'s: `search.max_hops`, `search.max_splits`,
+  `search.percent_step`, `graph.chunks`. No `algorithm_options`.
+- **Refused combination:** `bound_pruning` together with `graph_reuse` is a `ValueError`.
+- **Budgets:** a skipped path counts in `chunk_scored`, so `max_candidates` cuts where the reference
+  cuts (`paths_scored`, `paths_rejected_cycle`, `paths_truncated` are the reference's). Every quote
+  the bounded run executes is one the reference executes at that time or earlier, so a bounded
+  `max_quotes` truncation implies the reference's. A truncated run is `not_exact_budget_binding`.
+- **Ties:** the chunk's choice is replaced on `m > choice` only; equality with the bound is skipped.
+
+### 21.8 Computational and Memory Cost
+- **Bound:** at most the path's remaining hops of exact-rational multiply, add and floor, per scored
+  path that has a chunk choice to be measured against; a skip avoids up to that many pool quotes.
+- **Quotes:** the bounded run's executed-quote set is a subset of the reference's. The embedded
+  `path_split` stage is unchanged, so its quotes are not reduced.
+- **Memory:** the bound table ($\mathcal{O}(P)$ rationals) beside the reference's memo and flows.
+- **Time** is not claimed here (WHI-1602).
+
+### 21.9 Guarantees and Limitations
+- **Guarantees:** the reference's status, plan, evaluation and score under a non-binding budget,
+  and the reference's chunk-level counters (`paths_scored`, `paths_rejected_cycle`, the `chunks_*`,
+  `incremental_*` and `path_split_*` counters, `chosen_source`, `topology`, `truncated_by`).
+- **Limitations:**
+  - Pruning is off without the retained simpler candidate (P0) and with `graph_reuse`.
+  - Chunk bounds carry the integer slack, which is large for a token with a large rate: small chunks
+    in raw units prune little.
+  - A hop outside $x + m \le 2^{127}$, or a direction without a slack, is never pruned.
+  - `marginal_failures`, `marginal_incomplete`, `incomplete_example`, `quotes_executed` and
+    `quotes_memoized` may differ from the reference's; a skipped path is never a failure.
+
+---
+
+## 22. Algorithm 17: `metis_history_bounded` (`metis_history` with Rule M1 Arrival Pruning and Gated Rule M2)
+
+### 22.1 Problem and Inclusion Rationale
+`metis_history` (§14) runs, for every chunk, a hop-layered label search: each label is relaxed
+along every admissible edge and each relaxation costs one pool quote. `metis_history_bounded`
+(WHI-1600) skips relaxations that provably cannot improve the chunk's best marginal. Two rules, of very
+different safety:
+
+- **M1 (arrival prune), always on.** A relaxation *into the target* whose one-hop bound is at most the
+  chunk's best marginal so far is skipped. An arrival creates no label, so skipping it cannot change
+  dominance, either cap, the layer order or any label counter: M1 is **population-neutral** and exact
+  even on a chunk the reference itself caps.
+- **M2 (label prune), only behind the structural gate $G_{M2}$.** A relaxation into *another* token
+  whose best possible continuation (the `U_h` walk bound) is at most the best marginal is skipped. That
+  removes a *label*, and the labels that exist are observable through dominance (R2, R3) and the
+  caps (R6, R7). Outside the gate a removed label can resurrect one the reference discarded or refused
+  and produce a *better-than-reference plan*, which is not the reference (§22.5 item 2).
+
+It is an exact acceleration: with a non-binding budget status, plan, evaluation and score are
+`metis_history`'s.
+
+- **Identity:** experimental, `custom` group, opt-in, **NOT Jupiter Metis**. It takes exactly
+  `metis_history`'s options and keys (§22.7). Contract `R022-Q02/1`.
+- **What M2 does in practice.** On the tracked 96-case fixture under the shipped preset M2 is
+  active in **0 of 96** cases; every saving there is M1's. WHI-1600 recorded the same on the 96-case
+  tuning split (`G_M2` open on 0 of 96; that split lives only in the primary clone's gitignored
+  `data/`, so no offline test here asserts it). M2 matters where the gate opens *and* a label can
+  exist: a graph whose walks never merge (§22.5 item 1) or `dominance: "off"` with an ample frontier
+  (the 12 fixture cases of §22.5 item 3; WHI-1602's arm A4). Do not read M2 as part of the shipped
+  preset's behaviour on the corpus.
+
+### 22.2 Mathematical Model and Assumptions
+**M1.** For a relaxation $(\ell, e)$ with $e$ into the target, label amount $m > 0$ and a best marginal
+already found in this chunk: $\text{ub} = \lfloor \bar r_e m + s_e \rfloor$ (valid iff $x_e + m \le 2^{127}$).
+Skip iff $\text{ub} \le \text{best}$. The relaxation still counts in `label_relaxations` and
+`max_candidates`; it makes no quote. A relaxation with $m = 0$ makes no quote in the reference and is never
+skipped.
+
+**The table $U_h$ (M2).** For a fixed source, target and depth, $U_h(v)$ bounds every arrival from a
+label of amount $a$ at $v$ with $h$ hops left by $r\,a + s$, with $r$ and $s$ maximized separately over
+the *relaxed* walks (a token may repeat, committed-cycle admission is ignored, never into the source,
+never out of the target): $U_h(\text{target}) = (1, 0)$, $U_0(v) = $ no walk, and otherwise the max over
+edges $e = (v \to w)$ of $(\bar r_e\, U_{h-1}(w).r,\ s_e\, U_{h-1}(w).r + U_{h-1}(w).s)$. A relaxation of a
+label of amount $m$ along $e$ into a non-target $v$ has bound
+$\lfloor U_h(v).r\,(\bar r_e m + s_e) + U_h(v).s \rfloor$. If any edge on a walk that can reach the target
+has no bound, there is no bound for that label.
+
+**The gate.** With $W[k][v]$ the number of walks of exactly $k$ pools from the source to $v$ that the
+search could create (over-counted):
+
+$$G_{M2} \;=\; \max_k \textstyle\sum_v W[k][v] \le \texttt{max\_frontier\_labels}
+\ \wedge\ \big(\texttt{dominance} = \text{off} \ \vee\ \max_{k,v} W[k][v] \le 1\big).$$
+
+The first clause means no R7 refusal in either run. The second means no group ever holds two labels
+(off: every label is its own group; history with $W \le 1$: every (layer, token) is reached by one walk),
+so R2, R3 and R6 never fire. Then both runs build labels by the same tree rule (a label exists iff its
+parent exists) and the skipped relaxations are a subsequence of the reference's, which preserves
+the first maximal arrival. `m2.gate` reports `open`, `closed:frontier` or `closed:dominance`
+(`n/a` when pruning is off). The table is built per solve **only if the gate is open and a non-target
+label can exist** (`labels_exist`; `pruning-contract.md` §14 A1.3): with only direct pools between
+source and target nothing exists to skip and no table is built.
+
+**P0.** As in §21.2: pruning (M1 and M2) is off unless the retained `path_split` candidate exists.
+
+### 22.3 Concise Pseudocode
+```python
+def choose_history(alloc, amount, hops, dist, options, pruner):    # one chunk; the reference's selector
+    best, layer = None, [Label(amount, path=(), visited={source})]
+    for k in range(1, hops + 1):
+        for lab in layer:                                          # generation order
+            for e in edges_from(lab.token):                        # adjacency order
+                ...skip source / distance / revisit / token cycle...
+                relaxations += 1                                   # a skipped relaxation still counts
+                if pruner and best is not None and lab.amount > 0 \
+                        and pruner.skip(e, lab.amount, hops - k, best.marginal):
+                    continue                                       # M1 (arrival) or M2 (label)
+                m, update = alloc.step(e, lab.amount, k)           # one exact quote
+                if e.token_out == target:
+                    best = better(best, m, ...)                    # strict: ties keep the earlier
+                else:
+                    insert_label(...)                              # R1-R7 dominance and caps, unchanged
+
+def skip(self, edge, m, hops_left, best):                          # LabelPruner.skip
+    arrival = edge.token_out == target
+    if not arrival and self.table is None:
+        return False                                               # M2 off: nothing computed, nothing counted
+    ub = hop_bound(...) if arrival else floor(U[edge.token_out, hops_left].r * entering + U[...].s)
+    return ub is not None and ub <= best                           # None never prunes
+
+def prepare_solve(...):                                            # per solve
+    if retained_candidate_exists:                                  # P0
+        gate, labels_exist = m2_gate(index, source, target, hops, dist, options)
+        table = UTable(...) if gate == "open" and labels_exist else None
+        pruner = LabelPruner(bounds, flows, target, table)
+```
+
+### 22.4 Architecture and Topology Diagram
+
+```mermaid
+flowchart LR
+    A((A)) -->|ab| B((B))
+    B -->|bc| C((C))
+    C -->|cd| D((D))
+    A -->|ad| D
+```
+
+The chain of §22.5 item 1: no two walks from A reach the same token in the same layer, so the gate is
+open under the shipped preset. `ad` is a poor direct pool, so it sets a modest best marginal; M2 then
+skips the relaxation `ab>bc` (everything below it is bounded by 2194989) and the arrival `cd` is never
+reached.
+
+```mermaid
+flowchart TD
+    Rel["relaxation of a label, amount m > 0"] --> Best{"best exists, P0?"}
+    Best -- no --> Q["exact quote"]
+    Best -- yes --> Arr{"into the target?"}
+    Arr -- yes --> M1["M1: ub = floor(rate*m + slack)"]
+    Arr -- no --> Tab{"U_h table built?<br>(G_M2 open and a label can exist)"}
+    Tab -- no --> Q
+    Tab -- yes --> M2["M2: ub from U_h"]
+    M1 --> Le{"ub <= best?"}
+    M2 --> Le
+    Le -- yes --> Skip["pruned_bound += 1<br>still a relaxation, no quote"]
+    Le -- no --> Q
+```
+
+### 22.5 Hand-Worked Numeric Example
+All values are checked by `r022_examples.py` section 21 (`example_metis_history_bounded`). Each run goes
+through both registered factories (`metis_history`, `metis_history_bounded`) and is compared with
+`label_oracle`, the module's own implementation of the label search for graphs where no two labels
+share a group (a graph whose walks never merge, or `dominance: "off"`), with rules M1 and M2, `U_h` and
+R7 written from `pruning-contract.md` §6 and hand CPMM quotes; the gate is compared with `gate_oracle`
+(the walk counts $W$). The plans' gross is checked by the hand fund ledger.
+
+1. **M2 acts, and M1 would have acted elsewhere (the preset, a graph with no merging walks).** Pools
+   `ab` `10^9/2·10^9`, `bc` `3·10^9/10^9`, `cd` `10^9/10^9` and a poor direct `ad` `10^8/10^8`; request
+   10000000 A → D in 3 chunks, `label_hops` 3, the shipped preset options (`history`, 1, 1024). Every
+   (layer, token) is reached by one walk, so the gate is **open** and a label (B, C) can exist: rule
+   `M1+M2`, `m2.active` true, table cost 12 (3 hops, 2 table layers, six edge relaxations each). Each
+   chunk's best comes from the direct pool (`ad`: 3216439, 3015978, 2833691, total gross
+   **9066108**, the greedy oracle's). In every chunk M2 skips the relaxation of `ab>bc`: everything
+   below it is bounded by 2194989, at most the best. The reference makes 12 relaxations and the bounded
+   run 9; the 3 skipped bounds are the only 3 bound evaluations (`pruned_bound` 3). Had the gate been
+   closed, M1 alone would instead have skipped the arrival `ab>bc>cd` (bound 2190165, 2190165,
+   2190166) and made 12 relaxations. The result is `metis_history`'s either way.
+2. **The unsafe prune: a binding frontier cap (`pruning-contract.md` §6.4).** The tracked
+   `cpmm_graph` case `a_d_multi_hop` (10000000 TKA → TKD, 24 chunks, `max_hops` 2, `label_hops` 3), with
+   `dominance: "off"` and `max_frontier_labels` 3. The gate is **`closed:frontier`**: the reference
+   fills its 3-slot frontier and refuses 28 labels (`state_cap`), final gross **20600**, chunk 1
+   `ab_1>db_2` (862). With the gate closed `metis_history_bounded` runs **M1 only**: it skips 118 of
+   212 bounded arrivals, makes the same 432 relaxations and the same 28 R7 refusals, and returns
+   20600 (its label is still `exact`: a cap is not a budget, and an arrival prune is population-neutral).
+   Now force the gate open (the negative control the gate exists to prevent): M2 skips 124 relaxations
+   (table cost 30), the frontier refuses only 24 labels, and the search finds a *better* plan, gross
+   **20611**, which is **not the reference** (20600). The module's M2 oracle with the same cap reproduces 20611;
+   both gross values are checked by the hand ledger.
+3. **The gate on the tracked fixture.** The 96 cases (`max_hops` 3, `max_splits` 2, `percent_step` 25, 8
+   chunks, `label_hops` 3), each compared with the reference and with `gate_oracle`:
+
+   | Options | Cases identical to `metis_history` | Gate `open` and no label can exist | Gate `open` with a label | Gate `closed:dominance` | M2 active |
+   |---|---:|---:|---:|---:|---:|
+   | shipped preset (`history`, 1, 1024) | 96 of 96 | 84 | 0 | 12 | **0** |
+   | `dominance: "off"`, frontier $10^7$ | 96 of 96 | 84 | 12 | 0 | 12 |
+
+   The 84 direct-pool requests have no non-target label at all; the 12 requests without a direct pool
+   have parallel routes, so the preset's gate closes on dominance. Under `dominance: "off"` those 12
+   open and M2 acts, still returning the reference's plans.
+4. **Refusal: P0.** The two Moe pools of §21.5 item 5 with `max_splits` 1: `path_split` has no plan,
+   so `p0` is `false`, `m2` is `{active: false, gate: "n/a"}`, no bound is evaluated, and the result
+   (gross 288022822) is `metis_history`'s.
+5. **On the §11 request.** 10000 USDC → USDT0 with `daily_gross.yaml`'s values (`label_hops` 4, 200
+   chunks): the gate is open but no label can exist (only direct pools), so M2 is inactive and no table
+   is built; M1 makes 400 bound evaluations and skips none; 264 quotes counted, the same as
+   `metis_history` (§11.1).
+
+### 22.6 Implementation Map
+Pins: `dev` @ `1e63a043f7023988963bf18f47fbadf5f34b26ff` (PR #81).
+- File: `routing/algorithms/metis_history_bounded.py`: `PRESET` (line 40: the bounded strategy's own
+  pin of the options), `PROVENANCE` (47), `solve` (81), `FACTORY` (85) with `prepare=metis_history.prepare_bounded`,
+  `options_validator=metis_history.validate_options` and `options_preset`.
+- File: `routing/algorithms/metis_history.py`: `BOUNDED_NAME` (line 121), `PreparedBoundedMetisHistory`
+  (251), `prepare_bounded` (280), the pruner call inside `choose_history` (351; the skip at 405), the
+  per-solve gate and table (`_solve`, lines 536–551: P0, `m2_gate`, `UTable`, `LabelPruner`) and the
+  `bound_pruning` stats (705, with `m2` and `exactness`).
+- File: `routing/algorithms/chunk_pruning.py`: `UTable` (85), `walk_counts` (145), `m2_gate` (167),
+  `LabelPruner` (196; `skip` 214, `_upper` 228).
+- Config: `config/metis_history_bounded/preset_v1.yaml`.
+- Contract and tests: `pruning-contract.md` §6, §8, §10, §14; `tests/routing/test_chunk_bounded.py`.
+- Worked examples: `r022_examples.py`, `example_metis_history_bounded` (runner section 21).
+
+### 22.7 Parameters, Budgets, and Ties
+- **Options:** exactly `metis_history`'s `algorithm_options` (`dominance`, `max_labels_per_signature`,
+  `max_frontier_labels`; same keys, ranges and validator). The pruning is not an option.
+- **Two preset files, one set of options.** `benchmark.profile.preset_options` checks a preset file's
+  `algorithm` against the factory that pins it, so `metis_history` and `metis_history_bounded` cannot
+  share `config/metis_history/preset_v1.yaml` (`pruning-contract.md` §14 A1.4). `config/metis_history_bounded/preset_v1.yaml` is a
+  copy under the bounded strategy's own key (`R022-Q04-metis_history_bounded`) with **identical options**,
+  so the `settings_sha256` (`183bb1ff…`) is the same and paired comparisons are same-settings. **The two
+  files must stay option-identical:** the bounded file's sha256 is pinned in
+  `metis_history_bounded.py` and a changed file is refused. Under `--strategies all` it receives the same
+  preset values and the same `metis_graph_settings()` copy (`label_hops: 4`, `chunks`) as `metis_history`.
+- **Parameters:** `search.*`, `graph.chunks`, `graph.label_hops` (`graph.label_pruning` is not read).
+- **Budgets:** a skipped relaxation counts in `relaxed` (the `max_candidates` unit), so truncation points
+  are the reference's under M1; under M2 the bounded relaxations are a subsequence of the reference's, so it
+  truncates only where the reference does. A truncated run is `not_exact_budget_binding`.
+- **Ties:** the best marginal is replaced on `m > best` only; the first maximal arrival wins.
+- **Where M2 changes counters:** with `m2.active` the label-population counters
+  (`label_relaxations`, `labels_*`, `peak_*`, …) may differ from the reference's; the plan, evaluation,
+  score and chunk-level counters do not.
+
+### 22.8 Computational and Memory Cost
+- **M1:** one hop bound per arrival relaxation that has a best to be measured against.
+- **M2:** the table costs one edge relaxation per (token, depth, edge), reported as `bound_table_cost`
+  (a deterministic count, never wall time); it is built per solve, only when it can be used.
+- **Quotes:** the bounded run's executed-quote set is a subset of the reference's.
+- **Memory:** the bound table beside the reference's labels, frontier and region memo.
+- **Time** is not claimed here (WHI-1602).
+
+### 22.9 Guarantees and Limitations
+- **Guarantees:** the reference's result under a non-binding budget, **including on chunks the
+  reference caps** (M1); M2 is exact only behind $G_{M2}$.
+- **Limitations:**
+  - **M2 outside $G_{M2}$ is not proved and not specified.** The random and fixture sweeps found no
+    counterexample in history mode, which is evidence, not a proof; the gate keeps it off.
+  - **M2 is usually inactive under the preset.** The preset's one-label-per-signature caps close the
+    gate wherever routes merge, and a direct-pool request has no label to skip.
+  - As §21.9: P0, the $2^{127}$ domain, rate-only and no-slack directions, slack carrying the rate.
+  - `label_relaxations` and the other population counters are only reference-identical while M2 is
+    inactive.

@@ -15,8 +15,11 @@ and the experimental Metis-inspired (NOT Jupiter Metis) strategy:
 along with the real-state fixed-block snapshot case, then (sections 12-17, WHI-1561,
 `r021_examples.py`) the five 0.2.1 experimental strategies -- metis_history,
 direct_split_certified, incremental_graph_repair, uni_sor_cycle_safe and cfmm_dual (CPMM and
-CL stages) -- through their registered factories, and all fourteen `--strategies all` rows on
-the same fixed-block fixture.
+CL stages) -- through their registered factories, and all seventeen `--strategies all` rows on
+the same fixed-block fixture (the fourteen 0.2.1 rows plus the three 0.2.2 bounded strategies),
+then (sections 18-22, WHI-1601, `r022_examples.py`) the 0.2.2 upper-bound pruning examples:
+per-pool bounds, `single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`
+and the roster / preset checks.
 
 Run with:
     uv run python docs/examples/routing-algorithms/run_examples.py
@@ -34,6 +37,7 @@ for _path in (ROOT, HERE):
         sys.path.insert(0, str(_path))
 
 import r021_examples  # noqa: E402  (sections 12-17: the 0.2.1 strategies, WHI-1561)
+import r022_examples  # noqa: E402  (sections 18-22: upper-bound pruning, WHI-1601)
 
 from benchmark.objective import gross_only  # noqa: E402
 from benchmark.profile import load_profile  # noqa: E402
@@ -639,6 +643,11 @@ def run_all() -> None:
     # 12-17. The 0.2.1 experimental strategies (WHI-1561): r021_examples.py
     # -------------------------------------------------------------
     r021_examples.run_all()
+
+    # -------------------------------------------------------------
+    # 18-22. The 0.2.2 upper-bound pruning examples (WHI-1601): r022_examples.py
+    # -------------------------------------------------------------
+    r022_examples.run_all()
 
 
 if __name__ == "__main__":
