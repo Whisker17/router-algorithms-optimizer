@@ -171,7 +171,8 @@ def test_cfmm_dual_example() -> None:
     assert rc["best_exact_single_path"] < rc["v2_cl_stage"]["score"]
 
 
-def test_real_state_walkthrough_has_all_fourteen_rows() -> None:
+def test_real_state_walkthrough_has_every_row_of_the_all_roster() -> None:
+    """The fourteen 0.2.1 rows plus `single_path_bounded` (WHI-1599, appended by `all`)."""
     d = data("real_state")
     rows = {r["algorithm"]: r for r in d["rows"]}
     assert list(rows) == [
@@ -189,6 +190,7 @@ def test_real_state_walkthrough_has_all_fourteen_rows() -> None:
         "incremental_graph_repair",
         "uni_sor_cycle_safe",
         "cfmm_dual",
+        "single_path_bounded",
     ]
     assert d["bundle"]["pools"] == 19 and d["bundle"]["block"]["number"] == 101082044
     for name in ("metis_history", "incremental_graph_repair", "incremental_graph"):

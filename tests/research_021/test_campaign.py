@@ -34,6 +34,7 @@ import pytest
 import yaml
 
 import main
+from benchmark import strategies as strategies_module
 from benchmark.profile import preset_options, read_profile_document
 from benchmark.results import load_case_records, load_manifest
 from benchmark.strategies import derive
@@ -49,6 +50,7 @@ ALL14 = ["direct", "single_path", "direct_split", "path_split", "incremental_gra
          "uni_sor_port", "uni_sor_adaptive", "uni_sor_optimized", "metis_inspired",
          "metis_history", "direct_split_certified", "incremental_graph_repair",
          "uni_sor_cycle_safe", "cfmm_dual"]  # fmt: skip
+ALL15 = [*ALL14, "single_path_bounded"]  # the live `--strategies all` (WHI-1599)
 RESTRICTED = ("direct_split_certified", "uni_sor_cycle_safe", "cfmm_dual")
 
 
@@ -82,6 +84,16 @@ def _bounded_test() -> Iterator[None]:
             child.kill()
 
 
+@pytest.fixture
+def the_021_roster(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The preregistered 0.2.1 campaign (WHI-1562) freezes `--strategies all` as the 14
+    identities of that release. WHI-1599's `R022_ADDITIONS` (0.2.2) are not part of it, so the
+    tests that compare the frozen manifest with an in-process derivation run with them switched
+    off, as `test_algorithm_options` does for `R021_ADDITIONS`. (The bounded-fixture executor
+    test launches real `main.py` processes, which derive the live 15-identity roster.)"""
+    monkeypatch.setattr(strategies_module, "R022_ADDITIONS", ())
+
+
 @pytest.fixture(scope="module")
 def campaign() -> Any:
     return C.load_campaign()
@@ -90,6 +102,7 @@ def campaign() -> Any:
 # ----------------------------------------------------------------------------- manifest
 
 
+@pytest.mark.usefixtures("the_021_roster")
 def test_manifest_profiles_and_roster_are_consistent(campaign: Any) -> None:
     assert C.check(campaign) == []
     source = read_profile_document(REPO / "config" / "full_gross.yaml")
@@ -229,6 +242,7 @@ def test_registered_nominees_are_the_rule_results_of_the_clean_tuning_analysis(
         k: v["nominee"] for k, v in registered.items()}  # fmt: skip
 
 
+@pytest.mark.usefixtures("the_021_roster")
 def test_freeze_record_regenerates_from_code_and_manifest(
     campaign: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -321,6 +335,7 @@ def _registered_algorithms(campaign: Any, key: str) -> list[str]:
     return list(inv.algorithms)
 
 
+@pytest.mark.usefixtures("the_021_roster")
 @pytest.mark.parametrize("key", PROFILE_KEYS)
 def test_every_new_profile_runs_in_batch_and_single_request_mode(
     key: str, campaign: Any, tmp_path: Path, capsys: pytest.CaptureFixture[str]
@@ -427,14 +442,14 @@ def _fixture_campaign(tmp_path: Path) -> Any:
         "known_report_defects": {"cases": []},
         "invocations": [
             {"id": "X-mixed", "stage": "T", "kind": "run", "bundle": "mixed", "profile": "small",
-             "strategies": "all", "algorithms": ALL14},
+             "strategies": "all", "algorithms": ALL15},
             {"id": "X-lb", "stage": "T", "kind": "run", "bundle": "lb", "profile": "small",
-             "strategies": "all", "algorithms": ALL14},
+             "strategies": "all", "algorithms": ALL15},
             {"id": "X-scan1", "stage": "T", "kind": "run", "bundle": "mixed", "profile": "scan1",
              "strategies": "profile", "algorithms": ["direct_split", "direct_split_certified"]},
             {"id": "X-quote", "stage": "T", "kind": "quote", "bundle": "corpus",
              "profile": "small", "strategies": "all", "details": True, "request": "one",
-             "algorithms": ALL14, "derive": ["report", "replay", "order_check"]},
+             "algorithms": ALL15, "derive": ["report", "replay", "order_check"]},
         ],
         "comparisons": [
             {"id": "grid", "stage": "T", "kind": "equal_value", "class": "same_domain",
@@ -488,7 +503,7 @@ def test_stage_executor_and_analysis_on_bounded_fixtures(tmp_path: Path) -> None
     assert cycle["identity_on_comparable_identical"]["gate"] == "pass"
     assert [r["unit"] for r in cycle["same_unit_ratios"]] == ["quotes_counted", "admission_checks"]
     quote = result["invocations"]["X-quote"]
-    assert [a["status"]["arm"].split("/")[1] for a in quote["arms"]] == ALL14
+    assert [a["status"]["arm"].split("/")[1] for a in quote["arms"]] == ALL15
     assert result["invocations"]["X-quote.order"]["result"] == "ok"  # replay == original
     assert (out / "X-quote.report" / "report" / "single_request.txt").is_file()
     assert "p95" not in C.render_markdown(result)
