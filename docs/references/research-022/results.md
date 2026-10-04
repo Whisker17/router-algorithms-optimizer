@@ -367,7 +367,7 @@ Stage I runs the CLI matrix over all 17 IDs (`config/research_022/schedule.yaml`
 | `I-quote-compact.order` | derived: `report` / the recorded replay command / `order-check` | ok |
 
 - **Batch.** `I-batch17` has all 17 IDs in the registered order; the three bounded rows are `ok` on 96/96 cases, their `bound_pruning` blocks present; `direct_split_certified` is `unsupported` on 84 (visible, as registered).
-- **Report.** The HTML report of both runs lists the 17 rows with the bounded strategies' counters.
+- **Report.** The batch HTML report (`I-batch17.report`) lists the 17 rows and labels the three bounded rows as bound-pruned strategies ("no speedup claimed"); it does **not** show the bound-pruning counters. The quote runs produce no HTML, only `single_request.txt`. The counters are in each batch run's `cases.jsonl` (`search.bound_pruning`) and in the `pruned by bound` lines of the quote runs' `single_request.txt` (`quote --details`).
 - **Replay and order-check.** Each replay re-ran the recorded command with the same 17 algorithms and the same case count; `order-check` found no difference.
 - **Single request** (`I-quote-details`, one solve per strategy; the sentinel is the §11.5 single-request condition; **descriptive, one run**): all three bounded strategies return their references' plan and score (1 000 230 567 / 1 000 237 432 / 1 000 237 432).
 
