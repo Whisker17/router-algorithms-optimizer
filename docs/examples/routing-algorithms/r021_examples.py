@@ -2419,6 +2419,9 @@ def real_state_walkthrough() -> dict[str, Any]:
         "metis_inspired",
         "metis_history",
         "incremental_graph_repair",
+        # WHI-1600: the exact accelerations return their reference's plan (pruning contract §8)
+        "incremental_graph_bounded",
+        "metis_history_bounded",
     ):
         expected[name] = sum(split)
     expected["direct_split_certified"] = None  # unsupported: the pair's direct pools are CL/LB
@@ -2922,7 +2925,7 @@ def _print_cfmm(cf: Mapping[str, Any]) -> None:
 
 def _print_real_state(rs: Mapping[str, Any]) -> None:
     b = rs["bundle"]
-    _p("--- 17. Real-state fixed-block walkthrough: 14 rows (--strategies all, daily_gross) ---")
+    _p("--- 17. Real-state fixed-block walkthrough: 17 rows (--strategies all, daily_gross) ---")
     _p(
         f"bundle {b['bundle_id']} ({b['bundle_hash'][:12]}), block {b['block']['number']}, ",
         f"{b['pools']} pools {b['pool_protocols']}",

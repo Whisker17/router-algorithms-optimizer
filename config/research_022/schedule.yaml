@@ -1,0 +1,372 @@
+# WHI-1602 research-022 campaign schedule (R022-Q06; pruning contract R022-Q02/1 §11, §14).
+#
+# The single machine-readable schedule of the 0.2.2 exactness / work / timing campaign: inputs and
+# their hashes, every profile (generated from the unchanged canonical bases), every invocation of
+# every stage, the registered A5 budget rule, the timing launch policy and the pre-registered
+# rules. Validated, expanded, executed and analysed ONLY by `tools/research_022/pruning_campaign.py`
+# (`check`, `profiles`, `schedule`, `inputs`, `execute`, `a5-values`, `analyze`); explained in
+# docs/references/research-022/results.md. It reuses the 0.2.1 executor by import
+# (`tools/research_021/campaign.py`, never modified) and writes nothing under config/research_021.
+#
+# Stages: T = tuning split (checks: defects, gate behaviour, budgets), executed from a clean clone of
+# the commit that first contains this file, before any other observation; R = the report split,
+# executed ONCE from the freeze commit (this file with `a5.values` filled from stage T), never tuned
+# on; M = the binding-budget arm A5 on both splits (values fixed by the rule below, from the freeze
+# commit); L = quiet-host timing (§11.5); I = the CLI invocation matrix over all 17 IDs (batch,
+# single request, report, replay, order-check). Nothing here is an adoption, a default change or a
+# loss tolerance.
+schema: r022.campaign/1
+issue: WHI-1602
+publication_key: R022-Q06
+contract: R022-Q02/1
+contract_doc: docs/references/research-022/pruning-contract.md
+release: {version: 0.2.2, id: fca63897-b103-46f4-a690-c297246ed1ff}
+base_commit: 86a6fd3b6c59e32d26d5fe931d1177e867735719
+holdout_exposure:
+  tuning: exploration_data
+  report: previously_exposed        # R021-C/1 §6.1; executed once (contract §11.1)
+  l01_matrix: previously_exposed (L01 matrix = tuning cases + held-out report twins)
+host:
+  logical_cpus: 10                  # reference Apple M2 Pro; the load threshold uses the host's
+  load_sample_seconds: 30
+  contaminated_if: load1 > 0.5 * logical_cpus      # 5.0 on the 10-core host (contract §11.5)
+
+# ----------------------------------------------------------------------------- inputs
+# `source` is relative to the primary clone (`fixture`: to the repository); `inputs` copies each into
+# the durable inputs root (outside every worktree) and refuses a copy whose manifest.json sha256
+# differs. Hashes are those of the 0.2.1 campaign (the corpus is frozen).
+inputs:
+  full:
+    source: data/corpus/mantle-5src-101082044/bundle
+    bundle_hash: 717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
+    cases: 398
+    split: all
+    cohort: full_source
+  tuning_full:
+    source: data/corpus/mantle-5src-101082044/bundle_tuning
+    bundle_hash: ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
+    cases: 96
+    split: tuning
+    cohort: full_source
+  tuning_sor:
+    source: data/corpus/mantle-5src-101082044/sor_cohort_tuning
+    bundle_hash: b900b866d4a0ef6a3b33546f1d262ed3fc836847ef30da9e975c5bae75107ade
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
+    cases: 96
+    split: tuning
+    cohort: sor_compatible
+  report_full:
+    source: data/corpus/mantle-5src-101082044/bundle_report
+    bundle_hash: 85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
+    cases: 302
+    split: report
+    cohort: full_source
+  report_sor:
+    source: data/corpus/mantle-5src-101082044/sor_cohort_report
+    bundle_hash: 8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
+    cases: 302
+    split: report
+    cohort: sor_compatible
+  fixture:                          # the tracked 19-pool / 96-case corpus fixture (CLI matrix, stage I)
+    source: tests/fixtures/corpus/bundle
+    in_repository: true
+    bundle_hash: 5401b1de8c83a3527e5f9b5afae4510a760f171f2b306d49dbb5c830256c9ad0
+    prices_sha256: 1a3b5cfd9ca331d82cfa218db540a871eb1ad62f37d4aba9ba10583705bd1bcd
+    cases: 96
+    split: all
+    cohort: fixture
+requests:
+  sentinel: {token_in: USDC, token_out: USDT, amount: "1000"}        # the L01 sentinel
+
+# The 0.2.1 baseline records of the 14 reference IDs on the report split (WHI-1562, `--strategies
+# all`, git aa5726c5706ea7fb8c5a9c4dc49243fdd1570136, 4,228 records = 302 x 14 each). Read-only; they
+# live outside the repository (`--baseline-root`); the pins below are what the analysis verifies.
+baseline_021:
+  root_relative: research-021/whi-1562/aa5726c5706ea7fb8c5a9c4dc49243fdd1570136/R
+  git_revision: aa5726c5706ea7fb8c5a9c4dc49243fdd1570136
+  report_full: {slot: R-roster-full, run: 20261002T012141213128Z-e1515ec9,
+                manifest_sha256: fb62e42d7fbc4027f3e0da9939f1de8cd02d4a47521ee06355b1abe0f70a7a95,
+                cases_sha256: 3a8e0f3a2b20c100d4a2c325c0cd2ce1d22b2bf0e552af2261829a6f1cad215c,
+                bundle_hash: 85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0}
+  report_sor: {slot: R-roster-sor, run: 20261002T012141203437Z-8519bba8,
+               manifest_sha256: a9bbb8505d18c8eba6e18be95b143c10b4752be77e827be410f50f6b7e8c87fb,
+               cases_sha256: d0735a1c23f82a6b5ebac044864a363952b4587ef4909645b8c73e65263812b3,
+               bundle_hash: 8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640}
+
+# ----------------------------------------------------------------------------- profiles
+# `path` + `sha256`: a pinned, never-edited file. `path` + `generate`: a file rendered by
+# `pruning_campaign.py profiles --write` from the pinned base's `--strategies all` derivation (the
+# 17-ID roster of contract §10.1) restricted to the listed `algorithms`; `check` refuses a file whose
+# bytes differ from the rendering. Nothing but the listed `algorithms`, `options.set` and `budget` keys
+# differs from the base's derived roster (a test enforces it), so every strategy runs with the values
+# of `config/full_gross.yaml` (3 hops / 4 splits / 5 %, graph.chunks 50, M4 label settings, the 0.2.1
+# budget, seed 1447) -- or, for the net arm A2, of `config/full.yaml`.
+profiles:
+  canonical_gross: {path: config/full_gross.yaml,
+                    sha256: 51a8a65184ae765867fd9d7763776852b2b4576e3cf7116a8dc15ccd87028177}
+  canonical_net: {path: config/full.yaml,
+                  sha256: a99f33f8547a03ec6ff16f354b409a742d61db56921c45f88cbc26eb0887fab6}
+  # A1 pair groups: each bounded strategy runs in the SAME run, with the same values, as its reference
+  g_sp: {path: config/research_022/profiles/g_sp.yaml,
+         generate: {base: canonical_gross, algorithms: [single_path, single_path_bounded]},
+         purpose: "A1 pair: single_path / single_path_bounded"}
+  g_ig: {path: config/research_022/profiles/g_ig.yaml,
+         generate: {base: canonical_gross, algorithms: [incremental_graph, incremental_graph_bounded]},
+         purpose: "A1 pair: incremental_graph / incremental_graph_bounded"}
+  g_mh: {path: config/research_022/profiles/g_mh.yaml,
+         generate: {base: canonical_gross, algorithms: [metis_history, metis_history_bounded]},
+         purpose: "A1 pair: metis_history / metis_history_bounded (preset v1 under both keys)"}
+  # the 11 remaining reference IDs, for the unchanged-versus-0.2.1 check (contract §11.2)
+  g_rest_a: {path: config/research_022/profiles/g_rest_a.yaml,
+             generate: {base: canonical_gross,
+                        algorithms: [uni_sor_cycle_safe, direct, direct_split, direct_split_certified]},
+             purpose: "the 14-reference check: group a"}
+  g_rest_b: {path: config/research_022/profiles/g_rest_b.yaml,
+             generate: {base: canonical_gross, algorithms: [uni_sor_port, uni_sor_optimized, cfmm_dual]},
+             purpose: "the 14-reference check: group b"}
+  g_rest_c: {path: config/research_022/profiles/g_rest_c.yaml,
+             generate: {base: canonical_gross, algorithms: [incremental_graph_repair, uni_sor_adaptive]},
+             purpose: "the 14-reference check: group c"}
+  g_rest_d: {path: config/research_022/profiles/g_rest_d.yaml,
+             generate: {base: canonical_gross, algorithms: [path_split, metis_inspired]},
+             purpose: "the 14-reference check: group d"}
+  # A2: the config/full.yaml empirical-cost objective
+  n_sp: {path: config/research_022/profiles/n_sp.yaml,
+         generate: {base: canonical_net, algorithms: [single_path, single_path_bounded]},
+         purpose: "A2 pair under the empirical-cost objective"}
+  n_ig: {path: config/research_022/profiles/n_ig.yaml,
+         generate: {base: canonical_net, algorithms: [incremental_graph, incremental_graph_bounded]},
+         purpose: "A2 pair under the empirical-cost objective"}
+  n_mh: {path: config/research_022/profiles/n_mh.yaml,
+         generate: {base: canonical_net, algorithms: [metis_history, metis_history_bounded]},
+         purpose: "A2 pair under the empirical-cost objective"}
+  # A3 / A4: metis_history pair with the generous caps; A4 additionally dominance off
+  a3_mh: {path: config/research_022/profiles/a3_mh.yaml,
+          generate: {base: canonical_gross, algorithms: [metis_history, metis_history_bounded],
+                     options: {metis_history: {set: {dominance: history,
+                                                         max_labels_per_signature: 1000000,
+                                                         max_frontier_labels: 10000000}},
+                                   metis_history_bounded: {set: {dominance: history,
+                                                                 max_labels_per_signature: 1000000,
+                                                                 max_frontier_labels: 10000000}}}},
+          purpose: "A3: dominance history, 10^6 labels per signature, 10^7 frontier labels"}
+  a4_mh: {path: config/research_022/profiles/a4_mh.yaml,
+          generate: {base: canonical_gross, algorithms: [metis_history, metis_history_bounded],
+                     options: {metis_history: {set: {dominance: "off",
+                                                     max_labels_per_signature: 1000000,
+                                                     max_frontier_labels: 10000000}},
+                               metis_history_bounded: {set: {dominance: "off",
+                                                             max_labels_per_signature: 1000000,
+                                                             max_frontier_labels: 10000000}}}},
+          purpose: "A4: A3 with dominance off (G_M2 open where parallel routes exist; M2 can act)"}
+  # timing / single-request: the six pair strategies (L01 rules over the unchanged full_gross values)
+  timing_pairs: {path: config/research_022/profiles/timing_pairs.yaml,
+                 generate: {base: canonical_gross,
+                            algorithms: [single_path, single_path_bounded, incremental_graph,
+                                         incremental_graph_bounded, metis_history,
+                                         metis_history_bounded]},
+                 purpose: "stage L and the single-request checks: the six pair strategies"}
+
+# the 17-ID roster `--strategies all` derives from canonical_gross (contract §10.1)
+rosters:
+  all17: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port,
+          uni_sor_adaptive, uni_sor_optimized, metis_inspired, metis_history,
+          direct_split_certified, incremental_graph_repair, uni_sor_cycle_safe, cfmm_dual,
+          single_path_bounded, incremental_graph_bounded, metis_history_bounded]
+  references14: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port,
+                 uni_sor_adaptive, uni_sor_optimized, metis_inspired, metis_history,
+                 direct_split_certified, incremental_graph_repair, uni_sor_cycle_safe, cfmm_dual]
+  pairs: {single_path: single_path_bounded, incremental_graph: incremental_graph_bounded,
+          metis_history: metis_history_bounded}
+
+# ----------------------------------------------------------------------------- stages
+stages:
+  T:
+    split: tuning
+    owner: the implementer, first (before any report-split solve)
+    lanes: 5                        # concurrent invocations; timing here is descriptive only
+    caffeinate: true
+    pmset_capture: true
+  R:
+    split: report
+    owner: the implementer, ONCE, from the freeze commit
+    lanes: 5
+    caffeinate: true
+    pmset_capture: true
+  M:
+    split: tuning and report (A5, full_source only)
+    owner: the implementer, from the freeze commit (the A5 values are fixed by the rule below)
+    lanes: 5
+    caffeinate: true
+    pmset_capture: true
+  I:
+    split: fixture and sentinel (no corpus split)
+    owner: the implementer, alone on the host
+    lanes: 1
+    caffeinate: true
+    pmset_capture: true
+  L:
+    split: mixed (L01 matrix tuning cases + held-out twins, sentinel)
+    owner: the implementer, alone on the host, ONCE, only after the exactness gate passed (§11.5)
+    lanes: 1
+    caffeinate: true
+    pmset_capture: true
+    # Launch policy (an operational choice, registered before the first tuning observation; the
+    # pre-registered rules of contract §11.5 are unchanged). The headroom rule is the 0.2.1 one: five
+    # 1-minute load samples 30 s apart, none above 3.0. Where that 0.2.1 gate gave up at once, this
+    # stage WAITS: it re-samples every `resample_every_seconds` and launches the first time a
+    # five-sample group passes. After `max_wait_seconds` without a pass it is NOT launched and the
+    # timing verdict is `inconclusive` (no timing claim). Once launched there is no relaunch and no
+    # repeat, whatever the verdict: a contaminated window is `inconclusive`, never rerun.
+    launch_window: {samples: 5, interval_seconds: 30, headroom_load1: 3.0,
+                    resample_every_seconds: 300, max_wait_seconds: 21600}
+
+# ----------------------------------------------------------------------------- arms
+# Expanded by `pruning_campaign.py` into invocations `<stage>-<arm>-<group>-<bundle>` (`full`/`sor`),
+# plus `<stage>-WP-<arm>-<group>-<bundle>` work passes (pruning_work.py: `main.py run` with counting
+# twins around the family quote functions; never an exactness or timing record) and, in stage R,
+# the `report` child of every A1 run. Registered order = launch order (heaviest first). A5 is expanded
+# from `a5` (stage M). The SOR cohort runs A1 only (the 0.2.1 roster precedent); A2-A5 run on the
+# full five-source bundle.
+arms:
+  - {arm: B14, kind: reference_check, stages: {R: [report_full, report_sor]},
+     groups: {ra: g_rest_a, rb: g_rest_b, rc: g_rest_c, rd: g_rest_d}}
+  - {arm: A4, stages: {T: [tuning_full], R: [report_full]}, groups: {mh: a4_mh}, work_pass: true}
+  - {arm: A3, stages: {T: [tuning_full], R: [report_full]}, groups: {mh: a3_mh}}
+  - {arm: A1, stages: {T: [tuning_full, tuning_sor], R: [report_full, report_sor]},
+     groups: {ig: g_ig, mh: g_mh, sp: g_sp}, work_pass: true, report: true}
+  - {arm: A2, stages: {T: [tuning_full], R: [report_full]},
+     groups: {ig: n_ig, mh: n_mh, sp: n_sp}}
+
+# ----------------------------------------------------------------------------- A5
+# Binding budgets (contract §11.3). The values are NOT chosen by hand: the rule below is applied by
+# `pruning_campaign.py a5-values` to the reference records of the stage-T A1 run on `tuning_full`, and
+# the result is written here in the freeze commit, before any report-split solve. The same values run
+# on the tuning and the report split of the full_source bundle, bounded and reference in one run.
+a5:
+  rule: >-
+    For each pair, over the reference's non-truncated `ok` cells of `T-A1-<group>-full`: p25 and p50
+    (nearest rank, integer) of its `search.quotes_executed` (positive values only) become two
+    `max_quotes` budgets, and of its `candidates_considered` (positive values only) two
+    `max_candidates` budgets. A budget run replaces only that one `budget` key of the pair's A1 profile
+    (the other stays as in the 0.2.1 budget); reference and bounded run in the same invocation.
+    Reported separately under `not_exact_budget_binding`, never as exactness evidence.
+  groups: {sp: g_sp, ig: g_ig, mh: g_mh}
+  budgets: [{kind: max_quotes, p: 25}, {kind: max_quotes, p: 50},
+            {kind: max_candidates, p: 25}, {kind: max_candidates, p: 50}]
+  values:
+    sp: {"max_quotes": {"p25": 911, "p50": 2960}, "max_candidates": {"p25": 1714, "p50": 4840}}
+    ig: {"max_quotes": {"p25": 15456, "p50": 26358}, "max_candidates": {"p25": 90527, "p50": 229704}}
+    mh: {"max_quotes": {"p25": 12733, "p50": 21559}, "max_candidates": {"p25": 24513, "p50": 30026}}
+
+# ----------------------------------------------------------------------------- invocations
+# Stages L and I are listed literally; T, R and M are expanded from `arms` / `a5`.
+invocations:
+  # ---- I: the CLI matrix over all 17 IDs (derive: report / replay / order-check)
+  - {id: I-batch17, stage: I, kind: run, bundle: fixture, profile: canonical_gross, strategies: all,
+     algorithms: &all17 [direct, single_path, direct_split, path_split, incremental_graph,
+                         uni_sor_port, uni_sor_adaptive, uni_sor_optimized, metis_inspired,
+                         metis_history, direct_split_certified, incremental_graph_repair,
+                         uni_sor_cycle_safe, cfmm_dual, single_path_bounded,
+                         incremental_graph_bounded, metis_history_bounded],
+     derive: [report, replay, order_check]}
+  - {id: I-quote-details, stage: I, kind: quote, bundle: full, profile: canonical_gross,
+     strategies: all, details: true, request: sentinel, algorithms: *all17,
+     derive: [report, replay, order_check]}
+  - {id: I-quote-compact, stage: I, kind: quote, bundle: full, profile: canonical_gross,
+     strategies: all, details: false, request: sentinel, algorithms: *all17,
+     derive: [report, replay, order_check]}
+  # ---- L: quiet-host timing (contract §11.5): the L01 protocol rules over the six pair strategies;
+  # the baseline experiment is the three references, the candidate the three bounded strategies,
+  # compared pairwise (`--lane heuristic --pair BOUNDED=REFERENCE`: only that lane pairs different IDs;
+  # exactness is the §11.2 gate, not this comparison). The five `quote --details` are the
+  # single-request checks (descriptive, one solve per strategy per invocation).
+  - {id: L-ref, stage: L, kind: l01_run, arm: REF, bundle: full}
+  - {id: L-bnd, stage: L, kind: l01_run, arm: BND, bundle: full, after: [L-ref]}
+  - {id: L-cmp, stage: L, kind: l01_compare, baseline: L-ref, candidate: L-bnd, after: [L-bnd]}
+  - {id: L-q1, stage: L, kind: quote, bundle: full, profile: timing_pairs, strategies: profile,
+     details: true, request: sentinel, algorithms: &pairs6 [single_path, single_path_bounded,
+     incremental_graph, incremental_graph_bounded, metis_history, metis_history_bounded],
+     after: [L-cmp]}
+  - {id: L-q2, stage: L, kind: quote, bundle: full, profile: timing_pairs, strategies: profile,
+     details: true, request: sentinel, algorithms: *pairs6, after: [L-q1]}
+  - {id: L-q3, stage: L, kind: quote, bundle: full, profile: timing_pairs, strategies: profile,
+     details: true, request: sentinel, algorithms: *pairs6, after: [L-q2]}
+  - {id: L-q4, stage: L, kind: quote, bundle: full, profile: timing_pairs, strategies: profile,
+     details: true, request: sentinel, algorithms: *pairs6, after: [L-q3]}
+  - {id: L-q5, stage: L, kind: quote, bundle: full, profile: timing_pairs, strategies: profile,
+     details: true, request: sentinel, algorithms: *pairs6, after: [L-q4]}
+
+# L01 protocol and arms files for stage L (rendered by `pruning_campaign.py profiles --write` from
+# `config/latency/l01.yaml`: only `key` and the pinned `profile` differ; a test enforces the rest).
+latency:
+  protocol: {path: config/research_022/l01-r022.yaml, source: config/latency/l01.yaml,
+             source_sha256: 961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b,
+             key: L01-R022, profile: timing_pairs}
+  arms: {path: config/research_022/latency-arms.yaml, source: config/latency/l08.yaml,
+         key: L08-R022}
+  sufficient_budget: {path: config/latency/l01-sufficient-budget.yaml,
+                      sha256: 4059506da09280cdb0e8d4a94ac6ecef1c786113016e8eee430bef38089db43b}
+  pairs: {single_path_bounded: single_path, incremental_graph_bounded: incremental_graph,
+          metis_history_bounded: metis_history}
+
+# ----------------------------------------------------------------------------- rules
+rules:
+  exactness: >-
+    Contract §11.2 on every non-truncated cell of A1-A4: a cell is non-truncated when neither side
+    has a failed attempt (timeout incl. a `max_quotes` hard stop, worker error, missing record) and
+    both report `truncated_by` in {null, state_cap} and no truncated stage other than the strategy's
+    own name. Identical means: status, error, score, evaluation (the runner's independent replay of
+    the submitted plan, canonical JSON: pools, token pair, input funds and amounts per step),
+    solver-reported outcome, `candidates_considered`/`candidates_truncated` (not under an active M2),
+    and every `search` key outside the §8.1 allowed-to-differ column are equal; the bounded `search` has
+    exactly the reference's keys plus `bound_pruning`. A cell with a truncated side is excluded and
+    listed; `bounded truncated and reference not truncated` is a separate list (target empty). Any
+    difference is a blocking defect for that strategy: recorded with a reproduction command, never a
+    tuning input, never a reason to change a cell set, a grid or a budget.
+  baseline: >-
+    The 14 reference IDs on the report split at HEAD against the 0.2.1 baseline records
+    (`baseline_021`): the deterministic view of each record (status, evaluation, score, error,
+    candidates, `search`, quotes counted, solver-reported outcome, seed) must be equal; a difference
+    is reported per cell, not explained away.
+  work: >-
+    Contract §11.4: per pair, per case family (cohort, direct-pool vs no-direct, pool-family mix of
+    the reference plan, stratum, directed pair), sums and n/p50/p90/max of each unit separately;
+    ratios only bounded/reference of the same unit; a missing value is counted, never 0; the bound's
+    own cost (`bound_evaluations`, `bound_table_cost`, `bound_prepare` from the runner's prepare events)
+    is reported beside the savings, never netted. CL steps and LB bins come from the work pass (A1 on
+    both cohorts and splits; A4 on full_source), which also cross-checks its executed-quote count
+    against the meter and `search.quotes_executed` and its outcome against the ordinary run.
+  timing: >-
+    Contract §11.5: attempted only after the exactness gate passed; L01 rules (warm process, 1 warm-up
+    + 5 repeats, orders fixed and reverse, the A/A noise floor of each experiment, the held-out
+    decision split, the 10 % minimum worthwhile improvement and 2x noise rule) run by `report.latency
+    compare` over `config/research_022/l01-r022.yaml`. A window with any sampled 1-minute load above
+    0.5 x logical CPUs, any host `Sleep` transition, or no load sample or no sleep log is
+    `inconclusive`: no speed claim, no timing disposition. A passed window yields, per strategy, the
+    comparison's per-pair verdict mapped faster -> `improvement`, no_worthwhile_change ->
+    `no_difference`, slower -> `regression`. Cold = the comparison's charged cold stage (fresh worker,
+    prepare + solve); warm = solve only; prepare is its own number; memory is the separate tracemalloc
+    pass of the cold stage. Timing is never repeated for a better verdict.
+  disposition: >-
+    Contract §11.6 per bounded strategy: `reject` if the exactness gate fails on any non-truncated cell
+    or the bounded run returns invalid_plan / algorithm_error where its reference did not;
+    `inconclusive` if exactness holds but a registered question cannot be evaluated (no cell with
+    `pruned_bound > 0`, missing or incomplete records); otherwise `keep_experimental`, "work reduction
+    only", unless the timing gate passed and the verdict is `improvement` ("work and latency"). No
+    default is changed and nothing is adopted.
+  operations: >-
+    Operational choices registered before the first tuning observation (none changes a §11 rule):
+    (1) one invocation per pair group and per group of the 11 other references instead of one
+    `--strategies all` run per bundle (each group's values are the roster's, a test enforces it), so
+    the heavy strategies run in parallel lanes; every bounded strategy runs in the same run as its
+    reference. (2) A2-A5 run on the full_source cohort only. (3) The work pass covers A1 and A4. (4) The
+    stage-I matrix runs `--strategies all` (17 IDs) over the tracked fixture bundle and the sentinel
+    quote, with their report / replay / order-check. (5) Stages R and M execute from the freeze commit
+    (this file with `a5.values`); analysis code is unchanged between the commit that first contains it
+    and the freeze commit except for disclosed fixes. (6) The infrastructure retry of the 0.2.1
+    deviation rule is the only re-execution (`<id>.retry1`); a completed run is never repeated.

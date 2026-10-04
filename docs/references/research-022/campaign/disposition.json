@@ -1,0 +1,29 @@
+{
+ "incremental_graph_bounded": {
+  "cells_compared": 1194,
+  "disposition": "keep_experimental",
+  "exactness_differences": 0,
+  "new_failures": 0,
+  "pruned_bound_total_A1": 66087383,
+  "statement": "work reduction only",
+  "timing_verdict": "inconclusive"
+ },
+ "metis_history_bounded": {
+  "cells_compared": 1978,
+  "disposition": "keep_experimental",
+  "exactness_differences": 0,
+  "new_failures": 0,
+  "pruned_bound_total_A1": 4037274,
+  "statement": "work reduction only",
+  "timing_verdict": "inconclusive"
+ },
+ "single_path_bounded": {
+  "cells_compared": 1194,
+  "disposition": "keep_experimental",
+  "exactness_differences": 0,
+  "new_failures": 0,
+  "pruned_bound_total_A1": 1952682,
+  "statement": "work reduction only",
+  "timing_verdict": "inconclusive"
+ }
+}

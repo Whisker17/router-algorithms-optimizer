@@ -53,12 +53,26 @@ route of the case. Such candidates stay visible: `search_stats["paths_incomplete
 counts them (evaluated, or pruned behind an incomplete shared prefix) and
 `search_stats["incomplete_example"]` names the first; an `ok` result is then the best
 of the candidates that *could* be evaluated.
+
+**Bound pruning** (WHI-1599, `docs/references/research-022/pruning-contract.md` §4, rule S1;
+default **off**). `solve(..., bound_pruning=True)` -- reached only through the registered
+strategy `single_path_bounded`, never by a profile or the reference factory -- skips a
+candidate, after the dead-prefix check and before both budget checks and only while an
+incumbent exists, when the nested-floor output bound `UB` of `pools.bounds` (from its longest
+evaluated prefix) is at most the incumbent's score. Replacement is strict (`score > best`) and
+`score <= gross <= UB` for every supported objective, so plan, evaluation, score, status and
+the `report_candidate` sequence equal the reference's whenever the bounded run is not
+budget-truncated. A skipped candidate is `pruned_bound` (never `paths_pruned`, never a
+failure), makes no quote and leaves no `prefix_out`/`dead` entry. With the parameter off the
+code path, counters and records are the reference's: no `bound_pruning` key, no extra
+prepared object.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from pools.bounds import BoundTable, bound_out, build_bounds
 from pools.result import QuoteStatus
 from routing.algorithms.base import (
     AlgorithmConfig,
@@ -85,6 +99,8 @@ from routing.search import (
 from snapshot.models import Case, SnapshotBundle
 
 NAME = "single_path"
+BOUND_CONTRACT = "R022-Q02/1"  # the pruning contract rule S1 comes from
+BOUND_OBJECTIVES = ("gross_only", "synthetic_fixed_cost", "empirical_cost")  # §7
 
 CAPABILITIES = Capabilities(multi_hop=True, split=False)
 SEARCH_PARAMS = ("max_hops",)
@@ -105,6 +121,18 @@ class PreparedSinglePath:
         self.max_hops = max_hops
 
 
+class PreparedBoundedSinglePath(PreparedSinglePath):
+    """`PreparedSinglePath` plus the eagerly built, immutable output-bound table of the frozen
+    bundle (`pools.bounds`). Only `prepare_bounded` returns it; the reference `prepare` never
+    does (contract §10.2: no new object in the prepared result with the parameter off)."""
+
+    __slots__ = ("bound_table",)
+
+    def __init__(self, index: GraphIndex, max_hops: int, bound_table: BoundTable) -> None:
+        super().__init__(index, max_hops)
+        self.bound_table = bound_table
+
+
 def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedSinglePath:
     refuse_options(config)  # WHI-1548: explicit options are refused, never ignored
     max_hops = config.params.get("max_hops")
@@ -113,6 +141,32 @@ def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedSinglePa
             f"{NAME} requires search.max_hops as an integer >= 1, got {max_hops!r}"
         )
     return PreparedSinglePath(index=build_graph_index(bundle), max_hops=max_hops)
+
+
+def prepare_bounded(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedBoundedSinglePath:
+    """The reference preparation plus every pool direction's output bound (charged to the
+    preparation step, contract §10.3)."""
+    base = prepare(bundle, config)
+    return PreparedBoundedSinglePath(base.index, base.max_hops, build_bounds(bundle))
+
+
+def _path_upper_bound(
+    case: Case, path: Path, prefix_out: dict[Path, int], table: BoundTable
+) -> int | None:
+    """`UB(path)`: nested floors of the per-hop rates applied to the exact output of the
+    longest already-evaluated prefix (`case.amount_in` for none) -- output-bounds §5.1. `None`
+    (no bound) if any remaining hop has none: such a candidate is never pruned."""
+    k, amount = 0, case.amount_in
+    for j in range(len(path) - 1, 0, -1):
+        if path[:j] in prefix_out:
+            k, amount = j, prefix_out[path[:j]]
+            break
+    for edge in path[k:]:
+        bound = table.bounds.get((edge.pool_id, edge.token_in))
+        if bound is None:
+            return None
+        amount = bound_out(bound.rate, amount)
+    return amount
 
 
 def _new_quotes_needed(
@@ -133,13 +187,38 @@ def _new_quotes_needed(
 
 
 def solve(
-    case: Case, context: SolveContext, budget: Budget, *, cache: QuoteCache | None = None
+    case: Case,
+    context: SolveContext,
+    budget: Budget,
+    *,
+    cache: QuoteCache | None = None,
+    bound_pruning: bool = False,
 ) -> SolveResult:
     """`cache` lets a composing solver (`path_split`) share one per-solve quote memo;
-    the quote budget then counts every miss of that shared cache."""
+    the quote budget then counts every miss of that shared cache. `bound_pruning=True`
+    enables rule S1 (module docstring); it needs the `PreparedBoundedSinglePath` of
+    `prepare_bounded` and a supported objective (pruning-contract §7)."""
     prepared = context.prepared
     if not isinstance(prepared, PreparedSinglePath):
         raise TypeError(f"{NAME}.solve needs the PreparedSinglePath returned by prepare()")
+    table: BoundTable | None = None
+    if bound_pruning:
+        if not isinstance(prepared, PreparedBoundedSinglePath):
+            raise TypeError(
+                f"{NAME}.solve(bound_pruning=True) needs the PreparedBoundedSinglePath "
+                "returned by prepare_bounded()"
+            )
+        table = prepared.bound_table
+        if context.objective.mode not in BOUND_OBJECTIVES:
+            return SolveResult(
+                case_id=case.case_id,
+                algorithm=NAME,
+                status=SolveStatus.UNSUPPORTED,
+                error=(
+                    f"objective {context.objective.mode!r} is outside the bound-pruning "
+                    f"objectives {list(BOUND_OBJECTIVES)} (score <= gross is not proved)"
+                ),
+            )
     objective = context.objective
     bundle = context.bundle
     max_hops = prepared.max_hops
@@ -150,6 +229,7 @@ def solve(
 
     best: tuple[RoutePlan, Evaluation, int, Path] | None = None
     enumerated = evaluated = pruned = pruned_incomplete = truncated = 0
+    pruned_bound = bound_evaluations = bound_no_bound = 0
     truncated_by: str | None = None
     direct_candidates = 0
     failures: dict[str, int] = {}
@@ -168,6 +248,14 @@ def solve(
             if dead_reason == QuoteStatus.INCOMPLETE_SNAPSHOT.value:
                 pruned_incomplete += 1
             continue
+        if table is not None and best is not None:  # rule S1: UB <= incumbent score => skip
+            bound_evaluations += 1
+            upper = _path_upper_bound(case, path, prefix_out, table)
+            if upper is None:
+                bound_no_bound += 1
+            elif upper <= best[2]:
+                pruned_bound += 1
+                continue
         if budget.max_candidates is not None and evaluated >= budget.max_candidates:
             truncated_by, truncated = "max_candidates", truncated + 1
             continue
@@ -179,6 +267,9 @@ def solve(
         plan = path_plan(case, path)
         evaluation = evaluate(bundle, case, plan, objective, quote=cache)
         evaluated += 1
+        cost = evaluation.estimated_cost
+        if table is not None and cost is not None and cost < 0:  # score <= gross fails (§7)
+            raise ValueError(f"{NAME} bound pruning: negative estimated cost {cost}")
         for step in evaluation.trace:
             if step.status in (QuoteStatus.OK.value, "zero_input"):
                 prefix_out[path[: step.step + 1]] = step.amount_out
@@ -215,10 +306,25 @@ def solve(
         "incomplete_example": incomplete[0] if incomplete else None,
         "best_hops": None if best is None else len(best[3]),
     }
+    if table is not None:
+        stats["bound_pruning"] = {
+            "contract": BOUND_CONTRACT,
+            "reference": NAME,
+            "rule": "S1",
+            "pruned_bound": pruned_bound,
+            "bound_evaluations": bound_evaluations,
+            "bound_no_bound": bound_no_bound,
+            "bound_table_cost": 0,
+            "prepare": table.prepare_record(),
+            "exactness": {
+                "label": "exact" if truncated_by is None else "not_exact_budget_binding",
+                "binding": [] if truncated_by is None else [truncated_by],
+            },
+        }
     common: dict[str, Any] = {
         "case_id": case.case_id,
         "algorithm": NAME,
-        "candidates_considered": evaluated + pruned,
+        "candidates_considered": evaluated + pruned + pruned_bound,
         "candidates_truncated": truncated,
         "search_stats": stats,
     }

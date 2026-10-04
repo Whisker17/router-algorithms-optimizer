@@ -523,6 +523,43 @@ def _performance_lines(view: QuoteView, record: dict[str, Any]) -> list[str]:
     ]
 
 
+def _bound_pruning_lines(record: dict[str, Any]) -> list[str]:
+    """WHI-1599 (R022-Q02/1 §10.4): the recorded `search.bound_pruning` block of a bounded
+    strategy -- its own counters, never folded into the reference's; empty for any other."""
+    search = record.get("search")
+    block = search.get("bound_pruning") if isinstance(search, dict) else None
+    if not isinstance(block, dict):
+        return []
+    prepare: dict[str, Any] = block["prepare"] if isinstance(block.get("prepare"), dict) else {}
+    exactness: dict[str, Any] = (
+        block["exactness"] if isinstance(block.get("exactness"), dict) else {}
+    )
+    binding = exactness.get("binding") or []
+    chunk: list[str] = []
+    if "p0" in block:  # WHI-1600: the chunk searches (incremental_graph, metis_history)
+        chunk.append(
+            f"    retained simpler candidate present (P0): {block['p0']}"
+            + (
+                f"; rule M2 active: {block['m2'].get('active')} (gate {block['m2'].get('gate')})"
+                if isinstance(block.get("m2"), dict)
+                else ""
+            )
+        )
+    return [
+        f"  bound pruning ({block.get('contract')} rule {block.get('rule')}: exact acceleration "
+        f"of {block.get('reference')}):",
+        f"    pruned by bound {block.get('pruned_bound')} (not failures), bound evaluations "
+        f"{block.get('bound_evaluations')}, evaluations without a bound "
+        f"{block.get('bound_no_bound')}, bound table cost {block.get('bound_table_cost')}",
+        f"    bound table (built in preparation): {prepare.get('pool_directions')} pool "
+        f"directions, {prepare.get('bounded')} bounded, {prepare.get('rate_only')} rate only, "
+        f"{prepare.get('no_bound')} no bound",
+        *chunk,
+        f"    exactness: {exactness.get('label')}"
+        + (f" (binding: {', '.join(map(str, binding))})" if binding else ""),
+    ]
+
+
 def _diagnostics_lines(record: dict[str, Any]) -> list[str]:
     """The record's research-diagnostics block; empty for a record without one."""
     view = read_view(record)
@@ -595,6 +632,7 @@ def render_details(view: QuoteView) -> str:
                 lines.append(f"  PARTIAL DIAGNOSTIC -- {candidate['label']}:")
                 lines += _plan_lines(view, candidate["evaluation"], "    ")
         lines += _performance_lines(view, record)
+        lines += _bound_pruning_lines(record)
         lines += _diagnostics_lines(record)
     return "\n".join(lines) + "\n"
 

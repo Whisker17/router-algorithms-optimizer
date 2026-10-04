@@ -54,6 +54,19 @@ the shared profile; `graph.label_pruning` is **not read**. `algorithm_options.me
 `max_labels_per_signature` (1..1,000,000), `max_frontier_labels` (1..10,000,000), all
 required, no solver defaults. Bounded preset v1 (`PRESET`): `history / 1 / 1024`.
 
+**Bound pruning** (WHI-1600, `docs/references/research-022/pruning-contract.md` §6, rules M1/M2;
+default **off**). `solve(..., bound_pruning=True)` -- reached only through the registered
+strategy `metis_history_bounded`, never by a profile or the reference factory -- skips a
+relaxation whose arrival bound (`routing.algorithms.chunk_pruning`) is at most the chunk's best
+marginal so far. **M1** (a relaxation into the target) is always on: an arrival creates no label, so
+dominance, both caps, the layer order and the label counters are untouched, even on a chunk the
+reference caps. **M2** (a relaxation into another token, bounded by the per-solve `U_h` table) runs
+only behind the structural gate `G_M2` (§6.3): outside it a removed label could change dominance or
+a cap for the others (§6.4 reproduces a better-than-reference plan), so it is never enabled. A
+skipped relaxation is still a relaxation (`max_candidates` points stay put), makes no quote and is
+never a failure. Pruning needs the retained `path_split` candidate (P0). With the parameter off
+there is no `bound_pruning` key and no extra prepared object.
+
 **Diagnostics are not the solve.** `diagnose_history` (history-labels.md §9.2) is a separate,
 unbudgeted correctness pass with its own caches and counters; the registry, runner and
 profiles call `solve` only.
@@ -68,9 +81,10 @@ from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Any
 
+from pools.bounds import BoundTable, build_bounds
 from pools.constant_product import SOURCES
 from pools.result import SwapResult
-from routing.algorithms import incremental_graph, metis_inspired, path_split
+from routing.algorithms import chunk_pruning, incremental_graph, metis_inspired, path_split
 from routing.algorithms.base import (
     AlgorithmConfig,
     AlgorithmFactory,
@@ -104,6 +118,8 @@ from routing.search import GraphIndex, Path, QuoteCache, enumerate_paths, path_l
 from snapshot.models import Case, ConstantProductPoolState, PoolState, SnapshotBundle
 
 NAME = "metis_history"
+BOUNDED_NAME = "metis_history_bounded"  # the strategy that runs `solve(bound_pruning=True)`
+BOUND_CONTRACT = "R022-Q02/1"  # the pruning contract rules M1/M2 come from
 REFERENCE = metis_inspired.NAME
 
 CAPABILITIES = metis_inspired.CAPABILITIES
@@ -231,6 +247,15 @@ class PreparedMetisHistory:
         return self.graph.path_split.single_path.max_hops
 
 
+@dataclasses.dataclass(frozen=True)
+class PreparedBoundedMetisHistory(PreparedMetisHistory):
+    """`PreparedMetisHistory` plus the eagerly built, immutable output-bound table of the frozen
+    bundle (`pools.bounds`). Only `prepare_bounded` returns it; the reference `prepare` never
+    does (contract §10.2: no new object in the prepared result with the parameter off)."""
+
+    bound_table: BoundTable
+
+
 def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedMetisHistory:
     options = validated_options(FACTORY, config.options)  # the public entry validates too
     hops = config.params.get("label_hops")
@@ -249,6 +274,15 @@ def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedMetisHis
         )
     return PreparedMetisHistory(
         graph, hops, upward_safe_edges(bundle), MappingProxyType(dict(options))
+    )
+
+
+def prepare_bounded(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedBoundedMetisHistory:
+    """The reference preparation plus every pool direction's output bound (charged to the
+    preparation step, contract §10.3)."""
+    base = prepare(bundle, config)
+    return PreparedBoundedMetisHistory(
+        base.graph, base.label_hops, base.safe_edges, base.options, build_bounds(bundle)
     )
 
 
@@ -326,6 +360,7 @@ def choose_history(
     safe: frozenset[tuple[str, str]],
     region: dict[tuple[str, int], bool],
     work: Work,
+    pruner: chunk_pruning.LabelPruner | None = None,
 ) -> Choice | None:
     """One chunk of the selector (history-labels.md §4, rules R1-R8), on `alloc`'s committed
     flows and token edges, with `metis_inspired`'s counters (`relaxations`, `label_cycle`,
@@ -363,6 +398,13 @@ def choose_history(
                 relaxed += 1
                 alloc.relaxations += 1
                 work.label_relaxations += 1
+                if (  # rules M1/M2: every arrival below this relaxation is <= the chunk's best
+                    pruner is not None
+                    and best is not None
+                    and lab.amount > 0  # a zero input makes no pool call: nothing to save
+                    and pruner.skip(e, lab.amount, hops - k, best[0])
+                ):
+                    continue
                 result = alloc.step(e, lab.amount, k)
                 if isinstance(result, metis_inspired._Failure):
                     alloc._count(result, p)
@@ -428,12 +470,21 @@ def _termination(truncated_by: str | None, capped: int) -> str:
     return "state_cap" if capped else "complete"
 
 
-def solve(case: Case, context: SolveContext, budget: Budget) -> SolveResult:
+def solve(
+    case: Case, context: SolveContext, budget: Budget, *, bound_pruning: bool = False
+) -> SolveResult:
+    """`bound_pruning=True` enables rules M1/M2 (module docstring); it needs the
+    `PreparedBoundedMetisHistory` of `prepare_bounded`."""
     prepared = context.prepared
     if not isinstance(prepared, PreparedMetisHistory):
         raise TypeError(f"{NAME}.solve needs the PreparedMetisHistory returned by prepare()")
+    if bound_pruning and not isinstance(prepared, PreparedBoundedMetisHistory):
+        raise TypeError(
+            f"{NAME}.solve(bound_pruning=True) needs the PreparedBoundedMetisHistory "
+            "returned by prepare_bounded()"
+        )
     with counted_evaluations() as evaluations:  # the whole solve, fallback replays included
-        return _solve(case, context, budget, prepared, evaluations)
+        return _solve(case, context, budget, prepared, evaluations, bound_pruning)
 
 
 def _solve(
@@ -442,6 +493,7 @@ def _solve(
     budget: Budget,
     prepared: PreparedMetisHistory,
     evaluations: EvaluationCounter,
+    bound_pruning: bool = False,
 ) -> SolveResult:
     bundle, objective, opts = context.bundle, context.objective, prepared.options
     ps_prepared = prepared.graph.path_split
@@ -481,6 +533,22 @@ def _solve(
     region: dict[tuple[str, int], bool] = {}  # per solve: depends on the request
     dist = hops_to_target(index, case.token_in, case.token_out)
     reachable = case.token_in != case.token_out and dist.get(case.token_in, hops + 1) <= hops
+    pruner: chunk_pruning.LabelPruner | None = None
+    table: BoundTable | None = None
+    m2_gate, m2_table = "n/a", None
+    if bound_pruning:
+        assert isinstance(prepared, PreparedBoundedMetisHistory)
+        table = prepared.bound_table
+        if best is not None:  # P0 (contract §5.2): the retained simpler candidate exists
+            if reachable:
+                m2_gate, labels_exist = chunk_pruning.m2_gate(
+                    index, case.token_in, case.token_out, hops, dist, opts
+                )
+                if m2_gate == "open" and labels_exist:  # M2 only behind G_M2, and only if useful
+                    m2_table = chunk_pruning.UTable(
+                        index, case.token_in, case.token_out, hops, table.bounds
+                    )
+            pruner = chunk_pruning.LabelPruner(table.bounds, alloc.flows, case.token_out, m2_table)
     amounts = chunk_amounts(case.amount_in, prepared.graph.chunks)
     chunk_paths: list[Path] = []
     chunk_inputs: list[int] = []
@@ -510,6 +578,7 @@ def _solve(
                 safe=prepared.safe_edges,
                 region=region,
                 work=work,
+                pruner=pruner,
             )
             work.chunks_state_capped += work.drops() > drops  # R8
             if k != last and (choice is None or choice[0] == 0):
@@ -632,6 +701,22 @@ def _solve(
             "total": total,
         },
     }
+    if table is not None:
+        stats["bound_pruning"] = {
+            "contract": BOUND_CONTRACT,
+            "reference": NAME,
+            "rule": "M1+M2" if m2_table is not None else "M1",
+            "pruned_bound": pruner.pruned_bound if pruner else 0,
+            "bound_evaluations": pruner.bound_evaluations if pruner else 0,
+            "bound_no_bound": pruner.bound_no_bound if pruner else 0,
+            "bound_table_cost": m2_table.cost if m2_table is not None else 0,
+            "prepare": table.prepare_record(),
+            "p0": pruner is not None,
+            "m2": {"active": m2_table is not None, "gate": m2_gate},
+            "exactness": incremental_graph.budget_exactness(
+                own_cut, ps.search_stats.get("truncated_by")
+            ),
+        }
     common: dict[str, Any] = {
         "case_id": case.case_id,
         "algorithm": NAME,
@@ -640,7 +725,9 @@ def _solve(
         "search_stats": stats,
     }
     source = best[0] if best is not None else None
-    stats["r021"] = _diagnostics(bundle, prepared, stats, work, source)
+    stats["r021"] = _diagnostics(
+        bundle, prepared, stats, work, source, BOUNDED_NAME if bound_pruning else NAME
+    )
     if best is not None:
         _, plan, ev, score, route_paths = best
         stats["chosen_source"] = source
@@ -699,6 +786,7 @@ def _diagnostics(
     stats: Mapping[str, Any],
     work: Work,
     source: str | None,
+    algorithm: str = NAME,
 ) -> dict[str, Any]:
     """The `r021.diagnostics/1` record (history-labels.md §5, §7, §8): no bound is claimed."""
     dom = domain(bundle, prepared)
@@ -710,7 +798,7 @@ def _diagnostics(
     return {
         "schema": "r021.diagnostics/1",
         "contract": "R021-C/1",
-        "algorithm": NAME,
+        "algorithm": algorithm,
         "domain": dom,
         "candidate_domain_hash": hashlib.sha256(
             json.dumps(dom, sort_keys=True).encode()

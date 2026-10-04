@@ -1,0 +1,1931 @@
+{
+ "analysis_source": {
+  "schedule_sha256": "becf5ba653257214ad21fe0b7352c812f0cacfebc62b91ab707719de015fad81",
+  "tools_sha256": {
+   "pruning_analysis.py": "bde4a71153ee08187e4013f83ec81da1d9b15ae8cb5afc1b029914b9fc53e5ee",
+   "pruning_campaign.py": "c6b5116845889d6a44e86f1ed2e2b779d2cc4c8026ba3da8b3758562f703d5e5",
+   "pruning_work.py": "f40d1488c41e38e213c080c2c312bc5d5c586059a6636e88bf5d076aeec3a01c"
+  }
+ },
+ "binding_budgets": {
+  "M-A5-ig-c25-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 25
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "incremental_graph",
+   "score_vs_reference": {
+    "equal": 301,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 302
+   }
+  },
+  "M-A5-ig-c25-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 25
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "incremental_graph",
+   "score_vs_reference": {
+    "equal": 96,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 96
+   }
+  },
+  "M-A5-ig-c50-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 50
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "incremental_graph",
+   "score_vs_reference": {
+    "equal": 301,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 302
+   }
+  },
+  "M-A5-ig-c50-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 50
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "incremental_graph",
+   "score_vs_reference": {
+    "equal": 96,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 96
+   }
+  },
+  "M-A5-ig-q25-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 25
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [
+    "emp-779ded-78c1b0-low-3",
+    "emp-779ded-78c1b0-medium-2",
+    "emp-779ded-cda86a-large-2",
+    "emp-779ded-cda86a-low-1",
+    "emp-779ded-cda86a-low-4",
+    "emp-779ded-cda86a-medium-3",
+    "emp-78c1b0-779ded-medium-3",
+    "emp-78c1b0-779ded-medium-4",
+    "nod-c96de2-deadde-large-1",
+    "nod-c96de2-deadde-medium-2",
+    "nod-1bdd88-09bc4e-large-2",
+    "nod-1bdd88-09bc4e-low-2",
+    "nod-1bdd88-09bc4e-medium-2",
+    "bnd-deadde-78c1b0-liq_at",
+    "bnd-deadde-78c1b0-liq_above"
+   ],
+   "lower_cases": [],
+   "pair": "incremental_graph",
+   "score_vs_reference": {
+    "equal": 286,
+    "higher": 15,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 89,
+    "ref_cut/bnd_clean": 21,
+    "ref_cut/bnd_cut": 192
+   }
+  },
+  "M-A5-ig-q25-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 25
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [
+    "emp-779ded-78c1b0-low-2",
+    "emp-779ded-cda86a-low-3",
+    "emp-779ded-cda86a-medium-2",
+    "emp-78c1b0-779ded-medium-2",
+    "emp-deadde-78c1b0-large-4",
+    "nod-c96de2-deadde-large-2",
+    "nod-09bc4e-1bdd88-large-2",
+    "nod-1bdd88-09bc4e-large-1",
+    "nod-1bdd88-09bc4e-low-1",
+    "nod-1bdd88-09bc4e-medium-1"
+   ],
+   "lower_cases": [],
+   "pair": "incremental_graph",
+   "score_vs_reference": {
+    "equal": 86,
+    "higher": 10,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 24,
+    "ref_cut/bnd_clean": 12,
+    "ref_cut/bnd_cut": 60
+   }
+  },
+  "M-A5-ig-q50-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 50
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [
+    "emp-09bc4e-201eba-large-1",
+    "emp-09bc4e-201eba-large-2",
+    "emp-09bc4e-201eba-medium-1",
+    "emp-09bc4e-201eba-medium-3",
+    "emp-09bc4e-201eba-medium-4",
+    "emp-09bc4e-78c1b0-large-2",
+    "emp-09bc4e-78c1b0-large-3",
+    "emp-09bc4e-78c1b0-large-4",
+    "emp-09bc4e-78c1b0-low-3",
+    "emp-09bc4e-78c1b0-low-4",
+    "emp-09bc4e-78c1b0-medium-1",
+    "emp-09bc4e-78c1b0-medium-2",
+    "emp-201eba-09bc4e-low-1",
+    "emp-201eba-09bc4e-low-2",
+    "emp-201eba-09bc4e-low-3",
+    "emp-201eba-09bc4e-medium-1",
+    "emp-201eba-09bc4e-medium-2",
+    "emp-201eba-09bc4e-medium-4",
+    "emp-201eba-779ded-large-4",
+    "emp-201eba-779ded-medium-2",
+    "emp-201eba-78c1b0-large-2",
+    "emp-201eba-78c1b0-large-3",
+    "emp-201eba-78c1b0-large-4",
+    "emp-201eba-78c1b0-low-1",
+    "emp-201eba-78c1b0-low-2",
+    "emp-201eba-78c1b0-low-4",
+    "emp-201eba-78c1b0-medium-1",
+    "emp-201eba-78c1b0-medium-2",
+    "emp-201eba-78c1b0-medium-3",
+    "emp-779ded-09bc4e-low-2",
+    "emp-779ded-201eba-low-1",
+    "emp-779ded-201eba-low-3",
+    "emp-779ded-201eba-low-4",
+    "emp-779ded-201eba-medium-2",
+    "emp-779ded-201eba-medium-3",
+    "emp-779ded-201eba-medium-4",
+    "emp-779ded-78c1b0-low-1",
+    "emp-779ded-78c1b0-low-4",
+    "emp-78c1b0-09bc4e-large-2",
+    "emp-78c1b0-09bc4e-large-3",
+    "emp-78c1b0-09bc4e-large-4",
+    "emp-78c1b0-09bc4e-low-1",
+    "emp-78c1b0-09bc4e-low-4",
+    "emp-78c1b0-09bc4e-medium-1",
+    "emp-78c1b0-09bc4e-medium-2",
+    "emp-78c1b0-09bc4e-medium-3",
+    "emp-78c1b0-201eba-large-1",
+    "emp-78c1b0-201eba-large-2",
+    "emp-78c1b0-201eba-large-3",
+    "emp-78c1b0-201eba-low-4",
+    "emp-78c1b0-201eba-medium-2",
+    "emp-78c1b0-201eba-medium-3",
+    "emp-78c1b0-201eba-medium-4",
+    "emp-78c1b0-779ded-low-2",
+    "emp-78c1b0-779ded-medium-1",
+    "emp-78c1b0-deadde-large-1",
+    "emp-78c1b0-deadde-large-2",
+    "emp-78c1b0-deadde-large-3",
+    "emp-78c1b0-deadde-low-1",
+    "emp-78c1b0-deadde-low-3",
+    "emp-78c1b0-deadde-low-4",
+    "emp-78c1b0-deadde-medium-1",
+    "emp-78c1b0-deadde-medium-2",
+    "emp-78c1b0-deadde-medium-3",
+    "emp-cda86a-779ded-medium-1",
+    "emp-cda86a-779ded-medium-3",
+    "emp-deadde-78c1b0-low-1",
+    "emp-deadde-78c1b0-low-3",
+    "emp-deadde-78c1b0-low-4",
+    "emp-deadde-78c1b0-medium-4",
+    "emp-deadde-cda86a-low-2",
+    "emp-deadde-cda86a-low-3",
+    "emp-deadde-cda86a-low-4",
+    "nod-deadde-c96de2-large-2",
+    "nod-deadde-c96de2-medium-1",
+    "nod-09bc4e-1bdd88-large-1",
+    "nod-09bc4e-1bdd88-low-1",
+    "nod-09bc4e-1bdd88-medium-1",
+    "bnd-78c1b0-deadde-liq_at",
+    "bnd-78c1b0-deadde-liq_above",
+    "bnd-09bc4e-78c1b0-liq_at",
+    "bnd-09bc4e-78c1b0-liq_above",
+    "bnd-78c1b0-09bc4e-liq_at",
+    "bnd-78c1b0-09bc4e-liq_above",
+    "bnd-201eba-09bc4e-liq_at",
+    "bnd-201eba-09bc4e-liq_above",
+    "bnd-201eba-cda86a-liq_at",
+    "bnd-201eba-cda86a-liq_above"
+   ],
+   "lower_cases": [],
+   "pair": "incremental_graph",
+   "score_vs_reference": {
+    "equal": 213,
+    "higher": 88,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 147,
+    "ref_cut/bnd_clean": 91,
+    "ref_cut/bnd_cut": 64
+   }
+  },
+  "M-A5-ig-q50-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 50
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [
+    "emp-09bc4e-201eba-large-3",
+    "emp-09bc4e-201eba-medium-2",
+    "emp-09bc4e-779ded-large-2",
+    "emp-09bc4e-78c1b0-large-1",
+    "emp-09bc4e-78c1b0-medium-3",
+    "emp-201eba-09bc4e-low-4",
+    "emp-201eba-09bc4e-medium-3",
+    "emp-201eba-78c1b0-large-1",
+    "emp-201eba-78c1b0-low-3",
+    "emp-201eba-78c1b0-medium-4",
+    "emp-779ded-201eba-low-2",
+    "emp-779ded-78c1b0-low-2",
+    "emp-78c1b0-09bc4e-large-1",
+    "emp-78c1b0-09bc4e-medium-4",
+    "emp-78c1b0-201eba-large-4",
+    "emp-78c1b0-201eba-low-3",
+    "emp-78c1b0-201eba-medium-1",
+    "emp-78c1b0-deadde-large-4",
+    "emp-78c1b0-deadde-low-2",
+    "emp-78c1b0-deadde-medium-4",
+    "emp-cda86a-779ded-medium-2",
+    "emp-deadde-78c1b0-low-2",
+    "emp-deadde-cda86a-low-1",
+    "nod-deadde-c96de2-medium-2",
+    "nod-09bc4e-1bdd88-large-2",
+    "nod-09bc4e-1bdd88-low-2",
+    "nod-09bc4e-1bdd88-medium-2"
+   ],
+   "lower_cases": [],
+   "pair": "incremental_graph",
+   "score_vs_reference": {
+    "equal": 69,
+    "higher": 27,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 48,
+    "ref_cut/bnd_clean": 29,
+    "ref_cut/bnd_cut": 19
+   }
+  },
+  "M-A5-mh-c25-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 25
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "metis_history",
+   "score_vs_reference": {
+    "equal": 301,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 302
+   }
+  },
+  "M-A5-mh-c25-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 25
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "metis_history",
+   "score_vs_reference": {
+    "equal": 96,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 96
+   }
+  },
+  "M-A5-mh-c50-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 50
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "metis_history",
+   "score_vs_reference": {
+    "equal": 301,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 302
+   }
+  },
+  "M-A5-mh-c50-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 50
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "metis_history",
+   "score_vs_reference": {
+    "equal": 96,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 96
+   }
+  },
+  "M-A5-mh-q25-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 25
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [
+    "emp-779ded-cda86a-medium-1",
+    "emp-779ded-cda86a-medium-4",
+    "emp-78c1b0-779ded-medium-4",
+    "nod-1bdd88-09bc4e-large-2",
+    "nod-1bdd88-09bc4e-low-2",
+    "nod-1bdd88-09bc4e-medium-2"
+   ],
+   "lower_cases": [],
+   "pair": "metis_history",
+   "score_vs_reference": {
+    "equal": 295,
+    "higher": 6,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 90,
+    "ref_cut/bnd_clean": 6,
+    "ref_cut/bnd_cut": 206
+   }
+  },
+  "M-A5-mh-q25-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 25
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [
+    "emp-78c1b0-779ded-medium-2",
+    "nod-1bdd88-09bc4e-large-1",
+    "nod-1bdd88-09bc4e-low-1",
+    "nod-1bdd88-09bc4e-medium-1"
+   ],
+   "lower_cases": [],
+   "pair": "metis_history",
+   "score_vs_reference": {
+    "equal": 92,
+    "higher": 4,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 24,
+    "ref_cut/bnd_clean": 4,
+    "ref_cut/bnd_cut": 68
+   }
+  },
+  "M-A5-mh-q50-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 50
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [
+    "emp-09bc4e-201eba-large-2",
+    "emp-09bc4e-201eba-medium-4",
+    "emp-09bc4e-78c1b0-medium-2",
+    "emp-201eba-78c1b0-large-3",
+    "emp-201eba-78c1b0-large-4",
+    "emp-201eba-78c1b0-low-1",
+    "emp-201eba-78c1b0-low-2",
+    "emp-201eba-78c1b0-low-4",
+    "emp-201eba-78c1b0-medium-1",
+    "emp-201eba-78c1b0-medium-2",
+    "emp-201eba-78c1b0-medium-3",
+    "emp-779ded-09bc4e-medium-4",
+    "emp-779ded-201eba-medium-2",
+    "emp-78c1b0-09bc4e-medium-2",
+    "emp-78c1b0-09bc4e-medium-3",
+    "emp-78c1b0-201eba-large-1",
+    "emp-78c1b0-201eba-medium-2",
+    "emp-78c1b0-deadde-low-4",
+    "emp-cda86a-779ded-medium-4",
+    "emp-deadde-78c1b0-low-3",
+    "emp-deadde-cda86a-low-2",
+    "nod-c96de2-09bc4e-large-2",
+    "nod-c96de2-09bc4e-low-2",
+    "nod-c96de2-09bc4e-medium-2",
+    "nod-c96de2-deadde-low-1",
+    "nod-c96de2-deadde-medium-2",
+    "nod-09bc4e-1bdd88-low-1"
+   ],
+   "lower_cases": [],
+   "pair": "metis_history",
+   "score_vs_reference": {
+    "equal": 274,
+    "higher": 27,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 161,
+    "ref_cut/bnd_clean": 30,
+    "ref_cut/bnd_cut": 111
+   }
+  },
+  "M-A5-mh-q50-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 50
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [
+    "emp-201eba-09bc4e-medium-3",
+    "emp-201eba-78c1b0-large-1",
+    "emp-201eba-78c1b0-low-3",
+    "emp-201eba-78c1b0-medium-4",
+    "emp-78c1b0-09bc4e-medium-4",
+    "emp-deadde-78c1b0-low-2",
+    "nod-c96de2-09bc4e-large-1",
+    "nod-c96de2-09bc4e-low-1",
+    "nod-c96de2-09bc4e-medium-1",
+    "nod-c96de2-deadde-low-2",
+    "nod-c96de2-deadde-medium-1",
+    "nod-deadde-c96de2-large-1"
+   ],
+   "lower_cases": [],
+   "pair": "metis_history",
+   "score_vs_reference": {
+    "equal": 84,
+    "higher": 12,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 48,
+    "ref_cut/bnd_clean": 13,
+    "ref_cut/bnd_cut": 35
+   }
+  },
+  "M-A5-sp-c25-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 25
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [
+    "emp-09bc4e-201eba-low-1",
+    "emp-09bc4e-201eba-low-3",
+    "emp-09bc4e-201eba-low-4",
+    "emp-09bc4e-779ded-low-1",
+    "emp-09bc4e-78c1b0-low-2",
+    "emp-09bc4e-78c1b0-low-3",
+    "emp-09bc4e-78c1b0-low-4",
+    "emp-09bc4e-78c1b0-medium-1",
+    "emp-09bc4e-78c1b0-medium-2",
+    "emp-09bc4e-78c1b0-medium-4",
+    "emp-779ded-cda86a-low-2",
+    "emp-78c1b0-09bc4e-low-1",
+    "emp-78c1b0-09bc4e-low-4",
+    "emp-78c1b0-201eba-low-1",
+    "emp-78c1b0-201eba-low-4",
+    "emp-78c1b0-201eba-medium-4",
+    "emp-cda86a-201eba-large-1",
+    "emp-cda86a-201eba-large-3",
+    "emp-cda86a-201eba-large-4",
+    "emp-cda86a-201eba-low-1",
+    "emp-cda86a-201eba-low-2",
+    "emp-cda86a-201eba-low-4",
+    "emp-cda86a-201eba-medium-1",
+    "emp-cda86a-201eba-medium-2",
+    "emp-cda86a-201eba-medium-3",
+    "emp-cda86a-779ded-low-1",
+    "emp-cda86a-779ded-low-2",
+    "emp-cda86a-779ded-low-3",
+    "nod-deadde-c96de2-low-1",
+    "bnd-deadde-78c1b0-liq_at",
+    "bnd-deadde-78c1b0-liq_above",
+    "bnd-78c1b0-09bc4e-liq_at",
+    "bnd-78c1b0-09bc4e-liq_above",
+    "bnd-09bc4e-201eba-liq_at",
+    "bnd-09bc4e-201eba-liq_above",
+    "bnd-cda86a-201eba-liq_at",
+    "bnd-cda86a-201eba-liq_above"
+   ],
+   "lower_cases": [],
+   "pair": "single_path",
+   "score_vs_reference": {
+    "equal": 264,
+    "higher": 37,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 66,
+    "ref_cut/bnd_clean": 234,
+    "ref_cut/bnd_cut": 2
+   }
+  },
+  "M-A5-sp-c25-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 25
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [
+    "emp-09bc4e-201eba-low-2",
+    "emp-09bc4e-78c1b0-low-1",
+    "emp-09bc4e-78c1b0-medium-3",
+    "emp-78c1b0-09bc4e-low-2",
+    "emp-78c1b0-201eba-low-3",
+    "emp-cda86a-201eba-large-2",
+    "emp-cda86a-201eba-low-3",
+    "emp-cda86a-201eba-medium-4",
+    "emp-cda86a-779ded-low-4"
+   ],
+   "lower_cases": [],
+   "pair": "single_path",
+   "score_vs_reference": {
+    "equal": 87,
+    "higher": 9,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 30,
+    "ref_cut/bnd_clean": 66
+   }
+  },
+  "M-A5-sp-c50-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 50
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "single_path",
+   "score_vs_reference": {
+    "equal": 301,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 271,
+    "ref_cut/bnd_clean": 31
+   }
+  },
+  "M-A5-sp-c50-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_candidates",
+    "p": 50
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [],
+   "lower_cases": [],
+   "pair": "single_path",
+   "score_vs_reference": {
+    "equal": 96,
+    "higher": 0,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 90,
+    "ref_cut/bnd_clean": 6
+   }
+  },
+  "M-A5-sp-q25-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 25
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [
+    "emp-09bc4e-201eba-low-1",
+    "emp-09bc4e-201eba-low-3",
+    "emp-09bc4e-201eba-low-4",
+    "emp-09bc4e-779ded-low-1",
+    "emp-09bc4e-78c1b0-low-2",
+    "emp-09bc4e-78c1b0-low-3",
+    "emp-09bc4e-78c1b0-low-4",
+    "emp-09bc4e-78c1b0-medium-1",
+    "emp-09bc4e-78c1b0-medium-2",
+    "emp-09bc4e-78c1b0-medium-4",
+    "emp-201eba-cda86a-low-1",
+    "emp-201eba-cda86a-low-3",
+    "emp-201eba-cda86a-low-4",
+    "emp-201eba-cda86a-medium-2",
+    "emp-201eba-cda86a-medium-4",
+    "emp-779ded-09bc4e-low-1",
+    "emp-779ded-09bc4e-low-2",
+    "emp-779ded-09bc4e-low-4",
+    "emp-779ded-09bc4e-medium-2",
+    "emp-779ded-09bc4e-medium-3",
+    "emp-779ded-78c1b0-low-4",
+    "emp-779ded-cda86a-low-2",
+    "emp-78c1b0-09bc4e-low-1",
+    "emp-78c1b0-09bc4e-low-3",
+    "emp-78c1b0-09bc4e-low-4",
+    "emp-78c1b0-201eba-low-1",
+    "emp-78c1b0-201eba-low-2",
+    "emp-78c1b0-201eba-low-4",
+    "emp-78c1b0-201eba-medium-4",
+    "emp-cda86a-201eba-large-1",
+    "emp-cda86a-201eba-large-3",
+    "emp-cda86a-201eba-large-4",
+    "emp-cda86a-201eba-low-1",
+    "emp-cda86a-201eba-low-2",
+    "emp-cda86a-201eba-low-4",
+    "emp-cda86a-201eba-medium-1",
+    "emp-cda86a-201eba-medium-2",
+    "emp-cda86a-201eba-medium-3",
+    "emp-cda86a-779ded-low-1",
+    "emp-cda86a-779ded-low-2",
+    "emp-cda86a-779ded-low-3",
+    "nod-deadde-c96de2-large-2",
+    "nod-09bc4e-1bdd88-low-1",
+    "bnd-deadde-78c1b0-liq_at",
+    "bnd-deadde-78c1b0-liq_above",
+    "bnd-78c1b0-09bc4e-liq_at",
+    "bnd-78c1b0-09bc4e-liq_above",
+    "bnd-09bc4e-201eba-liq_at",
+    "bnd-09bc4e-201eba-liq_above",
+    "bnd-cda86a-201eba-liq_at",
+    "bnd-cda86a-201eba-liq_above"
+   ],
+   "lower_cases": [],
+   "pair": "single_path",
+   "score_vs_reference": {
+    "equal": 250,
+    "higher": 51,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 71,
+    "ref_cut/bnd_clean": 181,
+    "ref_cut/bnd_cut": 50
+   }
+  },
+  "M-A5-sp-q25-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 25
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [
+    "emp-09bc4e-201eba-low-2",
+    "emp-09bc4e-78c1b0-low-1",
+    "emp-09bc4e-78c1b0-medium-3",
+    "emp-201eba-cda86a-low-2",
+    "emp-779ded-09bc4e-low-3",
+    "emp-779ded-09bc4e-medium-1",
+    "emp-779ded-78c1b0-low-2",
+    "emp-78c1b0-09bc4e-low-2",
+    "emp-78c1b0-201eba-low-3",
+    "emp-cda86a-201eba-large-2",
+    "emp-cda86a-201eba-low-3",
+    "emp-cda86a-201eba-medium-4",
+    "emp-cda86a-779ded-low-4",
+    "nod-deadde-c96de2-large-1",
+    "nod-09bc4e-1bdd88-low-2"
+   ],
+   "lower_cases": [],
+   "pair": "single_path",
+   "score_vs_reference": {
+    "equal": 81,
+    "higher": 15,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 24,
+    "ref_cut/bnd_clean": 54,
+    "ref_cut/bnd_cut": 18
+   }
+  },
+  "M-A5-sp-q50-report": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 50
+   },
+   "bundle": "report_full",
+   "cells": 302,
+   "higher_cases": [
+    "emp-09bc4e-201eba-low-1",
+    "emp-09bc4e-201eba-low-3",
+    "emp-09bc4e-201eba-low-4",
+    "emp-09bc4e-779ded-low-1",
+    "emp-09bc4e-78c1b0-low-2",
+    "emp-09bc4e-78c1b0-low-3",
+    "emp-09bc4e-78c1b0-low-4",
+    "emp-78c1b0-201eba-low-4",
+    "emp-78c1b0-201eba-medium-4",
+    "emp-cda86a-201eba-large-1",
+    "emp-cda86a-201eba-large-3",
+    "emp-cda86a-201eba-large-4",
+    "emp-cda86a-201eba-low-1",
+    "emp-cda86a-201eba-low-2",
+    "emp-cda86a-201eba-low-4",
+    "emp-cda86a-201eba-medium-1",
+    "emp-cda86a-201eba-medium-2",
+    "emp-cda86a-201eba-medium-3",
+    "bnd-09bc4e-201eba-liq_at",
+    "bnd-09bc4e-201eba-liq_above",
+    "bnd-cda86a-201eba-liq_at",
+    "bnd-cda86a-201eba-liq_above"
+   ],
+   "lower_cases": [],
+   "pair": "single_path",
+   "score_vs_reference": {
+    "equal": 279,
+    "higher": 22,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 143,
+    "ref_cut/bnd_clean": 159
+   }
+  },
+  "M-A5-sp-q50-tuning": {
+   "bounded_truncated_reference_not": [],
+   "budget": {
+    "kind": "max_quotes",
+    "p": 50
+   },
+   "bundle": "tuning_full",
+   "cells": 96,
+   "higher_cases": [
+    "emp-09bc4e-201eba-low-2",
+    "emp-09bc4e-78c1b0-low-1",
+    "emp-78c1b0-201eba-low-3",
+    "emp-cda86a-201eba-large-2",
+    "emp-cda86a-201eba-low-3",
+    "emp-cda86a-201eba-medium-4"
+   ],
+   "lower_cases": [],
+   "pair": "single_path",
+   "score_vs_reference": {
+    "equal": 90,
+    "higher": 6,
+    "lower": 0
+   },
+   "truncation": {
+    "ref_clean/bnd_clean": 47,
+    "ref_cut/bnd_clean": 49
+   }
+  }
+ },
+ "compact": true,
+ "exactness": {},
+ "host_samples": 710,
+ "host_sleep_transitions": 0,
+ "invocations": {
+  "M-A5-ig-c25-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "901d91a2a0369db1a76b3626b7a9ae85409149c11eb40e68f1c9bb3149f48cff",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 19.46533203125,
+    "samples": 246,
+    "samples_over": 246,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "fdb596811206d1d5d3038ad15a6d55d6c40ecf0ace9476a571eca806ca11b2d6",
+   "profile_sha256": "d2ac4ff1c383860c2740b5f319999d2e8f4ce0847f3299e3ca69516e3f451d4f",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_ig_c25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-c25-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-c25-report/20261003T195135466685Z-2282b477",
+   "run_seconds": 7387.783874417,
+   "started": 1791057094.9161332,
+   "status_counts": {
+    "incremental_graph": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "incremental_graph_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791064483.769023
+  },
+  "M-A5-ig-c25-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "845825010e8c3463a94b5f4b60f4242aafe643d4bd0a1ccb8bc19e8b7d18efa6",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 17.16064453125,
+    "samples": 75,
+    "samples_over": 75,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "8d84b988c8d14bcefa4ea9767df91119af40364a0e263501fe268bd7292a79be",
+   "profile_sha256": "d2ac4ff1c383860c2740b5f319999d2e8f4ce0847f3299e3ca69516e3f451d4f",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_ig_c25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-c25-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-c25-tuning/20261003T181332878296Z-c579c2c7",
+   "run_seconds": 2239.165115417,
+   "started": 1791051212.464631,
+   "status_counts": {
+    "incremental_graph": {
+     "ok": 96
+    },
+    "incremental_graph_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791053452.238858
+  },
+  "M-A5-ig-c50-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "8d504351be45b28935b0773c60a1c21a99fe97dcd6ea6254560e68beeb6003a3",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 19.46533203125,
+    "samples": 246,
+    "samples_over": 246,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "759cd95ef3dc5da21c5898637bf21096dfaa3a4fbb2fb8969e86a83a4aa6bdde",
+   "profile_sha256": "6e26772519a6a07c4047dc46349e026ae03583f1230fc457d21bdd93c7bd2532",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_ig_c50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-c50-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-c50-report/20261003T204015367697Z-26a0cae1",
+   "run_seconds": 7395.176180833,
+   "started": 1791060014.930618,
+   "status_counts": {
+    "incremental_graph": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "incremental_graph_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791067410.74928
+  },
+  "M-A5-ig-c50-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "7d36bc8bf08b04f767fbcae7e49405642c9b0a17ef208fc0c9d0baa78e6fa91a",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 13.6923828125,
+    "samples": 75,
+    "samples_over": 75,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "ff4f04b099810d8bb7c7e07516d8867a75a6d3a8a2f7a32bd580ba83a0b09c8d",
+   "profile_sha256": "6e26772519a6a07c4047dc46349e026ae03583f1230fc457d21bdd93c7bd2532",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_ig_c50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-c50-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-c50-tuning/20261003T183024056775Z-a4f90a48",
+   "run_seconds": 2238.74009375,
+   "started": 1791052223.623719,
+   "status_counts": {
+    "incremental_graph": {
+     "ok": 96
+    },
+    "incremental_graph_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791054463.015661
+  },
+  "M-A5-ig-q25-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "2269d23d515a29b389f6f5cd55d802b9ee714d60d100167d0ec4fa24c33a9fa9",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 17.65625,
+    "samples": 127,
+    "samples_over": 127,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "2db8845f79211bf622141ba4b2c9f260f283ed7a592b8b3ae69bdd237aa1e44c",
+   "profile_sha256": "b863eb189da66cda8eb7b11f65d13e32bd06c1c308ae174af6445d84d435e968",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_ig_q25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-q25-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-q25-report/20261003T193659582776Z-069c08c5",
+   "run_seconds": 3794.556058,
+   "started": 1791056219.1138291,
+   "status_counts": {
+    "incremental_graph": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "incremental_graph_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791060014.4185102
+  },
+  "M-A5-ig-q25-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "0393f08387aa6d158921b65aa17de649ca0ed8da7e18d96e3a967dc339eca217",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 17.16064453125,
+    "samples": 42,
+    "samples_over": 42,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "b727431630a6d56c5ce74a29622809115b79138e6fd4f5c26fe7d7e90ce1410d",
+   "profile_sha256": "b863eb189da66cda8eb7b11f65d13e32bd06c1c308ae174af6445d84d435e968",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_ig_q25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-q25-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-q25-tuning/20261003T180931165924Z-7fc8d301",
+   "run_seconds": 1251.666654875,
+   "started": 1791050970.736047,
+   "status_counts": {
+    "incremental_graph": {
+     "ok": 96
+    },
+    "incremental_graph_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791052223.1120691
+  },
+  "M-A5-ig-q50-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "9d26d42c28f98433aea3f2c7923db6bdfb644e96460b4dc90e8834e5bb67d527",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 19.46533203125,
+    "samples": 199,
+    "samples_over": 199,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "9235f023f06d16bafa7763f836b07ca90b4e9ea7689192033daa868a8fc9c7f4",
+   "profile_sha256": "4cf8b22be872af1be86726ace29380ea607b09290765ac72f2c72dd231ea015a",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_ig_q50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-q50-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-q50-report/20261003T193822544163Z-38eec0a9",
+   "run_seconds": 5976.355721458,
+   "started": 1791056302.119221,
+   "status_counts": {
+    "incremental_graph": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "incremental_graph_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791062279.371986
+  },
+  "M-A5-ig-q50-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "efcbad29badaeaaf17344b5cd62d57254ba42a6fd0fdb42f9081e7904552e3fa",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 17.16064453125,
+    "samples": 63,
+    "samples_over": 63,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "7166eb20389a982ddc5102fb64f65dcb6fdc9280e94d54c124ddcbbc8cd5bcd5",
+   "profile_sha256": "4cf8b22be872af1be86726ace29380ea607b09290765ac72f2c72dd231ea015a",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_ig_q50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-q50-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-ig-q50-tuning/20261003T181019764306Z-4ec321b4",
+   "run_seconds": 1900.148506667,
+   "started": 1791051019.363563,
+   "status_counts": {
+    "incremental_graph": {
+     "ok": 96
+    },
+    "incremental_graph_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791052920.259551
+  },
+  "M-A5-mh-c25-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "5ee534d585b019422600c06fed305a3e52d28fd4d096d48fc0ebe56bacf93edc",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 21.31396484375,
+    "samples": 164,
+    "samples_over": 164,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "1abb7ac77ef6abac771fbbc341510c2f654453319f0d0e775e44a3311d26a6c9",
+   "profile_sha256": "614766dc67f52f664f6e9f8fc6cd4377682bf9ff2432b86d316ac7e663ec1f58",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_mh_c25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-c25-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-c25-report/20261003T221343848826Z-00e7ef31",
+   "run_seconds": 4895.833339459,
+   "started": 1791065623.389279,
+   "status_counts": {
+    "metis_history": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "metis_history_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791070520.0162828
+  },
+  "M-A5-mh-c25-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "c304869d3bde59cae1c133389779d2bced4ca92ca67cee2781ab877c52e0410f",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 18.93798828125,
+    "samples": 54,
+    "samples_over": 54,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "ddf330043a8f39343dc83ad825521e3f88744a734ff9d8afd7fc1c1c411e9c8f",
+   "profile_sha256": "614766dc67f52f664f6e9f8fc6cd4377682bf9ff2432b86d316ac7e663ec1f58",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_mh_c25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-c25-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-c25-tuning/20261003T190015114858Z-73c296ce",
+   "run_seconds": 1639.235508833,
+   "started": 1791054014.6887739,
+   "status_counts": {
+    "metis_history": {
+     "ok": 96
+    },
+    "metis_history_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791055654.741744
+  },
+  "M-A5-mh-c50-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "62b7193d05a425f27700ec1f16111fc7f4d6283980b9f4b4aaadc02afcd7e337",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 21.31396484375,
+    "samples": 154,
+    "samples_over": 154,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "0ccfc6e9c33affd93a73ffd2bc1614bdaf659eb3e38f59851d91c6420821c919",
+   "profile_sha256": "bf3889ae7b9a68181f807d8b75b7a41d363be59d16a8ded7cef9878f9887a5cd",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_mh_c50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-c50-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-c50-report/20261003T224331702157Z-fbe81e15",
+   "run_seconds": 4605.12599975,
+   "started": 1791067411.2609851,
+   "status_counts": {
+    "metis_history": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "metis_history_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791072017.408074
+  },
+  "M-A5-mh-c50-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "4905807a2ac15803e5fa2228e1fb4376ded7bd22ceeac7658a23971ed0f74d72",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 18.93798828125,
+    "samples": 54,
+    "samples_over": 54,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "083aa732777e96d3453d1512ac86bac28f4aa0d97f9729cf63409f2c141bd512",
+   "profile_sha256": "bf3889ae7b9a68181f807d8b75b7a41d363be59d16a8ded7cef9878f9887a5cd",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_mh_c50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-c50-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-c50-tuning/20261003T190743916246Z-6c5c81a2",
+   "run_seconds": 1643.028563625,
+   "started": 1791054463.522987,
+   "status_counts": {
+    "metis_history": {
+     "ok": 96
+    },
+    "metis_history_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791056107.178957
+  },
+  "M-A5-mh-q25-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "b2ccf3f5416e1d764ec42d5461a24ab4d9080f5f7478593221dfb01ba6629f5c",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 16.69091796875,
+    "samples": 111,
+    "samples_over": 111,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "3278a976880fafb3ad4cc4546fa9e225aa146f3486486622f92a6075c97353a7",
+   "profile_sha256": "0749b9587d762a381004865c6db881cf82773e9c6718fc965f69a703deb6825a",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_mh_q25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-q25-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-q25-report/20261003T211800446345Z-d4adcbff",
+   "run_seconds": 3341.907906375,
+   "started": 1791062279.8833432,
+   "status_counts": {
+    "metis_history": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "metis_history_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791065622.877484
+  },
+  "M-A5-mh-q25-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "b9b6f293661849349d5c4ea787b7ebbc1c10908495818d071d0f3c133c46ed74",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 13.6923828125,
+    "samples": 37,
+    "samples_over": 37,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "300feaf359637939bff5f18d1dcd78419e2693c366db8dc2239afb30f0b46804",
+   "profile_sha256": "0749b9587d762a381004865c6db881cf82773e9c6718fc965f69a703deb6825a",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_mh_q25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-q25-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-q25-tuning/20261003T184201179400Z-a9cf8ff7",
+   "run_seconds": 1092.705073833,
+   "started": 1791052920.766878,
+   "status_counts": {
+    "metis_history": {
+     "ok": 96
+    },
+    "metis_history_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791054014.180501
+  },
+  "M-A5-mh-q50-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "a104bac28e391c05bacfa9dac13bc57eb81ec52dd842b6976316e332786449fe",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 20.19091796875,
+    "samples": 152,
+    "samples_over": 152,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "90dfa991c0879340394fdf3803f957588ada984dc05c400fd2c00a40116ae184",
+   "profile_sha256": "adb3e35918699090e8d53a9b77311c3aaf000a929937a98618ee3008dd0ddef0",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_mh_q50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-q50-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-q50-report/20261003T215444717828Z-dfe6c6eb",
+   "run_seconds": 4560.908459667,
+   "started": 1791064484.274944,
+   "status_counts": {
+    "metis_history": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "metis_history_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791069046.1462011
+  },
+  "M-A5-mh-q50-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "b4833dc1e6f423465669a7302234a53c942fbaaf089bed4e8adbf0f82091b1d5",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 18.93798828125,
+    "samples": 50,
+    "samples_over": 50,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "8415876c1dad12be09e0c6728eed7aab599aa7821c26c5fd2067f3b91f824d73",
+   "profile_sha256": "adb3e35918699090e8d53a9b77311c3aaf000a929937a98618ee3008dd0ddef0",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_mh_q50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-q50-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-mh-q50-tuning/20261003T185053173015Z-48fa8185",
+   "run_seconds": 1497.042470792,
+   "started": 1791053452.746229,
+   "status_counts": {
+    "metis_history": {
+     "ok": 96
+    },
+    "metis_history_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791054950.390871
+  },
+  "M-A5-sp-c25-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "052a0f3510c5bb8cf3aa224ca5950a7d047441e9e0f879574d2725bcfd44699c",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 13.71533203125,
+    "samples": 22,
+    "samples_over": 22,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "0862f3134f64a061a3741b13d580103522adf816f84d11d0952bf8051eeabfe3",
+   "profile_sha256": "6531a98e3b6844b4a2c088ba63a4e5da56df1b279c50200d90ada4b3296279ab",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_sp_c25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-c25-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-c25-report/20261003T192735758010Z-2c59736c",
+   "run_seconds": 645.553818,
+   "started": 1791055655.2529159,
+   "status_counts": {
+    "single_path": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "single_path_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791056301.615551
+  },
+  "M-A5-sp-c25-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "896d0fe93f2007e4a0cb93d0f6dd9b97a62921d5be758ecbfd7e10f032cff765",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 12.61083984375,
+    "samples": 6,
+    "samples_over": 6,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "099d568c1ff91d9e621d62548cb620ffc17e11235ceff59b89cbf1152de1a829",
+   "profile_sha256": "6531a98e3b6844b4a2c088ba63a4e5da56df1b279c50200d90ada4b3296279ab",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_sp_c25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-c25-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-c25-tuning/20261003T180609999655Z-8f4154e1",
+   "run_seconds": 199.821445833,
+   "started": 1791050769.5797088,
+   "status_counts": {
+    "single_path": {
+     "ok": 96
+    },
+    "single_path_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791050970.224125
+  },
+  "M-A5-sp-c50-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "714f1cff80a85fda77fd5d17fba877105cfea8c436f096efe0f28714f1a1e0ad",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 17.65625,
+    "samples": 33,
+    "samples_over": 33,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "3dcb878a422569f090f7607f9148f86a868f24eaded59b5ca0c9df1f58db5499",
+   "profile_sha256": "958c1ce554b33d02f34ee364310cf4be07e2153712bcac6c2a6fb084a3382330",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_sp_c50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-c50-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-c50-report/20261003T193508111868Z-9c96cce7",
+   "run_seconds": 986.128498208,
+   "started": 1791056107.690784,
+   "status_counts": {
+    "single_path": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "single_path_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791057094.413808
+  },
+  "M-A5-sp-c50-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "7134c90a86beb2e22e89e5200ddfd313078d098cc57e87a63e66273b75191ccc",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 12.61083984375,
+    "samples": 10,
+    "samples_over": 10,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "2c87c307a55389bbe84447d23dce522f38eedea3413228be27a1e2267912be2e",
+   "profile_sha256": "958c1ce554b33d02f34ee364310cf4be07e2153712bcac6c2a6fb084a3382330",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_sp_c50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-c50-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-c50-tuning/20261003T180835964555Z-30db1378",
+   "run_seconds": 295.57365275,
+   "started": 1791050915.512696,
+   "status_counts": {
+    "single_path": {
+     "ok": 96
+    },
+    "single_path_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791051211.952947
+  },
+  "M-A5-sp-q25-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "e90118346720b93c811f4c92ef9fbc5c6ad37f10be6649f8998a17a6775843ac",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 12.48828125,
+    "samples": 15,
+    "samples_over": 15,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "678cb2fd8c450a1f33d9842221c089e93e467daab92243bcd896c3b4d5bc4ecf",
+   "profile_sha256": "b73ff19364a5258b86c098d494994d944a64f0a94434cb156464b186e7c218e8",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_sp_q25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-q25-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-q25-report/20261003T191551335555Z-3b73e721",
+   "run_seconds": 455.276437208,
+   "started": 1791054950.902406,
+   "status_counts": {
+    "single_path": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "single_path_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791055406.984307
+  },
+  "M-A5-sp-q25-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "e2de8e9210982de9c3f494183ee881a6ae54bda41536a62f8e765f2b217f4ef2",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 11.46533203125,
+    "samples": 4,
+    "samples_over": 4,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "1592658f0445ac487a6bd1e4fd484e6de4d3baff088a406a2382cb1c654b28de",
+   "profile_sha256": "b73ff19364a5258b86c098d494994d944a64f0a94434cb156464b186e7c218e8",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_sp_q25.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-q25-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-q25-tuning/20261003T180609980852Z-df87726f",
+   "run_seconds": 144.3908375,
+   "started": 1791050769.564096,
+   "status_counts": {
+    "single_path": {
+     "ok": 96
+    },
+    "single_path_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791050915.0012958
+  },
+  "M-A5-sp-q50-report": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases_sha256": "48d36949a94d90e9fcdd55eafb15b13fda9c4eae76b5f2bb8ae60078197d47c5",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "previously_exposed",
+   "host": {
+    "max_load1": 13.462890625,
+    "samples": 27,
+    "samples_over": 27,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "27e6646b4a6f8ef854a8153b82c34f33b388a282bbe298ae6f4326ca05e1156f",
+   "profile_sha256": "579e77f3c4b86e7f0471e0b84e80cac7a55ddfe9507523e995e140560e07a627",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/report_full --profile config/research_022/profiles/a5_sp_q50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-q50-report --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-q50-report/20261003T192327934863Z-4c4381b3",
+   "run_seconds": 810.298171416,
+   "started": 1791055407.496019,
+   "status_counts": {
+    "single_path": {
+     "no_route": 1,
+     "ok": 301
+    },
+    "single_path_bounded": {
+     "no_route": 1,
+     "ok": 301
+    }
+   },
+   "t": 1791056218.6016378
+  },
+  "M-A5-sp-q50-tuning": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases_sha256": "8638b5416ae3904c38e7e39748f43f82841405a1bcb5ec60e31b16aa44e36c02",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "exploration_data",
+   "host": {
+    "max_load1": 12.61083984375,
+    "samples": 8,
+    "samples_over": 8,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "b55088e1a8e776229961d70ff7c651ce9b44d9470d4feec594d68804a0180bd1",
+   "profile_sha256": "579e77f3c4b86e7f0471e0b84e80cac7a55ddfe9507523e995e140560e07a627",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/tuning_full --profile config/research_022/profiles/a5_sp_q50.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-q50-tuning --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/M/M-A5-sp-q50-tuning/20261003T180609981439Z-72fb4b20",
+   "run_seconds": 248.758876666,
+   "started": 1791050769.5695202,
+   "status_counts": {
+    "single_path": {
+     "ok": 96
+    },
+    "single_path_bounded": {
+     "ok": 96
+    }
+   },
+   "t": 1791051018.857225
+  }
+ },
+ "reconciled": true,
+ "reconciliation_problems": [],
+ "schema": "r022.campaign-analysis/1",
+ "stage": "M",
+ "stage_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+ "work": {},
+ "work_pass_agreement": {}
+}

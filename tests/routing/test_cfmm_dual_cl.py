@@ -257,14 +257,20 @@ def test_current_preset_is_cfmm_dual_2_and_v1_stays_a_byte_identical_historical_
     # anything else is an override, whatever its market_protocols
     for other in ({**V1, "lbfgs_memory": 30}, {**V2, "min_split_share": 1e-6}):
         assert options_entry(FACTORY, other)["source"] == {"kind": "override"}
-    # every default roster: 14 strategies, cfmm_dual last with the CURRENT preset (CL mode)
+    # every default roster: 17 strategies (WHI-1599/1600 append the three bounded identities after
+    # the 0.2.1 ones), cfmm_dual the last 0.2.1 identity, with the CURRENT preset (CL mode)
     for name in ("daily_gross.yaml", "full_gross.yaml"):
         source = yaml.safe_load((REPO / "config" / name).read_text())
         document, profile = derive(source, "all", source_path=name, source_sha256="x")
-        assert len(profile.algorithms) == 14 and profile.algorithms[-1] == NAME
+        assert len(profile.algorithms) == 17 and profile.algorithms[-4] == NAME
+        assert list(profile.algorithms[-3:]) == [
+            "single_path_bounded",
+            "incremental_graph_bounded",
+            "metis_history_bounded",
+        ]
         assert document["algorithm_options"][NAME] == V2
         assert profile.algorithm_options[NAME]["source"] == {"kind": "preset", **V2_PIN}
-        assert len(set(profile.algorithms)) == 14  # no duplicate identity
+        assert len(set(profile.algorithms)) == 17  # no duplicate identity
 
 
 def test_a_saved_whi_1558_effective_profile_replays_with_its_v1_identity() -> None:
@@ -331,7 +337,7 @@ def test_every_pin_is_verified_and_tamper_metadata_and_ambiguity_are_refused(
 
 def test_the_historical_seam_leaves_every_other_factory_unchanged() -> None:
     assert [n for n, f in ALGORITHMS.items() if f.historical_presets] == [NAME]
-    assert len(ALGORITHMS) == 15 and list(ALGORITHMS).count(NAME) == 1
+    assert len(ALGORITHMS) == 18 and list(ALGORITHMS).count(NAME) == 1  # + the 3 bounded ones
     for name, factory in ALGORITHMS.items():
         if factory.options_validator is None or name == NAME:
             continue

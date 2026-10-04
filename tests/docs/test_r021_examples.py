@@ -171,7 +171,8 @@ def test_cfmm_dual_example() -> None:
     assert rc["best_exact_single_path"] < rc["v2_cl_stage"]["score"]
 
 
-def test_real_state_walkthrough_has_all_fourteen_rows() -> None:
+def test_real_state_walkthrough_has_every_row_of_the_all_roster() -> None:
+    """The fourteen 0.2.1 rows plus the three 0.2.2 bounded rows (WHI-1599, WHI-1600; `all`)."""
     d = data("real_state")
     rows = {r["algorithm"]: r for r in d["rows"]}
     assert list(rows) == [
@@ -189,10 +190,15 @@ def test_real_state_walkthrough_has_all_fourteen_rows() -> None:
         "incremental_graph_repair",
         "uni_sor_cycle_safe",
         "cfmm_dual",
+        "single_path_bounded",
+        "incremental_graph_bounded",
+        "metis_history_bounded",
     ]
     assert d["bundle"]["pools"] == 19 and d["bundle"]["block"]["number"] == 101082044
     for name in ("metis_history", "incremental_graph_repair", "incremental_graph"):
         assert rows[name]["score"] == 10000663447
+    for name in ("incremental_graph_bounded", "metis_history_bounded"):  # exact accelerations
+        assert rows[name]["score"] == rows[name.removesuffix("_bounded")]["score"]
     for name in ("direct", "uni_sor_cycle_safe", "cfmm_dual"):
         assert rows[name]["score"] == 10000660449
     assert rows["direct_split_certified"]["status"] == "unsupported"

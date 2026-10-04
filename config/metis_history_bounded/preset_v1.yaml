@@ -1,0 +1,15 @@
+# Bounded comparison preset v1 of `metis_history_bounded` (WHI-1600, R022-Q04; pruning contract
+# R022-Q02/1 §10.4, open question §12.3(1)). It is `config/metis_history/preset_v1.yaml`
+# (R021-P04) under the bounded strategy's own key: `benchmark.profile.preset_options` checks a
+# preset file's `algorithm` against the factory that pins it, so one file cannot serve both.
+# The options below are identical to the reference's, hence so is their `settings_sha256`
+# (paired comparisons are same-settings). Frozen: its sha256 is pinned in
+# routing/algorithms/metis_history_bounded.py (`PRESET`) and a changed file is refused. It holds
+# only this identity's algorithm_options; search/graph/budget values come from the run profile.
+key: R022-Q04-metis_history_bounded
+version: 1
+algorithm: metis_history_bounded
+options:
+  dominance: history
+  max_labels_per_signature: 1
+  max_frontier_labels: 1024

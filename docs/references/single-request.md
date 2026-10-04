@@ -2,14 +2,17 @@
 
 Compare the routing strategies on **one** exact-input request against a frozen snapshot,
 with exactly one solve attempt per strategy. By default (`--strategies all`, WHI-1528,
-WHI-1540 and Release 0.2.1) these are fourteen for a six-algorithm profile:
+WHI-1540, Release 0.2.1 and Release 0.2.2) these are seventeen for a six-algorithm profile:
 
 1. the profile's six base algorithms;
 2. the two named optimized strategies `uni_sor_adaptive` and `uni_sor_optimized`;
 3. the experimental Metis-inspired (NOT Jupiter Metis) `metis_inspired`;
 4. the five 0.2.1 experimental identities `metis_history`, `direct_split_certified`,
    `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`, each with its pinned
-   current preset.
+   current preset;
+5. the three 0.2.2 exact bound-pruned accelerations `single_path_bounded`,
+   `incremental_graph_bounded` and `metis_history_bounded` (`metis_history_bounded` with a copy of
+   `metis_history`'s preset under its own key). Each returns its reference's plan and claims no speedup.
 
 `--strategies base|optimized` runs one group, and `--strategies profile` runs the profile's exact
 selection ([`strategy-groups.md`](strategy-groups.md)).
@@ -23,7 +26,7 @@ uv run python main.py quote \
   --token-in USDC --token-out USDT0 --amount 10000 --details
 ```
 
-Its 14 rows are the walkthrough of [`routing-algorithms.md`](routing-algorithms.md) §11. With the
+Its 17 rows are the walkthrough of [`routing-algorithms.md`](routing-algorithms.md) §11. With the
 frozen five-source corpus prepared locally (the primary clone's gitignored
 `data/corpus/mantle-5src-101082044/`), the same command runs against the whole corpus bundle:
 
@@ -48,7 +51,8 @@ terminal outputs, residuals) and a reconciliation check — plus this execution'
 preparation, worker start-up, solve and final-evaluation durations, counters and limit
 hit. `--details` changes presentation only; it adds no solver run or measurement pass.
 For the 0.2.1 rows it also prints the research diagnostics block (§ *Research diagnostics and
-work units* below).
+work units* below), and for the 0.2.2 bounded rows the bound-pruning block (§ *Bound-pruning
+counters* below).
 
 With `config/daily_gross.yaml`, `metis_inspired` uses the source's `chunks: 200`, budget
 and `search.*` values plus `label_hops: 4` and `label_pruning: true` from
@@ -165,6 +169,29 @@ tolerance …)`, `unknown`, or `unavailable (not_produced)`. `--details` adds:
 Units of different strategies are never divided by each other; `quotes_executed` is the only
 cross-strategy work unit. A `cfmm_dual` estimate is a numerical dual value, not an upper bound.
 
+## Bound-pruning counters
+
+The three 0.2.2 rows (`single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`)
+are exact accelerations of `single_path`, `incremental_graph` and `metis_history`; each is its own
+solve in the table, next to its reference. `--details` adds, after the plan and the stage durations,
+a `bound pruning (R022-Q02/1 rule …: exact acceleration of …)` block:
+
+- candidates (S1, I1) or relaxations (M1, M2) **pruned by bound**, counted apart from failures and
+  from dead-prefix pruning, the **bound evaluations** made, and the evaluations **without a bound**
+  (never pruned);
+- the **bound table** built in preparation: pool directions, how many are bounded, rate-only or
+  without a bound (on the 19-pool fixture: 38, 37, 1, 0);
+- for the chunk strategies whether the retained simpler candidate was present (P0), and for
+  `metis_history_bounded` whether rule M2 was active and its gate;
+- the **exactness label**: `exact`, or `not_exact_budget_binding` with the budget that bound.
+
+These counters are work, not time; a bounded row's latency is one observation like every other
+row's and is not a speed claim. The same block is stored in the case record as
+`search.bound_pruning` (`<run dir>/cases.jsonl`); the batch console, CSV and HTML summaries do not
+show it. On the 10000 USDC → USDT0 request above the three bounded rows prune nothing and return
+their references' plans and counted quotes (`routing-algorithms.md` §11.3 item 11). A saved quote or
+run made before Release 0.2.2 replays its own algorithms and never gains a bounded row.
+
 ## Replay and report
 
 `quote.json` and the run manifest record the exact replay command (`replay_command`), which
@@ -199,7 +226,7 @@ A batch `run` uses the same `--strategies` modes over every case of a bundle. Bo
 examples on checked-in fixtures:
 
 ```bash
-# all 14 strategies of the ordinary roster over the 4 cases of the mantle_mixed fixture
+# all 17 strategies of the ordinary roster over the 4 cases of the mantle_mixed fixture
 uv run python main.py run --bundle tests/fixtures/routing/mantle_mixed \
   --profile config/daily_gross.yaml --results-dir <results dir>
 
@@ -230,5 +257,7 @@ WHI-1449 results are in [`metis-challenge-results.md`](metis-challenge-results.m
 The five 0.2.1 identities are explained in §§14–18 of the guide (`metis_history`,
 `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe`, `cfmm_dual`), with
 their shared vocabulary in §1.8; their research contracts are in
-[`research-021/`](research-021/contract.md).
+[`research-021/`](research-021/contract.md). The three 0.2.2 bound-pruned strategies
+(`single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`) are explained in §§19–22
+(theory in §19); their contract is [`research-022/pruning-contract.md`](research-022/pruning-contract.md).
 

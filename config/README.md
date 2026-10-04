@@ -91,6 +91,10 @@ No loader code ships with the template — write it when the first config file l
   values: `history_on.yaml` (the preset beside the label search) and `history_off.yaml` (the
   `dominance: "off"` control beside the exhaustive enumeration; `off` is quoted because YAML
   reads a bare `off` as false).
+- `metis_history_bounded/` (WHI-1600) — `preset_v1.yaml`, `metis_history`'s preset options
+  under the exact-acceleration strategy's own key (a preset file names the algorithm that pins
+  it, so the file cannot be shared; the options and their `settings_sha256` are identical; not a
+  run profile, `--strategies all` writes it out).
 - `direct_split_certified/` (WHI-1552) — `preset_v1.yaml`, the sha256-pinned bounded
   `algorithm_options` preset of the experimental `direct_split_certified` (`repository_grid`,
   100,000 nodes / 100,000 open nodes; not a run profile, `--strategies all` writes it out), and

@@ -49,6 +49,12 @@ preset (`benchmark.profile.preset_options`) of an added algorithm the source doe
 and drops entries of unselected algorithms; the section is omitted when empty, so a source
 without options derives exactly as before.
 `profile` mode copies it as is.
+
+`R022_ADDITIONS` (WHI-1599, WHI-1600): the 0.2.2 exact bound-pruned accelerations
+(`single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`,
+`docs/references/research-022/pruning-contract.md` §10.1) follow the 0.2.1 identities under
+`all`. Only `metis_history_bounded` carries `algorithm_options`: exactly `metis_history`'s, from
+its own preset file (same options, same `settings_sha256`).
 """
 
 from __future__ import annotations
@@ -72,9 +78,12 @@ from benchmark.profile import (
 from routing.algorithms import (
     cfmm_dual,
     direct_split_certified,
+    incremental_graph_bounded,
     incremental_graph_repair,
     metis_history,
+    metis_history_bounded,
     metis_inspired,
+    single_path_bounded,
     uni_sor_cycle_safe,
 )
 from routing.algorithms.registry import ALGORITHMS, OPTIMIZED_STRATEGIES
@@ -106,6 +115,14 @@ R021_ADDITIONS: tuple[str, ...] = (
     incremental_graph_repair.NAME,  # WHI-1554 (contract order 3)
     uni_sor_cycle_safe.NAME,  # WHI-1556 (contract order 4; its empty-options preset)
     cfmm_dual.NAME,  # WHI-1558 (contract order 5; WHI-1559: its current cfmm_dual/2 CL preset)
+)
+# WHI-1599/WHI-1600 (R022-Q02/1 §10.1): the exact bound-pruned accelerations `all` appends after
+# `R021_ADDITIONS`, in contract order. Earlier saved profiles never gain them (`profile`
+# replays it literally).
+R022_ADDITIONS: tuple[str, ...] = (
+    single_path_bounded.NAME,  # WHI-1599
+    incremental_graph_bounded.NAME,  # WHI-1600
+    metis_history_bounded.NAME,  # WHI-1600 (its own copy of metis_history's preset)
 )
 DERIVATION_NOTE = (
     "`algorithms`, `strategies` and `selection` are derived from the source; under `all`, a "
@@ -142,7 +159,7 @@ def effective_document(
     if mode == "all" and METIS not in selected:
         selected.append(METIS)
     if mode == "all":
-        selected += [a for a in R021_ADDITIONS if a not in selected]
+        selected += [a for a in (*R021_ADDITIONS, *R022_ADDITIONS) if a not in selected]
     if not selected:
         raise StrategySelectionError(
             f"--strategies {mode}: {source_path} selects no base strategy (algorithms "
@@ -208,7 +225,7 @@ def derive(
     try:
         return document, parse_profile(document, source_path)
     except ProfileError as exc:
-        additions = (*OPTIMIZED_STRATEGIES, METIS, *R021_ADDITIONS)
+        additions = (*OPTIMIZED_STRATEGIES, METIS, *R021_ADDITIONS, *R022_ADDITIONS)
         added = ", ".join(a for a in document["algorithms"] if a in additions)
         raise StrategySelectionError(
             f"--strategies {mode}: {source_path} cannot run the added strategies ({added}): "
@@ -244,6 +261,7 @@ __all__ = [
     "METIS_SETTINGS",
     "MODES",
     "R021_ADDITIONS",
+    "R022_ADDITIONS",
     "StrategySelectionError",
     "announce",
     "derive",
