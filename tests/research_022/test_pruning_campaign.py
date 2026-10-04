@@ -551,3 +551,75 @@ def test_the_committed_analysis_drops_only_the_per_pair_families_and_pins_them()
     assert out["work"]["w"]["families"]["pair"]["sha256"] == C.sha256_bytes(
         json.dumps(pair, sort_keys=True).encode())  # fmt: skip
     assert result["work"]["w"]["families"]["pair"] == pair  # the input is untouched
+
+
+# ----------------------------------------------------------------------------- stage L plumbing
+
+
+def test_the_ref_and_bnd_arms_run_and_compare_through_the_real_latency_tools(
+    campaign: Any, tmp_path: Path
+) -> None:
+    """The stage-L commands, end to end, over the tracked fixture bundle: a miniature protocol
+    (three cases, two repeats) built from the rendered L01-R022 protocol, the real arms file,
+    `benchmark.latency run --arm REF|BND` and `report.latency compare --lane heuristic --pair
+    BOUNDED=REFERENCE`. Pins the pairing, the arm option subsets and the compare output."""
+    import subprocess
+
+    from snapshot.bundle import load_bundle
+
+    parent = load_bundle(FIXTURE)
+    doc = yaml.safe_load(C.render_protocol(campaign))
+    doc["parent_bundle"] = {"bundle_id": parent.bundle_id, "bundle_hash": parent.bundle_hash}
+    doc["matrix"] = [
+        {"case": "emp-09bc4e-779ded-low-2", "split": "tuning", "covers": ["small"]},
+        {"case": "emp-09bc4e-779ded-low-1", "split": "held_out", "covers": ["small"]},
+        {"case": "nod-09bc4e-c96de2-medium-1", "split": "held_out", "covers": ["no_route"]},
+    ]  # the corpus subset needs a no-direct-pool case
+    doc["sentinel"] = {"token_in": "USDC", "token_out": "USDT0", "amount": "1500.25"}
+    doc["timing"] = {"warmup": 1, "repeats": 2, "orders": ["fixed", "reverse"]}
+    doc["acceptance"]["min_timed_solve_seconds"] = 0.0
+    protocol = tmp_path / "protocol.yaml"
+    protocol.write_text(yaml.safe_dump(doc, sort_keys=False))
+    arms = yaml.safe_load(C.render_arms(campaign, protocol.read_text()))
+    arms["protocol"] = {"path": str(protocol), "sha256": C.sha256_bytes(protocol.read_bytes())}
+    arms_path = tmp_path / "arms.yaml"
+    arms_path.write_text(yaml.safe_dump(arms, sort_keys=False))
+
+    def run(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(["uv", "run", "python", *args], cwd=REPO, text=True,
+                              capture_output=True, timeout=600)  # fmt: skip
+
+    dirs = {}
+    for arm in ("REF", "BND"):
+        out = tmp_path / arm
+        done = run("-m", "benchmark.latency", "run", "--protocol", str(protocol), "--arms",
+                   str(arms_path), "--arm", arm, "--bundle", str(FIXTURE), "--out", str(out),
+                   "--allow-dirty")  # fmt: skip
+        assert done.returncode == 0, done.stderr[-2000:]
+        (dirs[arm],) = [p for p in out.iterdir() if p.is_dir()]
+        experiment = json.loads((dirs[arm] / "experiment.json").read_text())
+        assert experiment["state"] == "complete" and experiment["arm"]["name"] == arm
+        expected = list(campaign.raw["latency"]["pairs"]) if arm == "BND" else list(
+            campaign.raw["latency"]["pairs"].values())  # fmt: skip
+        assert experiment["algorithms"] == expected
+    pairs = [f"{c}={r}" for c, r in campaign.raw["latency"]["pairs"].items()]
+    args = ["-m", "report.latency", "compare", str(dirs["REF"]), str(dirs["BND"]),
+            "--lane", "heuristic", "--json", str(tmp_path / "compare.json")]  # fmt: skip
+    for pair in pairs:
+        args += ["--pair", pair]
+    done = run(*args)
+    assert done.returncode == 0, done.stderr[-2000:]
+    result = json.loads((tmp_path / "compare.json").read_text())
+    assert result["pairs"] == campaign.raw["latency"]["pairs"]
+    assert result["coverage_problems"] == {"baseline": [], "candidate": [], "pairing": []}
+    assert result["arms"]["baseline"] == "REF" and result["arms"]["candidate"] == "BND"
+    keys = {k for k in result["timing"] if k.endswith("matrix " + "single_path_bounded")}
+    assert keys, result["timing"].keys()
+    for algorithm in campaign.raw["latency"]["pairs"]:
+        entry = result["timing"][f"full_source/matrix {algorithm}"]
+        assert entry["reference"] == campaign.raw["latency"]["pairs"][algorithm]
+        assert entry["verdict"] in ("faster", "slower", "no_worthwhile_change",
+                                    "insufficient_cases", "lost_samples")  # fmt: skip
+    # the experiment's own result of every pair is identical in the exact semantic fields
+    exact_view = json.loads((dirs["REF"] / "experiment.json").read_text())
+    assert exact_view["profile"]["path"].endswith("timing_pairs.yaml")
