@@ -52,9 +52,9 @@ not repeated. Every disposition below is "work reduction only".
 | Step | Commit / time | Evidence |
 | --- | --- | --- |
 | Pre-registration of the §11 protocol | `64f2f86` (WHI-1598) | `pruning-contract.md` §11, before any bounded strategy existed |
-| Schedule, generated profiles, harness, tests | `93a9db5` | pushed before the first tuning observation; `campaign/freeze.json` pins every file of the freeze commit |
+| Schedule, generated profiles, harness, tests | `93a9db5` | pushed before the first tuning observation: GitHub's `CreateEvent` for the branch (head `93a9db5`) is 2026-10-03T15:10:22Z, the stage-T ledger starts 15:10:59Z; `git ls-remote origin refs/heads/feat/whi-1602-bounded-campaign` then returned `93a9db52…`. `campaign/freeze.json` pins the files of the freeze commit |
 | Stage T (tuning, checks) | from `93a9db5`, 2026-10-03 15:10Z → 17:55Z | 18/18 invocations `ok`, 0 reconciliation problems (`campaign/tuning-analysis.json`, `tuning-ledger.jsonl`) |
-| A5 values, freeze | `46d6e2e` | `a5-values` over the stage-T reference records; written once into the schedule |
+| A5 values, freeze | `46d6e2e` | `a5-values` over the stage-T reference records; written once into the schedule; GitHub `PushEvent` 2026-10-03T18:05:36Z, before the first report-split solve (stage-R ledger starts 18:06:04Z) |
 | Stages R, M (report split, once; A5 on both splits), I | from `46d6e2e`: R 2026-10-03 18:06Z → 2026-10-04 05:47Z, M 18:06Z → 00:00Z, I 03:10Z → 03:24Z | R: 32/32 `ok`; M: 24/24; I: 12/12; each analysis reconciled with 0 problems |
 | Stage L (timing) | from `46d6e2e`, launched 2026-10-04 07:04Z after the launch gate passed on attempt 10; ended 13:56Z | §7 |
 
@@ -88,7 +88,11 @@ both cohorts. Inputs (hash-verified copies of the frozen corpus bundles):
    of the pinned profile now keeps only the `algorithm_options` of the algorithms it runs. Without it
    the loader refuses the REF arm (its profile also declares `metis_history_bounded`'s options), so a
    reference and its bounded strategy could not be compared by `report.latency compare`. Every L08 arm
-   so far has no `algorithm_options`; `tests/benchmark/test_latency.py` passes unchanged.
+   so far has no `algorithm_options`; `tests/benchmark/test_latency.py` passes unchanged. One more
+   existing test needed one line: the legacy-profile guard `tests/benchmark/test_algorithm_options.py`
+   globs every `config/**/*.yaml`, so `NEW_PROFILES` now lists the generated `config/research_022/profiles/`
+   (the WHI-1562 precedent for `config/research_021/profiles/`). The first full-suite run on this branch
+   failed exactly there; it passes with that line.
 2. **The baseline comparison was refined after the first partial report-split analysis.** The first
    rule compared the order-check's whole deterministic view and flagged five references on every
    cell. The only differences were provenance stamps: `git_revision` inside `diagnostics` and

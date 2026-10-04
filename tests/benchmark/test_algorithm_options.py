@@ -101,6 +101,11 @@ NEW_PROFILES = (
     # `--strategies profile` except memory_gross -- tests/research_021 asserts both)
     | {p.relative_to(REPO).as_posix() for p in (REPO / "config" / "research_021" / "profiles")
        .glob("*.yaml")}  # fmt: skip
+    # WHI-1602: the 0.2.2 campaign profiles, GENERATED from the `--strategies all` derivation of
+    # full_gross/full by tools/research_022 (drift-checked by `pruning_campaign.py check`; each is
+    # a restricted slice of the 17-ID roster and runs only with `--strategies profile`)
+    | {p.relative_to(REPO).as_posix() for p in (REPO / "config" / "research_022" / "profiles")
+       .glob("*.yaml")}  # fmt: skip
 )
 TEST_ALARM_SECONDS = 240
 
