@@ -470,6 +470,15 @@ def arm_profile(arm: Arm, protocol: Protocol | str) -> RunProfile:
     raw = read_profile_document(REPO_ROOT / profile_path)
     if arm.algorithms is not None:
         raw["algorithms"] = list(arm.algorithms)
+        # an arm that selects a subset keeps only the options of the algorithms it runs (the
+        # loader refuses options declared for an algorithm that is not selected); a pinned
+        # profile without `algorithm_options` -- every L08 arm so far -- is unchanged
+        options = {k: v for k, v in (raw.get("algorithm_options") or {}).items()
+                   if k in arm.algorithms}  # fmt: skip
+        if options:
+            raw["algorithm_options"] = options
+        else:
+            raw.pop("algorithm_options", None)
     for key in ("shortlist", "sampling"):
         if getattr(arm, key):
             raw[key] = dict(getattr(arm, key))

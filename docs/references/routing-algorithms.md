@@ -2358,7 +2358,9 @@ When navigating the codebase, consult these authoritative entry points:
       `max_candidates` or `max_quotes` the record is labelled `not_exact_budget_binding` and makes no
       exactness claim.
     - No timing is claimed anywhere in this guide for them. They avoid quotes (work); whether that
-      saves time is the WHI-1602 measurement.
+      saves time is the WHI-1602 measurement, reported in
+      [`research-022/results.md`](research-022/results.md) (exactness on the frozen corpus, deterministic
+      work, and timing or its `inconclusive` label).
     - Pruning needs a proved bound. A direction with no bound (a stale CL tick, a missing LB fee, a
       CL price above $2^{128}$ for the chunk strategies, an amount above $2^{127}$) is never pruned and
       is counted in `bound_no_bound`.
@@ -4038,7 +4040,8 @@ is the stable anchor.
 - **Work, not time.** The deterministic counts are quotes avoided and `pruned_bound`; they are
   reported with the cost of the bound beside them (`bound_evaluations`, `bound_table_cost`),
   never netted. How many seconds that is worth is **not** measured here and not claimed;
-  WHI-1602 measures it under the L01 rules.
+  WHI-1602 measures it under the L01 rules and reports the exactness, work and timing results in
+  [`research-022/results.md`](research-022/results.md).
 
 ### 19.9 Guarantees and Limitations
 - **Guarantees.** When the bounded run is not budget-truncated, status, plan (every step and fund),
