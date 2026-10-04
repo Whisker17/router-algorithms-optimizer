@@ -508,6 +508,7 @@ def test_stage_l_timing_is_a_verdict_only_in_a_clean_window(
     samples = [json.loads(x) for x in (out / "load.jsonl").read_text().splitlines()]
     view = C._latency_view(campaign, out, done, samples, [], 10)
     assert view["gate_passed"] is True
+    assert set(view["windows"]) == {"L-ref", "L-bnd"}  # the comparison measures nothing
     assert {k: v["verdict"] for k, v in view["per_strategy"].items()} == {
         "full_source/matrix single_path_bounded": "improvement",
         "full_source/matrix metis_history_bounded": "no_difference"}  # fmt: skip

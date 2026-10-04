@@ -974,7 +974,8 @@ def _latency_view(
         ]
     }
     windows = {}
-    for inv_id in ("L-ref", "L-bnd", "L-cmp", "L-q1", "L-q2", "L-q3", "L-q4", "L-q5"):
+    # the measuring invocations; L-cmp only reads their records (it measures nothing)
+    for inv_id in ("L-ref", "L-bnd", "L-q1", "L-q2", "L-q3", "L-q4", "L-q5"):
         entry = done.get(inv_id)
         if entry and entry.get("result") == "ok":
             windows[inv_id] = r021.host_window(
