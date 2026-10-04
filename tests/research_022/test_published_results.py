@@ -247,6 +247,20 @@ def test_the_cli_matrix_covers_all_17_ids() -> None:
     assert all(v["result"] == "ok" for v in I["invocations"].values())
 
 
+def test_the_report_bullet_says_where_the_bound_counters_are_and_are_not() -> None:
+    counters = ("pruned_bound", "bound_no_bound", "bound_table_cost", "pruned by bound")
+    sources = {n: (REPO / "report" / n).read_text(encoding="utf-8") for n in
+               ("aggregate.py", "html.py", "render.py", "quote.py")}  # fmt: skip
+    # only the single-request text prints the counters; the HTML renderers never do (R1-F1)
+    assert all(k in sources["quote.py"] for k in counters)
+    html_code = "".join(sources[n] for n in ("aggregate.py", "html.py", "render.py"))
+    assert not [k for k in counters if k in html_code]
+    assert "Bound-pruned strategy" in sources["aggregate.py"]
+    bullet = next(x for x in RESULTS.splitlines() if x.startswith("- **Report.**"))
+    assert "does **not** show the bound-pruning counters" in bullet
+    assert "search.bound_pruning" in bullet and "single_request.txt" in bullet
+
+
 def test_timing_is_inconclusive_and_the_gate_evidence_is_what_the_page_states() -> None:
     lat = L["latency"]
     assert lat["gate_passed"] is False and lat["verdict"] == "inconclusive"
