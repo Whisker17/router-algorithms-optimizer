@@ -681,8 +681,9 @@ def _case_ids(inputs: Path, bundle: str) -> list[str]:
 
 
 def _pool_families(inputs: Path, bundle: str) -> dict[str, str]:
+    """pool id -> family; a pool entry without a `family` key is constant-product."""
     data = json.loads((inputs / bundle / "pools.json").read_text(encoding="utf-8"))
-    return {p["pool_id"]: str(p.get("family")) for p in data["pools"]}
+    return {p["pool_id"]: str(p.get("family") or "constant_product") for p in data["pools"]}
 
 
 def _families(
@@ -806,7 +807,12 @@ def analyze(
         view["holdout_exposure"] = labels.get(str(split), "not_a_corpus_split")
         view.update(status_counts=_status_counts(run), git_revision=m.git_revision,
                     profile_sha256=m.profile_sha256, bundle_hash=m.bundle_hash,
-                    replay_command=m.replay_command,
+                    replay_command=m.replay_command, cases_sha256=m.cases_sha256,
+                    manifest_sha256=sha256_bytes(
+                        (Path(entry["run_dir"]) / "manifest.json").read_bytes()),
+                    environment={k: m.environment.get(k) for k in
+                                 ("python_version", "platform", "cpu_model", "cpu_count",
+                                  "dependencies")},
                     run_seconds=m.timing.get("total_seconds") if m.timing else None)  # fmt: skip
     exactness: dict[str, Any] = {}
     work: dict[str, Any] = {}
@@ -1200,7 +1206,8 @@ def render_tables(analyses: Mapping[str, Mapping[str, Any]]) -> str:
                     f"{[round(x, 4) for x in pre['prepare_seconds_reference']]}; "
                     f"{[round(x, 4) for x in pre['prepare_seconds_bounded']]} |"
                 )
-            lines += ["", "### Work by case family (work-pass runs; sums, reference → bounded)", "",
+            lines += ["", "### Work by case family (work-pass runs; sums, reference → bounded)",
+                      "",
                       "| run | family | value | cases | unit | reference | bounded | ratio |",
                       "| --- | --- | --- | ---: | --- | ---: | ---: | ---: |"]  # fmt: skip
             for label, w in sorted(a["work"].items()):

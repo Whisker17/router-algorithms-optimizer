@@ -623,3 +623,16 @@ def test_the_ref_and_bnd_arms_run_and_compare_through_the_real_latency_tools(
     # the experiment's own result of every pair is identical in the exact semantic fields
     exact_view = json.loads((dirs["REF"] / "experiment.json").read_text())
     assert exact_view["profile"]["path"].endswith("timing_pairs.yaml")
+
+
+def test_a_pool_entry_without_a_family_key_is_constant_product(tmp_path: Path) -> None:
+    bundle = tmp_path / "b"
+    bundle.mkdir()
+    (bundle / "pools.json").write_text(json.dumps({"pools": [
+        {"pool_id": "cp", "reserve0": "1"},
+        {"pool_id": "cl", "family": "concentrated"},
+        {"pool_id": "lb", "family": "liquidity_book"}]}))  # fmt: skip
+    assert C._pool_families(tmp_path, "b") == {"cp": "constant_product", "cl": "concentrated",
+                                               "lb": "liquidity_book"}  # fmt: skip
+    assert PA.plan_mix({"evaluation": {"trace": [{"pool_id": "cp"}, {"pool_id": "cl"}]}},
+                       C._pool_families(tmp_path, "b")) == "cl+cp"  # fmt: skip
