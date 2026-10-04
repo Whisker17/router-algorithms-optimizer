@@ -301,3 +301,12 @@ def test_the_disposition_is_the_rule_applied_to_the_committed_analyses() -> None
 def test_no_placeholder_survives_in_the_page() -> None:
     assert re.search(r"__[A-Z0-9_]+__", RESULTS) is None
     assert "TBD" not in RESULTS
+
+
+def test_the_baseline_research_block_differences_are_attributed_to_whi_1603() -> None:
+    # WHI-1603 (cb2f806) made both domain() functions record the bundle's real cohort in a batch
+    # `run`; WHI-1606 only covers single-request bundles, so it must not be named as the cause.
+    assert RESULTS.count("WHI-1603") >= 3 and "`cb2f806`" in RESULTS
+    assert "the WHI-1606 cohort label" not in RESULTS
+    assert "That is the WHI-1606 fix" not in RESULTS
+    assert "WHI-1606, merged after the baseline" not in RESULTS

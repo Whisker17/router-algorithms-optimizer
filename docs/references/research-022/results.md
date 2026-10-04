@@ -98,8 +98,10 @@ both cohorts. Inputs (hash-verified copies of the frozen corpus bundles):
    cell. The only differences were provenance stamps: `git_revision` inside `diagnostics` and
    `search.r021` (the 0.2.1 baseline was produced at `aa5726c`), plus — for the SOR cohort only —
    the `universe.cohort` label and the domain hash of `metis_history` and `incremental_graph_repair`
-   (the 0.2.1 baseline recorded `full_source`; WHI-1606, merged after the baseline, records
-   `sor_compatible`). The comparison now has three tiers (§3): the outcome and the strategy's own
+   (the 0.2.1 baseline recorded `full_source`; WHI-1603 (`cb2f806`), merged after the baseline, derives
+   the cohort from the bundle with `cohort_of` and so records `sor_compatible` on the matched cut; WHI-1606
+   only adds the same label to single-request `main.py quote` bundles and cannot change a batch `main.py run`
+   record). The comparison now has three tiers (§3): the outcome and the strategy's own
    `search` counters (the contract's claim) are compared strictly; the research block is compared with
    the stamps removed and its remaining differences are listed. This was decided after seeing the
    first report-split analysis, not before; it changes no recorded value.
@@ -123,7 +125,7 @@ both cohorts. Inputs (hash-verified copies of the frozen corpus bundles):
 | Premise of the dispatch | What the records show |
 | --- | --- |
 | Tuning differentials used reduced grids; production-grid exactness unproven | Shown now: 96/96 per run on tuning, 302/302 on report, at the unchanged full-gross values (§2) |
-| §11.2: the 14 references are unchanged versus the 0.2.1 baseline | Outcome and `search` identical on all 8 456 cells; the research block differs only by stamps and, on SOR, the WHI-1606 cohort label (§3) |
+| §11.2: the 14 references are unchanged versus the 0.2.1 baseline | Outcome and `search` identical on all 8 456 cells; the research block differs only by stamps and, on SOR, the WHI-1603 cohort label (§3) |
 | M2 is active 0/96 under the preset on tuning (WHI-1600) | Re-derived: 0/96 (A1 full) and 0/96 (A1 SOR); gates `closed:frontier` 93 + `closed:dominance` 3 (full), 87 + 3 + 6 `open` (SOR). Under `dominance: off` (A4) M2 is active on **96/96** tuning cells and 301/302 report cells (the guide's 12/96 is its 96 *fixture* cases) |
 | The §11 real-state request skips nothing | True of the guide's $10 000 USDC→USDT0 fixture request; the sentinel $1 000 USDC→USDT on the full bundle skips plenty (§6) |
 
@@ -171,7 +173,7 @@ Run once on the report split. For every reference ID the record at HEAD is compa
 | `uni_sor_optimized` | 302 | 302 | 0 | 302 | 302 | 0 |
 | `uni_sor_port` | 302 | 302 | 0 | 302 | 302 | 0 |
 
-**8,456 of 8,456 cells have identical outcome and `search`; none differs in a status, a score, a plan or a counter; none is missing.** The 14 references are unchanged by the default-off parameter. The tier-3 differences are only on the matched SOR cohort, for `metis_history` and `incremental_graph_repair` (302 cells each): `search.r021.domain.universe.cohort` (`full_source` in the 0.2.1 baseline, `sor_compatible` now), `search.r021.candidate_domain_hash` and `diagnostics.domain.hash`. That is the WHI-1606 fix (matched cohort carried into the domain identity, merged after the baseline), not a behaviour change of this release.
+**8,456 of 8,456 cells have identical outcome and `search`; none differs in a status, a score, a plan or a counter; none is missing.** The 14 references are unchanged by the default-off parameter. The tier-3 differences are only on the matched SOR cohort, for `metis_history` and `incremental_graph_repair` (302 cells each): `search.r021.domain.universe.cohort` (`full_source` in the 0.2.1 baseline, `sor_compatible` now), `search.r021.candidate_domain_hash` and `diagnostics.domain.hash`. That is the WHI-1603 fix (`cb2f806`: the two `domain()` functions record the bundle's real cohort via `cohort_of` instead of a hard-coded `full_source`, merged after the baseline), not a behaviour change of this release; WHI-1606 (`9c8a39c`) is the related single-request (`main.py quote`) fix and does not touch a batch `run` record.
 - `metis_history` (SOR): {'/diagnostics/domain/hash': 302, '/r021/candidate_domain_hash': 302, '/r021/domain/universe/cohort': 302}
 - `incremental_graph_repair` (SOR): {'/diagnostics/domain/hash': 302, '/r021/candidate_domain_hash': 302, '/r021/domain/universe/cohort': 302}
 
