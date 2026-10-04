@@ -255,34 +255,86 @@ def deterministic_view(record: Mapping[str, Any]) -> Any:
     return _deterministic_view(record)
 
 
+# the outcome of a solve: what §11.2 requires unchanged between the 0.2.1 baseline and HEAD
+OUTCOME_KEYS = ("status", "error", "score", "evaluation", "solver_reported",
+                "candidates_considered", "candidates_truncated")  # fmt: skip
+# provenance stamps that differ between two commits by construction, not by behaviour
+STAMP_KEYS = ("git_revision", "stages")
+
+
+def _drop(value: Any, names: Sequence[str]) -> Any:
+    if isinstance(value, Mapping):
+        return {k: _drop(v, names) for k, v in value.items() if k not in names}
+    if isinstance(value, list):
+        return [_drop(v, names) for v in value]
+    return value
+
+
+def _leaf_paths(a: Any, b: Any, prefix: str = "") -> list[str]:
+    """The paths at which two JSON-like values differ (a missing key is a path)."""
+    if isinstance(a, Mapping) and isinstance(b, Mapping):
+        out: list[str] = []
+        for key in sorted(set(a) | set(b)):
+            if key not in a or key not in b:
+                out.append(f"{prefix}/{key} (missing)")
+            else:
+                out += _leaf_paths(a[key], b[key], f"{prefix}/{key}")
+        return out
+    return [] if canonical(a) == canonical(b) else [prefix or "/"]
+
+
 def baseline_compare(
     new: Mapping[tuple[str, str], Mapping[str, Any]],
     old: Mapping[tuple[str, str], Mapping[str, Any]],
     algorithms: Sequence[str],
 ) -> dict[str, Any]:
-    """§11.2 last sentence: the reference IDs at HEAD against the 0.2.1 baseline records
-    (status, score, plan replay, `search` and the rest of the deterministic view)."""
+    """§11.2 last sentence: each reference ID at HEAD against its 0.2.1 baseline records, in three
+    tiers. `outcome` (status, plan replay, score, error, candidates, solver-reported outcome, quotes
+    counted) and `search` (the strategy's own counters: `search` without the research-021 block)
+    are the contract's claim and must be identical; `research_block` (`search.r021` and the record's
+    `diagnostics`, without `git_revision` and observational `stages` seconds) is reported apart with
+    the paths at which it differs. A timed-out record is compared by status and `limit_hit` only."""
     per: dict[str, Any] = {}
     for algorithm in algorithms:
         keys = sorted({c for (a, c) in (*new, *old) if a == algorithm})
-        same = 0
         missing: list[str] = []
-        differing: list[dict[str, Any]] = []
+        outcome: list[dict[str, Any]] = []
+        search: list[dict[str, Any]] = []
+        research: dict[str, int] = {}
+        research_cells = 0
         for case_id in keys:
             n, o = new.get((algorithm, case_id)), old.get((algorithm, case_id))
             if n is None or o is None:
                 missing.append(case_id)
                 continue
-            a, b = deterministic_view(n), deterministic_view(o)
-            if canonical(a) == canonical(b):
-                same += 1
-            else:
-                bad = sorted(
-                    k for k in a.keys() | b.keys() if canonical(a.get(k)) != canonical(b.get(k))
-                )
-                differing.append({"case": case_id, "keys": bad})
-        per[algorithm] = {"cells": len(keys), "identical": same, "missing": missing,
-                          "differing": differing}  # fmt: skip
+            if n["status"] == "timeout" or o["status"] == "timeout":
+                if (n["status"], n.get("limit_hit")) != (o["status"], o.get("limit_hit")):
+                    outcome.append({"case": case_id, "keys": ["status"]})
+                continue
+            bad = [k for k in OUTCOME_KEYS if canonical(n.get(k)) != canonical(o.get(k))]
+            if n["quotes"]["counted"] != o["quotes"]["counted"]:
+                bad.append("quotes.counted")
+            if bad:
+                outcome.append({"case": case_id, "keys": bad})
+            s_new = {k: v for k, v in search_of(n).items() if k != "r021"}
+            s_old = {k: v for k, v in search_of(o).items() if k != "r021"}
+            if canonical(s_new) != canonical(s_old):
+                search.append({"case": case_id, "keys": _leaf_paths(s_new, s_old, "search")})
+            block_new = {"r021": search_of(n).get("r021"), "diagnostics": n.get("diagnostics")}
+            block_old = {"r021": search_of(o).get("r021"), "diagnostics": o.get("diagnostics")}
+            paths = _leaf_paths(_drop(block_new, STAMP_KEYS), _drop(block_old, STAMP_KEYS))
+            if paths:
+                research_cells += 1
+                for path in set(paths):
+                    research[path] = research.get(path, 0) + 1
+        per[algorithm] = {
+            "cells": len(keys), "missing": missing,
+            "outcome_differing": outcome, "search_differing": search,
+            "outcome_and_search_identical": len(keys) - len(missing) - len(
+                {d["case"] for d in (*outcome, *search)}),
+            "research_block_differing_cells": research_cells,
+            "research_block_paths": dict(sorted(research.items())),
+        }  # fmt: skip
     return per
 
 

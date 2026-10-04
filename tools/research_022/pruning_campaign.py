@@ -1238,15 +1238,27 @@ def render_tables(analyses: Mapping[str, Mapping[str, Any]]) -> str:
             lines += [
                 "### 14 references vs the 0.2.1 baseline records",
                 "",
-                "| bundle | algorithm | cells | identical | differing | missing |",
-                "| --- | --- | ---: | ---: | ---: | ---: |",
+                "| bundle | algorithm | cells | outcome+search identical | outcome differing | "
+                "search differing | missing | research block differs (cells) |",
+                "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
             ]
             for label in ("report_full", "report_sor"):
                 for algorithm, v in a["baseline_0_2_1"][label].items():
                     lines.append(
-                        f"| {label} | `{algorithm}` | {v['cells']} | {v['identical']} | "
-                        f"{len(v['differing'])} | {len(v['missing'])} |"
+                        f"| {label} | `{algorithm}` | {v['cells']} | "
+                        f"{v['outcome_and_search_identical']} | {len(v['outcome_differing'])} | "
+                        f"{len(v['search_differing'])} | {len(v['missing'])} | "
+                        f"{v['research_block_differing_cells']} |"
                     )
+            lines.append("")
+            lines += [
+                "Paths at which the research block (`search.r021`, `diagnostics`) differs:",
+                "",
+            ]
+            for label in ("report_full", "report_sor"):
+                for algorithm, v in a["baseline_0_2_1"][label].items():
+                    if v["research_block_paths"]:
+                        lines.append(f"- {label} `{algorithm}`: {v['research_block_paths']}")
             lines.append("")
     lines += [
         "## Disposition (§11.6)",

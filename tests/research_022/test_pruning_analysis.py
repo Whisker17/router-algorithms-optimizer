@@ -279,34 +279,33 @@ def test_binding_budget_view_reports_quadrants_and_what_the_bounded_run_did() ->
     assert view["higher_cases"] == ["b"]
 
 
-def test_baseline_compare_reports_each_differing_cell_and_missing_apart() -> None:
-    old = {("direct", c): record("direct", c) for c in ("a", "b", "c")}
+def test_baseline_compare_has_three_tiers_and_stamps_are_not_behaviour() -> None:
+    old = {("direct", c): record("direct", c) for c in ("a", "b", "c", "d", "e")}
+    for r in old.values():
+        r["diagnostics"] = {"checked_against": {"run": {"git_revision": "aaa"}},
+                            "domain": {"hash": "h"}, "stages": {"solve": 1.0}}
+        r["search"]["r021"] = {"certificate": {"source": {"git_revision": "aaa"}},
+                               "stages": {"solve": 1.0}, "domain": {"universe": {"cohort": "x"}}}
     new = copy.deepcopy(old)
-    new[("direct", "b")]["score"] = "101"
-    del new[("direct", "c")]
+    for r in new.values():  # a new commit and new wall seconds: identical behaviour
+        r["diagnostics"]["checked_against"]["run"]["git_revision"] = "bbb"
+        r["diagnostics"]["stages"]["solve"] = 2.0
+        r["search"]["r021"]["certificate"]["source"]["git_revision"] = "bbb"
+        r["search"]["r021"]["stages"]["solve"] = 2.0
+    new[("direct", "b")]["score"] = "101"  # tier 1: the outcome
+    new[("direct", "c")]["search"]["paths_enumerated"] = 99  # tier 2: the strategy's counters
+    new[("direct", "d")]["search"]["r021"]["domain"]["universe"]["cohort"] = "y"  # tier 3
+    del new[("direct", "e")]
     out = PA.baseline_compare(new, old, ["direct"])["direct"]
-    assert out["cells"] == 3 and out["identical"] == 1
-    assert out["missing"] == ["c"] and [d["case"] for d in out["differing"]] == ["b"]
-
-
-def test_diagnostics_may_differ_only_in_executed_quote_work_and_the_strategy_name() -> None:
-    def diag(name: str, quotes: int, **work: Any) -> dict[str, Any]:
-        return {"checked_against": {"quotes_counted": quotes, "score": "100",
-                                    "run": {"algorithm": name}},
-                "work": {"quotes_executed": quotes, "quotes_memoized": 3, "label_relaxations": 9,
-                         "peak_frontier_labels": 2, **work},
-                "stages": {"solve": 0.1 * quotes}, "state": "unavailable"}  # fmt: skip
-
-    ref = record("metis_history", diagnostics=diag("metis_history", 50))
-    bnd = record("metis_history_bounded", diagnostics=diag("metis_history_bounded", 20),
-                 block=bounded_block(rule="M1", m2={"active": False, "gate": "open"}))  # fmt: skip
-    for r in (ref, bnd):
-        r["search"].update(evaluations=4)
-    ok = PA.differences(ref, bnd, "metis_history_bounded")
-    assert ok == []
-    bnd["diagnostics"]["work"]["label_relaxations"] = 1  # population: only an active M2 may
-    assert PA.differences(ref, bnd, "metis_history_bounded") == ["diagnostics"]
-    bnd["search"]["bound_pruning"]["m2"]["active"] = True
-    assert PA.differences(ref, bnd, "metis_history_bounded") == []
-    bnd["diagnostics"]["state"] = "valid"  # anything else in the block is an identity
-    assert PA.differences(ref, bnd, "metis_history_bounded") == ["diagnostics"]
+    assert out["cells"] == 5 and out["missing"] == ["e"]
+    assert [d["case"] for d in out["outcome_differing"]] == ["b"]
+    assert out["outcome_differing"][0]["keys"] == ["score"]
+    assert out["search_differing"] == [{"case": "c", "keys": ["search/paths_enumerated"]}]
+    assert out["research_block_differing_cells"] == 1
+    assert list(out["research_block_paths"]) == ["/r021/domain/universe/cohort"]
+    assert out["outcome_and_search_identical"] == 2  # a and d: the research block is apart
+    timed = {("direct", "a"): record("direct", "a", status="timeout")}
+    timed[("direct", "a")]["limit_hit"] = "time"
+    same = copy.deepcopy(timed)
+    same[("direct", "a")]["search"]["paths_enumerated"] = 5  # how far a killed search got
+    assert PA.baseline_compare(same, timed, ["direct"])["direct"]["outcome_differing"] == []
