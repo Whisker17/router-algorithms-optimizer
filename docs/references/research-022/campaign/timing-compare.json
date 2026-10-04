@@ -1,0 +1,710 @@
+{
+  "acceptance": {
+    "decision_split": "held_out",
+    "exact_semantic_fields": [
+      "status",
+      "evaluation",
+      "score",
+      "error",
+      "limit_hit",
+      "solver_reported"
+    ],
+    "heuristic_default_loss_tolerance": null,
+    "min_timed_solve_seconds": 0.02,
+    "minimum_worthwhile_improvement": 0.1,
+    "noise_multiplier": 2.0,
+    "work_fields": [
+      "quotes_counted",
+      "candidates_considered",
+      "candidates_truncated",
+      "search"
+    ]
+  },
+  "arms": {
+    "arms_sha256": "661ee7977150b9502c5f3dcd8160252c5195f2ff2647e29079f7b6f9c71d334b",
+    "baseline": "REF",
+    "baseline_controls": {},
+    "candidate": "BND",
+    "candidate_controls": {},
+    "id": "R022-pairs",
+    "role": "decision"
+  },
+  "baseline": {
+    "experiment_id": "20261004T070453575881Z-093fe4e8",
+    "load": {
+      "contaminated": true,
+      "cpu_count": 10,
+      "max_loadavg_1m": 5.52001953125,
+      "samples": 395,
+      "threshold_loadavg_1m": 5.0
+    },
+    "measured_source": {
+      "code_tree_ids": {
+        "benchmark": "a5e51be2535b72cfd69601045f2a7b1b34083b43",
+        "config": "f67ec7a335fe131e3fdc77a0efd36227d4e2fec0",
+        "main.py": "49d7d696813be14d2328a1a432b3206b0f612b5c",
+        "pools": "75beda1696704bc74b69cf1441819636f8f3a3ed",
+        "pyproject.toml": "88e20f6da3c43165b0da3e92054e68e35145b3a6",
+        "report": "5f73f58c4e0b9afb62fce2cf5ea73402ade86b56",
+        "routing": "80ea5ab3e4528707ecfa659be70aa1908f931e5b",
+        "snapshot": "a419203d229ce945cf06a841377c12b97ab8137c",
+        "uv.lock": "e99b9d781977531bdf579a08e8e469ff3b253a32"
+      },
+      "dirty_patch_sha256": null,
+      "dirty_paths": [],
+      "git_diff_sha256": null,
+      "git_dirty": false,
+      "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d"
+    }
+  },
+  "bounded_exactness": {
+    "established": [],
+    "evidence_problems": {},
+    "mismatches": [],
+    "required": 0,
+    "unproven": []
+  },
+  "candidate": {
+    "experiment_id": "20261004T105149465914Z-7b2b0081",
+    "load": {
+      "contaminated": true,
+      "cpu_count": 10,
+      "max_loadavg_1m": 5.79345703125,
+      "samples": 395,
+      "threshold_loadavg_1m": 5.0
+    },
+    "measured_source": {
+      "code_tree_ids": {
+        "benchmark": "a5e51be2535b72cfd69601045f2a7b1b34083b43",
+        "config": "f67ec7a335fe131e3fdc77a0efd36227d4e2fec0",
+        "main.py": "49d7d696813be14d2328a1a432b3206b0f612b5c",
+        "pools": "75beda1696704bc74b69cf1441819636f8f3a3ed",
+        "pyproject.toml": "88e20f6da3c43165b0da3e92054e68e35145b3a6",
+        "report": "5f73f58c4e0b9afb62fce2cf5ea73402ade86b56",
+        "routing": "80ea5ab3e4528707ecfa659be70aa1908f931e5b",
+        "snapshot": "a419203d229ce945cf06a841377c12b97ab8137c",
+        "uv.lock": "e99b9d781977531bdf579a08e8e469ff3b253a32"
+      },
+      "dirty_patch_sha256": null,
+      "dirty_paths": [],
+      "git_diff_sha256": null,
+      "git_dirty": false,
+      "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d"
+    }
+  },
+  "charged": {
+    "full_source/matrix incremental_graph_bounded": {
+      "decision_cases": 15,
+      "improvement": 0.05078033207881949,
+      "lost_decision_cases": [],
+      "threshold": 0.5143065392461459,
+      "verdict": "not_slower"
+    },
+    "full_source/matrix metis_history_bounded": {
+      "decision_cases": 15,
+      "improvement": 0.0021312226956879954,
+      "lost_decision_cases": [],
+      "threshold": 0.8312546217962837,
+      "verdict": "not_slower"
+    },
+    "full_source/matrix single_path_bounded": {
+      "decision_cases": 15,
+      "improvement": 0.4209120677788667,
+      "lost_decision_cases": [],
+      "threshold": 0.1,
+      "verdict": "not_slower"
+    }
+  },
+  "charged_costs": {
+    "full_source/matrix incremental_graph_bounded": {
+      "charged_seconds": {
+        "baseline_median": 9.409030709,
+        "candidate_median": 8.0052577295
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36824.0,
+        "candidate_median": 157250.0
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.0001084375,
+        "candidate_median": 0.0042666455
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 435710186.5,
+        "candidate_median": 396892695.5
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.14214004149999998,
+        "candidate_median": 0.1465737085
+      }
+    },
+    "full_source/matrix metis_history_bounded": {
+      "charged_seconds": {
+        "baseline_median": 5.58351948,
+        "candidate_median": 5.533866605
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 50045.0,
+        "candidate_median": 164791.0
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.00028777100000000003,
+        "candidate_median": 0.0043880625
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 393748994.5,
+        "candidate_median": 382035750.5
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.14245060450000002,
+        "candidate_median": 0.14649587549999998
+      }
+    },
+    "full_source/matrix single_path_bounded": {
+      "charged_seconds": {
+        "baseline_median": 1.055653687,
+        "candidate_median": 0.5288166034999999
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36824.0,
+        "candidate_median": 157106.0
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.0001015,
+        "candidate_median": 0.0042213955
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 33714960.5,
+        "candidate_median": 5870552.0
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.1410362915,
+        "candidate_median": 0.14738549950000002
+      }
+    },
+    "full_source/sentinel incremental_graph_bounded": {
+      "charged_seconds": {
+        "baseline_median": 14.473569541000002,
+        "candidate_median": 13.577420667
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36432,
+        "candidate_median": 159362
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.000116875,
+        "candidate_median": 0.004229208
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 1093600812,
+        "candidate_median": 888783547
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.141259791,
+        "candidate_median": 0.143334792
+      }
+    },
+    "full_source/sentinel metis_history_bounded": {
+      "charged_seconds": {
+        "baseline_median": 11.397605376000001,
+        "candidate_median": 11.120026624
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 49845,
+        "candidate_median": 166903
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.000291334,
+        "candidate_median": 0.004281708
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 896222016,
+        "candidate_median": 876369353
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.141496542,
+        "candidate_median": 0.142544708
+      }
+    },
+    "full_source/sentinel single_path_bounded": {
+      "charged_seconds": {
+        "baseline_median": 2.751322583,
+        "candidate_median": 0.559077751
+      },
+      "prepare_peak_bytes": {
+        "baseline_median": 36432,
+        "candidate_median": 159218
+      },
+      "prepare_seconds": {
+        "baseline_median": 0.000103708,
+        "candidate_median": 0.004117917
+      },
+      "solve_peak_bytes": {
+        "baseline_median": 178065685,
+        "candidate_median": 11090076
+      },
+      "startup_including_prepare_seconds": {
+        "baseline_median": 0.141423583,
+        "candidate_median": 0.144113125
+      }
+    }
+  },
+  "claims": "No percentile, p95 or SLA is derived: each case has 2 x repeats samples; the figures are medians/min/max of observations on the recorded host.",
+  "coverage_problems": {
+    "baseline": [],
+    "candidate": [],
+    "pairing": []
+  },
+  "fixed_budget_differences": [],
+  "internal_checks": {
+    "baseline": {
+      "attempts_inconsistent": [],
+      "cold_warm": [],
+      "cross_order": []
+    },
+    "candidate": {
+      "attempts_inconsistent": [],
+      "cold_warm": [],
+      "cross_order": []
+    }
+  },
+  "lane": "heuristic",
+  "pairs": {
+    "incremental_graph_bounded": "incremental_graph",
+    "metis_history_bounded": "metis_history",
+    "single_path_bounded": "single_path"
+  },
+  "protocol_sha256": "f34475cdff54713f4641e2ac4c32c7cab41eefcdc7ffb79a4ba6cdc149350400",
+  "reasons": [
+    "host load exceeded the protocol threshold in an experiment"
+  ],
+  "regret": {
+    "full_source/matrix incremental_graph_bounded": {
+      "held_out": {
+        "at_zero_regret": 14,
+        "cases": 14,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/matrix metis_history_bounded": {
+      "held_out": {
+        "at_zero_regret": 14,
+        "cases": 14,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/matrix single_path_bounded": {
+      "held_out": {
+        "at_zero_regret": 14,
+        "cases": 14,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 1
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/sentinel incremental_graph_bounded": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/sentinel metis_history_bounded": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "full_source/sentinel single_path_bounded": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/matrix incremental_graph_bounded": {
+      "held_out": {
+        "at_zero_regret": 13,
+        "cases": 13,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 2
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/matrix metis_history_bounded": {
+      "held_out": {
+        "at_zero_regret": 13,
+        "cases": 13,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 2
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/matrix single_path_bounded": {
+      "held_out": {
+        "at_zero_regret": 13,
+        "cases": 13,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 2
+      },
+      "tuning": {
+        "at_zero_regret": 9,
+        "cases": 9,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/sentinel incremental_graph_bounded": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/sentinel metis_history_bounded": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    },
+    "sor_compatible/sentinel single_path_bounded": {
+      "sentinel": {
+        "at_zero_regret": 1,
+        "cases": 1,
+        "gains": 0,
+        "losses": 0,
+        "max_regret_bps": 0.0,
+        "mean_regret_bps": 0.0,
+        "not_applicable": 0
+      }
+    }
+  },
+  "report": {
+    "dirty_patch_sha256": null,
+    "generated_at": "2026-10-04T13:51:31.013707+00:00",
+    "git_dirty": false,
+    "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+    "report_tree_id": "5f73f58c4e0b9afb62fce2cf5ea73402ade86b56"
+  },
+  "schema": "latency-comparison/2",
+  "semantic_mismatches": [],
+  "status_regressions": [],
+  "status_transitions": {
+    "cold fixed full_source/matrix incremental_graph_bounded": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "cold fixed full_source/matrix metis_history_bounded": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "cold fixed full_source/matrix single_path_bounded": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "cold fixed full_source/sentinel incremental_graph_bounded": {
+      "ok->ok": 1
+    },
+    "cold fixed full_source/sentinel metis_history_bounded": {
+      "ok->ok": 1
+    },
+    "cold fixed full_source/sentinel single_path_bounded": {
+      "ok->ok": 1
+    },
+    "timing fixed full_source/matrix incremental_graph_bounded": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing fixed full_source/matrix metis_history_bounded": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing fixed full_source/matrix single_path_bounded": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing fixed full_source/sentinel incremental_graph_bounded": {
+      "ok->ok": 1
+    },
+    "timing fixed full_source/sentinel metis_history_bounded": {
+      "ok->ok": 1
+    },
+    "timing fixed full_source/sentinel single_path_bounded": {
+      "ok->ok": 1
+    },
+    "timing fixed sor_compatible/matrix incremental_graph_bounded": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing fixed sor_compatible/matrix metis_history_bounded": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing fixed sor_compatible/matrix single_path_bounded": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing fixed sor_compatible/sentinel incremental_graph_bounded": {
+      "ok->ok": 1
+    },
+    "timing fixed sor_compatible/sentinel metis_history_bounded": {
+      "ok->ok": 1
+    },
+    "timing fixed sor_compatible/sentinel single_path_bounded": {
+      "ok->ok": 1
+    },
+    "timing reverse full_source/matrix incremental_graph_bounded": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing reverse full_source/matrix metis_history_bounded": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing reverse full_source/matrix single_path_bounded": {
+      "no_route->no_route": 1,
+      "ok->ok": 23
+    },
+    "timing reverse full_source/sentinel incremental_graph_bounded": {
+      "ok->ok": 1
+    },
+    "timing reverse full_source/sentinel metis_history_bounded": {
+      "ok->ok": 1
+    },
+    "timing reverse full_source/sentinel single_path_bounded": {
+      "ok->ok": 1
+    },
+    "timing reverse sor_compatible/matrix incremental_graph_bounded": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing reverse sor_compatible/matrix metis_history_bounded": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing reverse sor_compatible/matrix single_path_bounded": {
+      "no_route->no_route": 2,
+      "ok->ok": 22
+    },
+    "timing reverse sor_compatible/sentinel incremental_graph_bounded": {
+      "ok->ok": 1
+    },
+    "timing reverse sor_compatible/sentinel metis_history_bounded": {
+      "ok->ok": 1
+    },
+    "timing reverse sor_compatible/sentinel single_path_bounded": {
+      "ok->ok": 1
+    }
+  },
+  "timing": {
+    "full_source/matrix incremental_graph_bounded": {
+      "decision_cases": {
+        "cpu": 13,
+        "wall": 13
+      },
+      "improvement": {
+        "cpu": 0.14331803339215243,
+        "wall": 0.14373552282872293
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.2552869910801321,
+        "base_wall": 0.25715326962307294,
+        "cand_cpu": 0.004833412007545945,
+        "cand_wall": 0.005109318648364836
+      },
+      "reference": "incremental_graph",
+      "threshold": 0.5143065392461459,
+      "verdict": "no_worthwhile_change"
+    },
+    "full_source/matrix metis_history_bounded": {
+      "decision_cases": {
+        "cpu": 12,
+        "wall": 12
+      },
+      "improvement": {
+        "cpu": 0.1817728954769512,
+        "wall": 0.18228070597571655
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.41359117298429426,
+        "base_wall": 0.41562731089814187,
+        "cand_cpu": 0.001700451790609181,
+        "cand_wall": 0.001764794638017042
+      },
+      "reference": "metis_history",
+      "threshold": 0.8312546217962837,
+      "verdict": "no_worthwhile_change"
+    },
+    "full_source/matrix single_path_bounded": {
+      "decision_cases": {
+        "cpu": 12,
+        "wall": 12
+      },
+      "improvement": {
+        "cpu": 0.607115464620811,
+        "wall": 0.6072406813035043
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.02597285955988271,
+        "base_wall": 0.025885974508880416,
+        "cand_cpu": 0.004463217693722266,
+        "cand_wall": 0.006186839383829801
+      },
+      "reference": "single_path",
+      "threshold": 0.1,
+      "verdict": "faster"
+    },
+    "sor_compatible/matrix incremental_graph_bounded": {
+      "decision_cases": {
+        "cpu": 12,
+        "wall": 12
+      },
+      "improvement": {
+        "cpu": 0.2090936708210238,
+        "wall": 0.21098450447939887
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.43132161207163144,
+        "base_wall": 0.431861469483231,
+        "cand_cpu": 0.0021814599680876068,
+        "cand_wall": 0.0017491989335818303
+      },
+      "reference": "incremental_graph",
+      "threshold": 0.863722938966462,
+      "verdict": "no_worthwhile_change"
+    },
+    "sor_compatible/matrix metis_history_bounded": {
+      "decision_cases": {
+        "cpu": 12,
+        "wall": 12
+      },
+      "improvement": {
+        "cpu": 0.1960455008288433,
+        "wall": 0.19626249443078747
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.43203425071760737,
+        "base_wall": 0.43598290645853566,
+        "cand_cpu": 0.0034609323691479066,
+        "cand_wall": 0.0030753983730968937
+      },
+      "reference": "metis_history",
+      "threshold": 0.8719658129170713,
+      "verdict": "no_worthwhile_change"
+    },
+    "sor_compatible/matrix single_path_bounded": {
+      "decision_cases": {
+        "cpu": 12,
+        "wall": 12
+      },
+      "improvement": {
+        "cpu": 0.6922670235220434,
+        "wall": 0.6932431340677296
+      },
+      "lost_decision_cases": [],
+      "noise": {
+        "base_cpu": 0.42475384005770467,
+        "base_wall": 0.42645754205291575,
+        "cand_cpu": 0.0035028869887914205,
+        "cand_wall": 0.00538201405031824
+      },
+      "reference": "single_path",
+      "threshold": 0.8529150841058315,
+      "verdict": "no_worthwhile_change"
+    }
+  },
+  "verdict": "inconclusive",
+  "work_differences": []
+}

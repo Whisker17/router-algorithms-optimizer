@@ -1,0 +1,644 @@
+{
+ "analysis_source": {
+  "schedule_sha256": "becf5ba653257214ad21fe0b7352c812f0cacfebc62b91ab707719de015fad81",
+  "tools_sha256": {
+   "pruning_analysis.py": "bde4a71153ee08187e4013f83ec81da1d9b15ae8cb5afc1b029914b9fc53e5ee",
+   "pruning_campaign.py": "c6b5116845889d6a44e86f1ed2e2b779d2cc4c8026ba3da8b3758562f703d5e5",
+   "pruning_work.py": "f40d1488c41e38e213c080c2c312bc5d5c586059a6636e88bf5d076aeec3a01c"
+  }
+ },
+ "binding_budgets": {},
+ "compact": true,
+ "exactness": {},
+ "host_samples": 30,
+ "host_sleep_transitions": 0,
+ "invocations": {
+  "I-batch17": {
+   "bundle_hash": "5401b1de8c83a3527e5f9b5afae4510a760f171f2b306d49dbb5c830256c9ad0",
+   "cases_sha256": "53ec2be580b2ab0ce3ce889dc725eb2788073356fd566f35f11dfb5ab35bfad5",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "not_a_corpus_split",
+   "host": {
+    "max_load1": 7.0537109375,
+    "samples": 1,
+    "samples_over": 1,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "108f2dc139f41fd16b18ec389f6991044dd7cbd2fbac9434b57fa16322347baf",
+   "profile_sha256": "12c85b447803a205e199d47cb1d6370e90dd5c8265bb95b28799fc8383dcfcef",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/fixture --profile /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-batch17/20261004T031019983002Z-5e4067e1/profile.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-batch17 --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-batch17/20261004T031019983002Z-5e4067e1",
+   "run_seconds": 32.588464875,
+   "started": 1791083419.766113,
+   "status_counts": {
+    "cfmm_dual": {
+     "no_route": 5,
+     "ok": 91
+    },
+    "direct": {
+     "no_route": 12,
+     "ok": 84
+    },
+    "direct_split": {
+     "no_route": 12,
+     "ok": 84
+    },
+    "direct_split_certified": {
+     "no_route": 12,
+     "unsupported": 84
+    },
+    "incremental_graph": {
+     "ok": 96
+    },
+    "incremental_graph_bounded": {
+     "ok": 96
+    },
+    "incremental_graph_repair": {
+     "ok": 96
+    },
+    "metis_history": {
+     "ok": 96
+    },
+    "metis_history_bounded": {
+     "ok": 96
+    },
+    "metis_inspired": {
+     "ok": 96
+    },
+    "path_split": {
+     "ok": 96
+    },
+    "single_path": {
+     "ok": 96
+    },
+    "single_path_bounded": {
+     "ok": 96
+    },
+    "uni_sor_adaptive": {
+     "ok": 96
+    },
+    "uni_sor_cycle_safe": {
+     "ok": 96
+    },
+    "uni_sor_optimized": {
+     "ok": 96
+    },
+    "uni_sor_port": {
+     "ok": 96
+    }
+   },
+   "t": 1791083452.7071402
+  },
+  "I-batch17.order": {
+   "exit_code": 0,
+   "host": {
+    "max_load1": null,
+    "samples": 0,
+    "sleep_transitions": 0,
+    "state": "unknown",
+    "threshold": 5.0
+   },
+   "result": "ok",
+   "run_dir": null,
+   "started": 1791083486.680219,
+   "t": 1791083487.187875
+  },
+  "I-batch17.replay": {
+   "bundle_hash": "5401b1de8c83a3527e5f9b5afae4510a760f171f2b306d49dbb5c830256c9ad0",
+   "cases_sha256": "7976e30f1b2fd822380685f2ea3fdc88db1ee918864307d436d631b4b6c10a81",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "not_a_corpus_split",
+   "host": {
+    "max_load1": 6.66162109375,
+    "samples": 1,
+    "samples_over": 1,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "b2443db5a27aca8de3a82e832315e6533939dd39791182ade81a1920304867ac",
+   "profile_sha256": "12c85b447803a205e199d47cb1d6370e90dd5c8265bb95b28799fc8383dcfcef",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/inputs/fixture --profile /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-batch17/20261004T031019983002Z-5e4067e1/profile.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-batch17 --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-batch17/20261004T031054442993Z-da8434bf",
+   "run_seconds": 31.590356417,
+   "started": 1791083454.242333,
+   "status_counts": {
+    "cfmm_dual": {
+     "no_route": 5,
+     "ok": 91
+    },
+    "direct": {
+     "no_route": 12,
+     "ok": 84
+    },
+    "direct_split": {
+     "no_route": 12,
+     "ok": 84
+    },
+    "direct_split_certified": {
+     "no_route": 12,
+     "unsupported": 84
+    },
+    "incremental_graph": {
+     "ok": 96
+    },
+    "incremental_graph_bounded": {
+     "ok": 96
+    },
+    "incremental_graph_repair": {
+     "ok": 96
+    },
+    "metis_history": {
+     "ok": 96
+    },
+    "metis_history_bounded": {
+     "ok": 96
+    },
+    "metis_inspired": {
+     "ok": 96
+    },
+    "path_split": {
+     "ok": 96
+    },
+    "single_path": {
+     "ok": 96
+    },
+    "single_path_bounded": {
+     "ok": 96
+    },
+    "uni_sor_adaptive": {
+     "ok": 96
+    },
+    "uni_sor_cycle_safe": {
+     "ok": 96
+    },
+    "uni_sor_optimized": {
+     "ok": 96
+    },
+    "uni_sor_port": {
+     "ok": 96
+    }
+   },
+   "t": 1791083486.1748421
+  },
+  "I-batch17.report": {
+   "exit_code": 0,
+   "host": {
+    "max_load1": null,
+    "samples": 0,
+    "sleep_transitions": 0,
+    "state": "unknown",
+    "threshold": 5.0
+   },
+   "result": "ok",
+   "run_dir": null,
+   "started": 1791083453.2143319,
+   "t": 1791083453.7291121
+  },
+  "I-quote-compact": {
+   "bundle_hash": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+   "cases_sha256": "6d41923ce3205aadfa6cb365de4756edc2cdaedfb84ed6d836243845c73a20ec",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "not_a_corpus_split",
+   "host": {
+    "max_load1": 7.08349609375,
+    "samples": 7,
+    "samples_over": 7,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "293b23f82ad168400916354ebcf3d87d2998c576e2fe39121203acff14bd87dc",
+   "profile_sha256": "51bdcb2a8cb1b9bce883cc024eee0638ed8a41b210fcc7ebc548e043a28c479f",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-compact/20261004T031805420737Z-fb8fef4c/bundle --profile /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-compact/20261004T031805420737Z-fb8fef4c/profile.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-compact/20261004T031805420737Z-fb8fef4c/runs --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-compact/20261004T031805420737Z-fb8fef4c/runs/20261004T031805736583Z-6dfbd119",
+   "run_seconds": 195.711363458,
+   "started": 1791083885.022947,
+   "status_counts": {
+    "cfmm_dual": {
+     "ok": 1
+    },
+    "direct": {
+     "ok": 1
+    },
+    "direct_split": {
+     "ok": 1
+    },
+    "direct_split_certified": {
+     "unsupported": 1
+    },
+    "incremental_graph": {
+     "ok": 1
+    },
+    "incremental_graph_bounded": {
+     "ok": 1
+    },
+    "incremental_graph_repair": {
+     "ok": 1
+    },
+    "metis_history": {
+     "ok": 1
+    },
+    "metis_history_bounded": {
+     "ok": 1
+    },
+    "metis_inspired": {
+     "ok": 1
+    },
+    "path_split": {
+     "ok": 1
+    },
+    "single_path": {
+     "ok": 1
+    },
+    "single_path_bounded": {
+     "ok": 1
+    },
+    "uni_sor_adaptive": {
+     "ok": 1
+    },
+    "uni_sor_cycle_safe": {
+     "ok": 1
+    },
+    "uni_sor_optimized": {
+     "ok": 1
+    },
+    "uni_sor_port": {
+     "ok": 1
+    }
+   },
+   "t": 1791084081.658782
+  },
+  "I-quote-compact.order": {
+   "exit_code": 0,
+   "host": {
+    "max_load1": null,
+    "samples": 0,
+    "sleep_transitions": 0,
+    "state": "unknown",
+    "threshold": 5.0
+   },
+   "result": "ok",
+   "run_dir": null,
+   "started": 1791084280.8017101,
+   "t": 1791084281.3070369
+  },
+  "I-quote-compact.replay": {
+   "bundle_hash": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+   "cases_sha256": "817232a2d35a963842088bcbe49f1b09f132af8c09606d4ba2b361b2fb2f38a8",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "not_a_corpus_split",
+   "host": {
+    "max_load1": 7.4091796875,
+    "samples": 6,
+    "samples_over": 6,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "6348aace60ba72fb073b8d96f66d733f2b43f2726fa64e84953d4e6ef6db9832",
+   "profile_sha256": "51bdcb2a8cb1b9bce883cc024eee0638ed8a41b210fcc7ebc548e043a28c479f",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-compact/20261004T031805420737Z-fb8fef4c/bundle --profile /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-compact/20261004T031805420737Z-fb8fef4c/profile.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-compact/20261004T031805420737Z-fb8fef4c/runs --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-compact/20261004T031805420737Z-fb8fef4c/runs/20261004T032123510206Z-fac890d9",
+   "run_seconds": 196.197350417,
+   "started": 1791084083.176626,
+   "status_counts": {
+    "cfmm_dual": {
+     "ok": 1
+    },
+    "direct": {
+     "ok": 1
+    },
+    "direct_split": {
+     "ok": 1
+    },
+    "direct_split_certified": {
+     "unsupported": 1
+    },
+    "incremental_graph": {
+     "ok": 1
+    },
+    "incremental_graph_bounded": {
+     "ok": 1
+    },
+    "incremental_graph_repair": {
+     "ok": 1
+    },
+    "metis_history": {
+     "ok": 1
+    },
+    "metis_history_bounded": {
+     "ok": 1
+    },
+    "metis_inspired": {
+     "ok": 1
+    },
+    "path_split": {
+     "ok": 1
+    },
+    "single_path": {
+     "ok": 1
+    },
+    "single_path_bounded": {
+     "ok": 1
+    },
+    "uni_sor_adaptive": {
+     "ok": 1
+    },
+    "uni_sor_cycle_safe": {
+     "ok": 1
+    },
+    "uni_sor_optimized": {
+     "ok": 1
+    },
+    "uni_sor_port": {
+     "ok": 1
+    }
+   },
+   "t": 1791084280.2898262
+  },
+  "I-quote-compact.report": {
+   "exit_code": 0,
+   "host": {
+    "max_load1": null,
+    "samples": 0,
+    "sleep_transitions": 0,
+    "state": "unknown",
+    "threshold": 5.0
+   },
+   "result": "ok",
+   "run_dir": null,
+   "started": 1791084082.164952,
+   "t": 1791084082.673027
+  },
+  "I-quote-details": {
+   "bundle_hash": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+   "cases_sha256": "35f688cc84ba5d3c3b55c7b741041a1615bf0e952c94375a00b63cbeed39deea",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "not_a_corpus_split",
+   "host": {
+    "max_load1": 8.328125,
+    "samples": 6,
+    "samples_over": 6,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "8fc161786a7974c73bfda1671dd77d0701d80b8de7057fca465786ee16cfa087",
+   "profile_sha256": "51bdcb2a8cb1b9bce883cc024eee0638ed8a41b210fcc7ebc548e043a28c479f",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-details/20261004T031128080045Z-9ee5f9a4/bundle --profile /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-details/20261004T031128080045Z-9ee5f9a4/profile.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-details/20261004T031128080045Z-9ee5f9a4/runs --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-details/20261004T031128080045Z-9ee5f9a4/runs/20261004T031128387026Z-ee9f6a53",
+   "run_seconds": 195.882347875,
+   "started": 1791083487.691309,
+   "status_counts": {
+    "cfmm_dual": {
+     "ok": 1
+    },
+    "direct": {
+     "ok": 1
+    },
+    "direct_split": {
+     "ok": 1
+    },
+    "direct_split_certified": {
+     "unsupported": 1
+    },
+    "incremental_graph": {
+     "ok": 1
+    },
+    "incremental_graph_bounded": {
+     "ok": 1
+    },
+    "incremental_graph_repair": {
+     "ok": 1
+    },
+    "metis_history": {
+     "ok": 1
+    },
+    "metis_history_bounded": {
+     "ok": 1
+    },
+    "metis_inspired": {
+     "ok": 1
+    },
+    "path_split": {
+     "ok": 1
+    },
+    "single_path": {
+     "ok": 1
+    },
+    "single_path_bounded": {
+     "ok": 1
+    },
+    "uni_sor_adaptive": {
+     "ok": 1
+    },
+    "uni_sor_cycle_safe": {
+     "ok": 1
+    },
+    "uni_sor_optimized": {
+     "ok": 1
+    },
+    "uni_sor_port": {
+     "ok": 1
+    }
+   },
+   "t": 1791083684.847544
+  },
+  "I-quote-details.order": {
+   "exit_code": 0,
+   "host": {
+    "max_load1": null,
+    "samples": 0,
+    "sleep_transitions": 0,
+    "state": "unknown",
+    "threshold": 5.0
+   },
+   "result": "ok",
+   "run_dir": null,
+   "started": 1791083884.009729,
+   "t": 1791083884.517577
+  },
+  "I-quote-details.replay": {
+   "bundle_hash": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+   "cases_sha256": "4c9bb62640275756e5e0e166460977d892ad4639d108e93188ce01b2bca6e6dc",
+   "environment": {
+    "cpu_count": 10,
+    "cpu_model": "Apple M2 Pro",
+    "dependencies": {
+     "numpy": "2.5.3",
+     "pycryptodome": "3.23.0",
+     "pyyaml": "6.0.3",
+     "scipy": "1.18.1"
+    },
+    "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.13"
+   },
+   "exit_code": 0,
+   "git_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+   "holdout_exposure": "not_a_corpus_split",
+   "host": {
+    "max_load1": 8.1845703125,
+    "samples": 7,
+    "samples_over": 7,
+    "sleep_transitions": 0,
+    "state": "contaminated",
+    "threshold": 5.0
+   },
+   "manifest_sha256": "e89b602194ae1be16504c5c6bc04a964bc0e73ac7e0566d743298631f1082e33",
+   "profile_sha256": "51bdcb2a8cb1b9bce883cc024eee0638ed8a41b210fcc7ebc548e043a28c479f",
+   "replay_command": "uv run python main.py run --bundle /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-details/20261004T031128080045Z-9ee5f9a4/bundle --profile /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-details/20261004T031128080045Z-9ee5f9a4/profile.yaml --results-dir /Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-details/20261004T031128080045Z-9ee5f9a4/runs --strategies profile",
+   "result": "ok",
+   "run_dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-022/whi-1602/46d6e2e628b2768caab124986c3ce50d3c2f891d/I/I-quote-details/20261004T031128080045Z-9ee5f9a4/runs/20261004T031446704358Z-bd943657",
+   "run_seconds": 196.397219792,
+   "started": 1791083686.375843,
+   "status_counts": {
+    "cfmm_dual": {
+     "ok": 1
+    },
+    "direct": {
+     "ok": 1
+    },
+    "direct_split": {
+     "ok": 1
+    },
+    "direct_split_certified": {
+     "unsupported": 1
+    },
+    "incremental_graph": {
+     "ok": 1
+    },
+    "incremental_graph_bounded": {
+     "ok": 1
+    },
+    "incremental_graph_repair": {
+     "ok": 1
+    },
+    "metis_history": {
+     "ok": 1
+    },
+    "metis_history_bounded": {
+     "ok": 1
+    },
+    "metis_inspired": {
+     "ok": 1
+    },
+    "path_split": {
+     "ok": 1
+    },
+    "single_path": {
+     "ok": 1
+    },
+    "single_path_bounded": {
+     "ok": 1
+    },
+    "uni_sor_adaptive": {
+     "ok": 1
+    },
+    "uni_sor_cycle_safe": {
+     "ok": 1
+    },
+    "uni_sor_optimized": {
+     "ok": 1
+    },
+    "uni_sor_port": {
+     "ok": 1
+    }
+   },
+   "t": 1791083883.508595
+  },
+  "I-quote-details.report": {
+   "exit_code": 0,
+   "host": {
+    "max_load1": null,
+    "samples": 0,
+    "sleep_transitions": 0,
+    "state": "unknown",
+    "threshold": 5.0
+   },
+   "result": "ok",
+   "run_dir": null,
+   "started": 1791083685.357419,
+   "t": 1791083685.865818
+  }
+ },
+ "reconciled": true,
+ "reconciliation_problems": [],
+ "schema": "r022.campaign-analysis/1",
+ "stage": "I",
+ "stage_revision": "46d6e2e628b2768caab124986c3ce50d3c2f891d",
+ "work": {},
+ "work_pass_agreement": {}
+}

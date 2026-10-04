@@ -1207,10 +1207,14 @@ def render_tables(analyses: Mapping[str, Mapping[str, Any]]) -> str:
                     f"{[round(x, 4) for x in pre['prepare_seconds_reference']]}; "
                     f"{[round(x, 4) for x in pre['prepare_seconds_bounded']]} |"
                 )
-            lines += ["", "### Work by case family (work-pass runs; sums, reference → bounded)",
-                      "",
-                      "| run | family | value | cases | unit | reference | bounded | ratio |",
-                      "| --- | --- | --- | ---: | --- | ---: | ---: | ---: |"]  # fmt: skip
+            lines += [
+                "",
+                "### Work by case family (work-pass runs; sum, then n / p50 / p90 / max per case)",
+                "",
+                "| run | family | value | cases | unit | reference sum | reference n/p50/p90/max | "
+                "bounded sum | bounded n/p50/p90/max | ratio |",
+                "| --- | --- | --- | ---: | --- | ---: | --- | ---: | --- | ---: |",
+            ]
             for label, w in sorted(a["work"].items()):
                 if not w["work_pass"]:
                     continue
@@ -1221,8 +1225,8 @@ def render_tables(analyses: Mapping[str, Mapping[str, Any]]) -> str:
                             if row is not None:
                                 lines.append(
                                     f"| `{label}` | {kind} | {value} | {table['cases']} | {unit} | "
-                                    f"{_f(row['reference']['sum'])} | "
-                                    f"{_f(row['bounded']['sum'])} | "
+                                    f"{_f(row['reference']['sum'])} | {_dist(row['reference'])} | "
+                                    f"{_f(row['bounded']['sum'])} | {_dist(row['bounded'])} | "
                                     f"{_f(row['ratio_bounded_over_reference'], 4)} |"
                                 )
             lines.append("")
