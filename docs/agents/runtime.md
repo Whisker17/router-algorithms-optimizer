@@ -18,6 +18,11 @@ one edit point.
 | `IMPLEMENTER` | Implements one issue in its own worktree, runs the relevant checks, opens the PR, hands off (`/implement`) | `medium` / `high` from the issue's `Complexity` (`docs/agents/issue-template.md` § Execution) | Widen scope; create the next release |
 | `REVIEWER` | Independent adversarial review of a PR range or a release snapshot (`/code-review`) | `high` | Edit the reviewed code; pass style preferences off as defects |
 
+Project binding note (WHI-1625): `config/agent-roles.conf` maps both template efforts of
+`REVIEWER` to the runtime's native `medium`, so a skill's `--effort high` review dispatch runs
+the reviewer at medium. That is an owner-declared mapping in the single edit point, not a
+dispatcher downgrade; record the native effort (`medium`) wherever a reviewer's effort is logged.
+
 Ordinary exploration is done by whichever role owns the task. There is no escalation role:
 unresolved findings past the review budget go to a human.
 
