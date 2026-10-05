@@ -1069,6 +1069,15 @@ def algorithm_label(run: RunData, algorithm: str) -> dict[str, Any]:
             ),
             "provenance": provenance,
         }
+    if isinstance(provenance, dict) and "R023-C" in str(provenance.get("contract")):
+        return {  # WHI-1623: `split_polish`; the label is the contract's (R023-C/1)
+            "kind": "experimental",
+            "title": (
+                f"Experimental split polishing — {provenance.get('label')}; post-processor of a "
+                "declared base strategy, a local heuristic; no optimality claimed"
+            ),
+            "provenance": provenance,
+        }
     if "metis" in algorithm.lower():
         return {
             "kind": "experimental",

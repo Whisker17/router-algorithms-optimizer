@@ -20,7 +20,10 @@ ordinary CLI compares. It covers:
   and `metis_history_bounded` (§§19–22; shared theory in §19). Each is an **exact acceleration** of
   a strategy above: it skips a candidate only when a proved upper bound shows that it cannot beat the
   incumbent, and returns the reference's plan. With them, `--strategies all` compares **17**
-  strategies. They claim no speedup: timing is a separate measurement (WHI-1602).
+  strategies. They claim no speedup: timing is a separate measurement (WHI-1602);
+- the **0.2.3 post-processor** `split_polish` (§23, contract `R023-C/1`): exact split-share
+  polishing of a declared base strategy's plan (Jupiter-inspired, **NOT Jupiter Metis**). It is
+  selected only by a profile that names it; `--strategies all` does not add it.
 
 For each strategy it describes the mathematical foundations, search mechanics, state management
 and practical trade-offs against frozen Mantle liquidity snapshots. To compare them on a single
@@ -42,6 +45,8 @@ Inspected source commits:
   `1e63a043f7023988963bf18f47fbadf5f34b26ff` (WHI-1600 merged on `dev`; PRs #80 and #81). Their
   worked examples are `docs/examples/routing-algorithms/r022_examples.py`. Line numbers in §§19–22
   are those of `1e63a04`; function names are the stable anchors when lines drift.
+- §23: `routing/algorithms/split_polish.py` as added by WHI-1623 on `release/v0.2.3`; its worked
+  example is checked by `tests/routing/test_split_polish.py`. §23 names functions, not lines.
 
 All numeric traces and intermediate transitions are verified offline by
 `tests/docs/test_routing_algorithm_examples.py`, `tests/docs/test_r021_examples.py` and
@@ -4738,3 +4743,159 @@ Pins: `dev` @ `1e63a043f7023988963bf18f47fbadf5f34b26ff` (PR #81).
   - As §21.9: P0, the $2^{127}$ domain, rate-only and no-slack directions, slack carrying the rate.
   - `label_relaxations` and the other population counters are only reference-identical while M2 is
     inactive.
+
+---
+
+## 23. Algorithm 18: `split_polish` (Exact Split-Share Polishing of a Base Plan; Jupiter-Inspired, NOT Jupiter Metis)
+
+### 23.1 Problem and Inclusion Rationale
+Every chunked strategy above allocates the input in fixed increments: `incremental_graph` commits
+$A / \text{chunks}$ at a time and never takes a chunk back. Its finished plan can therefore sit a
+fraction of a chunk away from the best split *of the same routes*. `split_polish` (WHI-1623,
+contract `R023-C/1` §3, §4, §6, E1) is a **post-processor**: it runs a declared base strategy, keeps
+the base plan's routes exactly and re-optimises only the split shares, with exact integer replay.
+
+- **Identity:** experimental, `custom` group, selected only by a profile that names it (`--strategies
+  all` does **not** add it). Label: "Jupiter-inspired (Ultra V3 / Metis v7 Brent splitting), **NOT
+  Jupiter Metis**". Gross-only.
+- **What is claimed:** never worse than the base plan it ran on, and every returned plan is an
+  evaluator-valid exact integer plan. **Not claimed:** optimality (a local pairwise heuristic over a
+  fixed topology, not SCO), Jupiter equivalence, any speedup.
+
+### 23.2 Mathematical Model and Assumptions
+**Domain (fixed funding topology).** The base plan's evaluated trace is canonicalised: zero
+references and zero-input steps are dropped, `ALL_REMAINING` is resolved. Every consumed fund must be
+fully consumed; otherwise the case is refused (`scope: unsupported_topology`) and the base result is
+returned unchanged. Pools, directions, step order and fund wiring stay fixed. The variables are the
+exact rational shares $s_{f,k} = a_{f,k} / P_f$ of every fund $f$ with more than one consumer $k$
+($P_f$ = the fund's produced amount).
+
+**Simulation.** For each fund, every consumer except the **last one with a positive share** gets
+$\lfloor P_f \cdot s_{f,k} \rfloor$, that one takes the remainder, a zero share gets exactly 0. Steps
+with zero input are skipped, a pool used twice sees the state of its earlier use, and a positive
+unconsumed non-target fund makes the candidate infeasible. This is the evaluator's replay of the
+canonical plan, so every simulated gross equals the evaluator's.
+
+**Pairwise line search.** For split funds in order of first consumption and consumer pairs $i < j$,
+the transfer $t \in [-s_j, s_i]$ moves share from $i$ to $j$. $t = 0$, $t = s_i$ (consumer $i$
+emptied) and $t = -s_j$ are always evaluated; interior points lie on the grid $D$ (`grid`, $10^9$
+share units). Golden section treats an infeasible point as $-\infty$; Brent (SciPy
+`minimize_scalar(method="bounded")`) minimises $-(v - v_0)/v_0$ with a finite penalty $+1.0$ for an
+infeasible point ($v_0 = 1$ when the base gross is 0), `xatol` $= \max(1, \text{tol}/2)$ grid units.
+The winner is the best **exact cached** point: higher gross, then $t = 0$, then smaller $|t|$, then
+smaller $t$. A strictly higher gross is accepted, checked by the evaluator's structural plan check
+(no quotes) and held at once; `rounds` rounds stop early after a round with no acceptance.
+
+### 23.3 Concise Pseudocode
+```python
+def solve_split_polish(case, base_strategy, budget):
+    base = base_strategy.solve(case, budget)              # same worker meter, same budget
+    if objective != gross_only: return unsupported("objective")
+    if base.status != ok: return base                     # base statuses pass through
+    ledger = Ledger(cap=budget.max_quotes, used=base_quotes, deadline=start + time_limit)
+    plan, produced = canonicalise(base.evaluation.trace)
+    shares = exact_shares(plan, produced)                 # Fraction(amount, produced)
+    if shares is None: return base with scope="unsupported_topology"
+    assert simulate(shares) == base                       # reconstruction (charged)
+    try:
+        for _ in range(rounds):
+            improved = False
+            for fund in split_funds:                      # order of first consumption
+                for i < j in consumers(fund):
+                    v, t = best_cached(line_search(lambda t: simulate(shares moved by t)))
+                    if v > incumbent.gross and structurally_valid(canonical(t)):
+                        incumbent = canonical(t); publish(incumbent); improved = True
+            if not improved: break
+    except PolishStop as stop:                            # max_quotes or time
+        truncated_by = stop.reason                        # status stays ok
+    return base if incumbent is base else incumbent
+```
+
+### 23.4 Architecture and Topology Diagram
+```mermaid
+flowchart TD
+    B["base strategy solve<br>(same meter, budget)"] --> S{"base ok?"}
+    S -- no --> P["pass the base status through"]
+    S -- yes --> C["canonicalise the trace<br>exact Fraction shares"]
+    C --> D{"every consumed fund<br>fully consumed?"}
+    D -- no --> U["ok, base plan,<br>scope unsupported_topology"]
+    D -- yes --> R["reconstruction check<br>(charged)"]
+    R --> L["pairwise line search<br>t=0, both endpoints, grid interior"]
+    L --> A{"gross strictly higher<br>and structurally valid?"}
+    A -- yes --> H["incumbent holder<br>report_candidate"] --> L
+    A -- no --> L
+    L -. ledger exhausted .-> T["ok, last incumbent,<br>truncated_by"]
+```
+
+### 23.5 Hand-Worked Numeric Example
+Checked by `tests/routing/test_split_polish.py::test_the_documented_worked_example` (and the same
+fixture is the contract's F7). Request 300 S → T through three fee-free CPMM pools, reserves
+`a` $1000/2000$, `b` $1000/100$, `c` $1000/100$, base plan 100 / 100 / 100:
+
+| Step | Plan | Outputs | Gross |
+|---|---|---|---:|
+| base | `a` 100, `b` 100, `c` 100 | 181, 9, 9 | **199** |
+| pair (`a`, `b`): best at the endpoint $t = -s_b = -1/3$ (`b` emptied into `a`) | `a` 200, `c` 100 | 333, 9 | **342** |
+| pair (`a`, `c`): best at $t = -s_c$ (`c` emptied into `a`) | `a` 300 | 461 | **461** |
+| pair (`b`, `c`): both shares 0, only $t = 0$ | unchanged | | 461 |
+| round 2: nothing accepted, stop | | | 461 |
+
+Each accepted plan is published as it is accepted. With the nominee (Brent, 2 rounds, tolerance
+$10^{-4}$, $D = 10^9$, `maxiter` 60) the call makes 92 simulations and 197 quotes (3 of them the
+reconstruction); golden makes 99 simulations and 210 quotes, with the same result. Under a quote cap
+the last accepted plan survives: cap 50 keeps 199, cap 80 keeps 342, cap 140 keeps 461 (golden).
+Both endpoints matter here, since the best split is a corner, and the interior grid would only
+approach it.
+
+On the tuning split (96 cases, `incremental_graph` c50 under `config/full_gross.yaml`) the nominee
+reproduces the pinned probe outputs case by case (`probe/results/ig_b2.json.gz`): 72 of 96 cases
+improve, by +0.473 bps on average (contract §7). That figure is tuning evidence, not a campaign result.
+
+### 23.6 Implementation Map
+- File: `routing/algorithms/split_polish.py`: `validate_options` and `Settings` (options),
+  `prepare` (the base's own `prepare` on the profile's `search.*`/`graph.chunks`), `Ledger`
+  (shared quote cap and cooperative deadline), `Topology`, `canonical_from_evaluation`,
+  `shares_or_refusal`, `simulate`, `canonical_plan`, `Incumbent`, `rebuild`, `line_search`
+  (`_golden`, `_brent`), `polish`, `polish_plan` (the E1 driver on an evaluated plan) and `solve`.
+  These are the seams WHI-1624 (`marginal_activation`, E2) reuses.
+- Registry: `routing/algorithms/registry.py`. Report label: `report/aggregate.py::algorithm_label`.
+- Contract and tests: `docs/references/research-023/contract.md` §3, §4, §6, §9;
+  `tests/routing/test_split_polish.py` (probe fixtures F1–F9, F13, the §9 gates, CLI, tuning
+  reproduction behind `ROUTER_TUNING_BUNDLE`).
+
+### 23.7 Parameters, Budgets, and Ties
+- **Options** (`algorithm_options.split_polish`, all six required, no preset, no defaults):
+  `base` (`incremental_graph` or `path_split`), `solver` (`brent` or `golden`), `rounds` (1–16),
+  `tolerance` (share of a fund, converted exactly to grid units), `grid` ($D$), `maxiter`. Nominee:
+  `incremental_graph`, `brent`, 2, 0.0001, 1000000000, 60; golden with 2 rounds is the solver control.
+- **Profile keys:** `search.max_hops`, `max_splits`, `percent_step` and `graph.chunks`, whatever the
+  base (they reach the base's `prepare`).
+- **Budgets:** one ledger with the base: the polish may spend `max_quotes` minus the base's quotes,
+  and stops cooperatively at `time_limit_seconds` after the solve started. A cooperative stop is `ok`
+  with `search.split_polish.truncated_by` (`max_quotes` or `time`); budget 0 returns the base result
+  itself. The runner's hard limits keep `timeout`.
+- **Statuses:** a non-gross objective is `unsupported` (`scope: objective`, the base never runs); a
+  base status other than `ok` passes through; `scope: unsupported_topology` returns the base result.
+- **Ties:** higher gross, then $t = 0$, smaller $|t|$, smaller $t$; equality never replaces the
+  incumbent, so a flat plateau keeps the base plan.
+
+### 23.8 Computational and Memory Cost
+- **Quotes:** each evaluated point is one full plan simulation (one quote per positive step). A pair
+  costs 3 points plus the solver's interior evaluations (at most `maxiter` + a few for Brent); a
+  round costs $\sum_f \binom{n_f}{2}$ pairs. Every quote is charged to the shared ledger, the
+  reconstruction included; cached points ($t$ keys) are not re-simulated within a pair.
+- **Memory:** the base's, plus one exact-share vector per split fund and the per-pair point cache.
+- **Time** is not claimed.
+
+### 23.9 Guarantees and Limitations
+- **Guarantees:** never worse than the base; every returned plan is the evaluator-valid incumbent
+  of exact integer replay (structurally checked before it is held); a cooperative stop keeps the last
+  incumbent and is never `no_route`.
+- **Limitations:**
+  - **Local.** Pairwise 1-D searches over a fixed topology: no new pools, no new routes, no global
+    optimum. A narrow feasible island can stop Brent short of its edge (golden may reach it, or not:
+    with both first golden probes infeasible it keeps the base).
+  - **Additive, not a replacement.** On the tuning split it loses to finer chunking case by case
+    (contract §7); it is a post-processor.
+  - **Bases:** `incremental_graph` and `path_split` only. `metis_inspired`, `metis_history` and
+    `incremental_graph_repair` need further profile keys or options and are not wired yet.

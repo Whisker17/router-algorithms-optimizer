@@ -77,6 +77,13 @@ Gross-only and estimate-only; `custom`, configured by validated `algorithm_optio
 sha256-pinned preset `cfmm_dual/2`, CL stage; `cfmm_dual/1` stays a historical pin);
 `--strategies all` appends it after
 `uni_sor_cycle_safe` (contract order 5). Importing it loads no NumPy/SciPy.
+
+`split_polish` (WHI-1623, R023-C/1 §4, E1) is a gross-only, never-worse post-processor of a
+declared base strategy (`incremental_graph` or `path_split`): it re-optimises the exact rational
+split shares of the base's canonical plan by pairwise Brent/golden line search over exact integer
+replay (Jupiter-inspired, NOT Jupiter Metis). It is `custom`, configured by validated
+`algorithm_options` (all six keys required, no preset) and selected only by a profile that names
+it: `--strategies all` does not add it. Importing it loads no SciPy.
 """
 
 from __future__ import annotations
@@ -95,6 +102,7 @@ from routing.algorithms import (
     path_split,
     single_path,
     single_path_bounded,
+    split_polish,
     uni_sor_cycle_safe,
     uni_sor_fast,
     uni_sor_port,
@@ -126,6 +134,8 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     single_path_bounded.NAME: single_path_bounded.FACTORY,  # WHI-1599
     incremental_graph_bounded.NAME: incremental_graph_bounded.FACTORY,  # WHI-1600
     metis_history_bounded.NAME: metis_history_bounded.FACTORY,  # WHI-1600
+    # 0.2.3 split polishing (R023-C/1 §4), `custom` group, profile-selected only.
+    split_polish.NAME: split_polish.FACTORY,  # WHI-1623
 }
 
 # The comparison groups, in their deterministic run order (base first, then optimized).
