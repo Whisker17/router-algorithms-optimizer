@@ -21,9 +21,10 @@ ordinary CLI compares. It covers:
   a strategy above: it skips a candidate only when a proved upper bound shows that it cannot beat the
   incumbent, and returns the reference's plan. With them, `--strategies all` compares **17**
   strategies. They claim no speedup: timing is a separate measurement (WHI-1602);
-- the **0.2.3 post-processor** `split_polish` (§23, contract `R023-C/1`): exact split-share
-  polishing of a declared base strategy's plan (Jupiter-inspired, **NOT Jupiter Metis**). It is
-  selected only by a profile that names it; `--strategies all` does not add it.
+- the **0.2.3 post-processors** `split_polish` (§23) and `marginal_activation` (§24), contract
+  `R023-C/1`: exact split-share polishing of a declared base strategy's plan, then activation of
+  new branches (Jupiter-inspired, **NOT Jupiter Metis**). Each is selected only by a profile that
+  names it; `--strategies all` adds neither.
 
 For each strategy it describes the mathematical foundations, search mechanics, state management
 and practical trade-offs against frozen Mantle liquidity snapshots. To compare them on a single
@@ -47,6 +48,9 @@ Inspected source commits:
   are those of `1e63a04`; function names are the stable anchors when lines drift.
 - §23: `routing/algorithms/split_polish.py` as added by WHI-1623 on `release/v0.2.3`; its worked
   example is checked by `tests/routing/test_split_polish.py`. §23 names functions, not lines.
+- §24: `routing/algorithms/marginal_activation.py` as added by WHI-1624 on `release/v0.2.3`; its
+  worked example is checked by `tests/routing/test_marginal_activation.py`. §24 names functions,
+  not lines.
 
 All numeric traces and intermediate transitions are verified offline by
 `tests/docs/test_routing_algorithm_examples.py`, `tests/docs/test_r021_examples.py` and
@@ -4899,3 +4903,175 @@ improve, by +0.473 bps on average (contract §7). That figure is tuning evidence
     (contract §7); it is a post-processor.
   - **Bases:** `incremental_graph` and `path_split` only. `metis_inspired`, `metis_history` and
     `incremental_graph_repair` need further profile keys or options and are not wired yet.
+
+## 24. Algorithm 19: `marginal_activation` (Branch Activation After Split Polishing; Jupiter-Inspired, NOT Jupiter Metis)
+
+### 24.1 Problem and Inclusion Rationale
+`split_polish` (§23) can only move flow between routes the base plan already uses. A pool the base
+never touched stays at zero, even when a small amount through it would beat the marginal rate of
+the existing routes. `marginal_activation` (WHI-1624, contract `R023-C/1` §3, §5, §6, E2) runs E1 and
+then **activates** up to K new branches: a small-amount label search on the post-plan pool states
+proposes paths, each is appended to the plan, re-split, and kept only if an independent replay
+confirms a strict gain with positive flow on the new branch. The closest published precedent is
+PRIME-Flow (overlapping paths, a split between the current flow and a new path, contract §1 P2).
+
+- **Identity:** experimental, `custom` group, selected only by a profile that names it (`--strategies
+  all` does **not** add it). Label: "Jupiter-inspired (Ultra V3 / Metis v7 Brent splitting), **NOT
+  Jupiter Metis**". Gross-only.
+- **What is claimed:** never worse than the base plan it ran on, and every returned plan is an
+  evaluator-valid exact integer plan. **Not claimed:** optimality (a heuristic label oracle and local
+  line searches; not SCO, not FVO), Jupiter equivalence, any speedup.
+
+### 24.2 Mathematical Model and Assumptions
+**Domain.** E1's fixed funding topology (§23) plus appended branches. A plan E1 refuses
+(`unsupported_topology`) is returned unchanged. A pool the plan already uses can be part of a new
+branch: it then executes again, after the plan's own use, on the state that use left
+(`shared_sequential`).
+
+**Proposal.** With the incumbent's post-plan pool states (one charged simulation), a hop-layered,
+token-simple label search starts at `token_in` with $\delta = \max(1, \lfloor A \cdot
+\texttt{delta\_share} \rfloor)$. Each layer keeps one label per token (a strictly larger output
+replaces it; ties keep the first in sorted order), up to $H$ = `search.max_hops` layers; every path
+reaching `token_out` is a terminal. Every relaxation is a fresh charged quote on the post-plan
+state. The `top_k` best terminals (larger output, then the path) are tried in rank order.
+
+**Admission.** The branch is appended after the incumbent's canonical steps under a fund-id prefix
+no existing fund id starts with. The union is admitted only if the token graph over **all** union
+steps is acyclic (`dag_cycle` otherwise): then no reallocation inside the union can create a cycle.
+
+**Seed and re-split.** PF mode seeds proportionally: the original REQUEST shares $w$ become
+$w \cdot (1 - s_0)$ and the branch gets $s_0$. It then searches one grouped variable
+$t \in [0, 1]$ over $w \cdot (1 - t) \oplus t$ with E1's line search ($t = 0$ is the original plan
+exactly, $t = 1$ sends everything into the branch; intermediate funds stay fixed). Full mode seeds
+by taking $s_0$ from the largest REQUEST consumer (lowest index on ties) and runs one complete E1
+polish call over every fund of the union (the ablation).
+
+**Acceptance.** The candidate is accepted iff (1) the branch's first hop has a positive integer
+input, (2) its gross is strictly higher than the incumbent's, and (3) an evaluator replay,
+**charged to the attempt ledger**, equals the simulated gross. The topology is then rebuilt from the
+canonical plan (zero steps dropped). Otherwise the next terminal is tried. The iteration stops after
+K activations, when no terminal is accepted (`stop_no_candidate`), or when the budget ends (the
+caught reason is kept).
+
+### 24.3 Concise Pseudocode
+```python
+def solve_marginal_activation(case, base_strategy, budget):
+    incumbent, ledger = split_polish_stages(case, base_strategy, budget)   # §23, one ledger
+    if refused(incumbent): return base                                       # unsupported_topology
+    if e1_truncated: return incumbent with not_reached="E1 truncated"
+    for it in range(K):
+        states = simulate(incumbent).post_states                             # charged
+        for rank, path in enumerate(top_paths(states, delta, H, top_k)):    # charged quotes
+            union = incumbent.steps + branch(path, fresh_prefix(it))
+            if has_token_cycle(union): log("dag_cycle"); continue
+            cand = seed(union, s0, mode)                                     # PF or donor
+            cand = pf_split(cand) if mode == "pf" else polish(cand)          # charged
+            if first_hop_flow(cand) > 0 and cand.gross > incumbent.gross \
+                    and evaluate(cand, quote=ledger.quote).gross == cand.gross:
+                incumbent = rebuild(cand); publish(incumbent); break
+            log("no_gain_or_zero_flow" or "replay_mismatch")
+        else:
+            log("stop_no_candidate"); break
+    return incumbent                                                          # PolishStop: ok
+```
+
+### 24.4 Architecture and Topology Diagram
+```mermaid
+flowchart TD
+    E["split_polish stages<br>(base + E1, one ledger)"] --> R{"E1 reached<br>its end?"}
+    R -- no --> N["ok, E1 incumbent,<br>not_reached: E1 truncated"]
+    R -- yes --> P["post-plan states<br>delta label search"]
+    P --> C["next ranked terminal"]
+    C --> D{"union token<br>graph acyclic?"}
+    D -- no --> C
+    D -- yes --> S["seed (PF / donor)<br>re-split (PF / polish)"]
+    S --> A{"flow > 0, gross higher,<br>charged replay equal?"}
+    A -- yes --> H["rebuild, publish"] --> P
+    A -- no --> C
+    C -. none left .-> T["stop_no_candidate"]
+```
+
+### 24.5 Hand-Worked Numeric Example
+Checked by `tests/routing/test_marginal_activation.py::test_the_documented_worked_example`. Request
+$A = 10^6$ S → T through two fee-free CPMM pools `p` and `q`, both with reserves $10^7 / 10^7$;
+the base plan sends everything through `p`. Nominee settings (PF, K = 2, top-3, $\delta$ and $s_0$
+from 0.0001, Brent, $H = 3$).
+
+| Step | What happens | Gross |
+|---|---|---:|
+| base | `p` 1,000,000 → 909090 | **909090** |
+| E1 | one consumer, nothing to split (the reconstruction is its only quote) | 909090 |
+| iteration 1, proposal | $\delta = 100$; on the post-plan state `p` gives 82, the untouched `q` 99: `q` ranks first | |
+| seed | `p` 999900, `q` 100 | 909107 |
+| PF search over $t$ | best at $t = 1/2$: `p` 500000 → 476190, `q` 500000 → 476190 | **952380** |
+| acceptance | first-hop flow 500000 > 0, 952380 > 909090, the charged replay gives 952380: accepted, `novel_pools=1` | 952380 |
+| iteration 2 | $\delta$ gives 90 on both post-plan states; each branch reuses a pool (`shared_sequential`); no strict gain for either: `stop_no_candidate` | 952380 |
+
+The activation stage makes 203 quotes and 72 simulations in 3 optimiser invocations; full mode
+reaches the same plan with 861 quotes and 305 simulations. The controls show why the gain is the
+activation's: from the same E1 incumbent, the work-matched control (target 203 quotes) and the
+call-matched control (3 polish calls) both stay at 909090 with 0 quotes, since E1 has nothing to
+split.
+
+On the tuning split (96 cases, `incremental_graph` c50 under `config/full_gross.yaml`) the PF nominee
+reproduces the pinned probe output case by case, controls included (`probe/results/ig_actpf.json.gz`):
+85 of 96 cases improve on the base, and activation is +0.199 bps over the work-matched control
+(74 better / 3 worse, contract §7). Those figures are tuning evidence, not a campaign result.
+
+### 24.6 Implementation Map
+- File: `routing/algorithms/marginal_activation.py`: `validate_options` and `Settings` (options),
+  `prepare` (the base's own `prepare`, the pool adjacency), `top_paths` (label search),
+  `fresh_prefix`, `union` (admission and seed), `pf_split`, `accepts` (the three-part rule),
+  `activate` and `run_activation` (the iteration), `ControlLedger`, `Snapshot` and `run_control`
+  (§5.3 controls) and `solve`.
+- Reused from `routing/algorithms/split_polish.py` unchanged: `Ledger`, `PolishStop`, `Topology`,
+  `simulate` (its post-plan states are the evaluator's `next_states`), `canonical_plan`,
+  `Incumbent`, `rebuild`, `line_search`, `polish`, `polish_plan`, `BASES`.
+- Registry: `routing/algorithms/registry.py`. Report label: `report/aggregate.py::algorithm_label`.
+- Contract and tests: `docs/references/research-023/contract.md` §3, §5, §6, §9;
+  `tests/routing/test_marginal_activation.py` (probe fixtures F10–F12, F14–F16, the §9 E2 gates,
+  controls, CLI, tuning reproduction behind `ROUTER_TUNING_BUNDLE`).
+
+### 24.7 Parameters, Budgets, and Ties
+- **Options** (`algorithm_options.marginal_activation`, all twelve required, no preset): E1's six
+  (§23), `mode` (`pf` or `full`), `activations` (K, 1–16), `top_k` (1–16), `delta_share` and
+  `seed_share` (exact decimals; $\delta = \max(1, \lfloor A \cdot \texttt{delta\_share} \rfloor)$),
+  and `arm` (`treatment`, `work_matched`, `call_matched`). Nominee: the E1 nominee with `pf`, 2, 3,
+  0.0001, 0.0001, `treatment`. $H$ is the profile's `search.max_hops`.
+- **Budgets:** one ledger with the base and E1 (§23). The label search, every simulation and the
+  acceptance replay are charged. A cooperative stop is `ok` with
+  `search.marginal_activation.truncated_by`; if it happens before E1 ends, the row is labelled
+  `not_reached = "activation/control not reached: E1 truncated"` and keeps the last E1 incumbent.
+- **Controls (campaign arms, contract §5.3).** A control arm runs base and E1 on its own ledger,
+  then the treatment's activation stage as an uncharged reference under a nested quote meter
+  (recorded under `activation`, `charged: false`), then the control from the E1 incumbent on a
+  `ControlLedger` pre-charged with base + E1, under the same global cap and a wall allowance equal
+  to the treatment's after base + E1. `work_matched`: E1 polish calls until the reference's
+  activation quotes (hard `work_target` stop) or a call that improves nothing. `call_matched`:
+  exactly the reference's optimiser invocations, each a full polish call (`calls_started` and
+  `calls_completed`). The record's quote count is base + E1 + the control's own quotes.
+- **Ties:** label ties keep the first label in sorted order; terminals rank by output, then path;
+  line-search ties as in §23; an equal gross never replaces the incumbent.
+
+### 24.8 Computational and Memory Cost
+- **Quotes:** per iteration, one simulation of the incumbent, at most one quote per (layer, token,
+  edge) relaxation, and per tried terminal one seed simulation plus the optimiser (PF: one line
+  search, i.e. 3 points plus at most `maxiter` interior points; full: a complete E1 polish call over
+  the union) plus, for a candidate that passes the flow and gain checks, one replay.
+- **Memory:** E1's, plus the pool adjacency of the bundle and one union topology at a time.
+- **Time** is not claimed.
+
+### 24.9 Guarantees and Limitations
+- **Guarantees:** never worse than the base; an accepted activation has positive first-hop flow, a
+  strictly higher gross and an equal charged replay; a cooperative stop keeps the last incumbent and
+  is never `no_route`; a control never spends past its `work_target` and makes exactly the
+  treatment's invocations unless its own budget ends first.
+- **Limitations:**
+  - **Heuristic oracle.** One label per (layer, token): the top-3 terminals are not the global top-3
+    admissible paths, and a path refused for a cycle is not repaired (no merge-by-token
+    reparameterisation, no cycle unlock by deactivation).
+  - **Local re-split.** PF fixes the intermediate funds; full mode is a local pairwise search.
+  - **Control-arm timing.** A control arm also runs the treatment's activation stage as its
+    reference, so its solve time includes it; the runner's hard time limit still applies to the
+    whole solve.
+  - **Bases:** as in §23 (`incremental_graph` and `path_split`).
