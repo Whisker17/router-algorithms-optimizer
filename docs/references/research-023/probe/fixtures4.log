@@ -1,0 +1,28 @@
+PASS endpoint ['1', '0'] g=90
+PASS endpoint ['0', '1'] g=9
+PASS dead non-target terminal -> infeasible 
+PASS target fund with zero consumer: supported, identity ok final=90 base=90
+PASS partially consumed target fund -> refusal reason partially_consumed_fund:out
+PASS cap 0: no exception, identity, ledger == seam truncated=max_quotes q=0 seam=0
+PASS cap 1: no exception, identity, ledger == seam truncated=None q=1 seam=1
+PASS cap 2: no exception, identity, ledger == seam truncated=None q=1 seam=1
+PASS cap 3: no exception, identity, ledger == seam truncated=None q=1 seam=1
+PASS retain cap 50 == 199 final=199 base=199 full=461 accepted=0
+PASS retain cap 80 == 342 final=342 base=199 full=461 accepted=1
+PASS retain cap 100 == 342 final=342 base=199 full=461 accepted=1
+PASS retain cap 140 == 461 final=461 base=199 full=461 accepted=2
+PASS retain cap 180 == 461 final=461 base=199 full=461 accepted=2
+PASS incumbent evaluated inside the line search distinct=25
+PASS endpoint zeroing evaluated 
+PASS brent finite penalty: no numpy warnings n=0 status={0: 1}
+PASS brent exact winner near optimum (1000000000000000000000000000000, Fraction(123456789, 1000000000))
+PASS union with reverse edge rejected as dag_cycle dag_cycle
+PASS cycle scenario: final replay ok and never worse final=1089662 base=99890 log=[[0, 0, 'accepted novel_pools=2 reuse=shared_sequential flow=9059'], [1, -1, 'stop_no_candidate']]
+PASS fresh prefix avoids collision __ACT0_1
+PASS CL partial target: unsupported_topology, true gross, plan unchanged orig=89 final=89 replay=89
+PASS PF endpoint identity A=100000 parts=(50000, 50000) g=99994 base=99994
+PASS PF endpoint identity A=100003 parts=(33335, 33334, 33334) g=99997 base=99997
+PASS PF endpoint identity A=99991 parts=(7, 49992, 49992) g=99984 base=99984
+PASS work target respected n=11 stop=work_target
+PASS time reason preserved and incumbent valid at every cut (133 cuts) []
+SUMMARY 27 / 27 passed

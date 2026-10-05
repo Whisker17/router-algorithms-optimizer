@@ -1,0 +1,95 @@
+reference runs (frozen): 23 cases with best: 96
+
+== c100_actpf.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=0 []
+   gain vs own base (descriptive): n=96 mean 0.476 p50 0.223 p95 1.661 max 3.277 | improved 85
+   paired overhead extra/base: p50 0.1319 p95 1.5699 mean 0.3576 max 2.6608 | extra quotes p50 3858 p95 70954 max 88489
+   gap to 0.1.0 best after: n=96 mean 0.231 p50 -0.037 p95 1.409 max 13.435 | >=best 74 >best 63
+   by stratum mean gain: {'emp/large': (24, 0.335), 'emp/low': (24, 0.782), 'emp/medium': (24, 0.368), 'nod/large': (8, 0.206), 'nod/low': (8, 0.395), 'nod/medium': (8, 0.66)}
+   vs C100: H/E/L (85, 11, 0) | families 32: net-win 29 net-loss 0 | total-work ratio p50 1.132 p95 2.570 mean 1.358
+   vs C200: H/E/L (68, 11, 17) | families 32: net-win 25 net-loss 4 | total-work ratio p50 0.972 p95 2.262 mean 1.077
+   activation log outcomes: {'dag_cycle': 40, 'accepted': 137, 'stop_no_candidate': 33, 'no_gain_or_zero_flow': 55}
+   source of final plan: {'activation': 74, 'base': 11, 'polish': 11}
+   E2 stage gain over its own E1 result: n=96 mean 0.155 p50 0.076 p95 0.577 max 0.973
+   control[calls] n=96 gain over E1: n=96 mean 0.009 p50 0.000 p95 0.074 max 0.259 | activation over control: n=96 mean 0.145 p50 0.066 p95 0.571 max 0.973 improved 73 worse 1 | call-matched 96 stops {'done': 95, 'max_quotes': 1}
+   control[work] n=96 gain over E1: n=96 mean 0.003 p50 0.000 p95 0.005 max 0.171 | activation over control: n=96 mean 0.152 p50 0.076 p95 0.574 max 0.973 improved 73 worse 2 | call-matched None stops {'work_target': 57, 'converged': 39}
+   rows without controls: []
+
+== c100_b2.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=0 []
+   gain vs own base (descriptive): n=96 mean 0.321 p50 0.086 p95 1.447 max 3.277 | improved 75
+   paired overhead extra/base: p50 0.0605 p95 1.5299 mean 0.3035 max 2.6042 | extra quotes p50 2788 p95 69129 max 86605
+   gap to 0.1.0 best after: n=96 mean 0.386 p50 0.000 p95 1.519 max 13.489 | >=best 50 >best 32
+   by stratum mean gain: {'emp/large': (24, 0.216), 'emp/low': (24, 0.599), 'emp/medium': (24, 0.203), 'nod/large': (8, 0.074), 'nod/low': (8, 0.234), 'nod/medium': (8, 0.496)}
+   vs C100: H/E/L (75, 21, 0) | families 32: net-win 27 net-loss 0 | total-work ratio p50 1.060 p95 2.530 mean 1.304
+   vs C200: H/E/L (37, 18, 41) | families 32: net-win 12 net-loss 13 | total-work ratio p50 0.932 p95 2.220 mean 1.035
+
+== ig_act.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=3 [('emp-78c1b0-201eba-low-3', 'max_quotes'), ('emp-78c1b0-201eba-medium-1', 'max_quotes'), ('emp-78c1b0-deadde-low-2', 'max_quotes')]
+   gain vs own base (descriptive): n=96 mean 0.740 p50 0.378 p95 2.601 max 7.836 | improved 85
+   paired overhead extra/base: p50 0.4382 p95 6.8086 mean 1.2559 max 9.7170 | extra quotes p50 7451 p95 234747 max 272007
+   gap to 0.1.0 best after: n=96 mean 0.077 p50 -0.001 p95 2.141 max 4.819 | >=best 59 >best 48
+   by stratum mean gain: {'emp/large': (24, 0.63), 'emp/low': (24, 0.998), 'emp/medium': (24, 0.693), 'nod/large': (8, 0.271), 'nod/low': (8, 1.323), 'nod/medium': (8, 0.324)}
+   vs C100: H/E/L (68, 11, 17) | families 32: net-win 25 net-loss 4 | total-work ratio p50 1.263 p95 6.424 mean 1.842
+   vs C200: H/E/L (51, 11, 34) | families 32: net-win 19 net-loss 10 | total-work ratio p50 1.053 p95 5.056 mean 1.452
+   activation log outcomes: {'dag_cycle': 33, 'accepted': 133, 'no_gain_or_zero_flow': 78, 'stop_no_candidate': 35, 'budget_before_validation': 2}
+   source of final plan: {'activation': 75, 'base': 11, 'polish': 10}
+   E2 stage gain over its own E1 result: n=96 mean 0.267 p50 0.103 p95 0.949 max 1.433
+   control[calls] n=96 gain over E1: n=96 mean 0.019 p50 0.000 p95 0.090 max 0.654 | activation over control: n=96 mean 0.248 p50 0.074 p95 0.949 max 1.433 improved 74 worse 1 | call-matched 96 stops {'done': 96}
+   control[work] n=96 gain over E1: n=96 mean 0.019 p50 0.000 p95 0.094 max 0.655 | activation over control: n=96 mean 0.247 p50 0.074 p95 0.949 max 1.433 improved 74 worse 3 | call-matched None stops {'converged': 83, 'work_target': 13}
+   rows without controls: []
+
+== ig_actpf.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=0 []
+   gain vs own base (descriptive): n=96 mean 0.675 p50 0.352 p95 2.638 max 7.836 | improved 85
+   paired overhead extra/base: p50 0.1314 p95 1.3018 mean 0.3034 max 1.9062 | extra quotes p50 2013 p95 42625 max 65723
+   gap to 0.1.0 best after: n=96 mean 0.142 p50 0.000 p95 2.073 max 4.819 | >=best 52 >best 41
+   by stratum mean gain: {'emp/large': (24, 0.512), 'emp/low': (24, 0.913), 'emp/medium': (24, 0.668), 'nod/large': (8, 0.249), 'nod/low': (8, 1.272), 'nod/medium': (8, 0.302)}
+   vs C100: H/E/L (68, 11, 17) | families 32: net-win 25 net-loss 4 | total-work ratio p50 1.018 p95 1.866 mean 1.078
+   vs C200: H/E/L (44, 11, 41) | families 32: net-win 15 net-loss 14 | total-work ratio p50 0.803 p95 1.677 mean 0.868
+   activation log outcomes: {'dag_cycle': 34, 'accepted': 142, 'stop_no_candidate': 29, 'no_gain_or_zero_flow': 50}
+   source of final plan: {'activation': 75, 'base': 11, 'polish': 10}
+   E2 stage gain over its own E1 result: n=96 mean 0.202 p50 0.101 p95 0.838 max 1.421
+   control[calls] n=96 gain over E1: n=96 mean 0.018 p50 0.000 p95 0.053 max 0.654 | activation over control: n=96 mean 0.184 p50 0.089 p95 0.828 max 1.421 improved 71 worse 4 | call-matched 96 stops {'done': 96}
+   control[work] n=96 gain over E1: n=96 mean 0.002 p50 0.000 p95 0.011 max 0.122 | activation over control: n=96 mean 0.199 p50 0.096 p95 0.838 max 1.421 improved 74 worse 3 | call-matched None stops {'work_target': 53, 'converged': 43}
+   rows without controls: []
+
+== ig_b1.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=0 []
+   gain vs own base (descriptive): n=96 mean 0.424 p50 0.086 p95 1.979 max 6.530 | improved 72
+   paired overhead extra/base: p50 0.0286 p95 0.6278 mean 0.1212 max 0.9492 | extra quotes p50 740 p95 20601 max 32726
+   gap to 0.1.0 best after: n=96 mean 0.394 p50 0.168 p95 2.230 max 5.681 | >=best 37 >best 19
+   by stratum mean gain: {'emp/large': (24, 0.258), 'emp/low': (24, 0.62), 'emp/medium': (24, 0.427), 'nod/large': (8, 0.097), 'nod/low': (8, 0.935), 'nod/medium': (8, 0.137)}
+   vs C100: H/E/L (30, 19, 47) | families 32: net-win 13 net-loss 14 | total-work ratio p50 0.921 p95 1.295 mean 0.932
+   vs C200: H/E/L (24, 18, 54) | families 32: net-win 8 net-loss 18 | total-work ratio p50 0.755 p95 1.138 mean 0.753
+
+== ig_b2.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=0 []
+   gain vs own base (descriptive): n=96 mean 0.473 p50 0.086 p95 2.076 max 7.836 | improved 72
+   paired overhead extra/base: p50 0.0564 p95 1.2483 mean 0.2405 max 1.8567 | extra quotes p50 1536 p95 41080 max 64014
+   gap to 0.1.0 best after: n=96 mean 0.344 p50 0.135 p95 2.213 max 5.681 | >=best 37 >best 19
+   by stratum mean gain: {'emp/large': (24, 0.346), 'emp/low': (24, 0.659), 'emp/medium': (24, 0.442), 'nod/large': (8, 0.1), 'nod/low': (8, 1.103), 'nod/medium': (8, 0.137)}
+   vs C100: H/E/L (30, 19, 47) | families 32: net-win 13 net-loss 14 | total-work ratio p50 0.952 p95 1.828 mean 1.027
+   vs C200: H/E/L (24, 18, 54) | families 32: net-win 8 net-loss 18 | total-work ratio p50 0.788 p95 1.638 mean 0.828
+
+== ig_g1.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=0 []
+   gain vs own base (descriptive): n=96 mean 0.417 p50 0.086 p95 1.991 max 5.224 | improved 73
+   paired overhead extra/base: p50 0.0350 p95 0.7930 mean 0.1516 max 1.2214 | extra quotes p50 956 p95 26135 max 42110
+   gap to 0.1.0 best after: n=96 mean 0.401 p50 0.168 p95 2.223 max 5.681 | >=best 37 >best 19
+   by stratum mean gain: {'emp/large': (24, 0.256), 'emp/low': (24, 0.628), 'emp/medium': (24, 0.429), 'nod/large': (8, 0.096), 'nod/low': (8, 0.83), 'nod/medium': (8, 0.137)}
+   vs C100: H/E/L (29, 20, 47) | families 32: net-win 13 net-loss 14 | total-work ratio p50 0.928 p95 1.436 mean 0.956
+   vs C200: H/E/L (24, 18, 54) | families 32: net-win 8 net-loss 18 | total-work ratio p50 0.763 p95 1.233 mean 0.772
+
+== ig_g2.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=0 []
+   gain vs own base (descriptive): n=96 mean 0.466 p50 0.086 p95 2.079 max 6.530 | improved 73
+   paired overhead extra/base: p50 0.0698 p95 1.5924 mean 0.3018 max 2.4364 | extra quotes p50 1904 p95 52280 max 84001
+   gap to 0.1.0 best after: n=96 mean 0.351 p50 0.125 p95 2.217 max 5.681 | >=best 37 >best 19
+   by stratum mean gain: {'emp/large': (24, 0.348), 'emp/low': (24, 0.662), 'emp/medium': (24, 0.443), 'nod/large': (8, 0.1), 'nod/low': (8, 0.998), 'nod/medium': (8, 0.137)}
+   vs C100: H/E/L (29, 20, 47) | families 32: net-win 13 net-loss 14 | total-work ratio p50 0.985 p95 2.104 mean 1.076
+   vs C200: H/E/L (24, 18, 54) | families 32: net-win 8 net-loss 18 | total-work ratio p50 0.788 p95 1.829 mean 0.868
+
+== ps_b2.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=0 []
+   gain vs own base (descriptive): n=96 mean 0.300 p50 0.018 p95 1.306 max 8.246 | improved 58
+   paired overhead extra/base: p50 0.0109 p95 0.1046 mean 0.0280 max 0.1318 | extra quotes p50 176 p95 2346 max 2640
+   gap to 0.1.0 best after: n=96 mean 5.051 p50 2.430 p95 20.153 max 20.600 | >=best 20 >best 2
+   by stratum mean gain: {'emp/large': (24, 0.2), 'emp/low': (24, 0.747), 'emp/medium': (24, 0.181), 'nod/large': (8, 0.005), 'nod/low': (8, 0.163), 'nod/medium': (8, 0.049)}
+
+== ps_g2.json  scheduled=96 zero_baseline=0 unsupported=0 truncated=0 []
+   gain vs own base (descriptive): n=96 mean 0.315 p50 0.016 p95 1.306 max 10.084 | improved 55
+   paired overhead extra/base: p50 0.0136 p95 0.1399 mean 0.0360 max 0.1635 | extra quotes p50 192 p95 2970 max 3276
+   gap to 0.1.0 best after: n=96 mean 5.036 p50 2.430 p95 20.153 max 20.600 | >=best 20 >best 2
+   by stratum mean gain: {'emp/large': (24, 0.2), 'emp/low': (24, 0.822), 'emp/medium': (24, 0.181), 'nod/large': (8, 0.006), 'nod/low': (8, 0.163), 'nod/medium': (8, 0.003)}
