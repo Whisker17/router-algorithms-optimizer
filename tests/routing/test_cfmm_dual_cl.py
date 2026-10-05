@@ -337,9 +337,12 @@ def test_every_pin_is_verified_and_tamper_metadata_and_ambiguity_are_refused(
 
 def test_the_historical_seam_leaves_every_other_factory_unchanged() -> None:
     assert [n for n, f in ALGORITHMS.items() if f.historical_presets] == [NAME]
-    assert len(ALGORITHMS) == 18 and list(ALGORITHMS).count(NAME) == 1  # + the 3 bounded ones
+    assert len(ALGORITHMS) == 19 and list(ALGORITHMS).count(NAME) == 1  # + 3 bounded, split_polish
     for name, factory in ALGORITHMS.items():
         if factory.options_validator is None or name == NAME:
+            continue
+        if factory.options_preset is None:  # WHI-1623: options, but no preset and no history
+            assert name == "split_polish" and not factory.historical_presets
             continue
         entry = options_entry(factory, preset_options(factory))
         assert entry["source"] == {"kind": "preset", **dict(factory.options_preset or {})}

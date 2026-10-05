@@ -687,7 +687,8 @@ def _numbers(text: str) -> set[str]:
 
 def _guide_chapters() -> str:
     text = GUIDE.read_text(encoding="utf-8")
-    body = text[text.index("## 19. Upper-Bound Pruning") :]
+    end = text.find("\n## 23. ")  # WHI-1623's chapter 23 is checked by test_split_polish.py
+    body = text[text.index("## 19. Upper-Bound Pruning") : end if end >= 0 else len(text)]
     body = re.sub(r"```.*?```", " ", body, flags=re.S)  # pseudocode and diagrams
     # the implementation maps hold source line numbers, which are anchors rather than results
     return re.sub(r"### \d+\.6 Implementation Map.*?(?=### \d+\.7 )", " ", body, flags=re.S)
