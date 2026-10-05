@@ -1,0 +1,128 @@
+"""Analysis v3 — descriptive finite-corpus statistics only (no significance claims).
+Usage: python analyze3.py <repo root>"""
+import glob
+import json
+import math
+import os
+import statistics as st
+import sys
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+REPO = sys.argv[1]
+TUNING = "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b"
+C100 = "20260925T153506524679Z-937800ce"
+C200 = "20260925T153506524695Z-a8a2dd9f"
+
+
+def pct(xs, q):
+    s = sorted(xs)
+    if not s:
+        return float("nan")
+    return s[min(max(1, math.ceil(q * len(s))), len(s)) - 1]
+
+
+def summ(xs):
+    if not xs:
+        return "n=0"
+    return "n=%d mean %.3f p50 %.3f p95 %.3f max %.3f" % (len(xs), st.mean(xs), pct(xs, .5), pct(xs, .95), max(xs))
+
+
+def stratum(cid):
+    p = cid.split("-")
+    return f"{p[0]}/{p[3]}" if p[0] in ("emp", "nod") else "boundary"
+
+
+# frozen reference run list (R3-m3): read, verify, never regenerate
+ref_runs = json.load(open(os.path.join(ROOT, "reference-runs.frozen.json")))
+assert len(ref_runs) == 23, len(ref_runs)
+best, recs = {}, {}
+for run in ref_runs:
+    m = json.load(open(f"{REPO}/data/results/{run}/manifest.json"))
+    assert m["bundle_hash"] == TUNING and m["state"] == "complete" and "gross-only" in m["objective_label"], run
+    for line in open(f"{REPO}/data/results/{run}/cases.jsonl"):
+        r = json.loads(line)
+        if r["status"] == "ok":
+            best[r["case_id"]] = max(best.get(r["case_id"], -1), int(r["score"]))
+        if r["algorithm"] == "incremental_graph" and run in (C100, C200):
+            recs[(run, r["case_id"])] = r
+print("reference runs (frozen):", len(ref_runs), "cases with best:", len(best))
+
+
+def bps(a, b):
+    return 1e4 * (a - b) / b
+
+
+def hel(pairs):
+    h = sum(a > b for a, b in pairs)
+    e = sum(a == b for a, b in pairs)
+    lo = sum(a < b for a, b in pairs)
+    return h, e, lo
+
+
+def by_family(rows, val_a, val_b):
+    fam = {}
+    for r in rows:
+        fam.setdefault(r["family"], []).append((val_a(r), val_b(r)))
+    net_w = sum(1 for v in fam.values() if hel(v)[0] > hel(v)[2])
+    net_l = sum(1 for v in fam.values() if hel(v)[0] < hel(v)[2])
+    return len(fam), net_w, net_l
+
+
+for fn in sorted(glob.glob(f"{ROOT}/*.json")):
+    name = os.path.basename(fn)
+    if name.startswith("reference-runs"):
+        continue
+    d = json.load(open(fn))
+    rows = d["rows"]
+    zero = [r for r in rows if r["recorded"] == 0]
+    rows_nz = [r for r in rows if r["recorded"] > 0]
+    unsup = [r["case"] for r in rows if r["status"] != "ok"]
+    trunc = [(r["case"], r["truncated_by"]) for r in rows if r["truncated_by"]]
+    print(f"\n== {name}  scheduled={len(rows)} zero_baseline={len(zero)} unsupported={len(unsup)} truncated={len(trunc)} {trunc}")
+    g = [bps(r["final"], r["recorded"]) for r in rows_nz]
+    print("   gain vs own base (descriptive):", summ(g), "| improved", sum(x > 0 for x in g))
+    ratio = [r["q_total"] / r["base_quotes"] for r in rows_nz if r["base_quotes"]]
+    print("   paired overhead extra/base: p50 %.4f p95 %.4f mean %.4f max %.4f | extra quotes p50 %d p95 %d max %d" % (
+        pct(ratio, .5), pct(ratio, .95), st.mean(ratio), max(ratio),
+        pct([r["q_total"] for r in rows], .5), pct([r["q_total"] for r in rows], .95), max(r["q_total"] for r in rows)))
+    gb = [1e4 * (best[r["case"]] - r["final"]) / best[r["case"]] for r in rows_nz if best.get(r["case"])]
+    print("   gap to 0.1.0 best after:", summ(gb), "| >=best", sum(r["final"] >= best[r["case"]] for r in rows_nz),
+          ">best", sum(r["final"] > best[r["case"]] for r in rows_nz))
+    strata = {}
+    for r, x in zip(rows_nz, g):
+        strata.setdefault(stratum(r["case"]), []).append(x)
+    print("   by stratum mean gain:", {k: (len(v), round(st.mean(v), 3)) for k, v in sorted(strata.items())})
+    if name.startswith("ig_") or name.startswith("c100_"):
+        for tag, run in (("C100", C100), ("C200", C200)):
+            pr = [r for r in rows_nz if (run, r["case"]) in recs and recs[(run, r["case"])]["status"] == "ok"]
+            pairs = [(r["final"], int(recs[(run, r["case"])]["score"])) for r in pr]
+            nf, nw, nl = by_family(pr, lambda r: r["final"], lambda r, run=run: int(recs[(run, r["case"])]["score"]))
+            wr = [(r["base_quotes"] + r["q_total"]) / recs[(run, r["case"])]["quotes"]["counted"] for r in pr]
+            print(f"   vs {tag}: H/E/L {hel(pairs)} | families {nf}: net-win {nw} net-loss {nl} | total-work ratio p50 %.3f p95 %.3f mean %.3f"
+                  % (pct(wr, .5), pct(wr, .95), st.mean(wr)))
+    if "act" in name:
+        acc = {}
+        for r in rows:
+            for e in r["act_log"]:
+                k = e[2].split(" ")[0]
+                acc[k] = acc.get(k, 0) + 1
+        print("   activation log outcomes:", acc)
+        print("   source of final plan:", {s: sum(r["source"] == s for r in rows) for s in sorted({r["source"] for r in rows})})
+        e2 = [bps(r["final"], r["e1_gross"]) for r in rows_nz if "e1_gross" in r]
+        print("   E2 stage gain over its own E1 result:", summ(e2))
+        withc = [r for r in rows_nz if "controls" in r]
+        if withc:
+            for kind in ("calls", "work"):
+                cg = [bps(r["controls"][kind]["gross"], r["e1_gross"]) for r in withc]
+                ag = [bps(r["final"], r["controls"][kind]["gross"]) for r in withc]
+                if kind == "work":
+                    over = [r["case"] for r in withc if r["controls"]["work"]["q"] > r["controls"]["work"]["target"]]
+                    assert not over, over
+                matched = sum(r["controls"][kind]["calls"] == r["stats"].get("polish_calls", 0) - 1 for r in withc) if kind == "calls" else None
+                stops = {}
+                for r in withc:
+                    k = r["controls"][kind]["stop"] or ("converged" if r["controls"][kind]["converged"] else "done")
+                    stops[k] = stops.get(k, 0) + 1
+                print(f"   control[{kind}] n={len(withc)} gain over E1: {summ(cg)} | activation over control: {summ(ag)}"
+                      f" improved {sum(x > 0 for x in ag)} worse {sum(x < 0 for x in ag)} | call-matched {matched} stops {stops}")
+        print("   rows without controls:", [r["case"] for r in rows if "controls" not in r])

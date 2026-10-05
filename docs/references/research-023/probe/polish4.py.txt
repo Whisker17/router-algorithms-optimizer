@@ -1,0 +1,584 @@
+"""Probe v3 (read-only): fixed-funding-topology split polishing (E1) and controlled
+activation (E2), with an incumbent holder, a topology DAG invariant, separate ledgers
+for controls, and exact rational transfer keys.
+
+Domain (E1): the canonicalised recorded plan's steps, pools, directions and fund
+wiring; every fund is fully consumed except terminal target funds (refused otherwise).
+Nothing here is SCO, a global optimum, or Jupiter Metis.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import os
+import sys
+import time
+from collections import defaultdict
+from fractions import Fraction
+
+from benchmark.objective import gross_only
+from pools.quote import quote_exact_in
+from routing.evaluator import _check_plan, _token_cycle, evaluate
+from routing.plan import REQUEST_FUND_ID, FundInput, RoutePlan, SwapStep
+from snapshot.bundle import load_bundle
+
+OBJ = gross_only()
+D = 10**9  # interior transfer grid (share units); endpoints and zero are exact rationals
+GR = (math.sqrt(5) - 1) / 2
+MAXITER = 60  # scalar 1-D iteration limit (both solvers)
+PENALTY = 1.0  # Brent: finite relative penalty for infeasible points (== losing 100 %)
+
+
+class Budget(Exception):
+    pass
+
+
+class Ledger:
+    """One attempt ledger: quote cap and cooperative wall deadline."""
+
+    def __init__(self, cap, deadline=None, start=0, target=None):
+        self.n = start
+        self.cap = cap
+        self.deadline = deadline
+        self.target = target  # control-only work target (R3-02): distinct stop reason
+
+    def quote(self, st, tin, amt):
+        if self.target is not None and self.n >= self.target:
+            raise Budget("work_target")
+        if self.cap is not None and self.n >= self.cap:
+            raise Budget("max_quotes")
+        if self.deadline is not None and time.monotonic() >= self.deadline:
+            raise Budget("time")
+        self.n += 1
+        return quote_exact_in(st, tin, amt)
+
+
+# ------------------------------------------------------------------ topology
+
+
+class Topo:
+    def __init__(self, steps, token_in, token_out):
+        self.steps = steps
+        self.token_in = token_in
+        self.token_out = token_out
+        self.fund_token = {REQUEST_FUND_ID: token_in}
+        for s in steps:
+            self.fund_token[s["out"]] = s["tout"]
+        self.consumers = defaultdict(list)
+        for si, s in enumerate(steps):
+            for ii, f in enumerate(s["inputs"]):
+                self.consumers[f].append((si, ii))
+        self.split_funds = []
+        for s in steps:
+            for f in s["inputs"]:
+                if len(self.consumers[f]) > 1 and f not in self.split_funds:
+                    self.split_funds.append(f)
+
+    def is_dag(self):
+        edges = {}
+        for s in self.steps:
+            edges.setdefault(s["tin"], set()).add(s["tout"])
+        return _token_cycle(edges) is None
+
+
+def topo_and_alloc_from_plan(plan, case):
+    steps = [dict(pool=s.pool_id, tin=s.token_in, tout=s.token_out,
+                  inputs=[i.fund_id for i in s.inputs], out=s.output_fund_id) for s in plan.steps]
+    alloc = {(si, ii): int(i.amount) for si, s in enumerate(plan.steps) for ii, i in enumerate(s.inputs)}
+    return Topo(steps, case.token_in, case.token_out), alloc
+
+
+def canonical_from_trace(trace):
+    """Canonicalise the recorded plan: drop zero references and zero-input steps (R2-04)."""
+    steps = []
+    for t in trace:
+        ins = tuple(FundInput(i["fund_id"], int(i["amount"])) for i in t["inputs"] if int(i["amount"]) > 0)
+        if ins:
+            steps.append(SwapStep(t["pool_id"], t["token_in"], t["token_out"], ins, t["output_fund_id"]))
+    produced = {REQUEST_FUND_ID: None}
+    for t in trace:
+        produced[t["output_fund_id"]] = int(t["amount_out"])
+    return RoutePlan(tuple(steps)), produced
+
+
+def shares_or_refusal(topo, alloc, produced):
+    """Exact rational shares. Refuse (None, reason) if a consumed fund is only partially
+    consumed (e.g. a target balance left beside a consumer): outside the E1 domain."""
+    sh = {}
+    for f, cons in topo.consumers.items():
+        tot = produced[f]
+        used = sum(alloc[c] for c in cons)
+        if used != tot:
+            return None, f"partially_consumed_fund:{f}"
+        sh[f] = [Fraction(alloc[c], tot) for c in cons]
+    return sh, None
+
+
+def simulate(bundle, topo, shares, amount, ledger):
+    produced = {REQUEST_FUND_ID: amount}
+    alloc, states, done = {}, {}, set()
+    for si, s in enumerate(topo.steps):
+        amt = 0
+        for ii, f in enumerate(s["inputs"]):
+            if f not in done:
+                tot = produced.get(f, 0)
+                cons = topo.consumers[f]
+                w = shares[f]
+                last = max(k for k in range(len(cons)) if w[k] > 0)  # remainder -> last positive share
+                vals, acc = [0] * len(cons), 0
+                for k in range(len(cons)):
+                    if k != last:
+                        v = math.floor(tot * w[k])
+                        assert 0 <= v <= tot - acc, "share invariant violated"
+                        vals[k] = v
+                        acc += v
+                vals[last] = tot - acc
+                for c, v in zip(cons, vals):
+                    alloc[c] = v
+                done.add(f)
+            amt += alloc[(si, ii)]
+        if amt == 0:
+            produced[s["out"]] = 0
+            continue
+        r = ledger.quote(states.get(s["pool"], bundle.pools[s["pool"]]), s["tin"], amt)
+        if r.status != "ok" or r.new_state is None or r.amount_in_consumed != amt:
+            return None, alloc, produced, states
+        states[s["pool"]] = r.new_state
+        produced[s["out"]] = r.amount_out
+    gross = 0
+    for f, v in produced.items():
+        if f in topo.consumers or v == 0:
+            continue
+        if topo.fund_token[f] != topo.token_out:
+            return None, alloc, produced, states
+        gross += v
+    return gross, alloc, produced, states
+
+
+def canonical_plan(topo, alloc):
+    steps = []
+    for si, s in enumerate(topo.steps):
+        ins = tuple(FundInput(f, alloc[(si, ii)]) for ii, f in enumerate(s["inputs"]) if alloc.get((si, ii), 0) > 0)
+        if ins:
+            steps.append(SwapStep(s["pool"], s["tin"], s["tout"], ins, s["out"]))
+    return RoutePlan(tuple(steps))
+
+
+def plan_json(plan):
+    return [dict(pool=s.pool_id, tin=s.token_in, tout=s.token_out,
+                 inputs=[[i.fund_id, i.amount] for i in s.inputs], out=s.output_fund_id) for s in plan.steps]
+
+
+def plan_hash(plan):
+    return hashlib.sha256(json.dumps(plan_json(plan), sort_keys=True).encode()).hexdigest()
+
+
+class Holder:
+    """Last validated incumbent: a complete canonical plan plus its rebuilt variables."""
+
+    def __init__(self, plan, gross, topo, shares, source):
+        self.plan, self.gross, self.topo, self.shares, self.source = plan, gross, topo, shares, source
+
+    def offer(self, bundle, case, topo, shares, alloc, gross, source):
+        if gross is None or gross <= self.gross:
+            return False
+        plan = canonical_plan(topo, alloc)
+        if _check_plan(bundle, case, plan) is not None:  # structural (DAG, wiring); no quotes
+            return False
+        self.plan, self.gross, self.topo, self.shares, self.source = plan, gross, topo, shares, source
+        return True
+
+
+def rebuild(holder, case, produced_from_alloc=None):
+    """Permanently drop zero steps: rebuild topology and exact shares from the canonical plan."""
+    topo, alloc = topo_and_alloc_from_plan(holder.plan, case)
+    produced = {REQUEST_FUND_ID: case.amount_in}
+    # produced amounts of the canonical plan follow from its own (fully consumed) inputs
+    for f, cons in topo.consumers.items():
+        produced[f] = sum(alloc[c] for c in cons)
+    shares, why = shares_or_refusal(topo, alloc, produced)
+    assert shares is not None, why
+    holder.topo, holder.shares = topo, shares
+
+
+# ------------------------------------------------------------------ 1-D search
+
+
+def line_search(eval_t, si, sj, tol_k, solver, stats):
+    """Maximise over transfer t in [-sj, si]; exact keys t (Fraction). t=0, t=si, t=-sj always
+    evaluated; interior points on the D grid. Ties: prefer t=0, then smaller |t|, then smaller t.
+    Local heuristic."""
+    lo, hi = -math.floor(sj * D), math.floor(si * D)
+    cache = {}
+
+    def F(t):
+        if t not in cache:
+            cache[t] = eval_t(t)
+        return cache[t]
+
+    def t_of(k):
+        k = max(lo, min(hi, int(round(k))))
+        if k == 0:
+            return Fraction(0)
+        if k == hi:
+            return si
+        if k == lo:
+            return -sj
+        return Fraction(k, D)
+
+    F(Fraction(0))
+    F(si)
+    F(-sj)
+    if hi - lo > tol_k:
+        if solver == "golden":
+            a, b = lo, hi
+            x1, x2 = b - GR * (b - a), a + GR * (b - a)
+            val = lambda x: (F(t_of(x))[0] if F(t_of(x))[0] is not None else -math.inf)  # noqa: E731
+            f1, f2 = val(x1), val(x2)
+            it = 0
+            while b - a > tol_k and it < MAXITER:
+                it += 1
+                if f1 >= f2:
+                    b, x2, f2 = x2, x1, f1
+                    x1 = b - GR * (b - a)
+                    f1 = val(x1)
+                else:
+                    a, x1, f1 = x1, x2, f2
+                    x2 = a + GR * (b - a)
+                    f2 = val(x2)
+            stats["golden_iters"] = stats.get("golden_iters", 0) + it
+        else:
+            from scipy.optimize import minimize_scalar
+
+            ref = F(Fraction(0))[0]
+            ref = ref if ref else 1
+
+            def obj(k):
+                v = F(t_of(k))[0]
+                return PENALTY if v is None else -float(Fraction(v - ref, ref))
+
+            res = minimize_scalar(obj, bounds=(lo, hi), method="bounded",
+                                  options={"xatol": max(1.0, tol_k / 2), "maxiter": MAXITER})
+            stats.setdefault("brent_status", {}).setdefault(int(res.status), 0)
+            stats["brent_status"][int(res.status)] += 1
+            stats["brent_nfev"] = stats.get("brent_nfev", 0) + int(res.nfev)
+    feasible = [(v, t, al) for t, (v, al) in cache.items() if v is not None]
+    if not feasible:
+        return None
+    feasible.sort(key=lambda x: (x[0], x[1] == 0, -abs(x[1]), -x[1]))
+    return feasible[-1]
+
+
+def polish(bundle, case, holder, ledger, solver, tol_bps, rounds, stats):
+    """Pairwise exchanges over holder.topo; every accepted exchange is offered to the
+    holder (structurally validated) immediately, so a Budget exception keeps it."""
+    tol_k = D * tol_bps // 10**4
+    topo, shares = holder.topo, dict(holder.shares)
+    cur = holder.gross
+    stats["polish_calls"] = stats.get("polish_calls", 0) + 1
+    for _ in range(rounds):
+        improved = False
+        for f in topo.split_funds:
+            n = len(topo.consumers[f])
+            for i in range(n):
+                for j in range(i + 1, n):
+                    si, sj = shares[f][i], shares[f][j]
+
+                    def eval_t(t, f=f, i=i, j=j, si=si, sj=sj):
+                        w = list(shares[f])
+                        w[i], w[j] = si - t, sj + t
+                        s2 = dict(shares)
+                        s2[f] = w
+                        g, al, _, _ = simulate(bundle, topo, s2, case.amount_in, ledger)
+                        return (g, (s2, al))
+
+                    best = line_search(eval_t, si, sj, tol_k, solver, stats)
+                    if best is not None and best[0] > cur:
+                        v, t, (s2, al) = best
+                        if holder.offer(bundle, case, topo, s2, al, v, "polish"):
+                            shares, cur = s2, v
+                            improved = True
+                            stats["accepted"] = stats.get("accepted", 0) + 1
+        if not improved:
+            break
+    rebuild(holder, case)
+
+
+# ------------------------------------------------------------------ activation
+
+
+def edges_from(bundle):
+    E = defaultdict(list)
+    for pid, st in bundle.pools.items():
+        E[st.token0].append((pid, st.token0, st.token1))
+        E[st.token1].append((pid, st.token1, st.token0))
+    for k in E:
+        E[k].sort()
+    return E
+
+
+def top_marginal_paths(bundle, E, states, src, dst, delta, ledger, H=3, k=3):
+    layer = {src: (delta, ())}
+    finals = []
+    for depth in range(1, H + 1):
+        nxt = {}
+        for t, (amt, path) in sorted(layer.items()):
+            if t == dst:
+                continue
+            for (pid, a, b) in E[t]:
+                if b == src or b in [p[1] for p in path]:
+                    continue
+                if depth == H and b != dst:
+                    continue
+                r = ledger.quote(states.get(pid, bundle.pools[pid]), a, amt)
+                if r.status != "ok" or r.amount_in_consumed != amt or r.amount_out <= 0:
+                    continue
+                p2 = path + ((pid, a, b),)
+                if b == dst:
+                    finals.append((r.amount_out, p2))
+                elif b not in nxt or r.amount_out > nxt[b][0]:
+                    nxt[b] = (r.amount_out, p2)
+        layer = nxt
+    finals.sort(key=lambda x: (-x[0], x[1]))
+    return finals[:k]
+
+
+def fresh_prefix(topo, it):
+    used = set(topo.fund_token)
+    n = 0
+    while True:
+        p = f"__ACT{it}_{n}"
+        if not any(u.startswith(p) for u in used):
+            return p
+        n += 1
+
+
+def union_with_branch(holder, path, prefix, seed, seed_mode="donor"):
+    steps = [dict(s, inputs=list(s["inputs"])) for s in holder.topo.steps]
+    for h, (pid, a, b) in enumerate(path):
+        fin = REQUEST_FUND_ID if h == 0 else f"{prefix}H{h-1}"
+        fo = f"{prefix}OUT" if h == len(path) - 1 else f"{prefix}H{h}"
+        steps.append(dict(pool=pid, tin=a, tout=b, inputs=[fin], out=fo))
+    t2 = Topo(steps, holder.topo.token_in, holder.topo.token_out)
+    if not t2.is_dag():  # invariant over ALL steps the optimiser can (re)activate (R2-01)
+        return None, "dag_cycle"
+    sh = {f: (list(holder.shares[f]) if f in holder.shares else [Fraction(1)]) for f in t2.consumers}
+    req = sh[REQUEST_FUND_ID]
+    if seed_mode == "proportional":  # PF: keep the original REQUEST vector's proportions
+        sh[REQUEST_FUND_ID] = [x * (1 - seed) for x in req] + [seed]
+    else:  # full mode: declared donor rule (largest consumer, lowest index on ties)
+        jmax = max(range(len(req)), key=lambda j: (req[j], -j))
+        if req[jmax] <= seed:
+            return None, "seed_impossible"
+        req[jmax] -= seed
+        req.append(seed)
+    assert sum(sh[REQUEST_FUND_ID]) == 1
+    return (t2, sh), None
+
+
+def activate(bundle, case, holder, ledger, solver, tol_bps, rounds, K, mode, log, stats):
+    E = edges_from(bundle)
+    for it in range(K):
+        g, alloc, prod, st = simulate(bundle, holder.topo, holder.shares, case.amount_in, ledger)
+        cands = top_marginal_paths(bundle, E, st, case.token_in, case.token_out,
+                                   max(1, case.amount_in // 10**4), ledger)
+        plan_pools = {s.pool_id for s in holder.plan.steps}
+        accepted = False
+        for rank, (_m, path) in enumerate(cands):
+            prefix = fresh_prefix(holder.topo, it)
+            built, why = union_with_branch(holder, path, prefix, Fraction(1, 10**4),
+                                           "donor" if mode == "full" else "proportional")
+            if built is None:
+                log.append([it, rank, why])
+                continue
+            t2, s2 = built
+            gseed, aseed, _, _ = simulate(bundle, t2, s2, case.amount_in, ledger)
+            if gseed is None:
+                log.append([it, rank, "seed_infeasible"])
+                continue
+            cand = Holder(canonical_plan(t2, aseed), gseed, t2, s2, "seed")
+            if _check_plan(bundle, case, cand.plan) is not None:
+                log.append([it, rank, "seed_structure"])
+                continue
+            cand.topo, cand.shares = t2, s2  # keep full union variables for this polish call
+            cand.pf_base = list(holder.shares[REQUEST_FUND_ID])  # original REQUEST vector (R3-03)
+            try:
+                if mode == "full":
+                    polish(bundle, case, cand, ledger, solver, tol_bps, rounds, stats)
+                else:  # PRIME-Flow-style: one grouped 1-D split current-flow vs new branch
+                    stats["polish_calls"] = stats.get("polish_calls", 0) + 1
+                    pf_split(bundle, case, cand, ledger, solver, tol_bps, stats)
+            finally:
+                newflow = sum(int(i.amount) for s in cand.plan.steps if s.output_fund_id.startswith(prefix)
+                              for i in s.inputs if i.fund_id == REQUEST_FUND_ID)
+                verdict = "no_gain_or_zero_flow"
+                reason = None
+                if cand.gross > holder.gross and newflow > 0:
+                    try:
+                        e = evaluate(bundle, case, cand.plan, OBJ, quote=ledger.quote)
+                        verdict = "accept" if (e.status == "ok" and e.gross_output == cand.gross) else "replay_mismatch"
+                    except Budget as bx:
+                        verdict, reason = "budget_before_validation", str(bx)
+                if verdict == "accept":
+                    novel = sum(p[0] not in plan_pools for p in path)
+                    reuse = any(p[0] in plan_pools for p in path)
+                    holder.plan, holder.gross, holder.source = cand.plan, cand.gross, "activation"
+                    rebuild(holder, case)
+                    log.append([it, rank, f"accepted novel_pools={novel} reuse={'shared_sequential' if reuse else 'none'} flow={newflow}"])
+                    accepted = True
+                else:
+                    log.append([it, rank, verdict])
+                if verdict == "budget_before_validation":
+                    raise Budget(reason)
+            if accepted:
+                break
+        if not accepted:
+            log.append([it, -1, "stop_no_candidate"])
+            break
+
+
+def pf_split(bundle, case, cand, ledger, solver, tol_bps, stats):
+    """Grouped scaling: existing REQUEST shares w_i scaled by (1-t)/(1-s0), new branch t."""
+    topo, base = cand.topo, cand.shares
+    s0 = base[REQUEST_FUND_ID][-1]
+    orig = cand.pf_base  # tt = 0 reproduces the original canonical plan exactly
+
+    def eval_t(t):
+        tt = s0 + t
+        w = [x * (1 - tt) for x in orig] + [tt]
+        s2 = dict(base)
+        s2[REQUEST_FUND_ID] = w
+        g, al, _, _ = simulate(bundle, topo, s2, case.amount_in, ledger)
+        return (g, (s2, al))
+
+    best = line_search(eval_t, 1 - s0, s0, D * tol_bps // 10**4, solver, stats)
+    if best is not None:
+        v, t, (s2, al) = best
+        cand.offer(bundle, case, topo, s2, al, v, "pf")
+    rebuild(cand, case)
+
+
+# ------------------------------------------------------------------ driver
+
+
+def ledger_gross(trace, token_out):
+    """Target-token terminal value of the recorded plan = sum over target funds of
+    produced - consumed (the evaluator's residual rule, R3-01)."""
+    produced, consumed, token = {}, defaultdict(int), {}
+    for t in trace:
+        produced[t["output_fund_id"]] = int(t["amount_out"])
+        token[t["output_fund_id"]] = t["token_out"]
+        for i in t["inputs"]:
+            consumed[i["fund_id"]] += int(i["amount"])
+    return sum(v - consumed[f] for f, v in produced.items() if token[f] == token_out)
+
+
+def run_case(bundle, case, trace, mode, solver, tol_bps, rounds, K, cap, deadline=None, ledger_factory=None):
+    base_plan, produced = canonical_from_trace(trace)
+    produced[REQUEST_FUND_ID] = case.amount_in
+    topo, alloc = topo_and_alloc_from_plan(base_plan, case)
+    out = dict(case=case.case_id, status="ok", truncated_by=None, act_log=[], stats={})
+    gross0 = ledger_gross(trace, case.token_out)
+    shares, why = shares_or_refusal(topo, alloc, produced)
+    holder = Holder(base_plan, gross0, topo, shares, "base")
+    if shares is None:
+        out.update(status="unsupported_topology", reason=why, final=gross0, source="base", q_total=0)
+        return out, holder, None
+    ledger = ledger_factory() if ledger_factory else Ledger(cap, deadline)
+    stats = out["stats"]
+    e1 = None
+    t0 = time.monotonic()
+    try:
+        g, al, _, _ = simulate(bundle, topo, shares, case.amount_in, ledger)  # reconstruction check
+        assert g == gross0 and all(al[c] == alloc[c] for c in alloc), "reconstruction mismatch"
+        polish(bundle, case, holder, ledger, solver, tol_bps, rounds, stats)
+        out["e1_gross"], out["q_e1"], out["e1_seconds"] = holder.gross, ledger.n, time.monotonic() - t0
+        e1 = (holder.plan, holder.gross, holder.topo, holder.shares)
+        if mode in ("activate", "activate_pf"):
+            activate(bundle, case, holder, ledger, solver, tol_bps, rounds, K,
+                     "full" if mode == "activate" else "pf", out["act_log"], stats)
+    except Budget as b:
+        out["truncated_by"] = str(b)
+    out.update(final=holder.gross, source=holder.source, q_total=ledger.n)
+    return out, holder, e1
+
+
+def controls(bundle, case, e1, q_e1, treat_calls, treat_q, solver, tol_bps, rounds, cap, wall_s):
+    """Separate ledgers, each with its own wall allowance wall_s (= the treatment's allowance after
+    the shared base + E1 stages). calls: exactly treat_calls polish invocations. work: polish until
+    exactly the treatment's activation-stage quote spend (work_target stop), or convergence."""
+    res = {}
+    for kind in ("calls", "work"):
+        h = Holder(*e1, "e1")
+        led = Ledger(cap, time.monotonic() + wall_s, start=q_e1,
+                     target=(q_e1 + treat_q) if kind == "work" else None)
+        st = {}
+        tb = None
+        try:
+            if kind == "calls":
+                for _ in range(treat_calls):
+                    polish(bundle, case, h, led, solver, tol_bps, rounds, st)
+            else:
+                while True:
+                    before = h.gross
+                    polish(bundle, case, h, led, solver, tol_bps, rounds, st)
+                    if h.gross == before:
+                        st["converged"] = True
+                        break
+        except Budget as b:
+            tb = str(b)
+        res[kind] = dict(gross=h.gross, q=led.n - q_e1, calls=st.get("polish_calls", 0), stop=tb,
+                         converged=st.get("converged", False), target=treat_q if kind == "work" else None)
+    return res
+
+
+def main():
+    bundle_dir, run_dir, alg, mode, solver, outp = sys.argv[1:7]
+    tol_bps = int(os.environ.get("TOL_BPS", "1"))
+    rounds = int(os.environ.get("ROUNDS", "2"))
+    K = int(os.environ.get("K", "2"))
+    total = int(os.environ.get("CAP_RESIDUAL", "300000"))
+    tlimit = float(os.environ.get("TIME_LIMIT", "900"))
+    bundle = load_bundle(bundle_dir)
+    cases = {c.case_id: c for c in bundle.cases}
+    rows = []
+    import numpy
+    import scipy
+
+    for line in open(os.path.join(run_dir, "cases.jsonl")):
+        rec = json.loads(line)
+        if rec["algorithm"] != alg or rec["status"] != "ok":
+            continue
+        case = cases[rec["case_id"]]
+        cap = max(0, total - rec["quotes"]["counted"])
+        base_s = sum(rec["measurement"]["solve_seconds"]) / max(1, len(rec["measurement"]["solve_seconds"]))
+        deadline = time.monotonic() + max(0.0, tlimit - base_s)
+        t0 = time.monotonic()
+        r, holder, e1 = run_case(bundle, case, rec["evaluation"]["trace"], mode, solver, tol_bps, rounds, K, cap, deadline)
+        r["probe_seconds"] = round(time.monotonic() - t0, 3)
+        r["recorded"] = int(rec["score"])
+        r["base_quotes"] = rec["quotes"]["counted"]
+        r["family"] = f"{case.token_in[:8]}->{case.token_out[:8]}"
+        # runner-side independent replay (outside the attempt ledger)
+        ev = evaluate(bundle, case, holder.plan, OBJ)
+        r.update(replay_status=str(ev.status), replay_gross=ev.gross_output,
+                 plan_sha256=plan_hash(holder.plan), plan=plan_json(holder.plan),
+                 repeated_pool_calls=ev.route_features.get("repeated_pool_calls"))
+        assert r["status"] != "ok" or r["final"] >= r["recorded"], r["case"]
+        assert ev.status == "ok" and ev.gross_output == r["final"], (r["case"], ev.status, ev.error)
+        if mode in ("activate", "activate_pf") and e1 is not None:
+            treat_calls = r["stats"].get("polish_calls", 0) - 1  # activation-stage optimiser invocations
+            wall_s = max(0.0, tlimit - base_s - r["e1_seconds"])
+            r["controls"] = controls(bundle, case, e1, r["q_e1"], treat_calls, r["q_total"] - r["q_e1"],
+                                     solver, tol_bps, rounds, cap, wall_s)
+        rows.append(r)
+    meta = dict(argv=sys.argv, env={k: os.environ.get(k) for k in ("TOL_BPS", "ROUNDS", "K", "CAP_RESIDUAL", "TIME_LIMIT")},
+                bundle_hash=bundle.bundle_hash, python=sys.version.split()[0], scipy=scipy.__version__,
+                numpy=numpy.__version__, script_sha256=hashlib.sha256(open(__file__, "rb").read()).hexdigest())
+    json.dump(dict(meta=meta, rows=rows), open(outp, "w"), default=str)
+
+
+if __name__ == "__main__":
+    main()
