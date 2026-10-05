@@ -51,7 +51,8 @@ def test_pre_existing_identities_record_byte_identical_capabilities() -> None:
     for name, recorded in PRE_EXISTING.items():
         assert json.dumps(ALGORITHMS[name].capabilities.to_dict(), sort_keys=True) == recorded
     assert set(ALGORITHMS) == set(PRE_EXISTING) | set(R021_ADDITIONS) | set(R022_ADDITIONS) | {
-        "split_polish"  # WHI-1623: registered, profile-selected only (not in `all`)
+        "split_polish",  # WHI-1623: registered, profile-selected only (not in `all`)
+        "marginal_activation",  # WHI-1624: likewise
     }
 
 

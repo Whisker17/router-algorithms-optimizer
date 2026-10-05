@@ -84,6 +84,14 @@ split shares of the base's canonical plan by pairwise Brent/golden line search o
 replay (Jupiter-inspired, NOT Jupiter Metis). It is `custom`, configured by validated
 `algorithm_options` (all six keys required, no preset) and selected only by a profile that names
 it: `--strategies all` does not add it. Importing it loads no SciPy.
+
+`marginal_activation` (WHI-1624, R023-C/1 §5, E2) runs `split_polish` and then appends up to K new
+branches from a delta-amount label search on the post-plan pool states, admitted only when the
+token graph over all union steps is acyclic and kept only on a strictly higher gross that an
+evaluator replay (charged) confirms, with positive flow on the new branch. Its `arm` option also
+runs the campaign's work- and call-matched controls (§5.3). It is `custom`, configured by
+validated `algorithm_options` (all twelve keys required, no preset) and selected only by a profile
+that names it: `--strategies all` does not add it. Importing it loads no SciPy.
 """
 
 from __future__ import annotations
@@ -96,6 +104,7 @@ from routing.algorithms import (
     incremental_graph,
     incremental_graph_bounded,
     incremental_graph_repair,
+    marginal_activation,
     metis_history,
     metis_history_bounded,
     metis_inspired,
@@ -134,8 +143,10 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     single_path_bounded.NAME: single_path_bounded.FACTORY,  # WHI-1599
     incremental_graph_bounded.NAME: incremental_graph_bounded.FACTORY,  # WHI-1600
     metis_history_bounded.NAME: metis_history_bounded.FACTORY,  # WHI-1600
-    # 0.2.3 split polishing (R023-C/1 §4), `custom` group, profile-selected only.
+    # 0.2.3 split polishing (R023-C/1 §4) and marginal activation (§5), `custom` group,
+    # profile-selected only.
     split_polish.NAME: split_polish.FACTORY,  # WHI-1623
+    marginal_activation.NAME: marginal_activation.FACTORY,  # WHI-1624
 }
 
 # The comparison groups, in their deterministic run order (base first, then optimized).

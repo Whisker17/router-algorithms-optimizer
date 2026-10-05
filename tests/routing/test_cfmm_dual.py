@@ -260,12 +260,13 @@ def _model_case(cid: str) -> tuple[SnapshotBundle, Case, dict[str, Any]]:
 def test_registered_once_after_uni_sor_cycle_safe_and_appended_by_all() -> None:
     assert ALGORITHMS[NAME] is cd.FACTORY is FACTORY
     names = list(ALGORITHMS)
-    assert names.count(NAME) == 1 and names[-5:] == [  # the 0.2.2 bounded identities follow
+    assert names.count(NAME) == 1 and names[-6:] == [  # the 0.2.2 bounded identities follow
         NAME,
         "single_path_bounded",
         "incremental_graph_bounded",
         "metis_history_bounded",
-        "split_polish",  # WHI-1623 (0.2.3), registered last
+        "split_polish",  # WHI-1623 (0.2.3)
+        "marginal_activation",  # WHI-1624 (0.2.3), registered last
     ]
     assert names.index(uni_sor_cycle_safe.NAME) + 1 == names.index(NAME)
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES

@@ -831,7 +831,8 @@ def test_every_number_of_chapter_23_is_asserted() -> None:
     """`routing-algorithms.md` §23 publishes only numbers that this file asserts, that the
     contract states (tuning evidence), or the chapter's own option ranges and ids."""
     guide = (REPO / "docs" / "references" / "routing-algorithms.md").read_text(encoding="utf-8")
-    chapter = guide[guide.index("## 23. ") :]
+    end = guide.find("\n## 24. ")  # WHI-1624's chapter 24 is checked by test_marginal_activation.py
+    chapter = guide[guide.index("## 23. ") : end if end >= 0 else len(guide)]
     chapter = re.sub(r"```.*?```", " ", chapter, flags=re.S)  # pseudocode and diagram
     chapter = re.sub(r"^#+ .*$", " ", chapter, flags=re.M)  # headings
     contract = (REPO / "docs" / "references" / "research-023" / "contract.md").read_text()
