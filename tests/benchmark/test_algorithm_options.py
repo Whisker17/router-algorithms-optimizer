@@ -86,7 +86,8 @@ IMPLEMENTED = (
 # WHI-1600: the one 0.2.2 addition that takes options (exactly `metis_history`'s, from its own
 # copy of the preset file); `--strategies all` writes its preset out like the 0.2.1 identities.
 OPTIONED_022 = ("metis_history_bounded",)
-OPTIONED_023 = ("split_polish",)  # WHI-1623: options without a preset, never added by `all`
+# WHI-1623, WHI-1624: options without a preset, never added by `all`
+OPTIONED_023 = ("split_polish", "marginal_activation")
 BOUNDED_PRESETS = {name: preset_options(ALGORITHMS[name]) for name in OPTIONED_022}
 NEW_PROFILES = (
     {
@@ -499,7 +500,7 @@ def test_the_all_roster_is_the_nine_plus_the_implemented_0_2_1_identities() -> N
     assert R021_ADDITIONS == IMPLEMENTED
     assert list(profile.algorithms) == [*NINE, *IMPLEMENTED, *R022_ADDITIONS]
     assert list(profile.algorithms) == document["algorithms"]  # WHI-1599 appends R022_ADDITIONS
-    assert len(ALGORITHMS) == 19  # the nine + uni_sor_fast + IMPLEMENTED + R022 (3) + split_polish
+    assert len(ALGORITHMS) == 20  # nine + uni_sor_fast + IMPLEMENTED + R022 (3) + OPTIONED_023 (2)
     with_options = {n for n, f in ALGORITHMS.items() if f.options_validator is not None}
     optioned = {*IMPLEMENTED, *OPTIONED_022}
     assert with_options == optioned | set(OPTIONED_023)
