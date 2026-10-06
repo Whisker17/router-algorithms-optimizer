@@ -24,7 +24,9 @@ rule; its values join the `search.*` values in `AlgorithmConfig.params`. The sam
 holds `graph.label_hops` (an integer >= `search.max_hops`) and `graph.label_pruning` (an
 explicit bool), the settings of the opt-in experimental `metis_inspired` (WHI-1449), which
 alone declares them; no other factory receives them and a profile without them resolves
-exactly as before.
+exactly as before. A factory with an `AlgorithmFactory.graph_params_for` hook
+(WHI-1626: `split_polish`, whose graph keys are its declared base's) requires and receives the
+keys that hook returns for its normalized `algorithm_options` instead; no other factory sets it.
 
 The optional `shortlist` section (WHI-1508) holds the pre-registered candidate-shortlist
 settings of the opt-in experimental `uni_sor_fast` variant of `uni_sor_port`
@@ -191,10 +193,14 @@ class RunProfile:
         are present; every value is an int or a tuple of ints, so nothing mutable is
         shared with the prepared state). A named strategy (WHI-1528) gets its own
         `strategies.<name>` recipe settings (plus a fresh copy of its `controls`) instead."""
+        resolved = self.algorithm_options.get(factory.name)
+        graph_keys = factory.graph_params
+        if factory.graph_params_for is not None and resolved is not None:  # WHI-1626
+            graph_keys = factory.graph_params_for(resolved["options"])
         params: dict[str, Any] = {
             key: self.search[key] for key in factory.search_params if key in self.search
         }
-        params.update({key: self.graph[key] for key in factory.graph_params if key in self.graph})
+        params.update({key: self.graph[key] for key in graph_keys if key in self.graph})
         params.update(
             {key: self.shortlist[key] for key in factory.shortlist_params if key in self.shortlist}
         )
@@ -206,7 +212,6 @@ class RunProfile:
             params.update(entry["shortlist"])
             params.update(entry["sampling"])
             params["controls"] = {k: dict(v) for k, v in entry["controls"].items()}
-        resolved = self.algorithm_options.get(factory.name)
         options = (  # a fresh read-only copy of this algorithm's own options only
             MappingProxyType(json.loads(json.dumps(resolved["options"])))
             if resolved is not None
@@ -762,6 +767,16 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         "algorithm_options",
         algorithms_obj,
     )
+    for name, entry in algorithm_options.items():  # WHI-1626: graph keys given the options
+        hook = ALGORITHMS[name].graph_params_for
+        keys = hook(entry["options"]) if hook is not None else ()
+        missing = [f"graph.{key}" for key in keys if key not in graph]
+        if missing:
+            raise ProfileError(
+                f"algorithms: {name!r} with its algorithm_options requires "
+                + ", ".join(missing)
+                + " to be declared explicitly (no built-in default)"
+            )
     return RunProfile(
         schema_version=raw["schema_version"],
         algorithms=tuple(algorithms_obj),

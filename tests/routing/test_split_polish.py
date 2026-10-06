@@ -620,7 +620,7 @@ def test_options_are_validated_all_required_and_exact() -> None:
         {},
         {k: v for k, v in NOMINEE.items() if k != "maxiter"},
         {**NOMINEE, "extra": 1},
-        {**NOMINEE, "base": "metis_inspired"},
+        {**NOMINEE, "base": "single_path"},  # WHI-1626: a still-unregistered base
         {**NOMINEE, "base": NAME},
         {**NOMINEE, "solver": "nelder"},
         {**NOMINEE, "rounds": 0},

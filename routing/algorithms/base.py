@@ -296,6 +296,11 @@ class AlgorithmFactory:
     # current `options_preset` alone is what `--strategies all` writes out. Empty for every
     # factory that never replaced its preset.
     historical_presets: tuple[Mapping[str, Any], ...] = ()
+    # WHI-1626: `(normalized options) -> graph.* keys` for a factory whose required graph keys
+    # depend on its own options (`split_polish`: those of its declared base). When set, the
+    # profile loader also requires, and `algorithm_config` hands over, exactly these keys (a
+    # superset of `graph_params`). `None` = `graph_params` alone (every other factory).
+    graph_params_for: Callable[[Mapping[str, Any]], tuple[str, ...]] | None = None
 
 
 # ------------------------------------------------------------------ WHI-1548 options
