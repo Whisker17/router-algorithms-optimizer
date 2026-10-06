@@ -84,29 +84,29 @@ bases:
   REP:  {algorithm: incremental_graph_repair, graph: {chunks: 50}, options: preset}
   PS:   {algorithm: path_split, graph: {chunks: 50}}
 arms:
-  # registered order = launch order (heaviest first; measured in stage T)
+  # registered order = launch order: descending solve hours measured in stage T
   - {arm: E2full-A0-cm, kind: e2, base: A0, mode: full, e2_arm: call_matched, treatment: E2full-A0}
   - {arm: E2full-A0-wm, kind: e2, base: A0, mode: full, e2_arm: work_matched, treatment: E2full-A0}
+  - {arm: E2full-A0, kind: e2, base: A0, mode: full, e2_arm: treatment}
   - {arm: E2pf-C100-cm, kind: e2, base: C100, mode: pf, e2_arm: call_matched, treatment: E2pf-C100}
   - {arm: E2pf-C100-wm, kind: e2, base: C100, mode: pf, e2_arm: work_matched, treatment: E2pf-C100}
-  - {arm: E2full-A0, kind: e2, base: A0, mode: full, e2_arm: treatment}
   - {arm: E2pf-C100, kind: e2, base: C100, mode: pf, e2_arm: treatment}
+  - {arm: E1b-REP, kind: e1, base: REP, solver: brent}
+  - {arm: REP, kind: reference}
+  - {arm: C200, kind: reference}
+  - {arm: E1b-C100, kind: e1, base: C100, solver: brent}
+  - {arm: C100, kind: reference}
   - {arm: E2pf-A0-cm, kind: e2, base: A0, mode: pf, e2_arm: call_matched, treatment: E2pf-A0}
   - {arm: E2pf-A0-wm, kind: e2, base: A0, mode: pf, e2_arm: work_matched, treatment: E2pf-A0}
   - {arm: E2pf-A0, kind: e2, base: A0, mode: pf, e2_arm: treatment}
-  - {arm: C200, kind: reference}
-  - {arm: E1b-REP, kind: e1, base: REP, solver: brent}
-  - {arm: E1b-C100, kind: e1, base: C100, solver: brent}
-  - {arm: REP, kind: reference}
-  - {arm: C100, kind: reference}
-  - {arm: E1b-A0, kind: e1, base: A0, solver: brent}
   - {arm: E1g-A0, kind: e1, base: A0, solver: golden}
+  - {arm: E1b-A0, kind: e1, base: A0, solver: brent}
+  - {arm: A0, kind: reference}
   - {arm: E1b-S4, kind: e1, base: S4, solver: brent}
   - {arm: E1b-M4, kind: e1, base: M4, solver: brent}
-  - {arm: E1b-PS, kind: e1, base: PS, solver: brent}
-  - {arm: A0, kind: reference}
   - {arm: S4, kind: reference}
   - {arm: M4, kind: reference}
+  - {arm: E1b-PS, kind: e1, base: PS, solver: brent}
   - {arm: PS, kind: reference}
 # Contract §8 arms NOT scheduled, kept as rows in every table with their reason.
 not_scheduled:
@@ -122,6 +122,12 @@ not_scheduled:
 # the canonical budget (900 s wall, 300,000 quotes): the runner kills a solve at 900 s, which for a
 # control arm includes its uncharged treatment re-run (WHI-1624 note); such a kill is a `timeout`
 # outcome, never rerun.
+# Settled from stage T (from 1bfd3f97, 2026-10-06 03:59Z -> 06:27Z UTC, 40/40 invocations `ok`,
+# `check` 0 problems): the longest invocation took 38 min, the whole stage 2 h 28 min at 6 lanes
+# (host load1 about 7-8, other sessions included); the largest single solve was 97 s (an E2-full
+# control, whose solve includes the treatment re-run), far below the 900 s hard limit. Stage R
+# (302 cases, about 3.1x) is therefore kept at 6 lanes, in the order of descending stage-T
+# solve hours, with the canonical hard limits unchanged; expected about 8 h.
 stages:
   T: {split: tuning_full, lanes: 6, caffeinate: true, pmset_capture: true,
       owner: "the implementer, first; dry run (wall time, configuration errors), never tuned on"}

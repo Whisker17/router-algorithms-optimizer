@@ -275,7 +275,7 @@ def check(raw: Mapping[str, Any]) -> list[str]:
             problems.append(f"profile {key}: {exc}")
             continue
         if not path.is_file() or path.read_text(encoding="utf-8") != text:
-            problems.append(f"profile {key}: {path.relative_to(REPO)} differs from its rendering")
+            problems.append(f"profile {key}: {profile_path(raw, key)} differs from its rendering")
             continue
         document, _ = derive(read_profile_document(path), "profile", source_path=str(path),
                              source_sha256="0" * 64)  # fmt: skip
