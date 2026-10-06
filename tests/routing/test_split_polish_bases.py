@@ -331,6 +331,8 @@ def test_the_hook_changes_nothing_for_a_shipped_profile(monkeypatch: pytest.Monk
     for path in shipped:
         raw = yaml.safe_load(path.read_text(encoding="utf-8"))
         if isinstance(raw, dict) and "algorithms" in raw and raw.get("schema_version") == 2:
+            if (raw.get("algorithm_options") or {}).get(NAME, {}).get("base") in NEW_BASES:
+                continue  # WHI-1627 campaign profiles on M4/S4/REP: they need the hook by design
             docs.append((str(path), raw))
     for base in sp.E1_BASES:
         docs.append((f"e1-{base}", document(base)))

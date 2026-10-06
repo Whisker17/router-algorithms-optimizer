@@ -1,0 +1,167 @@
+# WHI-1627 research-023 paired campaign schedule (contract R023-C/1 §5.3, §8, §10, §13).
+#
+# The single machine-readable schedule of the 0.2.3 campaign for `split_polish` (E1) and
+# `marginal_activation` (E2): inputs and their hashes, the shared settings, every arm with its
+# generated profile, the stages and the pre-registered rules. Validated, rendered, executed,
+# checked and tabulated ONLY by `tools/research_023/campaign.py` (`profiles`, `check`, `freeze`,
+# `inputs`, `run`, `analyze`, `tables`); explained in docs/references/research-023/results.md. It
+# reuses the 0.2.1 executor (`tools/research_021/campaign.py`: ledger, lanes, load sampler,
+# `caffeinate`, `pmset` capture, the single infrastructure retry) and the 0.2.2 work pass
+# (`tools/research_022/pruning_work.py`) by import; neither file is modified.
+#
+# Stages: T = the whole schedule on the TUNING split, a dry run that measures wall time and
+# catches configuration errors (descriptive only, never tuned on); R = the REPORT split, executed
+# ONCE from a fresh clone of the freeze commit (this file with `stages.R` settled from stage T),
+# pushed before the first report-split solve. Nothing here tunes, re-selects a nominee or changes
+# a setting of contract §4.7 / §5.2: every value below is the contract's or `config/full_gross.yaml`'s.
+schema: r023.campaign/1
+issue: WHI-1627
+contract: {key: R023-C/1, path: docs/references/research-023/contract.md,
+           sha256: 43775381d17cb7f1468c3a6b246e19571065e3a931eeb3445e73bd885f36af33}
+probe_sums: {path: docs/references/research-023/probe/SHA256SUMS,
+             sha256: 8e574c1e1cdb5b386e516e75b39978497698bacea5f84c22c4626ebb21da3a9a}
+release: {version: 0.2.3, id: 430fe77b-107a-41d8-86f2-9ae0b5ffe991}
+base_commit: 4f177705a807dbe97c2534ef2adfb7f639fffcad
+holdout_exposure:
+  tuning: exploration_data          # stage T only (dry run; the nominees were chosen here)
+  report: previously_exposed        # 0.1.0, 0.2.0, 0.2.1, 0.2.2 (contract §8)
+host:
+  logical_cpus: 10
+  load_sample_seconds: 30
+  contaminated_if: load1 > 0.5 * logical_cpus
+
+# ----------------------------------------------------------------------------- inputs
+# `source` is relative to the primary clone; `inputs` copies each into the durable inputs root
+# (outside every worktree) and refuses a copy whose manifest.json sha256 differs.
+inputs:
+  tuning_full:
+    source: data/corpus/mantle-5src-101082044/bundle_tuning
+    bundle_hash: ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b
+    cases_sha256: 8d2dc084f321ff2387c88fb568b545137530e0da1ee1b89e70579df6647c39b0
+    cases: 96
+    split: tuning
+    cohort: full_source
+  report_full:
+    source: data/corpus/mantle-5src-101082044/bundle_report
+    bundle_hash: 85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0
+    cases_sha256: c687241a2980c97880b2c948fd12b63b23f1956f89a61e1f2bbda8bd55413aa7
+    cases: 302
+    split: report
+    cohort: full_source
+
+# ----------------------------------------------------------------------------- settings
+# Every profile is `canonical_gross` (`config/full_gross.yaml`: 3 hops / 4 splits / 5 %, the
+# 900 s / 300,000-quote budget = the runner's hard limits AND the E1/E2 cooperative deadline and
+# global quote cap of contract §4.6, seed 1447, fixed order, one measured attempt) with only
+# `algorithms`, `graph` and `algorithm_options` replaced as the arm says. `graph` holds exactly
+# the keys the arm's identity (or its base, `graph_params_for`) reads.
+canonical: {path: config/full_gross.yaml,
+            sha256: 51a8a65184ae765867fd9d7763776852b2b4576e3cf7116a8dc15ccd87028177}
+presets:                            # the base options S4 / REP run with, written out (byte-pinned)
+  metis_history: {path: config/metis_history/preset_v1.yaml,
+                  sha256: f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799}
+  incremental_graph_repair: {path: config/incremental_graph_repair/preset_v1.yaml,
+                             sha256: 13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a}
+m4_settings: {path: config/metis_challenge/m4.yaml,       # the registered M4 graph section
+              sha256: 661311df6ff7a36a43954fff0e42f6b30b824d35d96c06f0e215960f256d4471}
+# E1 nominee (contract §4.7) and its golden solver control; E2 nominee (§5.2) and its full mode.
+polish: {solver: brent, rounds: 2, tolerance: 0.0001, grid: 1000000000, maxiter: 60}
+activation: {activations: 2, top_k: 3, delta_share: 0.0001, seed_share: 0.0001}
+profile_dir: config/research_023/profiles
+
+# ----------------------------------------------------------------------------- arms
+# One arm = one identity in one profile = one invocation `<stage>-<arm>`, plus its untimed work
+# pass `<stage>-WP-<arm>` (physical CL / LB work; none for an E2 control, whose physical work
+# would include the uncharged treatment re-run inside its solve). `bases` are the reference arms (contract §8); every E1/E2 arm names the
+# reference arm whose resolved configuration its base must equal (`check`) and whose record its
+# recorded base row must equal per case (`analyze`).
+bases:
+  A0:   {algorithm: incremental_graph, graph: {chunks: 50}}
+  C100: {algorithm: incremental_graph, graph: {chunks: 100}}
+  C200: {algorithm: incremental_graph, graph: {chunks: 200}}
+  M4:   {algorithm: metis_inspired, graph: {chunks: 50, label_hops: 4, label_pruning: true}}
+  S4:   {algorithm: metis_history, graph: {chunks: 50, label_hops: 4}, options: preset}
+  REP:  {algorithm: incremental_graph_repair, graph: {chunks: 50}, options: preset}
+  PS:   {algorithm: path_split, graph: {chunks: 50}}
+arms:
+  # registered order = launch order (heaviest first; measured in stage T)
+  - {arm: E2full-A0-cm, kind: e2, base: A0, mode: full, e2_arm: call_matched, treatment: E2full-A0}
+  - {arm: E2full-A0-wm, kind: e2, base: A0, mode: full, e2_arm: work_matched, treatment: E2full-A0}
+  - {arm: E2pf-C100-cm, kind: e2, base: C100, mode: pf, e2_arm: call_matched, treatment: E2pf-C100}
+  - {arm: E2pf-C100-wm, kind: e2, base: C100, mode: pf, e2_arm: work_matched, treatment: E2pf-C100}
+  - {arm: E2full-A0, kind: e2, base: A0, mode: full, e2_arm: treatment}
+  - {arm: E2pf-C100, kind: e2, base: C100, mode: pf, e2_arm: treatment}
+  - {arm: E2pf-A0-cm, kind: e2, base: A0, mode: pf, e2_arm: call_matched, treatment: E2pf-A0}
+  - {arm: E2pf-A0-wm, kind: e2, base: A0, mode: pf, e2_arm: work_matched, treatment: E2pf-A0}
+  - {arm: E2pf-A0, kind: e2, base: A0, mode: pf, e2_arm: treatment}
+  - {arm: C200, kind: reference}
+  - {arm: E1b-REP, kind: e1, base: REP, solver: brent}
+  - {arm: E1b-C100, kind: e1, base: C100, solver: brent}
+  - {arm: REP, kind: reference}
+  - {arm: C100, kind: reference}
+  - {arm: E1b-A0, kind: e1, base: A0, solver: brent}
+  - {arm: E1g-A0, kind: e1, base: A0, solver: golden}
+  - {arm: E1b-S4, kind: e1, base: S4, solver: brent}
+  - {arm: E1b-M4, kind: e1, base: M4, solver: brent}
+  - {arm: E1b-PS, kind: e1, base: PS, solver: brent}
+  - {arm: A0, kind: reference}
+  - {arm: S4, kind: reference}
+  - {arm: M4, kind: reference}
+  - {arm: PS, kind: reference}
+# Contract §8 arms NOT scheduled, kept as rows in every table with their reason.
+not_scheduled:
+  - {arm: E1b-CFMM, disposition: not_implemented,
+     reason: "optional CP+CL diagnostic: `cfmm_dual` is not a `split_polish` base (BASES = IG, PS, M4,
+              S4, REP); adding it is a runtime change outside this issue"}
+  - {arm: SOR-cohort, disposition: not_scheduled,
+     reason: "a matched SOR cohort is only for cross-router statements; results.md makes none"}
+
+# ----------------------------------------------------------------------------- stages
+# `lanes` = concurrent invocations (each one worker process). Work passes launch after every
+# ordinary arm of the stage has been launched (the registered order). The per-solve hard limits are
+# the canonical budget (900 s wall, 300,000 quotes): the runner kills a solve at 900 s, which for a
+# control arm includes its uncharged treatment re-run (WHI-1624 note); such a kill is a `timeout`
+# outcome, never rerun.
+stages:
+  T: {split: tuning_full, lanes: 6, caffeinate: true, pmset_capture: true,
+      owner: "the implementer, first; dry run (wall time, configuration errors), never tuned on"}
+  R: {split: report_full, lanes: 6, caffeinate: true, pmset_capture: true,
+      owner: "the implementer, ONCE, from a fresh clone of the pushed freeze commit"}
+
+# ----------------------------------------------------------------------------- rules
+rules:
+  one_pass: >-
+    One frozen pass per arm. The only re-execution is the 0.2.1 infrastructure deviation
+    (`run --retry-infrastructure ID`: once, into `<id>.retry1`, only for an attempt that ended without
+    a complete manifest, its reason recorded); a completed run is never repeated and a rerun never
+    replaces a recorded outcome. A `timeout` or truncated row is an outcome.
+  base_equality: >-
+    `check`: every E1/E2 arm's resolved base configuration (search, graph keys its base reads,
+    budget, measurement, base options) equals its reference arm's resolved configuration.
+    `analyze`: per case, the recorded base row (`search.base`: algorithm, status, quotes,
+    search) equals the reference arm's record (algorithm, status, quotes.counted, search) and
+    `base_gross` equals its score. A difference is listed per cell and is a problem.
+  controls: >-
+    Contract §5.3 per control row: `quotes <= target_quotes` (work-matched); `calls_started ==
+    target_calls` unless `stop` (call-matched; calls started and completed reported separately); the
+    embedded uncharged `activation` equals the treatment arm's own record of the same case (with
+    `charged` removed); a row with `not_reached` ("activation/control not reached: E1 truncated")
+    stays in every denominator and is never counted as matched. Every E2 arm has both controls.
+  ledger: >-
+    Per E1/E2 row with a base `ok`: `quotes.counted` == base row quotes + the identity's own quotes
+    (the seam), and the returned score >= `base_gross` (never worse) for a non-refused row; a refused
+    row (`unsupported_topology`) returns exactly the base gross.
+  metrics: >-
+    Contract §8, descriptive (no p-values): exact gross; every status and denominator; zero-baseline
+    rows counted apart and excluded from bps; per-case higher/equal/lower; bps distributions
+    (nearest-rank p5/p50/p95, mean); per directed-pair family net-win / net-loss; per stratum;
+    paired overhead (identity quotes / base quotes) and work ratios ((base + identity) / comparator
+    quotes); polish calls and accepted exchanges; Brent status counts; activation outcomes; control
+    stop reasons; physical CL / LB work from the work pass (cross-checked against the ordinary record);
+    wall time secondary only (no speed claim: L01 rule).
+  disposition: >-
+    Contract §10 per identity and per arm. `reject`: invalid returned plan; never-worse violation
+    against the identical base record; reconstruction failure; ledger != seam; a control not
+    call-matched or above its work target; a refusal returning a gross != the base record.
+    `inconclusive`: gates pass but > 10 % of a base's scheduled cases are truncated or
+    `unsupported_topology`, or a base is unavailable. `keep_experimental` otherwise. Nothing adopted.
