@@ -4856,8 +4856,9 @@ reproduces the pinned probe outputs case by case (`probe/results/ig_b2.json.gz`)
 improve, by +0.473 bps on average (contract §7). That figure is tuning evidence, not a campaign result.
 
 ### 23.6 Implementation Map
-- File: `routing/algorithms/split_polish.py`: `validate_options` and `Settings` (options),
-  `prepare` (the base's own `prepare` on the profile's `search.*`/`graph.chunks`), `Ledger`
+- File: `routing/algorithms/split_polish.py`: `validate_split_polish_options`, `validate_options`
+  and `Settings` (options), `graph_params_for` (the base's `graph.*` keys, WHI-1626), `prepare`
+  (the base's own `prepare` on exactly its own run's configuration, below), `Ledger`
   (shared quote cap and cooperative deadline), `Topology`, `canonical_from_evaluation`,
   `shares_or_refusal`, `simulate`, `canonical_plan`, `Incumbent`, `rebuild`, `line_search`
   (`_golden`, `_brent`), `polish`, `polish_plan` (the E1 driver on an evaluated plan) and `solve`.
@@ -4865,15 +4866,30 @@ improve, by +0.473 bps on average (contract §7). That figure is tuning evidence
 - Registry: `routing/algorithms/registry.py`. Report label: `report/aggregate.py::algorithm_label`.
 - Contract and tests: `docs/references/research-023/contract.md` §3, §4, §6, §9;
   `tests/routing/test_split_polish.py` (probe fixtures F1–F9, F13, the §9 gates, CLI, tuning
-  reproduction behind `ROUTER_TUNING_BUNDLE`).
+  reproduction behind `ROUTER_TUNING_BUNDLE`); `tests/routing/test_split_polish_bases.py` (the
+  M4/S4/REP bases: configuration forwarding, the E1 gates per base, base row == the base's own run
+  on the tracked corpus and, behind `ROUTER_TUNING_BUNDLE`, on the tuning split).
 
 ### 23.7 Parameters, Budgets, and Ties
 - **Options** (`algorithm_options.split_polish`, all six required, no preset, no defaults):
-  `base` (`incremental_graph` or `path_split`), `solver` (`brent` or `golden`), `rounds` (1–16),
+  `base` (`incremental_graph`, `path_split`, `metis_inspired`, `metis_history` or
+  `incremental_graph_repair`), `solver` (`brent` or `golden`), `rounds` (1–16),
   `tolerance` (share of a fund, converted exactly to grid units), `grid` ($D$), `maxiter`. Nominee:
   `incremental_graph`, `brent`, 2, 0.0001, 1000000000, 60; golden with 2 rounds is the solver control.
-- **Profile keys:** `search.max_hops`, `max_splits`, `percent_step` and `graph.chunks`, whatever the
-  base (they reach the base's `prepare`).
+- **The base runs as its own registered identity** (WHI-1626). It gets exactly the configuration
+  its own run gets under the same profile, from one source each:
+  - **Profile keys:** `search.max_hops`, `max_splits`, `percent_step` and `graph.chunks` whatever
+    the base, plus the base's own `graph.*` keys: `label_hops` and `label_pruning` for
+    `metis_inspired`, `label_hops` for `metis_history`. The loader requires them and hands them over
+    through the factory hook `graph_params_for` (no other identity sets it).
+  - **`base_options`:** the base's own `algorithm_options`, checked by the base's own validator
+    (reserved shared keys refused). Required for `metis_history` and `incremental_graph_repair` (no
+    default: write the pinned preset out to use it), refused for the other three bases. A profile
+    that also lists the base keeps the base's own entry for the base's own run; `split_polish` never
+    reads it. One profile holds one `split_polish` entry, so each base is its own profile.
+  - `CAPABILITIES` and `SEARCH_PARAMS` stay `incremental_graph`'s: exactly those of the three new
+    bases; `path_split`'s are narrower and covered.
+  - `marginal_activation` (§24) still accepts only `incremental_graph` and `path_split`.
 - **Budgets:** one ledger with the base: the polish may spend `max_quotes` minus the base's quotes,
   and stops cooperatively at `time_limit_seconds` after the solve started. A cooperative stop is `ok`
   with `search.split_polish.truncated_by` (`max_quotes` or `time`); budget 0 returns the base result
@@ -4901,8 +4917,10 @@ improve, by +0.473 bps on average (contract §7). That figure is tuning evidence
     with both first golden probes infeasible it keeps the base).
   - **Additive, not a replacement.** On the tuning split it loses to finer chunking case by case
     (contract §7); it is a post-processor.
-  - **Bases:** `incremental_graph` and `path_split` only. `metis_inspired`, `metis_history` and
-    `incremental_graph_repair` need further profile keys or options and are not wired yet.
+  - **Bases:** the five above only. On the tuning split no plan of the three new bases falls
+    outside the E1 domain, so `unsupported_topology` there is exercised only by a hand-built plan.
+    The base row equals the base's own run on every tuning case (no probe target existed for these
+    bases, contract §13); the research-023 campaign measures their gains.
 
 ## 24. Algorithm 19: `marginal_activation` (Branch Activation After Split Polishing; Jupiter-Inspired, NOT Jupiter Metis)
 

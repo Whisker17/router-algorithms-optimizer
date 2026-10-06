@@ -36,11 +36,23 @@ never runs); a base status other than `ok` passes through unchanged (relabelled)
 equal to the base returns the base's own plan and evaluation. A polished plan is returned with
 `evaluation=None` (the runner evaluates it independently) and `score` = its simulated gross.
 
-**Options** (`algorithm_options.split_polish`, all required, no defaults): `base`
-(`incremental_graph` or `path_split`), `solver` (`brent` / `golden`), `rounds`, `tolerance`
+**Options** (`algorithm_options.split_polish`, all required, no defaults): `base` (one of
+`BASES`: `incremental_graph`, `path_split` (WHI-1623), `metis_inspired`, `metis_history`,
+`incremental_graph_repair` (WHI-1626)), `solver` (`brent` / `golden`), `rounds`, `tolerance`
 (share of a fund, converted exactly to grid units), `grid` (D), `maxiter`. The E1 nominee is
-`incremental_graph`, `brent`, 2, 0.0001, 10**9, 60. The profile's `search.*` and `graph.chunks`
-(the `incremental_graph` keys) are required whatever the base and reach the base's `prepare`.
+`incremental_graph`, `brent`, 2, 0.0001, 10**9, 60.
+
+**The base runs as its own registered identity** (WHI-1626). Its configuration has one source
+each, so there is nothing to reconcile: (a) the profile's `search.*` and `graph.chunks` plus the
+base's own `graph.*` keys (`graph_params_for`: `label_hops`, `label_pruning` for
+`metis_inspired`, `label_hops` for `metis_history`), which the loader requires and hands to the
+base's `prepare` exactly as to the base's own run; (b) `base_options`, the base's own
+`algorithm_options`, validated by the base's own validator (reserved keys refused). It is
+required when the base takes options (`metis_history`, `incremental_graph_repair`: no default,
+write its pinned preset out to use it) and refused when it takes none. The base's own profile
+entry, if the profile also lists the base, is never read. `CAPABILITIES` and `SEARCH_PARAMS` are
+`incremental_graph`'s: exactly those of every base except `path_split`, whose narrower ones they
+cover (WHI-1623). `marginal_activation` (E2) accepts only `E1_BASES` through `validate_options`.
 
 `Ledger`, `Topology`, `canonical_from_evaluation`, `shares_or_refusal`, `simulate`,
 `canonical_plan`, `Incumbent`, `rebuild`, `line_search`, `polish` and `polish_plan` are the
@@ -59,11 +71,18 @@ from typing import Any
 
 from pools.quote import _ACTIVE_METER, QuoteMeter, metered_quotes, quote_exact_in
 from pools.result import QuoteStatus, SwapResult
-from routing.algorithms import incremental_graph, path_split
+from routing.algorithms import (
+    incremental_graph,
+    incremental_graph_repair,
+    metis_history,
+    metis_inspired,
+    path_split,
+)
 from routing.algorithms.base import (
     AlgorithmConfig,
     AlgorithmFactory,
     Budget,
+    OptionsError,
     SolveContext,
     SolveResult,
     SolveStatus,
@@ -82,11 +101,22 @@ ISSUE = "WHI-1623"
 CONTRACT = "R023-C/1"
 CONTRACT_DOC = "R023-C/1 (WHI-1622 research contract), E1"
 
+E1_BASES = (incremental_graph.NAME, path_split.NAME)  # WHI-1623's, the only ones E2 accepts
 BASES: Mapping[str, AlgorithmFactory] = MappingProxyType(
-    {incremental_graph.NAME: incremental_graph.FACTORY, path_split.NAME: path_split.FACTORY}
+    {
+        f.name: f
+        for f in (
+            incremental_graph.FACTORY,
+            path_split.FACTORY,
+            metis_inspired.FACTORY,  # WHI-1626: M4
+            metis_history.FACTORY,  # S4
+            incremental_graph_repair.FACTORY,  # REP
+        )
+    }
 )
 SOLVERS = ("brent", "golden")
 OPTION_KEYS = frozenset({"base", "solver", "rounds", "tolerance", "grid", "maxiter"})
+BASE_OPTIONS = "base_options"  # the base's own algorithm_options (WHI-1626)
 CAPABILITIES = incremental_graph.CAPABILITIES  # a ceiling: every base's plans are a subset
 SEARCH_PARAMS = incremental_graph.SEARCH_PARAMS
 GRAPH_PARAMS = incremental_graph.GRAPH_PARAMS
@@ -117,17 +147,48 @@ PROVENANCE = {
 }
 
 
-def validate_options(options: Mapping[str, Any]) -> dict[str, Any]:
-    """The `options_validator`: the six keys, all required, each typed and in range."""
+def validate_options(
+    options: Mapping[str, Any], bases: tuple[str, ...] = E1_BASES
+) -> dict[str, Any]:
+    """The six polish keys, all required, each typed and in range; `base` one of `bases` (by
+    default `E1_BASES`, which is what `marginal_activation` reuses this for)."""
     require_option_keys(options, set(OPTION_KEYS))
     return {
-        "base": option_choice(options["base"], "base", tuple(BASES)),
+        "base": option_choice(options["base"], "base", bases),
         "solver": option_choice(options["solver"], "solver", SOLVERS),
         "rounds": option_int(options["rounds"], "rounds", 1, 16),
         "tolerance": option_number(options["tolerance"], "tolerance", 1e-12, 1.0),
         "grid": option_int(options["grid"], "grid", 2, 10**18),
         "maxiter": option_int(options["maxiter"], "maxiter", 1, 1000),
     }
+
+
+def validate_split_polish_options(options: Mapping[str, Any]) -> dict[str, Any]:
+    """The `options_validator`: the six polish keys over every base in `BASES`, plus
+    `base_options` exactly when the base takes options (its own validator's normalized form)."""
+    require_option_keys(options, set(OPTION_KEYS), {BASE_OPTIONS})
+    out = validate_options({k: options[k] for k in OPTION_KEYS}, tuple(BASES))
+    base = BASES[out["base"]]
+    if base.options_validator is None:
+        if BASE_OPTIONS in options:
+            raise OptionsError(f"{BASE_OPTIONS}: {base.name!r} accepts no algorithm_options")
+        return out
+    if BASE_OPTIONS not in options:
+        raise OptionsError(
+            f"{BASE_OPTIONS}: {base.name!r} requires its own algorithm_options (no default)"
+        )
+    try:
+        out[BASE_OPTIONS] = validated_options(base, options[BASE_OPTIONS])
+    except OptionsError as exc:
+        raise OptionsError(f"{BASE_OPTIONS}: {exc}") from exc
+    return out
+
+
+def graph_params_for(options: Mapping[str, Any]) -> tuple[str, ...]:
+    """The `graph.*` keys of `split_polish` with these (normalized) options: `GRAPH_PARAMS`
+    (WHI-1623, whatever the base) plus the declared base's own."""
+    own = BASES[options["base"]].graph_params
+    return GRAPH_PARAMS + tuple(key for key in own if key not in GRAPH_PARAMS)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -165,7 +226,9 @@ def prepare(bundle: SnapshotBundle, config: AlgorithmConfig) -> PreparedSplitPol
     options = validated_options(FACTORY, config.options)  # the public entry validates too
     base = BASES[options["base"]]
     assert base.prepare is not None
-    base_prepared = base.prepare(bundle, AlgorithmConfig(base.name, params=config.params))
+    base_prepared = base.prepare(
+        bundle, AlgorithmConfig(base.name, config.params, options.get(BASE_OPTIONS, {}))
+    )
     return PreparedSplitPolish(
         options["base"], base_prepared, MappingProxyType(options), Settings.from_options(options)
     )
@@ -668,5 +731,6 @@ FACTORY = AlgorithmFactory(
     search_params=SEARCH_PARAMS,
     graph_params=GRAPH_PARAMS,
     provenance=PROVENANCE,
-    options_validator=validate_options,
+    options_validator=validate_split_polish_options,
+    graph_params_for=graph_params_for,
 )
