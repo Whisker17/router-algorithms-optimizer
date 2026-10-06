@@ -108,6 +108,10 @@ NEW_PROFILES = (
     # a restricted slice of the 17-ID roster and runs only with `--strategies profile`)
     | {p.relative_to(REPO).as_posix() for p in (REPO / "config" / "research_022" / "profiles")
        .glob("*.yaml")}  # fmt: skip
+    # WHI-1627: the 0.2.3 campaign profiles, GENERATED from full_gross by tools/research_023
+    # (drift-checked by `campaign.py check`; one opt-in identity each, `--strategies profile`)
+    | {p.relative_to(REPO).as_posix() for p in (REPO / "config" / "research_023" / "profiles")
+       .glob("*.yaml")}  # fmt: skip
 )
 TEST_ALARM_SECONDS = 240
 
