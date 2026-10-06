@@ -16,6 +16,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import re
 import shutil
 import sys
 from dataclasses import replace
@@ -323,3 +324,17 @@ def test_published_tables_regenerate_from_the_published_analysis(split: str) -> 
     assert sums == "".join(f"{d}  {n}\n" for n, d in analysis["raw_sha256"].items())
     assert analysis["problems"] == [] and len(analysis["git_revisions"]) == 1
     assert analysis["stage"] == {"tuning": "T", "report": "R"}[split]
+
+
+def test_every_three_decimal_figure_in_results_md_is_in_a_generated_table() -> None:
+    """A hand-copied bps / ratio figure in `results.md` must appear in a regenerated table (or the
+    contract's tuning table), so a transcription error fails here."""
+    results = (PUBLISHED.parent / "results.md").read_text(encoding="utf-8")
+    backed = "".join(
+        p.read_text(encoding="utf-8")
+        for p in (PUBLISHED / "report-tables.md", PUBLISHED / "tuning-tables.md",
+                  PUBLISHED.parent / "contract.md")
+    )  # fmt: skip
+    figures = set(re.findall(r"(?<![\d.])\d+\.\d{3}(?![\d.])", results))
+    assert len(figures) > 50  # not vacuous
+    assert sorted(f for f in figures if f not in backed) == []
