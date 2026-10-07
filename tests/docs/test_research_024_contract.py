@@ -45,7 +45,7 @@ R024 = ROOT / "docs" / "references" / "research-024"
 CONTRACT = (R024 / "contract.md").read_text(encoding="utf-8")
 RELEASE_PLAN = (ROOT / "docs" / "RELEASE_PLAN.md").read_text(encoding="utf-8")
 FULL_GROSS = "config/full_gross.yaml"
-FINDING_ID = re.compile(r"\bC[1-3]-F\d+\b")
+FINDING_ID = re.compile(r"\bC[1-4]-F\d+\b")
 
 
 def _sha(data: bytes) -> str:
@@ -663,7 +663,7 @@ def test_every_review_finding_has_one_disposition() -> None:
     for report in reports:
         raised |= set(FINDING_ID.findall(report.read_text(encoding="utf-8")))
     section = _section(13)
-    rows = re.findall(r"^\| (C[1-3]-F\d+) \| ([^|]+) \| ([^|]+) \|", section, re.M)
+    rows = re.findall(r"^\| (C[1-4]-F\d+) \| ([^|]+) \| ([^|]+) \|", section, re.M)
     ids = [row[0] for row in rows]
     assert len(ids) == len(set(ids))
     assert set(ids) == raised

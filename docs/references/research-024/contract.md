@@ -1132,7 +1132,8 @@ timing:
 
 ## 13. Independent review and dispositions
 
-**Reviewer and provenance.** Role `REVIEWER`, dispatched by the implementer with
+**Reviewer and provenance.** Role `REVIEWER`; rounds 1–3 dispatched by the implementer, round 4 (a
+confirmation round on the round-3 fix) by the ORCHESTRATOR, each with
 `scripts/agent-dispatch.sh REVIEWER <prompt> --effort high`. `config/agent-roles.conf` maps it to runtime
 `pi`, model **`mantle/gpt-6-astra`**, native thinking **`medium`** (`REVIEWER_EFFORT_HIGH="medium"`,
 owner mapping of WHI-1625); the dispatcher's argv is `pi -p --model mantle/gpt-6-astra --thinking
@@ -1141,16 +1142,18 @@ context; its working directory was a read-only detached worktree at the round's 
 afterwards, and the reviewer reported it clean before and after. **Disclosure:** the same model
 co-designed `R023-C/1` (its four review rounds, [`../research-023/reviews/`](../research-023/reviews/))
 and reviewed the 0.2.4 issue design (design-review rounds 1–4); it is not independent of the designs
-this contract carries forward. Neither the design review nor this contract review replaces or consumes
-the final release review (budget 3 reviews / 2 fix batches). Prompts, raw outputs and their SHA256SUMS:
-`router-algorithms-optimizer-artifacts/research-024/whi-1630/contract-review/`; verbatim reports in
-[`reviews/`](reviews/).
+this contract carries forward. Neither the design review nor this contract review (round 4 included)
+replaces or consumes the final release review (budget 3 reviews / 2 fix batches). Prompts, raw outputs
+and their SHA256SUMS: `router-algorithms-optimizer-artifacts/research-024/whi-1630/contract-review/`
+(rounds 1–3) and `…/whi-1630/contract-review-r4-orchestrator/` (round 4, 2026-10-07 05:08–05:11 UTC);
+verbatim reports in [`reviews/`](reviews/).
 
 | Round | Reviewed head | Verdict | Findings | Report |
 | --- | --- | --- | --- | --- |
 | 1 | `0d0bae25abf9025fc455370052f035a717ef4097` | DISAGREE | 5 blocking (C1-F1…F5) | [`reviews/round-1.md`](reviews/round-1.md) |
 | 2 | `1d043a19e8d807743f5c45a41c36934375aa528b` | DISAGREE | C1-F1, C1-F2 partly resolved; C1-F3…F5 resolved; 3 blocking (C2-F1…F3) | [`reviews/round-2.md`](reviews/round-2.md) |
 | 3 | `92adee0154d4c3feac6696d897d861bf91d2183e` | DISAGREE | C2-F1…F3, C1-F1, C1-F2 resolved; 1 blocking (C3-F1), 1 suggestion (C3-F2) | [`reviews/round-3.md`](reviews/round-3.md) |
+| 4 | `b8803dc2b095262d44741c66b6a07d03eaf86417` | AGREE | ORCHESTRATOR-commissioned confirmation; C3-F1 resolved in operative text, C3-F2 resolved, no regressions, §3 disclosure and §5.12 claim boundary adequate; 1 suggestion (C4-F1) | [`reviews/round-4.md`](reviews/round-4.md) |
 
 | Finding | Severity | Disposition (where) |
 | --- | --- | --- |
@@ -1162,8 +1165,9 @@ the final release review (budget 3 reviews / 2 fix batches). Prompts, raw output
 | C2-F1 | blocking | **Accepted.** Pair reconciliation is one field-based Rule P (P1 reconciled, P2 `work_pass_terminated`, P3 `both_terminated`, P4 `ordinary_terminated`, P5 `differs` = `defect`) for every arm with a work-pass twin, base rows included; C13 applies it; missing units stay missing (Rule M); P2–P4 count toward `inconclusive`, P5 toward `reject`; §12 `selection.pair_examples` has one example per case, checked by the contract test (§5.4.1, §7.4 C13, §9.1) |
 | C2-F2 | blocking | **Accepted.** Rule M defines every work value from the fields a record carries (the runner's null `quotes.counted` included); a candidate with any missing total is `ineligible: work_unavailable`; any missing A0 total ends both identities `no_selection` (`reference_work_unavailable`); a P5 in a reference arm is a `defect` of both identities; the B0 example now has the runner's null-count shape; worked examples WE7 and WE8 cover the missing-work outcomes (§5.4.1, §5.6, §5.8, §12) |
 | C2-F3 | blocking | **Accepted.** §7.5 registers the control audit in the R023 auditor's order: K0 terminated, K1 `not_reached`, K2 non-`ok` (the saved `no_route` control rows), K3 refused, K4 missing control block (`defect`), K5 matched (target and spend audits; `treatment_unavailable` when the treatment row has no `activation`); §12 `campaign.control_examples` has one example per class, checked by the contract test (§7.4 C11, C12, §7.5) |
-| C3-F1 | blocking | **Accepted, fixed after round 3; not re-reviewed** (three rounds is the cap). §5.10 now gives sensitivity arms their own validation: G1 on the ordinary records only, no G6, the winner arm's G2–G5/G7 against the base arm at the **same** `graph.chunks`, the base arm G1 only, `Q` still against the P\* reference arms; §12 `selection.sensitivity` pins it with the pinned R023 example the reviewer reproduced (c100 embedded base 37,827 quotes = `T-C100`, ≠ `T-A0` 38,098), and the contract test checks it (§5.4, §5.10, §12) |
-| C3-F2 | suggestion | **Accepted.** §12 `campaign.control_audit_examples` covers a pass, a work-target overrun, a call mismatch with and without `stop`, an embedded-activation mismatch and an absent treatment activation; the contract test executes the §7.5 audits on them (§7.5, §12) |
+| C3-F1 | blocking | **Accepted, fixed after round 3; confirmed resolved by round 4.** §5.10 now gives sensitivity arms their own validation: G1 on the ordinary records only, no G6, the winner arm's G2–G5/G7 against the base arm at the **same** `graph.chunks`, the base arm G1 only, `Q` still against the P\* reference arms; §12 `selection.sensitivity` pins it with the pinned R023 example the reviewer reproduced (c100 embedded base 37,827 quotes = `T-C100`, ≠ `T-A0` 38,098), and the contract test checks it (§5.4, §5.10, §12) |
+| C3-F2 | suggestion | **Accepted.** §12 `campaign.control_audit_examples` covers a pass, a work-target overrun, a call mismatch with and without `stop`, an embedded-activation mismatch and an absent treatment activation; the contract test executes the §7.5 audits on them (§7.5, §12); confirmed resolved by round 4 |
+| C4-F1 | suggestion | **Recorded, not actioned.** The ordinary-only sensitivity completeness example of §5.10 is specified but not executed by the contract test; round 4 judged it nonblocking because §5.10 settles the policy and the reviewer's read-only check confirmed that the pinned c100 example passes G1 without a work pass (§5.10, §12) |
 
 ## 14. Residual risks
 
@@ -1172,5 +1176,6 @@ nominees (§3); the E2 grid does not vary its E1 stage; cost-neutral runtime ass
 K 4 / top-9 (§10.1); a long timing stage on a shared host may end `inconclusive` in several units
 (§8.4); cross-unit latency is cross-window (§8.6); the work limit and ε are judgements made before
 observation, with the exposure of §3; the CEC excludes the options `source`, so provenance is checked
-separately by I1–I4. The post-round-3 edit for C3-F1 (§5.10) has passed the contract test but no further
-independent contract review (three rounds is the cap); the release review covers it.
+separately by I1–I4. The post-round-3 edit for C3-F1 (§5.10) was confirmed by the ORCHESTRATOR-commissioned
+round 4 (AGREE); its suggestion C4-F1 is not actioned, so the ordinary-only completeness case of §5.10 is
+checked by the contract text and the reviewer's read-only re-derivation, not by an executable test.
