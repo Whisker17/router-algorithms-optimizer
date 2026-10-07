@@ -1,0 +1,2 @@
+c100_b2 gain over own C100 base mean 0.321 p50 0.086 p95 1.447 improved 75/96 | vs C200 H/E/L 37/18/41 families net-win 12 net-loss 13 | total-work ratio vs C200 p50 0.932 p95 2.220 | truncated 0 replay_ok 96
+c100_actpf gain over own C100 base mean 0.476 p50 0.223 p95 1.661 improved 85/96 | vs C200 H/E/L 68/11/17 families net-win 25 net-loss 4 | total-work ratio vs C200 p50 0.972 p95 2.262 | truncated 0 replay_ok 96
