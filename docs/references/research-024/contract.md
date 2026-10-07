@@ -226,7 +226,7 @@ first two taken from saved R023 records):
 
 **Gates** and the branches they apply to (§12 `selection.gate_applicability`; "n/a" = not evaluated).
 A candidate's *base reference record* is the record of the same case in the reference arm (§5.3 item 3)
-of the identity named by its `base` option.
+of the identity named by its `base` option (for a sensitivity arm: §5.10).
 
 | Gate | Condition | B0 | B1 | B2 | B3 | Failure |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -345,12 +345,24 @@ are fresh (§7.1).
 
 ### 5.10 Sensitivity arms
 
-After the winner is fixed: the winner and its base, each with `graph.chunks` ∈ {100, 200} and P\*
-otherwise unchanged (ordinary run only). A base that does not read `graph.chunks` (`path_split`) gets
-`not_applicable` with that reason. Reported: own-base gain and `Q` against the P\* common reference of
-§5.5. Sensitivity arms never change the winner and are never selectable. The §5.4 gates apply to them
-except G6 (no work pass); a `defect` there is handled as in §5.8. §5.9 applies with the sensitivity
-rendering (R023's C100, C200, E1b-C100 and E2pf-C100 records qualify only if CEC-equal).
+After the winner is fixed, for each chunk value `k` ∈ {100, 200}: the **winner arm** (the winner's
+options, P\* with `graph.chunks: k`, otherwise unchanged) and the **base arm** (the winner's base
+identity with its §4.2 options, the same rendering). Ordinary runs only, no work pass. A base that does
+not read `graph.chunks` (`path_split`) gets `not_applicable` with that reason and neither arm runs.
+
+Validation (§12 `selection.sensitivity`):
+
+- G1 checks the scheduled ordinary records only (complete manifest, one record per tuning case);
+  G6 does not apply.
+- On the winner arm, G2–G5 and G7 apply per branch with the **base arm of the same `k`** as its base
+  reference record (the embedded base runs at chunks `k`, so it is never compared with the P\* reference
+  arms). On the base arm, only G1.
+- A `defect` there is handled as in §5.8.
+
+Reported: own-base gain against the same-`k` base arm, and `Q` against the unchanged P\* common
+reference of §5.5 (the five P\* reference arms). Sensitivity arms never change the winner and are never
+selectable. §5.9 applies with the sensitivity rendering (R023's C100, C200, E1b-C100 and E2pf-C100
+records qualify only if CEC-equal).
 
 ### 5.11 What is published
 
@@ -517,7 +529,8 @@ the treatment record of the same case and cohort carries an `activation` block (
 labelled `treatment_unavailable`, unmatched, not a defect): the embedded `activation` without its
 `charged` key equals the treatment's `activation`, and the target equals the treatment's
 `activation.quotes` (work-matched) or `activation.invocations` (call-matched). A failed audit is a
-`defect`. §12 `campaign.control_examples` holds one example per class.
+`defect`. §12 `campaign.control_examples` holds one example per class and
+`campaign.control_audit_examples` one per audit outcome; the contract test executes both.
 
 ## 8. Latency protocol `L01-R024` (WHI-1633)
 
@@ -901,7 +914,20 @@ selection:
          runs: [T-E2pf-A0, T-WP-E2pf-A0]}
       - {candidate: "ma|incremental_graph|full|k2|top3|d1e-4", r023_profile: e2full-a0,
          runs: [T-E2full-A0, T-WP-E2full-A0]}
-  sensitivity: {graph_chunks: [100, 200], not_applicable_bases: [path_split]}
+  sensitivity:
+    graph_chunks: [100, 200]
+    not_applicable_bases: [path_split]
+    work_pass: false
+    gates: {winner_arm: [G1, G2, G3, G4, G5, G7], base_arm: [G1]}
+    base_reference: base_arm_same_chunks
+    q_reference: pstar_reference_arms
+    # Pinned R023 tuning records, case emp-09bc4e-201eba-large-3: the c100 embedded base equals the
+    # c100 base arm on the G4 fields and differs from the P* A0 arm, as it must (not a defect).
+    example:
+      case: emp-09bc4e-201eba-large-3
+      embedded_base_quotes: {run: T-E1b-C100, value: 37827}
+      same_chunk_base_quotes: {run: T-C100, value: 37827}
+      pstar_base_quotes: {run: T-A0, value: 38098}
   # Worked examples of the §5.7 rule. Gross per case (null = a non-ok status), the common reference
   # per case and work totals are synthetic; `gates` is the G1-G7 outcome. Any rule implementation
   # (WHI-1631, R025-C/1) must reproduce `expected`.
@@ -1040,6 +1066,39 @@ campaign:
                marginal_activation: {arm: work_matched, scope: fixed_funding_topology,
                                      not_reached: null,
                                      control: {kind: work_matched, quotes: 90, target_quotes: 100}}}}
+  # §7.5 audits of K5 rows: control block, embedded activation, the treatment's activation
+  # (null = the treatment record carries none) and the expected outcome.
+  control_audit_examples:
+    - id: pass
+      control: {kind: work_matched, quotes: 90, target_quotes: 100, stop: null}
+      embedded: {quotes: 100, invocations: 2, charged: false}
+      treatment: {quotes: 100, invocations: 2}
+      outcome: ok
+    - id: work-target-overrun
+      control: {kind: work_matched, quotes: 101, target_quotes: 100, stop: work_target}
+      embedded: {quotes: 100, invocations: 2, charged: false}
+      treatment: {quotes: 100, invocations: 2}
+      outcome: defect
+    - id: call-mismatch-without-stop
+      control: {kind: call_matched, calls_started: 2, target_calls: 3, stop: null}
+      embedded: {quotes: 100, invocations: 3, charged: false}
+      treatment: {quotes: 100, invocations: 3}
+      outcome: defect
+    - id: call-mismatch-with-stop
+      control: {kind: call_matched, calls_started: 2, target_calls: 3, stop: max_quotes}
+      embedded: {quotes: 100, invocations: 3, charged: false}
+      treatment: {quotes: 100, invocations: 3}
+      outcome: ok
+    - id: embedded-differs
+      control: {kind: work_matched, quotes: 90, target_quotes: 100, stop: null}
+      embedded: {quotes: 99, invocations: 2, charged: false}
+      treatment: {quotes: 100, invocations: 2}
+      outcome: defect
+    - id: treatment-unavailable
+      control: {kind: work_matched, quotes: 90, target_quotes: 100, stop: null}
+      embedded: {quotes: 100, invocations: 2, charged: false}
+      treatment: null
+      outcome: treatment_unavailable
 timing:
   protocol: {key: L01-R024, source: config/latency/l01.yaml, replaced: [key, profile],
              source_sha256: 961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b}
@@ -1091,6 +1150,7 @@ the final release review (budget 3 reviews / 2 fix batches). Prompts, raw output
 | --- | --- | --- | --- | --- |
 | 1 | `0d0bae25abf9025fc455370052f035a717ef4097` | DISAGREE | 5 blocking (C1-F1…F5) | [`reviews/round-1.md`](reviews/round-1.md) |
 | 2 | `1d043a19e8d807743f5c45a41c36934375aa528b` | DISAGREE | C1-F1, C1-F2 partly resolved; C1-F3…F5 resolved; 3 blocking (C2-F1…F3) | [`reviews/round-2.md`](reviews/round-2.md) |
+| 3 | `92adee0154d4c3feac6696d897d861bf91d2183e` | DISAGREE | C2-F1…F3, C1-F1, C1-F2 resolved; 1 blocking (C3-F1), 1 suggestion (C3-F2) | [`reviews/round-3.md`](reviews/round-3.md) |
 
 | Finding | Severity | Disposition (where) |
 | --- | --- | --- |
@@ -1102,6 +1162,8 @@ the final release review (budget 3 reviews / 2 fix batches). Prompts, raw output
 | C2-F1 | blocking | **Accepted.** Pair reconciliation is one field-based Rule P (P1 reconciled, P2 `work_pass_terminated`, P3 `both_terminated`, P4 `ordinary_terminated`, P5 `differs` = `defect`) for every arm with a work-pass twin, base rows included; C13 applies it; missing units stay missing (Rule M); P2–P4 count toward `inconclusive`, P5 toward `reject`; §12 `selection.pair_examples` has one example per case, checked by the contract test (§5.4.1, §7.4 C13, §9.1) |
 | C2-F2 | blocking | **Accepted.** Rule M defines every work value from the fields a record carries (the runner's null `quotes.counted` included); a candidate with any missing total is `ineligible: work_unavailable`; any missing A0 total ends both identities `no_selection` (`reference_work_unavailable`); a P5 in a reference arm is a `defect` of both identities; the B0 example now has the runner's null-count shape; worked examples WE7 and WE8 cover the missing-work outcomes (§5.4.1, §5.6, §5.8, §12) |
 | C2-F3 | blocking | **Accepted.** §7.5 registers the control audit in the R023 auditor's order: K0 terminated, K1 `not_reached`, K2 non-`ok` (the saved `no_route` control rows), K3 refused, K4 missing control block (`defect`), K5 matched (target and spend audits; `treatment_unavailable` when the treatment row has no `activation`); §12 `campaign.control_examples` has one example per class, checked by the contract test (§7.4 C11, C12, §7.5) |
+| C3-F1 | blocking | **Accepted, fixed after round 3; not re-reviewed** (three rounds is the cap). §5.10 now gives sensitivity arms their own validation: G1 on the ordinary records only, no G6, the winner arm's G2–G5/G7 against the base arm at the **same** `graph.chunks`, the base arm G1 only, `Q` still against the P\* reference arms; §12 `selection.sensitivity` pins it with the pinned R023 example the reviewer reproduced (c100 embedded base 37,827 quotes = `T-C100`, ≠ `T-A0` 38,098), and the contract test checks it (§5.4, §5.10, §12) |
+| C3-F2 | suggestion | **Accepted.** §12 `campaign.control_audit_examples` covers a pass, a work-target overrun, a call mismatch with and without `stop`, an embedded-activation mismatch and an absent treatment activation; the contract test executes the §7.5 audits on them (§7.5, §12) |
 
 ## 14. Residual risks
 
@@ -1110,4 +1172,5 @@ nominees (§3); the E2 grid does not vary its E1 stage; cost-neutral runtime ass
 K 4 / top-9 (§10.1); a long timing stage on a shared host may end `inconclusive` in several units
 (§8.4); cross-unit latency is cross-window (§8.6); the work limit and ε are judgements made before
 observation, with the exposure of §3; the CEC excludes the options `source`, so provenance is checked
-separately by I1–I4.
+separately by I1–I4. The post-round-3 edit for C3-F1 (§5.10) has passed the contract test but no further
+independent contract review (three rounds is the cap); the release review covers it.

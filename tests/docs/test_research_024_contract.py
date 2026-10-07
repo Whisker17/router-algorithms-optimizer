@@ -492,6 +492,56 @@ def test_control_examples_classify() -> None:
         assert _control_class(example["record"]) == example["class"]
 
 
+def _control_audit(
+    control: dict[str, Any], embedded: dict[str, Any], treatment: dict[str, Any] | None
+) -> str:
+    """Contract §7.5 audits of a K5 row: the target audit, then the spend audit when possible."""
+    if control["kind"] == "work_matched":
+        if control["quotes"] > control["target_quotes"]:
+            return "defect"
+    elif control["calls_started"] != control["target_calls"] and control["stop"] is None:
+        return "defect"
+    if treatment is None:
+        return "treatment_unavailable"
+    if {k: v for k, v in embedded.items() if k != "charged"} != treatment:
+        return "defect"
+    work_matched = control["kind"] == "work_matched"
+    target = control["target_quotes"] if work_matched else control["target_calls"]
+    spend = treatment["quotes"] if work_matched else treatment["invocations"]
+    return "ok" if target == spend else "defect"
+
+
+@pytest.mark.parametrize(
+    "example", REGISTRY["campaign"]["control_audit_examples"], ids=lambda e: e["id"]
+)
+def test_control_audit_examples(example: dict[str, Any]) -> None:
+    got = _control_audit(example["control"], example["embedded"], example["treatment"])
+    assert got == example["outcome"]
+
+
+def test_sensitivity_arms_use_the_same_chunk_base_reference() -> None:
+    """§5.10: the embedded base of a c100 arm equals the c100 base arm, not the P* A0 arm."""
+    sensitivity = SELECTION["sensitivity"]
+    assert sensitivity["graph_chunks"] == [100, 200] and sensitivity["work_pass"] is False
+    assert sensitivity["gates"] == {
+        "winner_arm": ["G1", "G2", "G3", "G4", "G5", "G7"],
+        "base_arm": ["G1"],
+    }
+    assert sensitivity["base_reference"] == "base_arm_same_chunks"
+    assert sensitivity["q_reference"] == "pstar_reference_arms"
+    example = sensitivity["example"]
+    assert example["embedded_base_quotes"]["value"] == example["same_chunk_base_quotes"]["value"]
+    assert example["pstar_base_quotes"]["value"] != example["same_chunk_base_quotes"]["value"]
+    # the c100 profiles differ from P* only in graph.chunks, so the CECs differ only in params
+    profiles = ROOT / "config" / "research_023" / "profiles"
+    c100, a0 = (
+        _cec(load_profile(profiles / "c100.yaml"), "incremental_graph"),
+        _cec(_render("incremental_graph", None), "incremental_graph"),
+    )
+    assert {k for k in c100 if c100[k] != a0[k]} == {"params"}
+    assert c100["params"] == {**a0["params"], "chunks": 100}
+
+
 # ----------------------------------------------------------------------------- roster (§6)
 
 
