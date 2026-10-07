@@ -224,7 +224,9 @@ first two taken from saved R023 records):
 | B2 `not_reached_before_polish` | `search.base.status` = `ok` and no `search.<id>.base_gross` | the cooperative budget ending while the base plan is replayed (`scope: not_reached`); the base result is returned |
 | B3 `polished` | `search.base.status` = `ok` and `search.<id>.base_gross` present | every other return: improved, unchanged, refused (`unsupported_topology`), truncated, E2 `not_reached` after E1 |
 
-**Gates** and the branches they apply to (§12 `selection.gate_applicability`; "n/a" = not evaluated):
+**Gates** and the branches they apply to (§12 `selection.gate_applicability`; "n/a" = not evaluated).
+A candidate's *base reference record* is the record of the same case in the reference arm (§5.3 item 3)
+of the identity named by its `base` option.
 
 | Gate | Condition | B0 | B1 | B2 | B3 | Failure |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -233,13 +235,32 @@ first two taken from saved R023 records):
 | G3 never-worse | B2: gross = base reference gross; B3: gross ≥ base reference gross | n/a | n/a | ✓ | ✓ | `defect` |
 | G4 base identity | `search.base` (algorithm, status, quotes, search) equals the base reference record (algorithm, status, `quotes.counted`, search); B3 also `search.<id>.base_gross` = its gross | n/a | ✓ | ✓ | ✓ | `defect` |
 | G5 ledger | B1: `quotes.counted` = `search.base.quotes`; B2: `quotes.counted` ≥ `search.base.quotes` (the charged replay has no own-quotes field; the difference is reported); B3: `quotes.counted` = `search.base.quotes` + `search.<id>.quotes` | n/a | ✓ | ✓ | ✓ | `defect` |
-| G6 work-pass agreement | only for an arm with a work-pass twin, and only where neither twin is B0: status, score and `evaluation` (canonical JSON: the runner's independent replay of the submitted plan) equal, and `r022_work.quotes_executed` = `quotes.counted` | n/a | ✓ | ✓ | ✓ | `defect` |
+| G6 pair reconciliation | the rule P of §5.4.1 between the ordinary record and its work-pass twin | ✓ | ✓ | ✓ | ✓ | `defect` only for P5; P2–P4 are labels |
 | G7 independent evaluation and refusal | status `ok`: `evaluation.gross_output` = `search.<id>.gross`; `scope: unsupported_topology`: `search.<id>.gross` = `base_gross` | n/a | n/a | n/a | ✓ | `defect` |
 
-A cell that is B0 in exactly one of the two twins (the work pass is slower) is not a defect: it is
-reported as `work_pass_terminated`, its work units are missing (never 0), and in the selection the
-candidate is `ineligible: work_pass_incomplete`. "Gross" of a record is `int(evaluation.gross_output)`
-when its status is `ok`, else 0.
+"Gross" of a record is `int(evaluation.gross_output)` when its status is `ok`, else 0.
+
+#### 5.4.1 Missing values and pair reconciliation
+
+**Rule M (missing values).** A value a record does not carry is *missing*: never 0, never a default.
+Per cell, `quotes` is the ordinary record's `quotes.counted` when it is not null (a runner hard limit
+writes `{"attempted": null, "counted": null}`, `search: {}`); `cl_swap_steps` and `lb_bins_swapped` are
+the work-pass record's `search.r022_work` fields when that block is present (the work-pass wrapper adds
+it only when the solve returns). A sum over cells with any missing cell is missing.
+
+**Rule P (pair reconciliation)**, for every arm that has a work-pass twin (selection candidates, the
+reference arms, every campaign arm with a `WP-*` twin, whatever the identity), per cell, first match:
+
+| Case | Condition | Outcome |
+| --- | --- | --- |
+| P1 `reconciled` | the work pass carries `r022_work`, the ordinary record has non-null `quotes.counted`, and status, score, `evaluation` (canonical JSON: the runner's independent replay of the submitted plan) are equal and `r022_work.quotes_executed` = `quotes.counted` | all three units available |
+| P2 `work_pass_terminated` | the work pass lacks `r022_work`; the ordinary record has non-null `quotes.counted` | label; `quotes` available, CL and LB missing |
+| P3 `both_terminated` | the work pass lacks `r022_work`; the ordinary `quotes.counted` is null | label; all three units missing |
+| P4 `ordinary_terminated` | the work pass carries `r022_work`; the ordinary `quotes.counted` is null | label; `quotes` missing, CL and LB available |
+| P5 `differs` | both carry their fields and any compared value differs | `defect` |
+
+P2–P4 are labelled outcomes, reported (C7, C13), never compared, never defects. §12
+`selection.pair_examples` holds one example per case.
 
 ### 5.5 Objective
 
@@ -256,10 +277,12 @@ when its status is `ok`, else 0.
 
 ### 5.6 Work constraint
 
-- **Totals.** For candidate `x` and unit `u`, `W_u(x)` = the sum over all 96 cases (every status) of:
-  `quotes` = the ordinary record's `quotes.counted` (base + post-processing, one ledger);
-  `cl_swap_steps` and `lb_bins_swapped` = the work pass's `r022_work` fields.
-- **Reference.** The `incremental_graph` reference arm (A0) under P\*.
+- **Totals.** For candidate `x` and unit `u`, `W_u(x)` = the sum over all 96 cases (every status) of
+  the per-cell values of Rule M: `quotes` from the ordinary record (base + post-processing, one
+  ledger), `cl_swap_steps` and `lb_bins_swapped` from the work pass. A candidate with any missing
+  `W_u` is `ineligible: work_unavailable`.
+- **Reference.** The `incremental_graph` reference arm (A0) under P\*. If any `W_u(A0)` is missing,
+  both identities end `no_selection` (cause `reference_work_unavailable`).
 - **Ratio.** `ρ_u(x) = W_u(x) / W_u(A0)`; 0/0 = 1; a positive total over 0 = +∞.
 - **Limit.** `x` is eligible on work iff `ρ_u(x) ≤ 2` for **each** of the three units (exact compare;
   2 itself passes). Reason: a post-processor may at most double the total work of the ordinary
@@ -280,15 +303,18 @@ more work. Inside the band the cheaper candidate wins; outside it quality wins.
 
 ### 5.8 No winner, defects
 
-Per identity the outcome is exactly one of:
+Per identity the outcome is exactly one of, with precedence `blocked_defect` > `no_selection` >
+`selected` (a later defect turns a `selected` identity into `blocked_defect`):
 
-- `selected`: the §5.7 winner;
-- `no_selection`: `E` empty, `|C⁺| = 0`, or a base reference arm unavailable (G1 failure of a
-  reference after its retry);
-- `blocked_defect`: any candidate of the identity has a `defect` outcome (G3–G7 on an applicable
-  branch, §5.4). A 0.2.4 fix issue is filed (the
-  WHI-1629 escape clause). After the fix merges, the identity's whole grid is re-run from a newly
-  pushed schedule at the fix commit, without reusing any pre-fix record; this rule applies unchanged.
+- `blocked_defect`: a `defect` of the identity: any of its candidates has a `defect` outcome (G3–G7 on
+  an applicable branch, a P5 `differs`, §5.4), a sensitivity arm has one (§5.10), or the preset run
+  differs from its candidate (§6.2); a P5 `differs` or another `defect` in a reference arm is a
+  `defect` of both identities. A 0.2.4 fix issue is filed (the WHI-1629 escape clause). After the fix
+  merges, the identity's whole grid is re-run from a newly pushed schedule at the fix commit, without
+  reusing any pre-fix record; this rule applies unchanged;
+- `no_selection`: `E` empty, `|C⁺| = 0`, a reference arm unavailable (G1 failure after its retry), or
+  `reference_work_unavailable` (§5.6);
+- `selected`: otherwise, the §5.7 winner.
 
 `no_selection` and `blocked_defect` publish the full record (§5.11) and keep WHI-1632 blocked for that
 identity. A limit is never loosened, ε never widened and a nominee never installed. With fewer than two
@@ -322,8 +348,9 @@ are fresh (§7.1).
 After the winner is fixed: the winner and its base, each with `graph.chunks` ∈ {100, 200} and P\*
 otherwise unchanged (ordinary run only). A base that does not read `graph.chunks` (`path_split`) gets
 `not_applicable` with that reason. Reported: own-base gain and `Q` against the P\* common reference of
-§5.5. Sensitivity arms never change the winner and are never selectable. §5.9 applies with the
-sensitivity rendering (R023's C100, C200, E1b-C100 and E2pf-C100 records qualify only if CEC-equal).
+§5.5. Sensitivity arms never change the winner and are never selectable. The §5.4 gates apply to them
+except G6 (no work pass); a `defect` there is handled as in §5.8. §5.9 applies with the sensitivity
+rendering (R023's C100, C200, E1b-C100 and E2pf-C100 records qualify only if CEC-equal).
 
 ### 5.11 What is published
 
@@ -332,7 +359,8 @@ candidate: id, options, fresh run ids or reuse source, G1–G7 outcomes, status 
 gain (mean bps over cases with own-base gross > 0, H/E/L, improved count, families net +/−), `W_u` and
 `ρ_u` per unit, eligibility reason, `truncated_by` counts, refusal counts, Brent status counts; then
 the full ranking (`E` by `(−Q, W_quotes, W_cl, W_lb, id)`, ineligible by id), the feasible frontier
-(members of `E` not dominated in `(Q, W_quotes)`), the winner, its **margin**
+(members of `E` not dominated in `(Q, W_quotes)`; `y` dominates `x` iff `Q(y) ≥ Q(x)` and
+`W_quotes(y) ≤ W_quotes(x)` with at least one strict), the winner, its **margin**
 (`Q(winner) − max{Q(x) : x ∈ E \ T}`, `none` when `E = T`), its **concession** (`Q* − Q(winner)`,
 in [0, ε]), and the sensitivity arms. Frontier, margin and sensitivity never change the winner. The
 rule implementation must reproduce the selection from the pinned records and its tests must reproduce
@@ -359,7 +387,8 @@ added.
 
 Under P\*, `CEC(all-derived profile, id)` equals `CEC(P*-rendered winner, id)` for both identities,
 and the preset run's tuning records equal the candidate's on status, error, score, `evaluation`
-(canonical JSON), `quotes.counted`, `search.<id>` and `search.base`.
+(canonical JSON), `quotes.counted`, `search.<id>` and `search.base`. A difference is a `defect`
+(§5.8): WHI-1632 does not proceed for that identity.
 
 ### 6.3 Historical provenance invariants (D1-F2)
 
@@ -417,7 +446,7 @@ the 0.2.3 explicit ones) replay literally.
 | --- | --- | --- |
 | `Q19-full` | the 19 rows of `--strategies all` from `config/full_gross.yaml` (one run, or registered group runs whose resolved per-identity values equal the derived roster's; `check` enforces it) | `tuning_full`, `report_full` |
 | `Q19-sor` | the same on the matched V2/V3 cohort | `tuning_sor`, `report_sor` |
-| `BASE-E1`, `BASE-E2` | identically configured base control of each selected post-processor: the `Q19` row of its base identity when the base's CEC on its declared keys and options equals the base as run inside the post-processor; otherwise a separate arm (P\* rendering) | as `Q19-full` |
+| `BASE-E1`, `BASE-E2` | identically configured base control of each selected post-processor: the `Q19` row of its base identity when, restricted to the keys the base factory declares (`search_params`, `graph_params`, `graph_params_for`), its `algorithm_config.params` equal those the post-processor hands its base, and its options equal the preset's `base_options` (none when absent); otherwise a separate arm with that configuration (P\* rendering) | as `Q19-full` and `Q19-sor` |
 | `E2-E1only` | `split_polish` with E2's base and E2's six E1 keys (= E2's E1 stage); the `Q19` `split_polish` row serves when CEC-equal, otherwise a separate arm | full cohort, both splits |
 | `E2-wm`, `E2-cm` | `marginal_activation` with the E2 preset and `arm` `work_matched` / `call_matched` (`R023-C/1` §5.3) | full cohort, both splits |
 | `WP-*` | an untimed work pass for every arm above except `E2-wm` / `E2-cm` | as its arm |
@@ -451,20 +480,44 @@ C100/C200 arms, CFMM + E1). They are not re-run; their earlier results stand as 
 | C2 | Matched-success denominators per comparison: scheduled, common `ok`, only-A `ok`, only-B `ok` |
 | C3 | Zero-reference handling: baseline gross 0 counted apart (`zero_baseline_na`), excluded from bps |
 | C4 | Per-case distributions: n, mean, min, p5, p50, p95, max (nearest rank) and H/E/L |
-| C5 | Directed-pair families: net + / net − counts per comparison; a per-family table for each new identity vs its base control and vs **every** rankable other row (the C9(a) set), plus vs the C9(b) envelope labelled as an envelope |
-| C6 | Strata (`emp-` low / medium / large, `nod-`, `bnd-`) per comparison |
-| C7 | Truncation, refusal and fallback disclosures: `truncated_by`, `unsupported_topology`, `not_reached`, runner `timeout` by limit, last-valid candidates, each identity's own fallback counters |
+| C5 | Directed-pair families (family = the case's `(token_in, token_out)`): net + / net − counts per comparison; a per-family table for each new identity vs its base control and vs **every** rankable other row (the C9(a) set), plus vs the C9(b) envelope labelled as an envelope |
+| C6 | Strata per comparison: stratum = `bnd` or `nod` for those case-id prefixes, else the size word (`low` / `medium` / `large`) of an `emp-` case id |
+| C7 | Truncation, refusal and fallback disclosures: `truncated_by`, `unsupported_topology`, `not_reached`, runner `timeout` by limit, last-valid candidates, each identity's own fallback counters, the branch counts B0–B3 (§5.4) and the Rule P labels P2–P4 (§5.4.1) |
 | C8 | Work units separately: `quotes`, CL swap steps, LB bins, and each identity's search counters; ratios only within one unit |
 | C9 | Comparisons: (a) each new identity vs each of the other 18 rows per cohort and split (rankable per §7.3, else the expanded-protocol section); (b) every row vs the per-case best of the rows rankable with it on its cohort (an oracle envelope, not a portfolio); (c) each new identity vs its base control |
 | C10 | Base control: per case, `search.base` equals the `BASE-*` record (G4) |
-| C11 | E2 attribution: E2 vs `E2-E1only`, vs `E2-wm`, vs `E2-cm`; target audit (work-matched quotes ≤ target; call-matched calls = treatment invocations); spend audit (embedded activation = treatment record; target = treatment spend); `not_reached` rows kept unmatched |
-| C12 | The gates of §5.4 per arm, on the branches they apply to, each against the base record of the **same cohort and split**: `Q19` `split_polish` / `marginal_activation` rows and a separate `E2-E1only` arm: G2–G7 (G6 with their `WP-*` twin); `E2-wm` / `E2-cm`: G2–G5 and G7, no G6 (no work pass, §7.2), plus the C11 audits and C14; `BASE-*` and the other `Q19` rows: completeness, C1 and C13 only (they are the base references the post-processors are checked against, C10) |
-| C13 | Work-pass reconciliation: every `WP-*` record equals its ordinary twin (status, score, `evaluation`) and executed = counted quotes |
+| C11 | E2 attribution: E2 vs `E2-E1only`, vs `E2-wm`, vs `E2-cm` (C2–C6 rules), and the control audit of §7.5 for every control row: matched rows get the target and spend audits, every other class is kept in the denominators as unmatched with its class |
+| C12 | The gates of §5.4 per arm, on the branches they apply to, each against the base record of the **same cohort and split**: `Q19` `split_polish` / `marginal_activation` rows and a separate `E2-E1only` arm: G2–G7; `E2-wm` / `E2-cm`: G2–G5 and G7, no G6 (no work pass, §7.2), plus the §7.5 control audit and C14; `BASE-*` and the other `Q19` rows: completeness, C1 and C13 only (they are the base references the post-processors are checked against, C10) |
+| C13 | Work-pass reconciliation: Rule P (§5.4.1) on every cell of every arm with a `WP-*` twin, whatever the identity (post-processor rows and base rows alike): P1 counts, the P2–P4 labels with their cells, every P5 `differs` (a `defect`, a `check` problem); missing units stay missing in every work table (Rule M) |
 | C14 | Control work: `E2-wm` / `E2-cm` are excluded from physical-work and timing comparisons; their charged quotes and their embedded uncharged activation are reported as separate columns |
 | C15 | Cross-campaign determinism (descriptive): the 17 earlier identities' report-split records vs 0.2.2's (status, score, `evaluation`); differences listed |
 
 Tables are regenerated by a pinned script from pinned raw records (SHA256SUMS). Every scheduled arm ×
-case has exactly one quality outcome; `check` reports 0 problems.
+case has exactly one quality outcome. `check` problems are exactly: a missing or duplicate scheduled
+record and every `defect` (a §5.4 gate on an applicable branch per C12, a P5 `differs`, a K4 row, a
+failed §7.5 audit). Branches B0–B3, the P2–P4 labels, K0–K3 and `treatment_unavailable` are reported
+outcomes, not problems.
+
+### 7.5 Control audit (E2 controls; the R023 auditor's order, `tools/research_023/r023_analysis.py::control_audit`)
+
+Every `E2-wm` / `E2-cm` row is classified, first match, by the fields it carries:
+
+| Class | Condition | Outcome |
+| --- | --- | --- |
+| K0 `terminated` | no `search.marginal_activation` (branch B0) | unmatched, kept with its status |
+| K1 `not_reached` | `search.marginal_activation.not_reached` is set | unmatched ("activation/control not reached: E1 truncated") |
+| K2 `non_ok` | status ≠ `ok` (e.g. B1 base pass-through: the saved `R-E2pf-A0-wm` / `-cm` `bnd-1bdd88-78c1b0-dust` rows, `no_route`, no `activation` or `control` block) | unmatched, kept with its status |
+| K3 `refused` | `scope` = `unsupported_topology` (E1 refused: no control ran) | unmatched |
+| K4 `missing_control_block` | none of the above and no `control` block | `defect` |
+| K5 `matched` | a `control` block is present | audits below |
+
+On K5 rows: **target audit**: work-matched `control.quotes` ≤ `control.target_quotes`; call-matched
+`control.calls_started` = `control.target_calls` unless `control.stop` is set. **Spend audit**, only when
+the treatment record of the same case and cohort carries an `activation` block (otherwise the row is
+labelled `treatment_unavailable`, unmatched, not a defect): the embedded `activation` without its
+`charged` key equals the treatment's `activation`, and the target equals the treatment's
+`activation.quotes` (work-matched) or `activation.invocations` (call-matched). A failed audit is a
+`defect`. §12 `campaign.control_examples` holds one example per class.
 
 ## 8. Latency protocol `L01-R024` (WHI-1633)
 
@@ -516,8 +569,9 @@ no selection or quality runs, no work passes, no test suite, no other agent jobs
 is held for the whole stage and `pmset -g log` sleep/wake events are captured.
 
 **Launch gate (per attempt).** Five one-minute load samples 30 s apart, none above 3.0; otherwise
-re-sample every 300 s; if no gate passes within 21,600 s the unit ends `inconclusive (no_launch)`.
-Launch polling is bounded by that window and is not an attempt.
+re-sample every 300 s; if no gate passes within 21,600 s the unit ends `inconclusive (no_launch)` and
+the next unit in the order opens its own launch window. Launch polling is bounded by that window and is
+not an attempt.
 
 **Departure from R022 (stated as such).** R022 forbade repeating a completed timing run (pruning
 contract §11.1) and recorded "host load is never a retry reason" (`research-022/results.md` §7). R024
@@ -585,14 +639,15 @@ with outcome `valid`. Nothing is said about the latency of an identity whose uni
 
 ### 9.1 Dispositions (R021 vocabulary; one per new identity, on the report split)
 
-- `reject`: a `defect` outcome of C12 (a §5.4 gate on an applicable branch) on any record of the
-  identity or its controls; an `invalid_plan` or `algorithm_error` where its base record of the same
+- `reject`: a `defect` outcome of C12 or C13 (a §5.4 gate on an applicable branch, a P5 `differs`, a
+  §7.5 control-audit failure) on any record of the identity or its controls; an `invalid_plan` or `algorithm_error` where its base record of the same
   cohort and split is not the same status; a control above its work target or not call-matched; a
   refusal whose gross differs from the base record.
 - `inconclusive`: no `reject`, but a question cannot be evaluated: more than 10 % of the identity's
   scheduled `report_full` cases are truncated (`truncated_by` set), `unsupported_topology`, branch B2,
-  or branch B0 where the base record is `ok` (a runner `timeout` is a budget outcome, not a defect); or
-  a base or control arm is missing; or a scheduled arm is incomplete.
+  branch B0 where the base record is `ok` (a runner `timeout` is a budget outcome, not a defect), or
+  carry a P2–P4 label (missing work, Rule M); or a base or control arm is missing; or a scheduled arm is
+  incomplete.
 - `keep_experimental`: otherwise. No win is required.
 
 The timing verdict is separate (§8.6–§8.7) and never changes the disposition.
@@ -756,7 +811,7 @@ selection:
     epsilon_bps: "1/100"
     tie_break: [quotes, cl_swap_steps, lb_bins_swapped, candidate_id]
   gate_applicability:
-    B0_terminated: [G1, G2]
+    B0_terminated: [G1, G2, G6]
     B1_base_passthrough: [G1, G2, G4, G5, G6]
     B2_not_reached_before_polish: [G1, G2, G3, G4, G5, G6]
     B3_polished: [G1, G2, G3, G4, G5, G6, G7]
@@ -777,9 +832,10 @@ selection:
                                               gross: "1", quotes: 0, truncated_by: max_quotes,
                                               not_reached: "activation/control not reached: E1 truncated"}}}
       branch: B3_polished
-    - source: "synthetic: runner hard limit"
+    - source: "synthetic: runner hard limit (benchmark/runner.py failure record shape)"
       identity: split_polish
-      record: {status: timeout, quotes: {counted: 300000}, search: {}}
+      record: {status: timeout, quotes: {attempted: null, counted: null}, search: {},
+               evaluation: null, score: null}
       branch: B0_terminated
     - source: "synthetic: the budget ends while the base plan is replayed"
       identity: split_polish
@@ -787,6 +843,36 @@ selection:
                search: {base: {algorithm: metis_history, status: ok, quotes: 299990},
                         split_polish: {scope: not_reached, truncated_by: max_quotes}}}
       branch: B2_not_reached_before_polish
+  # Rule P (§5.4.1): one ordinary / work-pass pair per case, with the expected case and the units
+  # that stay available (Rule M: the others are missing, never 0).
+  pair_examples:
+    - case: P1_reconciled
+      ordinary: {status: ok, score: "100", evaluation: {gross_output: "100"}, quotes: {counted: 10}}
+      work_pass: {status: ok, score: "100", evaluation: {gross_output: "100"}, quotes: {counted: 10},
+                  search: {r022_work: {quotes_executed: 10, cl_swap_steps: 5, lb_bins_swapped: 1}}}
+      available: [quotes, cl_swap_steps, lb_bins_swapped]
+    - case: P2_work_pass_terminated
+      ordinary: {status: ok, score: "100", evaluation: {gross_output: "100"}, quotes: {counted: 10}}
+      work_pass: {status: timeout, score: null, evaluation: null,
+                  quotes: {attempted: null, counted: null}, search: {}}
+      available: [quotes]
+    - case: P3_both_terminated
+      ordinary: {status: timeout, score: null, evaluation: null,
+                 quotes: {attempted: null, counted: null}, search: {}}
+      work_pass: {status: timeout, score: null, evaluation: null,
+                  quotes: {attempted: null, counted: null}, search: {}}
+      available: []
+    - case: P4_ordinary_terminated
+      ordinary: {status: timeout, score: null, evaluation: null,
+                 quotes: {attempted: null, counted: null}, search: {}}
+      work_pass: {status: ok, score: "100", evaluation: {gross_output: "100"}, quotes: {counted: 10},
+                  search: {r022_work: {quotes_executed: 10, cl_swap_steps: 5, lb_bins_swapped: 1}}}
+      available: [cl_swap_steps, lb_bins_swapped]
+    - case: P5_differs
+      ordinary: {status: ok, score: "100", evaluation: {gross_output: "100"}, quotes: {counted: 10}}
+      work_pass: {status: ok, score: "100", evaluation: {gross_output: "100"}, quotes: {counted: 11},
+                  search: {r022_work: {quotes_executed: 11, cl_swap_steps: 5, lb_bins_swapped: 1}}}
+      available: null
   reuse:
     stage_t_revision: 1bfd3f97fb205d21bb93acb754dfafcc1d851265
     sums: {path: docs/references/research-023/campaign/tuning-SHA256SUMS,
@@ -878,6 +964,22 @@ selection:
         - {id: "we6|n", gates: pass, gross: [1000500, 2001000, 0],
            work: {quotes: 1000, cl_swap_steps: 500, lb_bins_swapped: 1}}
       expected: {outcome: selected, winner: "we6|m", eligible: ["we6|m"]}
+    - id: WE7-missing-candidate-work   # a missing total (Rule M) makes the candidate ineligible
+      reference: {gross: [1000000, 2000000, 0],
+                  work: {quotes: 1000, cl_swap_steps: 500, lb_bins_swapped: 100}}
+      candidates:
+        - {id: "we7|o", gates: pass, gross: [1000500, 2001000, 0],
+           work: {quotes: 1000, cl_swap_steps: null, lb_bins_swapped: 100}}
+        - {id: "we7|p", gates: pass, gross: [1000010, 2000020, 0],
+           work: {quotes: 1000, cl_swap_steps: 500, lb_bins_swapped: 100}}
+      expected: {outcome: selected, winner: "we7|p", eligible: ["we7|p"]}
+    - id: WE8-missing-reference-work   # a missing A0 total: no selection at all
+      reference: {gross: [1000000, 2000000, 0],
+                  work: {quotes: null, cl_swap_steps: 500, lb_bins_swapped: 100}}
+      candidates:
+        - {id: "we8|q", gates: pass, gross: [1000010, 2000020, 0],
+           work: {quotes: 1000, cl_swap_steps: 500, lb_bins_swapped: 100}}
+      expected: {outcome: no_selection, winner: null, eligible: []}
 roster:
   additions: [split_polish, marginal_activation]
   all19: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port,
@@ -911,6 +1013,33 @@ campaign:
   no_work_pass: [E2-wm, E2-cm]
   checklist: [C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15]
   disposition_truncation_limit: "1/10"
+  # §7.5 control classes; the K2 example is a saved R023 report-split control record.
+  control_examples:
+    - class: K0_terminated
+      record: {status: timeout, quotes: {attempted: null, counted: null}, search: {}}
+    - class: K1_not_reached
+      source: "saved: R023 R-E2pf-C100-wm, bnd-cda86a-201eba-round_at"
+      record: {status: ok, search: {base: {status: ok},
+               marginal_activation: {arm: work_matched, scope: fixed_funding_topology,
+                                     not_reached: "activation/control not reached: E1 truncated"}}}
+    - class: K2_non_ok
+      source: "saved: R023 R-E2pf-A0-wm, bnd-1bdd88-78c1b0-dust"
+      record: {status: no_route, quotes: {counted: 4},
+               search: {base: {status: no_route, quotes: 4},
+                        marginal_activation: {arm: work_matched, scope: null, not_reached: null}}}
+    - class: K3_refused
+      record: {status: ok, search: {base: {status: ok},
+               marginal_activation: {arm: call_matched, scope: unsupported_topology,
+                                     not_reached: null}}}
+    - class: K4_missing_control_block
+      record: {status: ok, search: {base: {status: ok},
+               marginal_activation: {arm: call_matched, scope: fixed_funding_topology,
+                                     not_reached: null}}}
+    - class: K5_matched
+      record: {status: ok, search: {base: {status: ok},
+               marginal_activation: {arm: work_matched, scope: fixed_funding_topology,
+                                     not_reached: null,
+                                     control: {kind: work_matched, quotes: 90, target_quotes: 100}}}}
 timing:
   protocol: {key: L01-R024, source: config/latency/l01.yaml, replaced: [key, profile],
              source_sha256: 961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b}
@@ -961,6 +1090,7 @@ the final release review (budget 3 reviews / 2 fix batches). Prompts, raw output
 | Round | Reviewed head | Verdict | Findings | Report |
 | --- | --- | --- | --- | --- |
 | 1 | `0d0bae25abf9025fc455370052f035a717ef4097` | DISAGREE | 5 blocking (C1-F1…F5) | [`reviews/round-1.md`](reviews/round-1.md) |
+| 2 | `1d043a19e8d807743f5c45a41c36934375aa528b` | DISAGREE | C1-F1, C1-F2 partly resolved; C1-F3…F5 resolved; 3 blocking (C2-F1…F3) | [`reviews/round-2.md`](reviews/round-2.md) |
 
 | Finding | Severity | Disposition (where) |
 | --- | --- | --- |
@@ -969,6 +1099,9 @@ the final release review (budget 3 reviews / 2 fix batches). Prompts, raw output
 | C1-F3 | blocking | **Accepted.** The per-family table compares with every rankable other row (the C9(a) set) and with the C9(b) envelope, labelled as such; no "best row" choice remains (§7.4 C5) |
 | C1-F4 | blocking | **Accepted.** Corrected from the committed ledger: ≈ 65 min from the first sample to the passing gate, 45 min of which were re-sample sleeps (§10.3) |
 | C1-F5 | blocking | **Accepted.** This section records role, model, native effort, fresh context, each round's head and the R023 / design-review participation, and states the separate release-review budget; the contract test now requires a non-empty review record with these fields (§13) |
+| C2-F1 | blocking | **Accepted.** Pair reconciliation is one field-based Rule P (P1 reconciled, P2 `work_pass_terminated`, P3 `both_terminated`, P4 `ordinary_terminated`, P5 `differs` = `defect`) for every arm with a work-pass twin, base rows included; C13 applies it; missing units stay missing (Rule M); P2–P4 count toward `inconclusive`, P5 toward `reject`; §12 `selection.pair_examples` has one example per case, checked by the contract test (§5.4.1, §7.4 C13, §9.1) |
+| C2-F2 | blocking | **Accepted.** Rule M defines every work value from the fields a record carries (the runner's null `quotes.counted` included); a candidate with any missing total is `ineligible: work_unavailable`; any missing A0 total ends both identities `no_selection` (`reference_work_unavailable`); a P5 in a reference arm is a `defect` of both identities; the B0 example now has the runner's null-count shape; worked examples WE7 and WE8 cover the missing-work outcomes (§5.4.1, §5.6, §5.8, §12) |
+| C2-F3 | blocking | **Accepted.** §7.5 registers the control audit in the R023 auditor's order: K0 terminated, K1 `not_reached`, K2 non-`ok` (the saved `no_route` control rows), K3 refused, K4 missing control block (`defect`), K5 matched (target and spend audits; `treatment_unavailable` when the treatment row has no `activation`); §12 `campaign.control_examples` has one example per class, checked by the contract test (§7.4 C11, C12, §7.5) |
 
 ## 14. Residual risks
 

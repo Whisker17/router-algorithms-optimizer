@@ -302,6 +302,8 @@ def _select(
     def within_limits(c: dict[str, Any]) -> bool:
         for unit, limit in limits.items():
             num, den = c["work"][unit], reference_work[unit]
+            if num is None:
+                return False  # Rule M: a missing total makes the candidate ineligible
             if den == 0 and num > 0:
                 return False  # positive / 0 = infinite
             ratio = Fraction(1) if den == 0 else Fraction(num, den)  # 0 / 0 = 1
@@ -309,6 +311,8 @@ def _select(
                 return False
         return True
 
+    if any(v is None for v in reference_work.values()):
+        return "no_selection", None, []  # reference_work_unavailable
     if not scored:
         return "no_selection", None, []
     eligible = [c for c in example["candidates"] if c["gates"] == "pass" and within_limits(c)]
@@ -391,7 +395,7 @@ def _branch(record: dict[str, Any], identity: str) -> str:
 def test_gate_applicability_is_the_registered_table() -> None:
     gates = ["G1", "G2", "G3", "G4", "G5", "G6", "G7"]
     assert SELECTION["gate_applicability"] == {
-        "B0_terminated": gates[:2],
+        "B0_terminated": ["G1", "G2", "G6"],
         "B1_base_passthrough": ["G1", "G2", "G4", "G5", "G6"],
         "B2_not_reached_before_polish": gates[:6],
         "B3_polished": gates,
@@ -421,6 +425,71 @@ def test_record_branch_examples_cover_every_branch_and_the_saved_no_route_shape(
     assert any(
         e["source"].startswith("saved:") and e["record"]["status"] == "no_route" for e in examples
     )
+
+
+def _reconcile(ordinary: dict[str, Any], work_pass: dict[str, Any]) -> tuple[str, list[str]]:
+    """Contract §5.4.1 Rule P (first match) and the units Rule M keeps available."""
+    work = (work_pass.get("search") or {}).get("r022_work")
+    counted = (ordinary.get("quotes") or {}).get("counted")
+    if work is not None and counted is not None:
+        same = all(ordinary.get(k) == work_pass.get(k) for k in ("status", "score", "evaluation"))
+        if same and work["quotes_executed"] == counted:
+            return "P1_reconciled", ["quotes", "cl_swap_steps", "lb_bins_swapped"]
+        return "P5_differs", []
+    if work is None and counted is not None:
+        return "P2_work_pass_terminated", ["quotes"]
+    if work is None:
+        return "P3_both_terminated", []
+    return "P4_ordinary_terminated", ["cl_swap_steps", "lb_bins_swapped"]
+
+
+@pytest.mark.parametrize("example", SELECTION["pair_examples"], ids=lambda e: e["case"])
+def test_pair_reconciliation_examples(example: dict[str, Any]) -> None:
+    case, available = _reconcile(example["ordinary"], example["work_pass"])
+    assert case == example["case"]
+    if case != "P5_differs":
+        assert available == example["available"]
+
+
+def test_pair_examples_cover_every_case() -> None:
+    cases = [e["case"] for e in SELECTION["pair_examples"]]
+    assert cases == [
+        "P1_reconciled",
+        "P2_work_pass_terminated",
+        "P3_both_terminated",
+        "P4_ordinary_terminated",
+        "P5_differs",
+    ]
+
+
+def _control_class(record: dict[str, Any]) -> str:
+    """Contract §7.5: the class of an E2 control row (first match)."""
+    own = (record.get("search") or {}).get("marginal_activation")
+    if own is None:
+        return "K0_terminated"
+    if own.get("not_reached") is not None:
+        return "K1_not_reached"
+    if record.get("status") != "ok":
+        return "K2_non_ok"
+    if own.get("scope") == "unsupported_topology":
+        return "K3_refused"
+    if not isinstance(own.get("control"), dict):
+        return "K4_missing_control_block"
+    return "K5_matched"
+
+
+def test_control_examples_classify() -> None:
+    examples = REGISTRY["campaign"]["control_examples"]
+    assert [e["class"] for e in examples] == [
+        "K0_terminated",
+        "K1_not_reached",
+        "K2_non_ok",
+        "K3_refused",
+        "K4_missing_control_block",
+        "K5_matched",
+    ]
+    for example in examples:
+        assert _control_class(example["record"]) == example["class"]
 
 
 # ----------------------------------------------------------------------------- roster (§6)
