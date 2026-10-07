@@ -86,6 +86,8 @@ IMPLEMENTED = (
 # WHI-1600: the one 0.2.2 addition that takes options (exactly `metis_history`'s, from its own
 # copy of the preset file); `--strategies all` writes its preset out like the 0.2.1 identities.
 OPTIONED_022 = ("metis_history_bounded",)
+# WHI-1623, WHI-1624: options without a preset, never added by `all`
+OPTIONED_023 = ("split_polish", "marginal_activation")
 BOUNDED_PRESETS = {name: preset_options(ALGORITHMS[name]) for name in OPTIONED_022}
 NEW_PROFILES = (
     {
@@ -105,6 +107,10 @@ NEW_PROFILES = (
     # full_gross/full by tools/research_022 (drift-checked by `pruning_campaign.py check`; each is
     # a restricted slice of the 17-ID roster and runs only with `--strategies profile`)
     | {p.relative_to(REPO).as_posix() for p in (REPO / "config" / "research_022" / "profiles")
+       .glob("*.yaml")}  # fmt: skip
+    # WHI-1627: the 0.2.3 campaign profiles, GENERATED from full_gross by tools/research_023
+    # (drift-checked by `campaign.py check`; one opt-in identity each, `--strategies profile`)
+    | {p.relative_to(REPO).as_posix() for p in (REPO / "config" / "research_023" / "profiles")
        .glob("*.yaml")}  # fmt: skip
 )
 TEST_ALARM_SECONDS = 240
@@ -275,7 +281,7 @@ def test_every_options_factory_refuses_reserved_and_unknown_keys_in_prepare(
     """Applies to every registered options factory (the implemented 0.2.1 identities; none of
     the nine) and the fixtures."""
     factories = [f for f in ALGORITHMS.values() if f.options_validator is not None]
-    assert {f.name for f in factories} == {A, B, *IMPLEMENTED, *OPTIONED_022}
+    assert {f.name for f in factories} == {A, B, *IMPLEMENTED, *OPTIONED_022, *OPTIONED_023}
     for factory in factories:
         assert factory.prepare is not None
         for bad in ({"max_hops": 1}, {"__unknown__": 1}):
@@ -498,10 +504,11 @@ def test_the_all_roster_is_the_nine_plus_the_implemented_0_2_1_identities() -> N
     assert R021_ADDITIONS == IMPLEMENTED
     assert list(profile.algorithms) == [*NINE, *IMPLEMENTED, *R022_ADDITIONS]
     assert list(profile.algorithms) == document["algorithms"]  # WHI-1599 appends R022_ADDITIONS
-    assert len(ALGORITHMS) == 18  # the nine + uni_sor_fast + IMPLEMENTED + R022_ADDITIONS (3)
+    assert len(ALGORITHMS) == 20  # nine + uni_sor_fast + IMPLEMENTED + R022 (3) + OPTIONED_023 (2)
     with_options = {n for n, f in ALGORITHMS.items() if f.options_validator is not None}
     optioned = {*IMPLEMENTED, *OPTIONED_022}
-    assert with_options == optioned
+    assert with_options == optioned | set(OPTIONED_023)
+    assert not set(OPTIONED_023) & set(profile.algorithms)  # never added by `all`
     assert all(ALGORITHMS[n].options_preset is not None for n in optioned)
     assert all(f.options_preset is None for n, f in ALGORITHMS.items() if n not in optioned)
     for name in NINE:
@@ -687,7 +694,9 @@ def test_existing_prepares_refuse_explicit_options_and_keep_absent_parity() -> N
     bundle = load_bundle(MIXED)
     _, profile = _derive(read_profile_document(REPO / "config" / "daily_gross.yaml"), "all")
     guarded = [f for f in ALGORITHMS.values() if f.options_validator is None]
-    assert {f.name for f in guarded} == set(ALGORITHMS) - set(IMPLEMENTED) - set(OPTIONED_022)
+    assert {f.name for f in guarded} == (
+        set(ALGORITHMS) - set(IMPLEMENTED) - set(OPTIONED_022) - set(OPTIONED_023)
+    )
     for factory in guarded:
         if factory.prepare is None:  # `direct`: no public prepare, nothing to bypass
             assert factory.name == "direct"

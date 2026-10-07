@@ -1,0 +1,21 @@
+"""C100-base summary (nearest rank). Usage: python c100_summary.py <repo root>"""
+import json, math, statistics as st, sys, os
+HERE = os.path.dirname(os.path.abspath(__file__))
+def pct(xs, q):
+    s = sorted(xs); return s[min(max(1, math.ceil(q * len(s))), len(s)) - 1]
+R = sys.argv[1] + '/data/results/'
+c200 = {json.loads(l)['case_id']: json.loads(l) for l in open(R + '20260925T153506524695Z-a8a2dd9f/cases.jsonl') if '"incremental_graph"' in l}
+for fn in ['c100_b2', 'c100_actpf']:
+    rows = json.load(open(f'{HERE}/{fn}.json'))['rows']
+    g = [1e4 * (r['final'] - r['recorded']) / r['recorded'] for r in rows]
+    pr = [(r['final'], int(c200[r['case']]['score'])) for r in rows if c200[r['case']]['status'] == 'ok']
+    fam = {}
+    for r in rows:
+        fam.setdefault(r['family'], []).append((r['final'], int(c200[r['case']]['score'])))
+    nw = sum(1 for v in fam.values() if sum(a > b for a, b in v) > sum(a < b for a, b in v))
+    nl = sum(1 for v in fam.values() if sum(a > b for a, b in v) < sum(a < b for a, b in v))
+    wr = [(r['base_quotes'] + r['q_total']) / c200[r['case']]['quotes']['counted'] for r in rows]
+    print(fn, 'gain over own C100 base mean %.3f p50 %.3f p95 %.3f improved %d/%d' % (st.mean(g), pct(g, .5), pct(g, .95), sum(x > 0 for x in g), len(g)),
+          '| vs C200 H/E/L %d/%d/%d families net-win %d net-loss %d | total-work ratio vs C200 p50 %.3f p95 %.3f' % (
+              sum(a > b for a, b in pr), sum(a == b for a, b in pr), sum(a < b for a, b in pr), nw, nl, pct(wr, .5), pct(wr, .95)),
+          '| truncated %d replay_ok %d' % (sum(bool(r['truncated_by']) for r in rows), sum(r['replay_status'] == 'ok' for r in rows)))

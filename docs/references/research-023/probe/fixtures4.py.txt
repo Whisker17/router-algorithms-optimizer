@@ -1,0 +1,236 @@
+"""Regression fixtures for probe v3: every round-1/round-2 counterexample, re-run on v3.
+Run from the repository root: PYTHONPATH=. uv run python fixtures3.py"""
+import importlib.util
+import os
+import sys
+import warnings
+from fractions import Fraction
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+spec = importlib.util.spec_from_file_location("P4", os.path.join(HERE, "polish4.py"))
+P = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(P)
+
+from benchmark.objective import gross_only  # noqa: E402
+from pools.quote import metered_quotes  # noqa: E402
+from routing.evaluator import evaluate  # noqa: E402
+from routing.plan import FundInput, RoutePlan, SwapStep  # noqa: E402
+from snapshot.models import BlockRef, Case, SnapshotBundle  # noqa: E402
+from snapshot.models import ConcentratedPoolState as CL  # noqa: E402
+from snapshot.models import ConstantProductPoolState as CP  # noqa: E402
+
+O = gross_only()
+results = []
+
+
+def check(name, cond, detail=""):
+    results.append((name, bool(cond)))
+    print(("PASS " if cond else "FAIL ") + name, detail)
+
+
+def bundle(pools, c):
+    return SnapshotBundle("fx", "synthetic", 1, BlockRef(1, 1, "h", 1), {p.pool_id: p for p in pools}, (c,), "h", "fx")
+
+
+def step(pid, tin, tout, fid, amount, out):
+    return SwapStep(pid, tin, tout, (FundInput(fid, amount),), out)
+
+
+def trace(ev):
+    return [t.to_dict() for t in ev.trace]
+
+
+def run(b, c, plan, mode="polish", solver="golden", rounds=2, K=2, cap=None):
+    ev = evaluate(b, c, plan, O)
+    assert ev.status == "ok", ev.error
+    with metered_quotes(None) as m:
+        r, h, e1 = P.run_case(b, c, trace(ev), mode, solver, 1, rounds, K, cap)
+        seam_solver = m.counted
+    rep = evaluate(b, c, h.plan, O)
+    return ev, r, h, rep, seam_solver
+
+
+# F1/F2 endpoints in both orders (R023-01) via v3 simulate + canonical plan
+c = Case("c", "S", "T", 100)
+b = bundle([CP("a", "S", "T", 1000, 1000, 30), CP("b", "S", "T", 1000, 100, 30), CP("x", "S", "X", 1000, 2000, 30),
+            CP("tx", "T", "X", 1000, 1000, 30)], c)
+base = RoutePlan((step("a", "S", "T", "REQUEST", 50, "A"), step("b", "S", "T", "REQUEST", 50, "B")))
+ev = evaluate(b, c, base, O)
+t, al = P.topo_and_alloc_from_plan(P.canonical_from_trace(trace(ev))[0], c)
+for w in ([Fraction(1), Fraction(0)], [Fraction(0), Fraction(1)]):
+    g, a, _, _ = P.simulate(b, t, {"REQUEST": w}, 100, P.Ledger(None))
+    e = evaluate(b, c, P.canonical_plan(t, a), O)
+    check(f"endpoint {list(map(str, w))}", e.status == "ok" and e.gross_output == g, f"g={g}")
+
+# F3 dead non-target branch rejected at scoring (R023-02)
+t_dead = P.Topo([dict(pool="x", tin="S", tout="X", inputs=["REQUEST"], out="dead"),
+                  dict(pool="a", tin="S", tout="T", inputs=["REQUEST"], out="out")], "S", "T")
+g, *_ = P.simulate(b, t_dead, {"REQUEST": [Fraction(1, 2), Fraction(1, 2)]}, 100, P.Ledger(None))
+check("dead non-target terminal -> infeasible", g is None)
+
+# F4 target balance beside a zero consumer (R2-04): canonicalised, supported, identity
+base = RoutePlan((step("a", "S", "T", "REQUEST", 100, "out"), step("tx", "T", "X", "out", 0, "dead")))
+ev, r, h, rep, _ = run(b, c, base)
+check("target fund with zero consumer: supported, identity", r["status"] == "ok" and r["final"] == ev.gross_output
+      and rep.status == "ok", f"{r['status']} final={r.get('final')} base={ev.gross_output}")
+
+# F5 partially consumed target fund with a positive consumer: refused, incumbent kept
+# In a valid plan a target fund can stay partially consumed only beside a positive consumer whose
+# output is 0 (any positive continuation must return to T -> cycle, or leave a non-target
+# residual -> invalid). CPMM rejects such dust as insufficient_output_amount, so the refusal
+# path is exercised at unit level on a constructed topology.
+tp = P.Topo([dict(pool="a", tin="S", tout="T", inputs=["REQUEST"], out="out"),
+             dict(pool="tx", tin="T", tout="X", inputs=["out"], out="x1")], "S", "T")
+sh, why = P.shares_or_refusal(tp, {(0, 0): 100, (1, 0): 1}, {"REQUEST": 100, "out": 90, "x1": 0})
+check("partially consumed target fund -> refusal reason", sh is None and why.startswith("partially_consumed_fund"), why)
+
+# F6 budget-zero identity and accounting (R2-02)
+base = RoutePlan((step("a", "S", "T", "REQUEST", 100, "out"),))
+for cap in (0, 1, 2, 3):
+    ev, r, h, rep, seam = run(b, c, base, cap=cap)
+    check(f"cap {cap}: no exception, identity, ledger == seam", rep.status == "ok" and r["final"] == ev.gross_output
+          and seam == r["q_total"], f"truncated={r['truncated_by']} q={r['q_total']} seam={seam}")
+
+# F7 completed improvements survive truncation (R2-02)
+c2 = Case("retain", "S", "T", 300)
+b2 = bundle([CP("a", "S", "T", 1000, 2000, 0), CP("b", "S", "T", 1000, 100, 0), CP("c", "S", "T", 1000, 100, 0)], c2)
+base = RoutePlan(tuple(step(pid, "S", "T", "REQUEST", 100, pid.upper()) for pid in ("a", "b", "c")))
+evf = evaluate(b2, c2, base, O)
+_, rfull, *_ = run(b2, c2, base, cap=None)
+for cap in (50, 80, 100, 140, 180):
+    ev, r, h, rep, seam = run(b2, c2, base, cap=cap)
+    expect = {50: 199, 80: 342, 100: 342, 140: 461, 180: 461}[cap]
+    check(f"retain cap {cap} == {expect}", rep.status == "ok" and rep.gross_output == r["final"] == expect
+          and seam == r["q_total"], f"final={r['final']} base={evf.gross_output} full={rfull['final']} accepted={r['stats'].get('accepted', 0)}")
+
+# F8 zero transfer vs endpoint aliasing (R2-05)
+c3 = Case("small", "S", "T", 10**12)
+b3 = bundle([CP("a", "S", "T", 10**15, 10**18, 0), CP("b", "S", "T", 10**15, 10**18, 0)], c3)
+seen = []
+orig = P.simulate
+
+
+def spy(bundle_, topo, shares, amount, ledger):
+    seen.append(tuple(shares["REQUEST"]))
+    return orig(bundle_, topo, shares, amount, ledger)
+
+
+P.simulate = spy
+base = RoutePlan((step("a", "S", "T", "REQUEST", 1, "A"), step("b", "S", "T", "REQUEST", 10**12 - 1, "B")))
+ev, r, h, rep, _ = run(b3, c3, base, rounds=1)
+P.simulate = orig
+inc = (Fraction(1, 10**12), Fraction(10**12 - 1, 10**12))
+check("incumbent evaluated inside the line search", seen.count(inc) >= 2, f"distinct={len(set(seen))}")
+check("endpoint zeroing evaluated", (Fraction(0), Fraction(1)) in seen)
+
+# F9 Brent: no overflow/invalid warnings with the finite penalty; exact winner
+with warnings.catch_warnings(record=True) as ws:
+    warnings.simplefilter("always")
+    st = {}
+    res = P.line_search(lambda t: ((10**30 - (int(t * P.D) - 123456789) ** 2) if 0 <= t * P.D <= 2 * 10**8 else None, None),
+                        Fraction(1, 2), Fraction(1, 2), 10**5, "brent", st)
+    check("brent finite penalty: no numpy warnings", len(ws) == 0, f"n={len(ws)} status={st.get('brent_status')}")
+    check("brent exact winner near optimum", res is not None and abs(int(res[1] * P.D) - 123456789) <= 10**5, str(res[:2]))
+
+# F10 activation DAG invariant: union containing X->Y and Y->X is rejected (R2-01)
+c4 = Case("cyc", "S", "T", 10000)
+pools = [CP("sx", "S", "X", 100000, 100000, 0), CP("xy", "X", "Y", 1000000, 10000, 0), CP("yt", "Y", "T", 1000, 100000, 0),
+         CP("sy", "S", "Y", 1000, 1000000, 0), CP("xt", "X", "T", 10000, 1000000, 0)]
+b4 = bundle(pools, c4)
+plan_active = RoutePlan((step("sx", "S", "X", "REQUEST", 3000, "A"), step("xy", "X", "Y", "A", "ALL_REMAINING", "B"),
+                         step("yt", "Y", "T", "B", "ALL_REMAINING", "C"), step("sy", "S", "Y", "REQUEST", 7000, "D"),
+                         SwapStep("yt", "Y", "T", (FundInput("D", "ALL_REMAINING"),), "E")))
+ev = evaluate(b4, c4, plan_active, O)
+hh = P.Holder(*([None] * 4), "x")
+canon = P.canonical_from_trace(trace(ev))[0]
+hh.plan, hh.gross = canon, ev.gross_output
+P.rebuild(hh, c4)
+built, why = P.union_with_branch(hh, (("sy", "S", "Y"), ("xy", "Y", "X"), ("xt", "X", "T")), "__T", Fraction(1, 10**4))
+check("union with reverse edge rejected as dag_cycle", built is None and why == "dag_cycle", why)
+
+# F11 reviewer's cycle scenario end-to-end: dormant branch removed, activation replay valid
+plan_dormant = RoutePlan((step("sx", "S", "X", "REQUEST", 0, "A"), step("xy", "X", "Y", "A", 0, "B"),
+                          step("yt", "Y", "T", "B", 0, "C"), step("sy", "S", "Y", "REQUEST", 10000, "D"),
+                          SwapStep("yt", "Y", "T", (FundInput("D", "ALL_REMAINING"),), "E")))
+ev, r, h, rep, seam = run(b4, c4, plan_dormant, mode="activate", K=2)
+check("cycle scenario: final replay ok and never worse", rep.status == "ok" and r["final"] >= ev.gross_output
+      and rep.gross_output == r["final"], f"final={r['final']} base={ev.gross_output} log={r['act_log']}")
+
+# F12 fresh fund prefixes do not collide with existing ids
+hh2 = P.Holder(*([None] * 4), "x")
+hh2.plan = RoutePlan((step("sy", "S", "Y", "REQUEST", 10000, "__ACT0_0OUT"), SwapStep("yt", "Y", "T", (FundInput("__ACT0_0OUT", 10000),), "E")))
+hh2.gross = 1
+P.rebuild(hh2, c4)
+pfx = P.fresh_prefix(hh2.topo, 0)
+check("fresh prefix avoids collision", not any(f.startswith(pfx) for f in hh2.topo.fund_token), pfx)
+
+
+# F13 R3-01: evaluator-valid CL zero-output consumer -> unsupported_topology with the TRUE gross
+c5 = Case("partial-target", "S", "T", 100)
+cl = CL(pool_id="tx", source_key="uniswap_v3", token0="T", token1="X", fee=3000, tick_spacing=60, sqrt_price_x96=1 << 96,
+        tick=0, liquidity=10**9, fee_protocol=0, fee_growth_global0_x128=0, fee_growth_global1_x128=0, protocol_fees0=0,
+        protocol_fees1=0, bitmap_word_range=(-1, 1))
+b5 = bundle([CP("st", "S", "T", 1000, 1000, 30), cl], c5)
+p5 = RoutePlan((step("st", "S", "T", "REQUEST", 100, "out"), step("tx", "T", "X", "out", 1, "dead")))
+ev, r, h, rep, seam = run(b5, c5, p5)
+check("CL partial target: unsupported_topology, true gross, plan unchanged", r["status"] == "unsupported_topology"
+      and r["final"] == ev.gross_output == rep.gross_output and h.plan == p5 and seam == 0,
+      f"orig={ev.gross_output} final={r['final']} replay={rep.gross_output}")
+
+# F14 R3-03: PF zero-new-branch endpoint reproduces the original plan exactly (several consumers, non-divisible)
+for A, parts in ((100000, (50000, 50000)), (100003, (33335, 33334, 33334)), (99991, (7, 49992, 49992))):
+    c6 = Case("pf", "S", "T", A)
+    b6 = bundle([CP(p_, "S", "T", 10**9, 10**9, 0) for p_ in ("a", "b", "c", "d")], c6)
+    p6 = RoutePlan(tuple(step(pid, "S", "T", "REQUEST", amt, pid.upper()) for pid, amt in zip("abc", parts)))
+    ev6 = evaluate(b6, c6, p6, O)
+    assert ev6.status == "ok", ev6.error
+    canon = P.canonical_from_trace(trace(ev6))[0]
+    hh = P.Holder(canon, ev6.gross_output, None, None, "base")
+    P.rebuild(hh, c6)
+    built, why = P.union_with_branch(hh, (("d", "S", "T"),), "__N", Fraction(1, 10**4), "proportional")
+    t2, s2 = built
+    s_end = dict(s2)
+    s_end["REQUEST"] = [x * 1 for x in hh.shares["REQUEST"]] + [Fraction(0)]
+    g, al, _, _ = P.simulate(b6, t2, s_end, A, P.Ledger(None))
+    check(f"PF endpoint identity A={A} parts={parts}", g == ev6.gross_output and P.canonical_plan(t2, al) == canon,
+          f"g={g} base={ev6.gross_output}")
+
+# F15 R3-02: work-target ledger never exceeds its target and stops with work_target
+led = P.Ledger(None, None, start=10, target=11)
+st = {}
+hh = P.Holder(*([None] * 4), "x")
+base = RoutePlan(tuple(step(pid, "S", "T", "REQUEST", 100, pid.upper()) for pid in ("a", "b", "c")))
+evw = evaluate(b2, c2, base, O)
+hh.plan, hh.gross = P.canonical_from_trace(trace(evw))[0], evw.gross_output
+P.rebuild(hh, c2)
+try:
+    P.polish(b2, c2, hh, led, "golden", 1, 2, st)
+    stop = None
+except P.Budget as bx:
+    stop = str(bx)
+check("work target respected", led.n <= 11 and stop == "work_target", f"n={led.n} stop={stop}")
+
+
+# F16 R3-m1: a time stop anywhere (incl. activation validation) is reported as time, never max_quotes
+class TimeAt(P.Ledger):
+    def __init__(self, at):
+        super().__init__(None)
+        self.at = at
+
+    def quote(self, st_, tin, amt):
+        if self.n >= self.at:
+            raise P.Budget("time")
+        return super().quote(st_, tin, amt)
+
+
+bad = []
+ev4 = evaluate(b4, c4, plan_dormant, O)
+for at in range(1, 400, 3):
+    r, h, e1 = P.run_case(b4, c4, trace(ev4), "activate", "golden", 1, 2, 2, None, ledger_factory=lambda at=at: TimeAt(at))
+    rp = evaluate(b4, c4, h.plan, O)
+    if r["truncated_by"] not in (None, "time") or rp.status != "ok" or rp.gross_output != r["final"] or r["final"] < ev4.gross_output:
+        bad.append((at, r["truncated_by"], rp.status))
+check("time reason preserved and incumbent valid at every cut (133 cuts)", not bad, str(bad[:3]))
+
+print("SUMMARY", sum(ok for _, ok in results), "/", len(results), "passed")
+sys.exit(0 if all(ok for _, ok in results) else 1)

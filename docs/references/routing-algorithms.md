@@ -20,7 +20,13 @@ ordinary CLI compares. It covers:
   and `metis_history_bounded` (§§19–22; shared theory in §19). Each is an **exact acceleration** of
   a strategy above: it skips a candidate only when a proved upper bound shows that it cannot beat the
   incumbent, and returns the reference's plan. With them, `--strategies all` compares **17**
-  strategies. They claim no speedup: timing is a separate measurement (WHI-1602).
+  strategies. They claim no speedup: timing is a separate measurement (WHI-1602);
+- the **0.2.3 post-processors** `split_polish` (§23) and `marginal_activation` (§24), contract
+  `R023-C/1`: exact split-share polishing of a declared base strategy's plan, then activation of
+  new branches (Jupiter-inspired, **NOT Jupiter Metis**). Each is selected only by a profile that
+  names it; `--strategies all` adds neither and still compares **17** strategies. The research-023
+  campaign kept both `keep_experimental` ([`research-023/results.md`](research-023/results.md)):
+  nothing is adopted, no default changes and no speed is claimed.
 
 For each strategy it describes the mathematical foundations, search mechanics, state management
 and practical trade-offs against frozen Mantle liquidity snapshots. To compare them on a single
@@ -42,14 +48,24 @@ Inspected source commits:
   `1e63a043f7023988963bf18f47fbadf5f34b26ff` (WHI-1600 merged on `dev`; PRs #80 and #81). Their
   worked examples are `docs/examples/routing-algorithms/r022_examples.py`. Line numbers in §§19–22
   are those of `1e63a04`; function names are the stable anchors when lines drift.
+- §§23–24, §11.5 and the 0.2.3 parts of Sections 1, 12 and 13: `routing/algorithms/split_polish.py`
+  and `routing/algorithms/marginal_activation.py` at `4f177705a807dbe97c2534ef2adfb7f639fffcad`
+  (WHI-1626 merged on `release/v0.2.3`; `split_polish` was added by WHI-1623 `52a5261`,
+  `marginal_activation` by WHI-1624 `b8c93f9`). Both files are unchanged at
+  `322ddcb9c39891bbc5c8084f64b26e5eca37a8b2` (WHI-1627 merged), whose
+  `docs/references/research-023/results.md` and `campaign/report-analysis.json` hold the campaign
+  figures of §§23.9 and 24.9. Their worked examples are `docs/examples/routing-algorithms/r023_examples.py`;
+  `tests/routing/test_split_polish.py` and `tests/routing/test_marginal_activation.py` check them too.
+  §§23–24 name functions, not lines.
 
 All numeric traces and intermediate transitions are verified offline by
-`tests/docs/test_routing_algorithm_examples.py`, `tests/docs/test_r021_examples.py` and
-`tests/docs/test_r022_examples.py`, and can be run via
+`tests/docs/test_routing_algorithm_examples.py`, `tests/docs/test_r021_examples.py`,
+`tests/docs/test_r022_examples.py` and `tests/docs/test_r023_examples.py`, and can be run via
 `docs/examples/routing-algorithms/run_examples.py` (sections 1–11: the nine original strategies;
 sections 12–17: the five 0.2.1 identities and the 17-row fixed-block walkthrough; sections 18–22: the
-0.2.2 upper-bound pruning examples). No example requires RPC, Dune or credentials, and none depends
-on the gitignored `data/`.
+0.2.2 upper-bound pruning examples; sections 23–26: the 0.2.3 worked examples of §§23.5 and 24.5, the
+§11.5 request and the research-023 campaign figures, read from the committed `report-analysis.json`).
+No example requires RPC, Dune or credentials, and none depends on the gitignored `data/`.
 
 ---
 
@@ -85,8 +101,8 @@ subject to:
 - **Section 8:** `uni_sor_adaptive` (optimized, recipe H3) — Coarse-to-fine percentage sampling over the unchanged SOR core, validated anytime incumbent.
 - **Section 9:** `uni_sor_optimized` (optimized, recipe H4) — Amount-aware 5 % / 100 % route shortlist, the same sampling, and the exact L02–L04 quote controls.
 - **Section 10:** `metis_inspired` (experimental, NOT Jupiter Metis) — Hop-layered, quote-driven label search replacing `incremental_graph`'s per-chunk path enumeration.
-- **Section 11:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044) — all 17 `--strategies all` rows, including the visible `unsupported` row, plus the quote/details/replay commands.
-- **Section 12:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map — for all 17 strategies.
+- **Section 11:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044) — all 17 `--strategies all` rows, including the visible `unsupported` row, plus the quote/details/replay commands, and (§11.5, separately) the two profile-selected 0.2.3 post-processors on the same request.
+- **Section 12:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map — for all 17 strategies and the two 0.2.3 post-processors.
 - **Section 13:** Operational Boundaries, Limitations, and Known Debt.
 - **Section 14:** `metis_history` (0.2.1, experimental, NOT Jupiter Metis) — History-signature labels with proven dominance, retained unknowns and visible caps.
 - **Section 15:** `direct_split_certified` (0.2.1, experimental) — Exact-rational branch and bound over `direct_split`'s grid, with a certified lower/upper interval.
@@ -97,10 +113,15 @@ subject to:
 - **Section 20:** `single_path_bounded` (0.2.2, experimental) — `single_path` with rule S1: skip a path whose nested-floor bound is at most the incumbent.
 - **Section 21:** `incremental_graph_bounded` (0.2.2, experimental) — `incremental_graph` with rule I1: skip a path whose chunk chain bound is at most the chunk's best marginal.
 - **Section 22:** `metis_history_bounded` (0.2.2, experimental) — `metis_history` with rule M1 (arrivals) and rule M2 (labels) behind the structural gate `G_M2`.
+- **Section 23:** `split_polish` (0.2.3, experimental, NOT Jupiter Metis, profile-selected) — Exact pairwise re-splitting of a declared base strategy's finished plan over its fixed funding topology, the campaign results, and why the measured gain is small next to Jupiter's announcements.
+- **Section 24:** `marginal_activation` (0.2.3, experimental, NOT Jupiter Metis, profile-selected) — Split polishing, then new branches from a small-amount label search on the post-plan pool states, checked against matched controls.
 
-The five 0.2.1 chapters and the four 0.2.2 chapters follow Section 13 so that every earlier section
-number and anchor stays unchanged; Sections 11–13 cover the whole 17-strategy roster. §1.8 introduces
-the vocabulary of the 0.2.1 chapters, and §19 that of the 0.2.2 chapters.
+The five 0.2.1 chapters, the four 0.2.2 chapters and the two 0.2.3 chapters follow Section 13 so that
+every earlier section number and anchor stays unchanged. Sections 11–13 cover the whole 17-strategy
+`--strategies all` roster and, kept apart from it, the two profile-selected 0.2.3 post-processors
+(§11.5, §12, §13 item 16). §1.8 introduces the vocabulary of the 0.2.1 chapters, §19 that of the
+0.2.2 chapters, and §23.2 that of the 0.2.3 chapters (fixed funding topology, exact shares, one attempt
+ledger with the base), which §24 reuses.
 
 ### 1.3 Terminology and Symbol Table
 
@@ -1901,7 +1922,8 @@ subset, not a held-out corpus result. The fixture is not the full frozen corpus 
 bundle alone has 143 pools). The `quote` command solves on a derived single-case request bundle of
 the same 19 pools (it records that bundle's own hash); `r021_examples.py` section 17 re-runs the
 same 17 rows in process on the fixture itself and checks each gross against the exact protocol
-quotes below.
+quotes below. The two 0.2.3 post-processors are not `--strategies all` rows; §11.5 runs them on the
+same request through an explicit profile.
 
 ### 11.1 Summary Comparison Table
 
@@ -2100,6 +2122,127 @@ smaller domain next to `direct_split` rows that use all four pools (§15.1).
 and [`strategy-groups.md`](strategy-groups.md) the selection modes and the literal replay of
 older saved profiles.
 
+### 11.5 The 0.2.3 Post-Processors on the Same Request (Explicit Profile)
+
+`split_polish` (§23) and `marginal_activation` (§24) are not rows of the §11.1 table. Each is
+selected only by a profile that names it, and `--strategies all` adds neither, so the 17-row table and
+its count stay as they are. Each one also runs a declared base strategy and returns at least the base's
+gross, so its row is read against its base's row, not against the other sixteen. This subsection runs
+both on the same request through an explicit profile: the values of `config/daily_gross.yaml`, with only
+`algorithms` replaced and the two nominees' options written out (§23.7, §24.7; neither has a preset):
+
+```yaml
+schema_version: 2
+algorithms:
+- incremental_graph
+- split_polish
+- marginal_activation
+objective:
+  mode: gross_only
+search:
+  max_hops: 2
+  max_splits: 4
+  percent_step: 5
+graph:
+  chunks: 200
+budget:
+  time_limit_seconds: 120
+  max_quotes: 50000
+  max_candidates: null
+measurement:
+  warmup: 1
+  repeats: 3
+  seed: 1447
+  order: fixed
+  memory_pass: true
+worker:
+  start_method: spawn
+  scope: algorithm
+  prepare_time_limit_seconds: 120
+algorithm_options:
+  split_polish:
+    base: incremental_graph
+    solver: brent
+    rounds: 2
+    tolerance: 0.0001
+    grid: 1000000000
+    maxiter: 60
+  marginal_activation:
+    base: incremental_graph
+    solver: brent
+    rounds: 2
+    tolerance: 0.0001
+    grid: 1000000000
+    maxiter: 60
+    mode: pf
+    activations: 2
+    top_k: 3
+    delta_share: 0.0001
+    seed_share: 0.0001
+    arm: treatment
+```
+
+Saved as `r023-walkthrough.yaml`, it runs literally (the `quote` command itself makes it one solve
+attempt per algorithm):
+
+```bash
+uv run python main.py quote \
+  --bundle tests/fixtures/corpus/bundle \
+  --profile r023-walkthrough.yaml \
+  --token-in USDC --token-out USDT0 --amount 10000 \
+  --strategies profile --details
+```
+
+| Algorithm | Status | Evaluated Gross (USDT0) | Gross Raw Units | Quotes Counted | vs the Base Row | Trace Characteristics |
+|---|---|---|---|---|---|---|
+| `incremental_graph` (the base) | `ok` | 10000.663447 | 10000663447 | 264 | – | The §11.1 row: Agni V3 9950000000 raw, Moe LB `0x368b...` 50000000 raw |
+| `split_polish` | `ok` | **10000.663636** | **10000663636** | 360 (264 + 96) | **+189 raw** | Same two pools: Agni V3 9964149090 raw, Moe LB 35850910 raw |
+| `marginal_activation` | `ok` | **10000.663636** | **10000663636** | 588 (264 + 96 + 228) | **+189 raw** | `split_polish`'s plan; no branch accepted |
+
+```
+Step 0: agni_v3 pool 0x36f66548cda219c6fc037037cee063b9f28b13ef
+  Input:     REQUEST 9964149090 raw
+  Output:    F1 9964809143 raw
+Step 1: moe_lb_v2_2 pool 0x368b148052a1a775dbe70e56d04474e54c694cac
+  Input:     REQUEST 35850910 raw
+  Output:    F2 35854493 raw
+Terminal Total: 9964809143 + 35854493 = 10000663636 raw
+Residuals: None. Reconciled exactly.
+```
+
+1. **E1 re-splits the base's one Liquidity Book chunk.** `incremental_graph` commits its chunks of
+   50 USDC and gives exactly one of them to the Moe LB pool. The plan has one split fund (`REQUEST`, two
+   consumers), so each round is one Brent line search over one pair. Round 1 moves 14149090 raw of the
+   LB leg back to Agni V3 and gains 189 raw units, 0.0002 bps of the base gross; round 2 accepts
+   nothing and the polish stops. Factory counters: 1 polish call, 2 Brent line searches, 49
+   simulations, 96 quotes (the reconstruction included), 1 accepted exchange. Both legs are checked
+   against independent exact protocol quotes: $9964809143 + 35854493 = 10000663636$. For comparison,
+   the best split of the same two pools on a 0.1-USDC grid of the LB leg gives 10000663634, 2 raw
+   units less.
+2. **E2 finds no branch worth activating.** From the E1 incumbent,
+   $\delta = \max(1, \lfloor A \cdot 0.0001 \rfloor) = 1000000$ raw. USDC's pools all lead straight to
+   USDT0 (§11.3 item 5), so the label search on the post-plan states finds three 1-hop terminals; the
+   fourth direct pool, Liquidity Book `0x1bc3...`, fails at $\delta$:
+   - Agni V3 returns 1000011 and Moe LB `0x368b...` 999996. Both are already in the plan, so either
+     branch reuses its pool (`shared_sequential`) and can only shift flow between the two legs E1 has
+     just balanced.
+   - Moe Classic `0x69a7...` returns 14207. It is novel, but its USDT0 reserve is only 14410 raw.
+
+   Each terminal is seeded, re-split by the PF line search and logged `no_gain_or_zero_flow`; the stage
+   then stops with `stop_no_candidate`. Factory counters: 3 optimiser invocations, 74 simulations,
+   228 quotes. The three $\delta$ outputs are checked against exact quotes on the post-plan states and
+   the hand constant-product quote.
+3. **One ledger per row.** Each row's quotes are its base's plus its own: $264 + 96 = 360$ and
+   $264 + 96 + 228 = 588$. The base record inside each row (`search.base`) is the `incremental_graph`
+   row, 10000663447 with 264 quotes.
+4. **Classification.** Like the table above, this is an exploratory single request on the 19-pool
+   fixture, not a campaign or held-out corpus result. The measured evidence is the research-023
+   campaign (§§23.9 and 24.9). No latency is published or claimed.
+
+`r023_examples.py` section 25 runs the three rows in process through the registered factories on the
+fixture itself; `tests/docs/test_r023_examples.py` also runs the `quote` command above and compares its
+saved records with them.
+
 ---
 
 ## 12. Algorithmic Comparison Matrix, Complexity, and Reading Map
@@ -2155,6 +2298,25 @@ differs only in which candidates it quotes. "Result" is the identity they claim,
 | **Group / Default** | Experimental, opt-in | Experimental, opt-in | Experimental (NOT Jupiter Metis), opt-in |
 | **Where counters are** | `search.bound_pruning` in the case record; `quote --details` | same | same |
 
+The two 0.2.3 post-processors (§§23–24) are not searches of their own: each runs a declared base
+strategy, then re-optimises that base's finished plan with exact integer replay. They are selected only
+by a profile that names them and are not in `--strategies all` (§11.5).
+
+| Property | `split_polish` (E1) | `marginal_activation` (E2) |
+|---|---|---|
+| **Reference control** | its base, run as the base's own identity (campaign arms A0, C100, M4, S4, REP, PS; §23.9) | its base and E1; the `work_matched` and `call_matched` control arms (campaign only) |
+| **Bases** | `incremental_graph`, `path_split`, `metis_inspired`, `metis_history`, `incremental_graph_repair` | `incremental_graph`, `path_split` |
+| **Multi-Hop / Split Support** | the base plan's routes and funds only (fixed funding topology) | the base plan plus up to `activations` appended branches of $\le H$ hops |
+| **Shared Intermediate Pools** | as the base plan (sequential pool state) | **Yes**; a new branch may reuse a plan pool (`shared_sequential`) |
+| **Supported Protocols** | All 5 (exact replay) | All 5 (exact replay) |
+| **Search Mechanism** | pairwise 1-D Brent (or golden) line search over exact rational shares | E1, then a hop-layered label search of $\delta$ quotes on the post-plan states; PF grouped line search or a full E1 re-polish |
+| **Optimality Scope** | local; never below the base | local heuristic; never below the base |
+| **Objective** | `gross_only` | `gross_only` |
+| **Options** | six, all required, no preset | twelve, all required, no preset |
+| **Group / Default** | Experimental (NOT Jupiter Metis), profile-selected | Experimental (NOT Jupiter Metis), profile-selected |
+| **Campaign disposition** | `keep_experimental` (§23.9) | `keep_experimental` (§24.9) |
+| **Where counters are** | `search.split_polish` and `search.base` in the case record | `search.marginal_activation` (`e1`, `activation`, `control`) and `search.base` |
+
 ### 12.2 Asymptotic Search Complexity
 
 Let:
@@ -2170,6 +2332,7 @@ Let:
 - $H_L$: Label-layer depth (`graph.label_hops`); $\lvert T \rvert$: tokens; $\deg_{\max}$: largest pool degree of a token.
 - $F$: `max_frontier_labels`; $n$: direct pools; $N_b$, $N_o$: `max_bound_nodes`, `max_open_nodes`; $C$, $R_a$: `max_checkpoints`, `max_repair_attempts`.
 - $\lvert M \rvert$: `cfmm_dual` markets; $E_f$: `max_function_evaluations`; $c_o$: one market oracle call; $A_r$: `max_recovery_attempts`.
+- $R_p$, $I_{\max}$: `split_polish`'s `rounds` and `maxiter`; $n_f$: consumers of a split fund $f$; $\lvert \sigma \rvert$, $\lvert \sigma' \rvert$: positive steps of the plan and of an activation union (one quote each per simulation); $K_a$, $k$: `activations`, `top_k`; $P_\delta$: relaxations of one activation label search ($\le H \cdot \lvert T \rvert \cdot \deg_{\max}$).
 
 *Table Notation:* `\lvert \Pi_H \rvert` denotes the count of cycle-free candidate paths.
 
@@ -2192,12 +2355,18 @@ Let:
 | `single_path_bounded` | the reference's, plus $\mathcal{O}(H \cdot \lvert \Pi_H \rvert)$ exact-rational operations for the bounds and $\mathcal{O}(P)$ preparation | $\le$ the reference's (executed-quote set is a subset) | the reference's + $\mathcal{O}(P)$ rationals |
 | `incremental_graph_bounded` | the reference's, plus $\mathcal{O}(K \cdot \sum_{\pi} \text{hops}(\pi))$ rational operations for the bounds and $\mathcal{O}(P)$ preparation | $\le$ the reference's (the embedded `path_split` is unchanged) | the reference's + $\mathcal{O}(P)$ rationals |
 | `metis_history_bounded` | the reference's, plus one bound per relaxation and, when M2 can act, `bound_table_cost` $\mathcal{O}(H_L \cdot \sum_v \deg v)$ per solve | $\le$ the reference's | the reference's + $\mathcal{O}(P)$ rationals + the per-solve `U_h` table |
+| `split_polish` | $\text{Cost}(\text{base}) + \mathcal{O}(R_p \cdot \sum_f \binom{n_f}{2} \cdot I_{\max} \cdot \lvert \sigma \rvert \cdot c_q)$ | $\text{Quotes}(\text{base}) + \lvert \sigma \rvert \cdot (1 + R_p \sum_f \binom{n_f}{2} \cdot (3 + I_{\max} + \text{a few}))$, all on the base's `max_quotes` ledger | the base's + one exact share vector per split fund + the per-pair point cache |
+| `marginal_activation` | $\text{Cost}(\text{split\_polish}) + \mathcal{O}(K_a \cdot (P_\delta + k \cdot I_{\max} \cdot \lvert \sigma' \rvert) \cdot c_q)$ in PF mode; full mode runs one E1 polish call over the union per tried terminal | $\text{Quotes}(\text{split\_polish}) + K_a \cdot (\lvert \sigma \rvert + P_\delta + k \cdot (3 + I_{\max} + \text{a few}) \cdot \lvert \sigma' \rvert)$ in PF mode, on the same ledger | E1's + the pool adjacency + one union topology at a time |
 
 For `cfmm_dual`, a CL oracle call locates the target price in its precomputed index by binary
 search, but that does not make the solve logarithmic: the evaluation count, not the lookup,
 dominates the numerical work, and every exact quote and the final replay still step tick by tick
 in `pools.concentrated`. The bounds above are budget-shaped: each 0.2.1 identity stops at its
-declared caps, and a cap is reported, never hidden.
+declared caps, and a cap is reported, never hidden. The two 0.2.3 rows count simulations of a
+finished plan: one quote per positive step and evaluated point, with the cached points of a pair
+never re-simulated (§§23.8, 24.8). Their polish quotes are physically cheaper than the base's: on the
+report split, `split_polish` on A0 executes 1.276× its base's quotes but 1.014× its CL swap steps
+(§23.8).
 
 ### 12.3 Source Reading Map
 
@@ -2225,6 +2394,7 @@ When navigating the codebase, consult these authoritative entry points:
   - `routing/algorithms/chunk_pruning.py` (0.2.2): `hop_bound` (line 33), `chain_bound` (50), `UTable` (85), `m2_gate` (167), `LabelPruner` (196)
   - `routing/algorithms/single_path_bounded.py`, `incremental_graph_bounded.py`, `metis_history_bounded.py` (0.2.2): `solve`, `FACTORY`; the rules live in `single_path.py` (`_path_upper_bound`, line 153; the S1 block, lines 251–259), `incremental_graph.py` (`_bound_start`, line 449; the I1 block, lines 648–660) and `metis_history.py` (`choose_history`, line 351; the gate and table in `_solve`, lines 536–551)
   - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the base and optimized comparison groups; `metis_inspired`, the five 0.2.1 identities (`R021_ADDITIONS`, contract order) and the three 0.2.2 bounded strategies (`R022_ADDITIONS`, line 122) are added by `benchmark/strategies.py` under `--strategies all`)
+  - `routing/algorithms/split_polish.py` (0.2.3, E1): `validate_options` / `Settings`, `graph_params_for`, `prepare`, `Ledger`, `Topology`, `canonical_from_evaluation`, `shares_or_refusal`, `simulate`, `Incumbent`, `rebuild`, `line_search` (`_golden`, `_brent`), `polish`, `polish_plan`, `solve`; `routing/algorithms/marginal_activation.py` (0.2.3, E2): `top_paths`, `union`, `pf_split`, `accepts`, `activate`, `run_activation`, `ControlLedger`, `run_control`, `solve`. Both are registered in `registry.py` and are not among `benchmark/strategies.py`'s `--strategies all` additions (§§23–24 name functions, not lines)
 - **Contract Verification:**
   - Uniswap SOR: [`uni-sor-port-contract.md`](uni-sor-port-contract.md) and `tests/routing/test_uni_sor_parity.py`.
   - Optimized strategies: [`strategy-groups.md`](strategy-groups.md), [`latency-optimization-results.md`](latency-optimization-results.md) (L08), `tests/routing/test_uni_sor_strategies.py` and `tests/routing/test_uni_sor_fast.py`.
@@ -2232,6 +2402,7 @@ When navigating the codebase, consult these authoritative entry points:
   - 0.2.1 identities: the shared contract [`research-021/contract.md`](research-021/contract.md) and one memo each: [`history-labels.md`](research-021/history-labels.md), [`integer-allocation.md`](research-021/integer-allocation.md), [`suffix-repair.md`](research-021/suffix-repair.md), [`cycle-safe-sor.md`](research-021/cycle-safe-sor.md), [`cfmm-dual.md`](research-021/cfmm-dual.md). Worked examples: `docs/examples/routing-algorithms/r021_examples.py` and `tests/docs/test_r021_examples.py`.
   - 0.2.2 bound pruning: [`research-022/output-bounds.md`](research-022/output-bounds.md) (the per-pool bounds and proofs), [`research-022/pruning-contract.md`](research-022/pruning-contract.md) (the rules, the exactness argument, the interface and its §14 amendment). Worked examples: `docs/examples/routing-algorithms/r022_examples.py` and `tests/docs/test_r022_examples.py`; strategy tests `tests/routing/test_single_path_bounded.py`, `tests/routing/test_chunk_bounded.py`, `tests/routing/test_pruning_contract.py`, `tests/pools/test_bounds.py`, `tests/pools/test_output_bounds_contract.py`.
   - Cost Model: [`cost-model.md`](cost-model.md) and `benchmark/costs.py`.
+  - 0.2.3 post-processors: the contract [`research-023/contract.md`](research-023/contract.md) (`R023-C/1`), its source register [`research-023/sources.md`](research-023/sources.md), the pinned probe ([`research-023/probe/README.md`](research-023/probe/README.md); publication check `tests/docs/test_research_023_contract.py`) and the campaign record [`research-023/results.md`](research-023/results.md) with [`report-tables.md`](research-023/campaign/report-tables.md), generated from `report-analysis.json` by `tools/research_023/` (`tests/research_023/test_r023_campaign.py`). Strategy tests: `tests/routing/test_split_polish.py`, `tests/routing/test_split_polish_bases.py`, `tests/routing/test_marginal_activation.py`. Worked examples: `docs/examples/routing-algorithms/r023_examples.py` and `tests/docs/test_r023_examples.py`.
 
 ---
 
@@ -2348,10 +2519,14 @@ When navigating the codebase, consult these authoritative entry points:
       quality.
 14. **Literal Replay:** Saved effective profiles, including the pre-0.2.1 eight- and nine-strategy
     ones and the 14-strategy 0.2.1 ones, replay literally with `--strategies profile` and never gain
-    a 0.2.1 identity or a 0.2.2 bounded strategy; use each manifest's `replay_command` (§11.4,
-    [`strategy-groups.md`](strategy-groups.md)). The preregistered 0.2.1 campaign (WHI-1562) froze
-    its own 14-ID roster and `tools/research_021/` is kept as it was by design: do not "fix" it to 17
-    (its tests switch the 0.2.2 additions off); replay a 0.2.1 run with `--strategies profile`.
+    a 0.2.1 identity, a 0.2.2 bounded strategy or a 0.2.3 post-processor; use each manifest's
+    `replay_command` (§11.4, [`strategy-groups.md`](strategy-groups.md)). Release 0.2.3 adds nothing to
+    `--strategies all` (still 17 rows): `split_polish` and `marginal_activation` run only from a
+    profile that names them (§11.5). The preregistered 0.2.1 campaign (WHI-1562) froze its own 14-ID
+    roster and `tools/research_021/` is kept as it was by design: do not "fix" it to 17 (its tests
+    switch the 0.2.2 additions off); replay a 0.2.1 run with `--strategies profile`. Likewise the 0.2.2
+    campaign's roster (`all17` in `config/research_022/schedule.yaml`) and `tools/research_022/` are
+    unchanged in 0.2.3 and name neither post-processor (`r023_examples.py` section 25 checks both).
 15. **The 0.2.2 Bounded Strategies Are Exact Accelerations, Not Speedups:**
     - `single_path_bounded`, `incremental_graph_bounded` and `metis_history_bounded` return their
       references' plans whenever the bounded run is not budget-truncated. Under a binding
@@ -2369,6 +2544,26 @@ When navigating the codebase, consult these authoritative entry points:
       and is inactive under the shipped preset on the tracked fixture (§22).
     - The bound counters are in each case record (`search.bound_pruning` in `cases.jsonl`) and in
       `quote --details`; the batch console, CSV and HTML summaries do not show them.
+16. **The 0.2.3 Post-Processors Are Local, Additive and Experimental:**
+    - **Local and additive.** `split_polish` and `marginal_activation` only post-process a declared
+      base strategy's finished plan: E1 re-splits the base's own routes over a fixed funding
+      topology, and E2 adds branches proposed by a heuristic label oracle. Neither claims an optimum,
+      Jupiter equivalence or a speedup, and neither replaces finer chunking (§§23.9, 24.9).
+    - **Gross-only.** Any other objective is `unsupported` (`scope: objective`) and the base never runs.
+    - **Profile-selected.** Neither is in `--strategies all` (§11.5). Each runs only from a profile
+      that names it, with all of its options written out (no preset); one profile holds one entry of
+      each.
+    - **Bases.** `split_polish`: `incremental_graph`, `path_split`, `metis_inspired`,
+      `metis_history`, `incremental_graph_repair`. `marginal_activation`: `incremental_graph` and
+      `path_split`.
+    - **Controls are campaign-only.** The `work_matched` and `call_matched` arms of
+      `marginal_activation` measure the activation against equal polishing work (contract §5.3). They
+      are measurement arms, not routers to select.
+    - **Disposition.** The research-023 campaign kept both `keep_experimental` (contract §10): every
+      gate passed, and the measured gains are in §§23.9 and 24.9, under the evidence boundaries of
+      contract §8 (one block, a previously exposed report split, tuning-informed nominees, no speed
+      claim). [`research-023/results.md`](research-023/results.md) is the record. Nothing is adopted and
+      no default changes.
 
 ---
 
@@ -4738,3 +4933,506 @@ Pins: `dev` @ `1e63a043f7023988963bf18f47fbadf5f34b26ff` (PR #81).
   - As §21.9: P0, the $2^{127}$ domain, rate-only and no-slack directions, slack carrying the rate.
   - `label_relaxations` and the other population counters are only reference-identical while M2 is
     inactive.
+
+---
+
+## 23. Algorithm 18: `split_polish` (Exact Split-Share Polishing of a Base Plan; Jupiter-Inspired, NOT Jupiter Metis)
+
+### 23.1 Problem and Inclusion Rationale
+Every chunked strategy above allocates the input in fixed increments: `incremental_graph` commits
+$A / \text{chunks}$ at a time and never takes a chunk back. Its finished plan can therefore sit a
+fraction of a chunk away from the best split *of the same routes*. `split_polish` (WHI-1623,
+contract `R023-C/1` §3, §4, §6, E1) is a **post-processor**: it runs a declared base strategy, keeps
+the base plan's routes exactly and re-optimises only the split shares, with exact integer replay.
+
+- **Identity:** experimental, `custom` group, selected only by a profile that names it (`--strategies
+  all` does **not** add it). Label: "Jupiter-inspired (Ultra V3 / Metis v7 Brent splitting), **NOT
+  Jupiter Metis**". Gross-only.
+- **What is claimed:** never worse than the base plan it ran on, and every returned plan is an
+  evaluator-valid exact integer plan. **Not claimed:** optimality (a local pairwise heuristic over a
+  fixed topology, not SCO), Jupiter equivalence, any speedup.
+- **What was measured:** on the research-023 report split it is never below its base and adds a
+  fraction of a bps on average, but loses to finer chunking case by case (§23.9). §23.9 also explains,
+  from the sources only, why that gain is small next to Jupiter's announcements.
+
+### 23.2 Mathematical Model and Assumptions
+**Domain (fixed funding topology).** The base plan's evaluated trace is canonicalised: zero
+references and zero-input steps are dropped, `ALL_REMAINING` is resolved. Every consumed fund must be
+fully consumed; otherwise the case is refused (`scope: unsupported_topology`) and the base result is
+returned unchanged. Pools, directions, step order and fund wiring stay fixed. The variables are the
+exact rational shares $s_{f,k} = a_{f,k} / P_f$ of every fund $f$ with more than one consumer $k$
+($P_f$ = the fund's produced amount).
+
+**Simulation.** For each fund, every consumer except the **last one with a positive share** gets
+$\lfloor P_f \cdot s_{f,k} \rfloor$, that one takes the remainder, a zero share gets exactly 0. Steps
+with zero input are skipped, a pool used twice sees the state of its earlier use, and a positive
+unconsumed non-target fund makes the candidate infeasible. This is the evaluator's replay of the
+canonical plan, so every simulated gross equals the evaluator's.
+
+**Pairwise line search.** For split funds in order of first consumption and consumer pairs $i < j$,
+the transfer $t \in [-s_j, s_i]$ moves share from $i$ to $j$. $t = 0$, $t = s_i$ (consumer $i$
+emptied) and $t = -s_j$ are always evaluated; interior points lie on the grid $D$ (`grid`, $10^9$
+share units). Golden section treats an infeasible point as $-\infty$; Brent (SciPy
+`minimize_scalar(method="bounded")`) minimises $-(v - v_0)/v_0$ with a finite penalty $+1.0$ for an
+infeasible point ($v_0 = 1$ when the base gross is 0), `xatol` $= \max(1, \text{tol}/2)$ grid units.
+The winner is the best **exact cached** point: higher gross, then $t = 0$, then smaller $|t|$, then
+smaller $t$. A strictly higher gross is accepted, checked by the evaluator's structural plan check
+(no quotes) and held at once; `rounds` rounds stop early after a round with no acceptance.
+
+### 23.3 Concise Pseudocode
+```python
+def solve_split_polish(case, base_strategy, budget):
+    base = base_strategy.solve(case, budget)              # same worker meter, same budget
+    if objective != gross_only: return unsupported("objective")
+    if base.status != ok: return base                     # base statuses pass through
+    ledger = Ledger(cap=budget.max_quotes, used=base_quotes, deadline=start + time_limit)
+    plan, produced = canonicalise(base.evaluation.trace)
+    shares = exact_shares(plan, produced)                 # Fraction(amount, produced)
+    if shares is None: return base with scope="unsupported_topology"
+    assert simulate(shares) == base                       # reconstruction (charged)
+    try:
+        for _ in range(rounds):
+            improved = False
+            for fund in split_funds:                      # order of first consumption
+                for i < j in consumers(fund):
+                    v, t = best_cached(line_search(lambda t: simulate(shares moved by t)))
+                    if v > incumbent.gross and structurally_valid(canonical(t)):
+                        incumbent = canonical(t); publish(incumbent); improved = True
+            if not improved: break
+    except PolishStop as stop:                            # max_quotes or time
+        truncated_by = stop.reason                        # status stays ok
+    return base if incumbent is base else incumbent
+```
+
+### 23.4 Architecture and Topology Diagram
+```mermaid
+flowchart TD
+    B["base strategy solve<br>(same meter, budget)"] --> S{"base ok?"}
+    S -- no --> P["pass the base status through"]
+    S -- yes --> C["canonicalise the trace<br>exact Fraction shares"]
+    C --> D{"every consumed fund<br>fully consumed?"}
+    D -- no --> U["ok, base plan,<br>scope unsupported_topology"]
+    D -- yes --> R["reconstruction check<br>(charged)"]
+    R --> L["pairwise line search<br>t=0, both endpoints, grid interior"]
+    L --> A{"gross strictly higher<br>and structurally valid?"}
+    A -- yes --> H["incumbent holder<br>report_candidate"] --> L
+    A -- no --> L
+    L -. ledger exhausted .-> T["ok, last incumbent,<br>truncated_by"]
+```
+
+### 23.5 Hand-Worked Numeric Example
+Checked by `tests/routing/test_split_polish.py::test_the_documented_worked_example` (and the same
+fixture is the contract's F7). Request 300 S → T through three fee-free CPMM pools, reserves
+`a` $1000/2000$, `b` $1000/100$, `c` $1000/100$, base plan 100 / 100 / 100:
+
+| Step | Plan | Outputs | Gross |
+|---|---|---|---:|
+| base | `a` 100, `b` 100, `c` 100 | 181, 9, 9 | **199** |
+| pair (`a`, `b`): best at the endpoint $t = -s_b = -1/3$ (`b` emptied into `a`) | `a` 200, `c` 100 | 333, 9 | **342** |
+| pair (`a`, `c`): best at $t = -s_c$ (`c` emptied into `a`) | `a` 300 | 461 | **461** |
+| pair (`b`, `c`): both shares 0, only $t = 0$ | unchanged | | 461 |
+| round 2: nothing accepted, stop | | | 461 |
+
+Each accepted plan is published as it is accepted. With the nominee (Brent, 2 rounds, tolerance
+$10^{-4}$, $D = 10^9$, `maxiter` 60) the call makes 92 simulations and 197 quotes (3 of them the
+reconstruction); golden makes 99 simulations and 210 quotes, with the same result. Under a quote cap
+the last accepted plan survives: cap 50 keeps 199, cap 80 keeps 342, cap 140 keeps 461 (golden).
+Both endpoints matter here, since the best split is a corner, and the interior grid would only
+approach it.
+
+On the tuning split (96 cases, `incremental_graph` c50 under `config/full_gross.yaml`) the nominee
+reproduces the pinned probe outputs case by case (`probe/results/ig_b2.json.gz`): 72 of 96 cases
+improve, by +0.473 bps on average (contract §7). That figure is tuning evidence, not a campaign result.
+The campaign result is the report split's: 199 of 291 scored cases improve, by +0.447 bps on average
+(§23.9).
+
+### 23.6 Implementation Map
+- File: `routing/algorithms/split_polish.py`: `validate_split_polish_options`, `validate_options`
+  and `Settings` (options), `graph_params_for` (the base's `graph.*` keys, WHI-1626), `prepare`
+  (the base's own `prepare` on exactly its own run's configuration, below), `Ledger`
+  (shared quote cap and cooperative deadline), `Topology`, `canonical_from_evaluation`,
+  `shares_or_refusal`, `simulate`, `canonical_plan`, `Incumbent`, `rebuild`, `line_search`
+  (`_golden`, `_brent`), `polish`, `polish_plan` (the E1 driver on an evaluated plan) and `solve`.
+  These are the seams WHI-1624 (`marginal_activation`, E2) reuses.
+- Registry: `routing/algorithms/registry.py`. Report label: `report/aggregate.py::algorithm_label`.
+- Contract and tests: `docs/references/research-023/contract.md` §3, §4, §6, §9;
+  `tests/routing/test_split_polish.py` (probe fixtures F1–F9, F13, the §9 gates, CLI, tuning
+  reproduction behind `ROUTER_TUNING_BUNDLE`); `tests/routing/test_split_polish_bases.py` (the
+  M4/S4/REP bases: configuration forwarding, the E1 gates per base, base row == the base's own run
+  on the tracked corpus and, behind `ROUTER_TUNING_BUNDLE`, on the tuning split).
+
+### 23.7 Parameters, Budgets, and Ties
+- **Options** (`algorithm_options.split_polish`, all six required, no preset, no defaults):
+  `base` (`incremental_graph`, `path_split`, `metis_inspired`, `metis_history` or
+  `incremental_graph_repair`), `solver` (`brent` or `golden`), `rounds` (1–16),
+  `tolerance` (share of a fund, converted exactly to grid units), `grid` ($D$), `maxiter`. Nominee:
+  `incremental_graph`, `brent`, 2, 0.0001, 1000000000, 60; golden with 2 rounds is the solver control.
+- **The base runs as its own registered identity** (WHI-1626). It gets exactly the configuration
+  its own run gets under the same profile, from one source each:
+  - **Profile keys:** `search.max_hops`, `max_splits`, `percent_step` and `graph.chunks` whatever
+    the base, plus the base's own `graph.*` keys: `label_hops` and `label_pruning` for
+    `metis_inspired`, `label_hops` for `metis_history`. The loader requires them and hands them over
+    through the factory hook `graph_params_for` (no other identity sets it).
+  - **`base_options`:** the base's own `algorithm_options`, checked by the base's own validator
+    (reserved shared keys refused). Required for `metis_history` and `incremental_graph_repair` (no
+    default: write the pinned preset out to use it), refused for the other three bases. A profile
+    that also lists the base keeps the base's own entry for the base's own run; `split_polish` never
+    reads it. One profile holds one `split_polish` entry, so each base is its own profile.
+  - `CAPABILITIES` and `SEARCH_PARAMS` stay `incremental_graph`'s: exactly those of the three new
+    bases; `path_split`'s are narrower and covered.
+  - `marginal_activation` (§24) still accepts only `incremental_graph` and `path_split`.
+- **Budgets:** one ledger with the base: the polish may spend `max_quotes` minus the base's quotes,
+  and stops cooperatively at `time_limit_seconds` after the solve started. A cooperative stop is `ok`
+  with `search.split_polish.truncated_by` (`max_quotes` or `time`); budget 0 returns the base result
+  itself. The runner's hard limits keep `timeout`.
+- **Statuses:** a non-gross objective is `unsupported` (`scope: objective`, the base never runs); a
+  base status other than `ok` passes through; `scope: unsupported_topology` returns the base result.
+- **Ties:** higher gross, then $t = 0$, smaller $|t|$, smaller $t$; equality never replaces the
+  incumbent, so a flat plateau keeps the base plan.
+
+### 23.8 Computational and Memory Cost
+- **Quotes:** each evaluated point is one full plan simulation (one quote per positive step). A pair
+  costs 3 points plus the solver's interior evaluations (at most `maxiter` + a few for Brent); a
+  round costs $\sum_f \binom{n_f}{2}$ pairs. Every quote is charged to the shared ledger, the
+  reconstruction included; cached points ($t$ keys) are not re-simulated within a pair.
+- **Memory:** the base's, plus one exact-share vector per split fund and the per-pair point cache.
+- **Measured work** (report split, the untimed work pass of [`research-023/results.md`](research-023/results.md)):
+  on A0, `split_polish` executes 1.276× its base's quotes but only 1.014× its CL swap steps and
+  1.072× its LB bins swapped, because a polish quote re-quotes the pools of a finished plan at nearby
+  amounts. The golden solver control spends a median 1.207× Brent's polish quotes (p95 1.432) for
+  practically the same gross (§23.9, Q5).
+- **Time** is not claimed.
+
+### 23.9 Guarantees and Limitations
+- **Guarantees:** never worse than the base; every returned plan is the evaluator-valid incumbent
+  of exact integer replay (structurally checked before it is held); a cooperative stop keeps the last
+  incumbent and is never `no_route`.
+- **Limitations:**
+  - **Local.** Pairwise 1-D searches over a fixed topology: no new pools, no new routes, no global
+    optimum. A narrow feasible island can stop Brent short of its edge (golden may reach it, or not:
+    with both first golden probes infeasible it keeps the base).
+  - **Additive, not a replacement.** On the tuning split it loses to finer chunking case by case
+    (contract §7), and the report split confirms it (Q2 below); it is a post-processor.
+  - **Bases:** the five above only. On the tuning split no plan of the three new bases falls
+    outside the E1 domain, so `unsupported_topology` there is exercised only by a hand-built plan.
+    The base row equals the base's own run on every tuning case (no probe target existed for these
+    bases, contract §13). On the report split E1 improves 214, 214 and 199 of 291 scored cases on
+    M4, S4 and REP (Q1 below).
+
+**Measured on the report split (WHI-1627, contract §8).** [`research-023/results.md`](research-023/results.md)
+reports one frozen pass of 23 arms over the 302 cases of the report split. The arms are contract
+§8's: the references A0, C100 and C200 (`incremental_graph` with 50, 100 and 200 chunks), M4
+(`metis_inspired`, label hops 4), S4 (`metis_history`), REP (`incremental_graph_repair`) and PS
+(`path_split`); `split_polish(B)` on each base B except C200, with golden on A0 as the solver control;
+and E2 (§24.9). Every arm runs `config/full_gross.yaml`'s search (3 hops, 4 splits, 5 %) and its
+900 s / 300,000-quote budget. Each arm has 301 `ok` cells and 1 `no_route` (the same case in every
+arm). 10 cases have a zero gross baseline; they are
+counted apart and kept out of every bps figure, so the scored denominator below is 291 of the 302
+scheduled cases. H/E/L counts the scored cases where the first plan is higher / equal / lower, and
+"pairs net + / −" counts the 32 directed token pairs whose cases are net higher / net lower. Every
+E1 and E2 record's base row equals its reference arm's record of the same case (16 arms × 302 cases,
+0 differences), so Q1 compares identical bases. Nothing here is a p-value: the cases share 32
+directed pairs and one block.
+
+Q1, `split_polish(B)` against its own base B (the Brent nominee):
+
+| Base B | Scored / scheduled | H/E/L | Mean bps | p50 | p95 | Pairs net + / − |
+|---|---|---|---|---|---|---|
+| A0 (`incremental_graph`, chunks 50) | 291 / 302 | 199/92/0 | 0.447 | 0.072 | 1.915 | 26 / 0 |
+| C100 (`incremental_graph`, chunks 100) | 291 / 302 | 205/86/0 | 0.329 | 0.074 | 1.608 | 27 / 0 |
+| M4 (`metis_inspired`) | 291 / 302 | 214/77/0 | 0.494 | 0.129 | 2.383 | 29 / 0 |
+| S4 (`metis_history`) | 291 / 302 | 214/77/0 | 0.529 | 0.112 | 2.422 | 29 / 0 |
+| REP (`incremental_graph_repair`) | 291 / 302 | 199/92/0 | 0.454 | 0.071 | 2.336 | 26 / 0 |
+| PS (`path_split`) | 291 / 302 | 181/110/0 | 0.224 | 0.018 | 0.865 | 22 / 0 |
+
+Q2 (against finer chunking) and Q5 (between the solvers):
+
+| Comparison | Scored / scheduled | H/E/L | Mean bps | p50 | p95 | Pairs net + / − |
+|---|---|---|---|---|---|---|
+| `split_polish(A0)` vs C100 | 291 / 302 | 84/85/122 | 0.472 | 0.000 | 3.856 | 8 / 18 |
+| `split_polish(A0)` vs C200 | 291 / 302 | 63/79/149 | 0.682 | -0.004 | 9.015 | 7 / 19 |
+| golden E1 (A0) vs C100 | 291 / 302 | 83/86/122 | 0.468 | 0.000 | 3.854 | 8 / 18 |
+| golden E1 (A0) vs C200 | 291 / 302 | 61/80/150 | 0.678 | -0.006 | 9.019 | 6 / 20 |
+| Brent E1 (A0) vs golden E1 (A0) (Q5) | 291 / 302 | 107/110/74 | 0.004 | 0.000 | 0.019 | 15 / 8 |
+
+- **Never below the base.** On all six bases E1 has 0 lower cases, and it improves 181 to 214 of the
+  291 scored cases.
+- **Not a substitute for finer chunking.** As the tuning split predicted, `split_polish(A0)` loses to
+  C100 and C200 on cases and on directed pairs. Its mean is still positive because of a long right
+  tail where the coarse base had left a large mis-split: p5 −1.422 / −1.768 bps, p95 3.856 / 9.015 bps
+  against C100 / C200.
+- **Brent or golden.** The two solvers reach practically the same gross; golden spends more polish
+  quotes (§23.8).
+- **Disposition (contract §10): `keep_experimental`.** Every gate passed on every E1 arm: 0 invalid
+  plans, 0 never-worse violations against the identical base record, 0 ledger ≠ seam counts, 0
+  `unsupported_topology` refusals, 0 reconstruction errors. 2 of the 302 C100 cells stopped
+  cooperatively at `max_quotes` (the base had spent most of the shared ledger) and return the last
+  validated incumbent. `keep_experimental` is not adoption: `split_polish` stays opt-in and
+  profile-selected, and no default changes.
+- **Evidence boundaries (contract §8).** Report split `previously_exposed` (0.1.0, 0.2.0, 0.2.1,
+  0.2.2); tuning-informed nominees; pinned source, settings and analysis hashes; every scheduled
+  status kept; one block; no speed claim without L01; no new-block generalisation. Every figure above
+  is `campaign/report-analysis.json`'s, rounded as `campaign/report-tables.md` renders it
+  (`r023_examples.py` section 26).
+
+**Why the measured gain is small next to Jupiter's announcements.** The Jupiter material that
+motivated E1 (contract §1; quotations and pins in [`research-023/sources.md`](research-023/sources.md))
+announces much larger numbers than the +0.447 bps measured here. Read against the sources
+themselves, none of them quantifies a large split gain:
+
+1. **"100x" is not a split-quality figure.** U1 (Ultra V3) says "We are seeing 100x performance
+   improvements with these changes compared to our sunsetted Metis router". The page does not define
+   the metric. The comparator is the retired Metis router (by chronology pre-v7 Metis, which the
+   contract marks as an inference), and "these changes" are a bundle: Iris, golden-section and Brent
+   splitting, splitting "up to 0.01%". The contract uses the claim as motivation, never as a target.
+   Its one transferable idea, precision decoupled from evaluation count, is what Q5 measures.
+2. **Jupiter's only quantified price figure is +0.63 bps.** QE reports that "Jupiter swaps execute
+   with an average of +0.63 bps positive slippage", the figure U1 also gives for its October 2025
+   window. It compares execution with the quote; it is not a measured gain of one routing algorithm
+   over another.
+3. **The within-support split is the small lever in the literature too.** P1 (Xi & Moallemi), on
+   pools of a single token pair, measures "an average shortfall of 2.02 bps per trade". Mis-splitting
+   within the activated set accounts for a mean of 0.05467 bps of it, and "insufficient pool activation
+   dominates". E1 acts only on that within-support split; activation is E2's lever, and here too it is
+   the larger one (§24.9).
+4. **Strong exact bases already capture most of the split value here.** Every base is an exact
+   integer router that already splits. E1's mean gain falls from +0.447 bps on A0 (chunks 50) to
+   +0.329 on C100 (chunks 100), finer chunking alone beats `split_polish(A0)` on counts (Q2), and
+   against M4 and S4 even E2's mean is negative (§24.9).
+5. **Jupiter's dynamic, execution-layer and venue mechanisms are outside an offline replay.**
+   Contract §1 ("Mantle mapping") and §11 put RTSE, predictive execution, JIT on-chain re-split,
+   Beam/MEV, RFQ/Prop AMM and dynamic intermediates out of scope (dynamic state, execution layer or
+   absent venues), and defer Fast Mode, exact per-tick caching and a charged portfolio as static
+   follow-ups. A frozen, single-block, gross-only replay measures none of them.
+
+The measured gain is therefore small because the lever this release can act on, the split of a
+finished plan's own routes, is a small part of routing quality (P1, Q1), and the bases here leave
+little of it (Q1, Q2). The sourced Jupiter figures measure other things.
+
+## 24. Algorithm 19: `marginal_activation` (Branch Activation After Split Polishing; Jupiter-Inspired, NOT Jupiter Metis)
+
+### 24.1 Problem and Inclusion Rationale
+`split_polish` (§23) can only move flow between routes the base plan already uses. A pool the base
+never touched stays at zero, even when a small amount through it would beat the marginal rate of
+the existing routes. `marginal_activation` (WHI-1624, contract `R023-C/1` §3, §5, §6, E2) runs E1 and
+then **activates** up to K new branches: a small-amount label search on the post-plan pool states
+proposes paths, each is appended to the plan, re-split, and kept only if an independent replay
+confirms a strict gain with positive flow on the new branch. The closest published precedent is
+PRIME-Flow (overlapping paths, a split between the current flow and a new path, contract §1 P2).
+
+- **Identity:** experimental, `custom` group, selected only by a profile that names it (`--strategies
+  all` does **not** add it). Label: "Jupiter-inspired (Ultra V3 / Metis v7 Brent splitting), **NOT
+  Jupiter Metis**". Gross-only.
+- **What is claimed:** never worse than the base plan it ran on, and every returned plan is an
+  evaluator-valid exact integer plan. **Not claimed:** optimality (a heuristic label oracle and local
+  line searches; not SCO, not FVO), Jupiter equivalence, any speedup.
+
+### 24.2 Mathematical Model and Assumptions
+**Domain.** E1's fixed funding topology (§23) plus appended branches. A plan E1 refuses
+(`unsupported_topology`) is returned unchanged. A pool the plan already uses can be part of a new
+branch: it then executes again, after the plan's own use, on the state that use left
+(`shared_sequential`).
+
+**Proposal.** With the incumbent's post-plan pool states (one charged simulation), a hop-layered,
+token-simple label search starts at `token_in` with $\delta = \max(1, \lfloor A \cdot
+\texttt{delta\_share} \rfloor)$. Each layer keeps one label per token (a strictly larger output
+replaces it; ties keep the first in sorted order), up to $H$ = `search.max_hops` layers; every path
+reaching `token_out` is a terminal. Every relaxation is a fresh charged quote on the post-plan
+state. The `top_k` best terminals (larger output, then the path) are tried in rank order.
+
+**Admission.** The branch is appended after the incumbent's canonical steps under a fund-id prefix
+no existing fund id starts with. The union is admitted only if the token graph over **all** union
+steps is acyclic (`dag_cycle` otherwise): then no reallocation inside the union can create a cycle.
+
+**Seed and re-split.** PF mode seeds proportionally: the original REQUEST shares $w$ become
+$w \cdot (1 - s_0)$ and the branch gets $s_0$. It then searches one grouped variable
+$t \in [0, 1]$ over $w \cdot (1 - t) \oplus t$ with E1's line search ($t = 0$ is the original plan
+exactly, $t = 1$ sends everything into the branch; intermediate funds stay fixed). Full mode seeds
+by taking $s_0$ from the largest REQUEST consumer (lowest index on ties) and runs one complete E1
+polish call over every fund of the union (the ablation).
+
+**Acceptance.** The candidate is accepted iff (1) the branch's first hop has a positive integer
+input, (2) its gross is strictly higher than the incumbent's, and (3) an evaluator replay,
+**charged to the attempt ledger**, equals the simulated gross. The topology is then rebuilt from the
+canonical plan (zero steps dropped). Otherwise the next terminal is tried. The iteration stops after
+K activations, when no terminal is accepted (`stop_no_candidate`), or when the budget ends (the
+caught reason is kept).
+
+### 24.3 Concise Pseudocode
+```python
+def solve_marginal_activation(case, base_strategy, budget):
+    incumbent, ledger = split_polish_stages(case, base_strategy, budget)   # §23, one ledger
+    if refused(incumbent): return base                                       # unsupported_topology
+    if e1_truncated: return incumbent with not_reached="E1 truncated"
+    for it in range(K):
+        states = simulate(incumbent).post_states                             # charged
+        for rank, path in enumerate(top_paths(states, delta, H, top_k)):    # charged quotes
+            union = incumbent.steps + branch(path, fresh_prefix(it))
+            if has_token_cycle(union): log("dag_cycle"); continue
+            cand = seed(union, s0, mode)                                     # PF or donor
+            cand = pf_split(cand) if mode == "pf" else polish(cand)          # charged
+            if first_hop_flow(cand) > 0 and cand.gross > incumbent.gross \
+                    and evaluate(cand, quote=ledger.quote).gross == cand.gross:
+                incumbent = rebuild(cand); publish(incumbent); break
+            log("no_gain_or_zero_flow" or "replay_mismatch")
+        else:
+            log("stop_no_candidate"); break
+    return incumbent                                                          # PolishStop: ok
+```
+
+### 24.4 Architecture and Topology Diagram
+```mermaid
+flowchart TD
+    E["split_polish stages<br>(base + E1, one ledger)"] --> R{"E1 reached<br>its end?"}
+    R -- no --> N["ok, E1 incumbent,<br>not_reached: E1 truncated"]
+    R -- yes --> P["post-plan states<br>delta label search"]
+    P --> C["next ranked terminal"]
+    C --> D{"union token<br>graph acyclic?"}
+    D -- no --> C
+    D -- yes --> S["seed (PF / donor)<br>re-split (PF / polish)"]
+    S --> A{"flow > 0, gross higher,<br>charged replay equal?"}
+    A -- yes --> H["rebuild, publish"] --> P
+    A -- no --> C
+    C -. none left .-> T["stop_no_candidate"]
+```
+
+### 24.5 Hand-Worked Numeric Example
+Checked by `tests/routing/test_marginal_activation.py::test_the_documented_worked_example`. Request
+$A = 10^6$ S → T through two fee-free CPMM pools `p` and `q`, both with reserves $10^7 / 10^7$;
+the base plan sends everything through `p`. Nominee settings (PF, K = 2, top-3, $\delta$ and $s_0$
+from 0.0001, Brent, $H = 3$).
+
+| Step | What happens | Gross |
+|---|---|---:|
+| base | `p` 1,000,000 → 909090 | **909090** |
+| E1 | one consumer, nothing to split (the reconstruction is its only quote) | 909090 |
+| iteration 1, proposal | $\delta = 100$; on the post-plan state `p` gives 82, the untouched `q` 99: `q` ranks first | |
+| seed | `p` 999900, `q` 100 | 909107 |
+| PF search over $t$ | best at $t = 1/2$: `p` 500000 → 476190, `q` 500000 → 476190 | **952380** |
+| acceptance | first-hop flow 500000 > 0, 952380 > 909090, the charged replay gives 952380: accepted, `novel_pools=1` | 952380 |
+| iteration 2 | $\delta$ gives 90 on both post-plan states; each branch reuses a pool (`shared_sequential`); no strict gain for either: `stop_no_candidate` | 952380 |
+
+The activation stage makes 203 quotes and 72 simulations in 3 optimiser invocations; full mode
+reaches the same plan with 861 quotes and 305 simulations. The controls show why the gain is the
+activation's: from the same E1 incumbent, the work-matched control (target 203 quotes) and the
+call-matched control (3 polish calls) both stay at 909090 with 0 quotes, since E1 has nothing to
+split.
+
+On the tuning split (96 cases, `incremental_graph` c50 under `config/full_gross.yaml`) the PF nominee
+reproduces the pinned probe output case by case, controls included (`probe/results/ig_actpf.json.gz`):
+85 of 96 cases improve on the base, and activation is +0.199 bps over the work-matched control
+(74 better / 3 worse, contract §7). Those figures are tuning evidence, not a campaign result. The
+campaign result is the report split's: PF (A0) is +0.210 bps over its work-matched control, 209/78/4
+of 291 scored cases (§24.9).
+
+### 24.6 Implementation Map
+- File: `routing/algorithms/marginal_activation.py`: `validate_options` and `Settings` (options),
+  `prepare` (the base's own `prepare`, the pool adjacency), `top_paths` (label search),
+  `fresh_prefix`, `union` (admission and seed), `pf_split`, `accepts` (the three-part rule),
+  `activate` and `run_activation` (the iteration), `ControlLedger`, `Snapshot` and `run_control`
+  (§5.3 controls) and `solve`.
+- Reused from `routing/algorithms/split_polish.py` unchanged: `Ledger`, `PolishStop`, `Topology`,
+  `simulate` (its post-plan states are the evaluator's `next_states`), `canonical_plan`,
+  `Incumbent`, `rebuild`, `line_search`, `polish`, `polish_plan`, `BASES`.
+- Registry: `routing/algorithms/registry.py`. Report label: `report/aggregate.py::algorithm_label`.
+- Contract and tests: `docs/references/research-023/contract.md` §3, §5, §6, §9;
+  `tests/routing/test_marginal_activation.py` (probe fixtures F10–F12, F14–F16, the §9 E2 gates,
+  controls, CLI, tuning reproduction behind `ROUTER_TUNING_BUNDLE`).
+
+### 24.7 Parameters, Budgets, and Ties
+- **Options** (`algorithm_options.marginal_activation`, all twelve required, no preset): E1's six
+  (§23), `mode` (`pf` or `full`), `activations` (K, 1–16), `top_k` (1–16), `delta_share` and
+  `seed_share` (exact decimals; $\delta = \max(1, \lfloor A \cdot \texttt{delta\_share} \rfloor)$),
+  and `arm` (`treatment`, `work_matched`, `call_matched`). Nominee: the E1 nominee with `pf`, 2, 3,
+  0.0001, 0.0001, `treatment`. $H$ is the profile's `search.max_hops`.
+- **Budgets:** one ledger with the base and E1 (§23). The label search, every simulation and the
+  acceptance replay are charged. A cooperative stop is `ok` with
+  `search.marginal_activation.truncated_by`; if it happens before E1 ends, the row is labelled
+  `not_reached = "activation/control not reached: E1 truncated"` and keeps the last E1 incumbent.
+- **Controls (campaign arms, contract §5.3).** A control arm runs base and E1 on its own ledger,
+  then the treatment's activation stage as an uncharged reference under a nested quote meter
+  (recorded under `activation`, `charged: false`), then the control from the E1 incumbent on a
+  `ControlLedger` pre-charged with base + E1, under the same global cap and a wall allowance equal
+  to the treatment's after base + E1. `work_matched`: E1 polish calls until the reference's
+  activation quotes (hard `work_target` stop) or a call that improves nothing. `call_matched`:
+  exactly the reference's optimiser invocations, each a full polish call (`calls_started` and
+  `calls_completed`). The record's quote count is base + E1 + the control's own quotes.
+- **Ties:** label ties keep the first label in sorted order; terminals rank by output, then path;
+  line-search ties as in §23; an equal gross never replaces the incumbent.
+
+### 24.8 Computational and Memory Cost
+- **Quotes:** per iteration, one simulation of the incumbent, at most one quote per (layer, token,
+  edge) relaxation, and per tried terminal one seed simulation plus the optimiser (PF: one line
+  search, i.e. 3 points plus at most `maxiter` interior points; full: a complete E1 polish call over
+  the union) plus, for a candidate that passes the flow and gain checks, one replay.
+- **Memory:** E1's, plus the pool adjacency of the bundle and one union topology at a time.
+- **Measured work** (report split, the untimed work pass of [`research-023/results.md`](research-023/results.md)),
+  against the A0 base: PF (A0) executes 1.305× its quotes, 1.046× its CL swap steps and 1.079× its
+  LB bins swapped; full (A0) 2.260×, 1.448× and 1.283×, the only arm with a large physical cost.
+- **Time** is not claimed.
+
+### 24.9 Guarantees and Limitations
+- **Guarantees:** never worse than the base; an accepted activation has positive first-hop flow, a
+  strictly higher gross and an equal charged replay; a cooperative stop keeps the last incumbent and
+  is never `no_route`; a control never spends past its `work_target` and makes exactly the
+  treatment's invocations unless its own budget ends first.
+- **Limitations:**
+  - **Heuristic oracle.** One label per (layer, token): the top-3 terminals are not the global top-3
+    admissible paths, and a path refused for a cycle is not repaired (no merge-by-token
+    reparameterisation, no cycle unlock by deactivation).
+  - **Local re-split.** PF fixes the intermediate funds; full mode is a local pairwise search.
+  - **Control-arm timing.** A control arm also runs the treatment's activation stage as its
+    reference, so its solve time includes it; the runner's hard time limit still applies to the
+    whole solve.
+  - **Bases:** `incremental_graph` and `path_split` only (§23.7); the campaign ran E2 on
+    `incremental_graph` with chunks 50 and 100 (A0, C100).
+
+**Measured on the report split (WHI-1627, contract §8).** The denominators are §23.9's: 302 scheduled
+cases per arm, 291 scored after the 10 zero-gross baselines. In 2 rows of each C100 E2 arm, E1 stopped
+at `max_quotes` before the activation stage, so the row is labelled `not_reached` ("activation/control
+not reached: E1 truncated"). These 2 PF-C100 rows stay in the 302 denominators, are excluded from the
+scored H/E/L in every comparison and are never counted as matched, so PF (C100) is scored on 289 cases.
+
+Q3, the activation against its matched controls (each control starts from the same E1 incumbent,
+contract §5.3):
+
+| Treatment vs control | Scored / scheduled | H/E/L | Mean bps | p50 | p95 | Pairs net + / − |
+|---|---|---|---|---|---|---|
+| PF (A0) vs work-matched | 291 / 302 | 209/78/4 | 0.210 | 0.060 | 0.948 | 28 / 1 |
+| PF (A0) vs call-matched | 291 / 302 | 202/79/10 | 0.195 | 0.053 | 0.945 | 28 / 0 |
+| full (A0) vs work-matched | 291 / 302 | 208/76/7 | 0.257 | 0.059 | 1.027 | 28 / 1 |
+| full (A0) vs call-matched | 291 / 302 | 208/78/5 | 0.258 | 0.059 | 1.027 | 28 / 0 |
+| PF (C100) vs work-matched | 289 / 302 | 195/88/6 | 0.146 | 0.044 | 0.564 | 28 / 0 |
+| PF (C100) vs call-matched | 289 / 302 | 186/87/16 | 0.130 | 0.040 | 0.559 | 27 / 0 |
+
+Q4, `marginal_activation` against the references (H/E/L, mean bps; the C100 column of PF (C100) is its
+own base):
+
+| Treatment | vs C100 | vs C200 | vs M4 | vs S4 | vs REP |
+|---|---|---|---|---|---|
+| PF (A0) | 170/56/65, +0.685 | 116/56/119, +0.895 | 143/52/96, -0.747 | 141/51/99, -1.986 | 233/56/2, +0.622 |
+| PF (C100) | 235/54/0, +0.479 | 175/54/60, +0.691 | 156/50/83, -0.962 | 150/49/90, -2.210 | 212/54/23, +0.416 |
+| full (A0) | 183/56/52, +0.748 | 134/56/101, +0.958 | 146/52/93, -0.684 | 145/51/95, -1.923 | 233/56/2, +0.685 |
+
+- **The activation survives both controls.** Every E2 arm beats both of its matched controls. The
+  controls themselves add only +0.002 to +0.019 bps over E1: more polishing on the same budget buys
+  almost nothing. Over all iterations PF (A0) accepts 395 activations in 210 cases; 111 candidates are
+  refused as `dag_cycle`, 159 are `no_gain_or_zero_flow`, 116 iterations stop without a candidate, and
+  0 stop on the budget.
+- **Mixed against M4 and S4.** Against the `incremental_graph`-family references (C100, C200, REP)
+  E2 is higher in more cases than it is lower, except PF (A0) against C200 (116/56/119); PF (C100)
+  vs C200 has 26 / 3 directed pairs net + / −. Against M4 and S4 it is also higher in more cases,
+  but its **mean is negative** (PF (C100): −0.962 bps vs M4, −2.210 vs S4): on a few cases M4's and
+  S4's label searches find much better routes (p5 about −10 bps), which a refinement of an
+  `incremental_graph`-family plan does not reach. E2 is never below its own base (PF (C100) vs C100:
+  235/54/0).
+- **Disposition (contract §10): `keep_experimental`.** Every gate passed. Both controls are matched
+  in every matched row: 0 above the work target, 0 call-count mismatches, 0 embedded-activation or
+  target mismatches. At most 6 of an arm's 302 cells stopped at `max_quotes`: `E2full-A0`, and the
+  call-matched control `E2pf-C100-cm` counting its 2 E1-truncated rows. `keep_experimental` is not
+  adoption: the identity stays opt-in and profile-selected, the controls are campaign arms only, and
+  no default changes.
+- **Evidence boundaries** are those of §23.9 (contract §8), and every figure is
+  `report-analysis.json`'s as `report-tables.md` renders it (`r023_examples.py` section 26).
+- **Why the gain is small next to Jupiter's announcements:** §23.9. Activation is the lever P1 finds
+  dominant, and it is the larger lever here too, but its measured size is still a fraction of a bps.
