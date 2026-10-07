@@ -19,7 +19,10 @@ CL stages) -- through their registered factories, and all seventeen `--strategie
 the same fixed-block fixture (the fourteen 0.2.1 rows plus the three 0.2.2 bounded strategies),
 then (sections 18-22, WHI-1601, `r022_examples.py`) the 0.2.2 upper-bound pruning examples:
 per-pool bounds, `single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`
-and the roster / preset checks.
+and the roster / preset checks, then (sections 23-26, WHI-1628, `r023_examples.py`) the 0.2.3
+post-processors: the `split_polish` and `marginal_activation` worked examples, the same
+fixed-block request through an explicit profile that names them, and the research-023 campaign
+figures read from the committed `report-analysis.json`.
 
 Run with:
     uv run python docs/examples/routing-algorithms/run_examples.py
@@ -38,6 +41,7 @@ for _path in (ROOT, HERE):
 
 import r021_examples  # noqa: E402  (sections 12-17: the 0.2.1 strategies, WHI-1561)
 import r022_examples  # noqa: E402  (sections 18-22: upper-bound pruning, WHI-1601)
+import r023_examples  # noqa: E402  (sections 23-26: the 0.2.3 post-processors, WHI-1628)
 
 from benchmark.objective import gross_only  # noqa: E402
 from benchmark.profile import load_profile  # noqa: E402
@@ -648,6 +652,11 @@ def run_all() -> None:
     # 18-22. The 0.2.2 upper-bound pruning examples (WHI-1601): r022_examples.py
     # -------------------------------------------------------------
     r022_examples.run_all()
+
+    # -------------------------------------------------------------
+    # 23-26. The 0.2.3 post-processors (WHI-1628): r023_examples.py
+    # -------------------------------------------------------------
+    r023_examples.run_all()
 
 
 if __name__ == "__main__":
