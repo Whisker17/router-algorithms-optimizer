@@ -49,4 +49,4 @@ pythonpath = ["."]
 python_version = "3.12"
 strict = true
 # Mirror the wheel packages list once modules land:
-files = ["main.py", "snapshot", "pools", "routing", "benchmark", "report", "tests", "tools/upstream/uni_sor/author_inputs.py", "tools/research_021/analysis.py", "tools/research_021/campaign.py", "tools/research_022/pruning_analysis.py", "tools/research_022/pruning_campaign.py", "tools/research_022/pruning_work.py"]
+files = ["main.py", "snapshot", "pools", "routing", "benchmark", "report", "tests", "tools/upstream/uni_sor/author_inputs.py", "tools/research_021/analysis.py", "tools/research_021/campaign.py", "tools/research_022/pruning_analysis.py", "tools/research_022/pruning_campaign.py", "tools/research_022/pruning_work.py", "tools/research_023/r023_analysis.py", "tools/research_024/*.py"]

@@ -160,6 +160,18 @@ No loader code ships with the template — write it when the first config file l
   `full_gross.yaml` / `full.yaml` by `campaign.py profiles --write` (do not edit; `check`
   refuses drift) and run with `--strategies profile`. See
   `docs/references/research-021/preregistration.md`.
+- `research_024/selection.yaml` — the WHI-1631 preset-selection schedule of contract
+  R024-C/1 §5 (`docs/references/research-024/contract.md`): the tuning input and its hashes
+  (the report bundles are banned by name and hash), the P\* rendering, verbatim copies of
+  the contract's candidate grids (90 `split_polish`, 108 `marginal_activation`), objective,
+  work limit, ε and tie-break, the 13 registered R023 reuses and the two stages (T: the grid;
+  I: the preset runs and the chunk-sensitivity arms). Read only by
+  `tools/research_024/selection.py` (the rule is `tools/research_024/r024_rule.py`); `check`
+  refuses any difference from the contract registry. `research_024/profiles/*.yaml` are the
+  GENERATED P\*-rendered profiles of every candidate and reference arm (`ref-*`) and, once the
+  stage-T analysis is pinned, of the stage-I arms (`i-*`), written by `selection.py profiles
+  --write` (do not edit; `check` refuses drift) and run with `--strategies profile`. See
+  `docs/references/research-024/selection.md`.
 - `calibration/` — the WHI-1447 tuning-split calibration profiles: `probe-h3-*.yaml`
   (uncapped 3-hop demand probes), `sweep-base.yaml` and the `sweep-*.yaml` grid points
   generated from it by `main.py calibrate profiles` (do not edit; regenerate).
