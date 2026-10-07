@@ -212,17 +212,34 @@ candidates; they are sensitivity arms (§5.10).
 
 ### 5.4 Gates (per candidate, every tuning case)
 
-| Gate | Condition | Failure |
-| --- | --- | --- |
-| G1 completeness | ordinary run and work pass each have a complete manifest and exactly one record per tuning case | `ineligible: incomplete` |
-| G2 status pass-through | the candidate's status equals its base reference record's status on every case | `ineligible: status` |
-| G3 never-worse | on every case where the base reference is `ok`: candidate gross ≥ base reference gross | `defect` |
-| G4 base identity | per case, the recorded `search.base` (algorithm, status, quotes, search) equals the base reference record (algorithm, status, `quotes.counted`, search) and `search.<id>.base_gross` equals its gross (`R023` results §2) | `defect` |
-| G5 ledger | per `ok` case, `quotes.counted` = base quotes + `search.<id>.quotes` | `defect` |
-| G6 work-pass agreement | per case, the work-pass record's status, score and `evaluation` (canonical JSON: the runner's independent replay of the submitted plan) equal the ordinary record's, and `r022_work.quotes_executed` = `quotes.counted` | `defect` |
-| G7 independent evaluation and refusal | per `ok` case, the runner's `evaluation.gross_output` equals `search.<id>.gross`; an `unsupported_topology` refusal returns the base gross | `defect` |
+**Record branches.** A post-processor record (`split_polish`, `marginal_activation`, an E2 control) is
+classified by the fields it carries, never by defaults for missing fields (`split_polish.py::_solve`,
+`marginal_activation.py::_solve`; §12 `selection.record_branches` holds one example per branch, the
+first two taken from saved R023 records):
 
-"Gross" of a record is `int(evaluation.gross_output)` when its status is `ok`, else 0.
+| Branch | Recognised by | Produced by |
+| --- | --- | --- |
+| B0 `terminated` | `search.<id>` or `search.base` absent | a runner hard limit (`timeout`), a worker error, an `algorithm_error` |
+| B1 `base_passthrough` | `search.base.status` ≠ `ok` | the base's own non-`ok` status, returned unchanged (e.g. R023 `R-E1b-A0` `bnd-1bdd88-78c1b0-dust`: `no_route`, no `base_gross`) |
+| B2 `not_reached_before_polish` | `search.base.status` = `ok` and no `search.<id>.base_gross` | the cooperative budget ending while the base plan is replayed (`scope: not_reached`); the base result is returned |
+| B3 `polished` | `search.base.status` = `ok` and `search.<id>.base_gross` present | every other return: improved, unchanged, refused (`unsupported_topology`), truncated, E2 `not_reached` after E1 |
+
+**Gates** and the branches they apply to (§12 `selection.gate_applicability`; "n/a" = not evaluated):
+
+| Gate | Condition | B0 | B1 | B2 | B3 | Failure |
+| --- | --- | --- | --- | --- | --- | --- |
+| G1 completeness | ordinary run and work pass each have a complete manifest and exactly one record per tuning case | ✓ | ✓ | ✓ | ✓ | `ineligible: incomplete` |
+| G2 status pass-through | the record's status equals its base reference record's status | ✓ | ✓ | ✓ | ✓ | `ineligible: status` |
+| G3 never-worse | B2: gross = base reference gross; B3: gross ≥ base reference gross | n/a | n/a | ✓ | ✓ | `defect` |
+| G4 base identity | `search.base` (algorithm, status, quotes, search) equals the base reference record (algorithm, status, `quotes.counted`, search); B3 also `search.<id>.base_gross` = its gross | n/a | ✓ | ✓ | ✓ | `defect` |
+| G5 ledger | B1: `quotes.counted` = `search.base.quotes`; B2: `quotes.counted` ≥ `search.base.quotes` (the charged replay has no own-quotes field; the difference is reported); B3: `quotes.counted` = `search.base.quotes` + `search.<id>.quotes` | n/a | ✓ | ✓ | ✓ | `defect` |
+| G6 work-pass agreement | only for an arm with a work-pass twin, and only where neither twin is B0: status, score and `evaluation` (canonical JSON: the runner's independent replay of the submitted plan) equal, and `r022_work.quotes_executed` = `quotes.counted` | n/a | ✓ | ✓ | ✓ | `defect` |
+| G7 independent evaluation and refusal | status `ok`: `evaluation.gross_output` = `search.<id>.gross`; `scope: unsupported_topology`: `search.<id>.gross` = `base_gross` | n/a | n/a | n/a | ✓ | `defect` |
+
+A cell that is B0 in exactly one of the two twins (the work pass is slower) is not a defect: it is
+reported as `work_pass_terminated`, its work units are missing (never 0), and in the selection the
+candidate is `ineligible: work_pass_incomplete`. "Gross" of a record is `int(evaluation.gross_output)`
+when its status is `ok`, else 0.
 
 ### 5.5 Objective
 
@@ -251,7 +268,7 @@ candidates; they are sensitivity arms (§5.10).
 
 ### 5.7 The rule
 
-1. `E` = candidates that pass G1–G7 and the work limit.
+1. `E` = candidates with no `ineligible` and no `defect` outcome under §5.4 that pass the work limit.
 2. If `E` is empty: no selection (§5.8).
 3. `Q* = max_{x∈E} Q(x)`; tie band `T = {x ∈ E : Q(x) ≥ Q* − ε}`, **ε = 1/100 bps** (exact).
 4. **Winner** = the lexicographic minimum over `T` of
@@ -268,7 +285,8 @@ Per identity the outcome is exactly one of:
 - `selected`: the §5.7 winner;
 - `no_selection`: `E` empty, `|C⁺| = 0`, or a base reference arm unavailable (G1 failure of a
   reference after its retry);
-- `blocked_defect`: any candidate of the identity fails G3–G7. A 0.2.4 fix issue is filed (the
+- `blocked_defect`: any candidate of the identity has a `defect` outcome (G3–G7 on an applicable
+  branch, §5.4). A 0.2.4 fix issue is filed (the
   WHI-1629 escape clause). After the fix merges, the identity's whole grid is re-run from a newly
   pushed schedule at the fix commit, without reusing any pre-fix record; this rule applies unchanged.
 
@@ -433,14 +451,14 @@ C100/C200 arms, CFMM + E1). They are not re-run; their earlier results stand as 
 | C2 | Matched-success denominators per comparison: scheduled, common `ok`, only-A `ok`, only-B `ok` |
 | C3 | Zero-reference handling: baseline gross 0 counted apart (`zero_baseline_na`), excluded from bps |
 | C4 | Per-case distributions: n, mean, min, p5, p50, p95, max (nearest rank) and H/E/L |
-| C5 | Directed-pair families: net + / net − counts per comparison; a per-family table for each new identity vs its base and vs the best rankable other row |
+| C5 | Directed-pair families: net + / net − counts per comparison; a per-family table for each new identity vs its base control and vs **every** rankable other row (the C9(a) set), plus vs the C9(b) envelope labelled as an envelope |
 | C6 | Strata (`emp-` low / medium / large, `nod-`, `bnd-`) per comparison |
 | C7 | Truncation, refusal and fallback disclosures: `truncated_by`, `unsupported_topology`, `not_reached`, runner `timeout` by limit, last-valid candidates, each identity's own fallback counters |
 | C8 | Work units separately: `quotes`, CL swap steps, LB bins, and each identity's search counters; ratios only within one unit |
 | C9 | Comparisons: (a) each new identity vs each of the other 18 rows per cohort and split (rankable per §7.3, else the expanded-protocol section); (b) every row vs the per-case best of the rows rankable with it on its cohort (an oracle envelope, not a portfolio); (c) each new identity vs its base control |
 | C10 | Base control: per case, `search.base` equals the `BASE-*` record (G4) |
 | C11 | E2 attribution: E2 vs `E2-E1only`, vs `E2-wm`, vs `E2-cm`; target audit (work-matched quotes ≤ target; call-matched calls = treatment invocations); spend audit (embedded activation = treatment record; target = treatment spend); `not_reached` rows kept unmatched |
-| C12 | G3–G7 of §5.4 on every record of the new identities and their controls |
+| C12 | The gates of §5.4 per arm, on the branches they apply to, each against the base record of the **same cohort and split**: `Q19` `split_polish` / `marginal_activation` rows and a separate `E2-E1only` arm: G2–G7 (G6 with their `WP-*` twin); `E2-wm` / `E2-cm`: G2–G5 and G7, no G6 (no work pass, §7.2), plus the C11 audits and C14; `BASE-*` and the other `Q19` rows: completeness, C1 and C13 only (they are the base references the post-processors are checked against, C10) |
 | C13 | Work-pass reconciliation: every `WP-*` record equals its ordinary twin (status, score, `evaluation`) and executed = counted quotes |
 | C14 | Control work: `E2-wm` / `E2-cm` are excluded from physical-work and timing comparisons; their charged quotes and their embedded uncharged activation are reported as separate columns |
 | C15 | Cross-campaign determinism (descriptive): the 17 earlier identities' report-split records vs 0.2.2's (status, score, `evaluation`); differences listed |
@@ -567,12 +585,14 @@ with outcome `valid`. Nothing is said about the latency of an identity whose uni
 
 ### 9.1 Dispositions (R021 vocabulary; one per new identity, on the report split)
 
-- `reject`: any G3–G7 failure on any record of the identity or its controls; an invalid returned plan;
-  a control above its work target or not call-matched; a refusal whose gross differs from the base
-  record.
-- `inconclusive`: the gates pass but a question cannot be evaluated: more than 10 % of the identity's
-  scheduled `report_full` cases truncated (`truncated_by` set) or `unsupported_topology`, a base or
-  control arm missing, or a scheduled arm incomplete.
+- `reject`: a `defect` outcome of C12 (a §5.4 gate on an applicable branch) on any record of the
+  identity or its controls; an `invalid_plan` or `algorithm_error` where its base record of the same
+  cohort and split is not the same status; a control above its work target or not call-matched; a
+  refusal whose gross differs from the base record.
+- `inconclusive`: no `reject`, but a question cannot be evaluated: more than 10 % of the identity's
+  scheduled `report_full` cases are truncated (`truncated_by` set), `unsupported_topology`, branch B2,
+  or branch B0 where the base record is `ok` (a runner `timeout` is a budget outcome, not a defect); or
+  a base or control arm is missing; or a scheduled arm is incomplete.
 - `keep_experimental`: otherwise. No win is required.
 
 The timing verdict is separate (§8.6–§8.7) and never changes the disposition.
@@ -619,7 +639,7 @@ from committed ledgers and from raw records pinned by committed hashes; no new r
 | --- | --- |
 | Calibration | R022 stage L: `L-ref` (single_path, incremental_graph, metis_history) 3.78 h, `L-bnd` 2.99 h (`research-022/campaign/timing-ledger.jsonl`) = 1.94× and 1.72× those identities' report `full_source` solve hours |
 | Per-unit estimate (one attempt, ≈ 1.94 × report solve hours) | `U1` ≈ 3.5 h, `U2` ≈ 4.5 h, `U3` ≈ 3.9 h, `U4` ≈ 3.4 h, `U5` ≈ 4.5 h, `U6` ≈ 3.4 h, `UP` ≈ 6–11 h (depends on the selected bases), `UQ` < 0.5 h; **≈ 29–35 h for one attempt of every unit** |
-| Launch waits | up to 6 h per attempt; R022 needed 9 failed gates (≈ 45 min) |
+| Launch waits | up to 6 h per attempt; R022 needed 9 failed gates: ≈ 65 min from the first sample to the passing gate, of which 45 min were the 300-s re-sample sleeps |
 | Worst case | 3 attempts and 3 launch windows per unit (bounded, §8.4) |
 | Concurrency | 1 lane, nothing else on the host (§8.4) |
 
@@ -735,6 +755,38 @@ selection:
   rule:
     epsilon_bps: "1/100"
     tie_break: [quotes, cl_swap_steps, lb_bins_swapped, candidate_id]
+  gate_applicability:
+    B0_terminated: [G1, G2]
+    B1_base_passthrough: [G1, G2, G4, G5, G6]
+    B2_not_reached_before_polish: [G1, G2, G3, G4, G5, G6]
+    B3_polished: [G1, G2, G3, G4, G5, G6, G7]
+  # One record skeleton per branch (only the fields the classification and G5 read). The first two
+  # are saved R023 report-split records; any gate implementation must classify them as `branch`.
+  record_branches:
+    - source: "saved: R023 R-E1b-A0, bnd-1bdd88-78c1b0-dust"
+      identity: split_polish
+      record: {status: no_route, quotes: {counted: 4},
+               search: {base: {algorithm: incremental_graph, status: no_route, quotes: 4},
+                        split_polish: {scope: null, truncated_by: null}}}
+      branch: B1_base_passthrough
+    - source: "saved: R023 R-E2pf-C100-wm, bnd-cda86a-201eba-round_at"
+      identity: marginal_activation
+      record: {status: ok, quotes: {counted: 300000},
+               search: {base: {algorithm: incremental_graph, status: ok, quotes: 300000},
+                        marginal_activation: {scope: fixed_funding_topology, base_gross: "1",
+                                              gross: "1", quotes: 0, truncated_by: max_quotes,
+                                              not_reached: "activation/control not reached: E1 truncated"}}}
+      branch: B3_polished
+    - source: "synthetic: runner hard limit"
+      identity: split_polish
+      record: {status: timeout, quotes: {counted: 300000}, search: {}}
+      branch: B0_terminated
+    - source: "synthetic: the budget ends while the base plan is replayed"
+      identity: split_polish
+      record: {status: ok, quotes: {counted: 300000},
+               search: {base: {algorithm: metis_history, status: ok, quotes: 299990},
+                        split_polish: {scope: not_reached, truncated_by: max_quotes}}}
+      branch: B2_not_reached_before_polish
   reuse:
     stage_t_revision: 1bfd3f97fb205d21bb93acb754dfafcc1d851265
     sums: {path: docs/references/research-023/campaign/tuning-SHA256SUMS,
@@ -892,11 +944,31 @@ timing:
 
 ## 13. Independent review and dispositions
 
-The contract review is recorded here after it has run (role, model, native effort, fresh context, the
-head SHA of each round, every finding with its disposition). Until then this section lists no finding.
+**Reviewer and provenance.** Role `REVIEWER`, dispatched by the implementer with
+`scripts/agent-dispatch.sh REVIEWER <prompt> --effort high`. `config/agent-roles.conf` maps it to runtime
+`pi`, model **`mantle/gpt-6-astra`**, native thinking **`medium`** (`REVIEWER_EFFORT_HIGH="medium"`,
+owner mapping of WHI-1625); the dispatcher's argv is `pi -p --model mantle/gpt-6-astra --thinking
+medium`. **Fresh context:** one new dispatch per round, never a review inside the implementer's
+context; its working directory was a read-only detached worktree at the round's head, removed
+afterwards, and the reviewer reported it clean before and after. **Disclosure:** the same model
+co-designed `R023-C/1` (its four review rounds, [`../research-023/reviews/`](../research-023/reviews/))
+and reviewed the 0.2.4 issue design (design-review rounds 1–4); it is not independent of the designs
+this contract carries forward. Neither the design review nor this contract review replaces or consumes
+the final release review (budget 3 reviews / 2 fix batches). Prompts, raw outputs and their SHA256SUMS:
+`router-algorithms-optimizer-artifacts/research-024/whi-1630/contract-review/`; verbatim reports in
+[`reviews/`](reviews/).
+
+| Round | Reviewed head | Verdict | Findings | Report |
+| --- | --- | --- | --- | --- |
+| 1 | `0d0bae25abf9025fc455370052f035a717ef4097` | DISAGREE | 5 blocking (C1-F1…F5) | [`reviews/round-1.md`](reviews/round-1.md) |
 
 | Finding | Severity | Disposition (where) |
 | --- | --- | --- |
+| C1-F1 | blocking | **Accepted.** Record branches B0–B3 recognised by the fields a record carries, a gate-by-branch applicability table (B1 base pass-through has no `base_gross`; B2 has no own quotes; B0 has no `search.base`), the work-pass-only termination case, and saved-record examples in §12 `selection.record_branches` that the contract test classifies (§5.4, §9.1, §12) |
+| C1-F2 | blocking | **Accepted.** C12 is now an arm-to-gate matrix: G6 only for arms with a `WP-*` twin, E2 controls get G2–G5, G7, C11 and C14, base rows are references only; each check uses the same cohort and split (§7.4 C12) |
+| C1-F3 | blocking | **Accepted.** The per-family table compares with every rankable other row (the C9(a) set) and with the C9(b) envelope, labelled as such; no "best row" choice remains (§7.4 C5) |
+| C1-F4 | blocking | **Accepted.** Corrected from the committed ledger: ≈ 65 min from the first sample to the passing gate, 45 min of which were re-sample sleeps (§10.3) |
+| C1-F5 | blocking | **Accepted.** This section records role, model, native effort, fresh context, each round's head and the R023 / design-review participation, and states the separate release-review budget; the contract test now requires a non-empty review record with these fields (§13) |
 
 ## 14. Residual risks
 

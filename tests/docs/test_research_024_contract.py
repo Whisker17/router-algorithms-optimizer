@@ -375,6 +375,54 @@ def test_worked_examples_bind_epsilon_limit_and_tie_break() -> None:
     assert winner("WE3", order=swapped) != examples["WE3"]["expected"]["winner"]
 
 
+def _branch(record: dict[str, Any], identity: str) -> str:
+    """Contract §5.4: the branch a post-processor record is in, from the fields it carries."""
+    search = record.get("search") or {}
+    own, base = search.get(identity), search.get("base")
+    if own is None or base is None:
+        return "B0_terminated"
+    if base["status"] != "ok":
+        return "B1_base_passthrough"
+    if "base_gross" not in own:
+        return "B2_not_reached_before_polish"
+    return "B3_polished"
+
+
+def test_gate_applicability_is_the_registered_table() -> None:
+    gates = ["G1", "G2", "G3", "G4", "G5", "G6", "G7"]
+    assert SELECTION["gate_applicability"] == {
+        "B0_terminated": gates[:2],
+        "B1_base_passthrough": ["G1", "G2", "G4", "G5", "G6"],
+        "B2_not_reached_before_polish": gates[:6],
+        "B3_polished": gates,
+    }
+
+
+@pytest.mark.parametrize("example", SELECTION["record_branches"], ids=lambda e: e["branch"])
+def test_record_branches_classify_and_keep_their_ledger(example: dict[str, Any]) -> None:
+    record, identity = example["record"], example["identity"]
+    branch = _branch(record, identity)
+    assert branch == example["branch"]
+    assert branch in SELECTION["gate_applicability"]
+    counted = record["quotes"]["counted"]
+    search = record["search"]
+    if branch == "B1_base_passthrough":  # G5: nothing beyond the base was charged
+        assert counted == search["base"]["quotes"]
+        assert record["status"] == search["base"]["status"]  # G2
+    elif branch == "B2_not_reached_before_polish":
+        assert counted >= search["base"]["quotes"]
+    elif branch == "B3_polished":
+        assert counted == search["base"]["quotes"] + search[identity]["quotes"]
+
+
+def test_record_branch_examples_cover_every_branch_and_the_saved_no_route_shape() -> None:
+    examples = SELECTION["record_branches"]
+    assert {e["branch"] for e in examples} == set(SELECTION["gate_applicability"])
+    assert any(
+        e["source"].startswith("saved:") and e["record"]["status"] == "no_route" for e in examples
+    )
+
+
 # ----------------------------------------------------------------------------- roster (§6)
 
 
@@ -490,11 +538,26 @@ def test_release_plan_has_the_024_gates_and_the_six_023_issues() -> None:
 
 
 def test_every_review_finding_has_one_disposition() -> None:
+    reports = sorted((R024 / "reviews").glob("round-*.md"))
+    assert reports, "the contract review has not been recorded"
     raised: set[str] = set()
-    for report in sorted((R024 / "reviews").glob("round-*.md")):
+    for report in reports:
         raised |= set(FINDING_ID.findall(report.read_text(encoding="utf-8")))
-    rows = re.findall(r"^\| (C[1-3]-F\d+) \| ([^|]+) \| ([^|]+) \|", _section(13), re.M)
+    section = _section(13)
+    rows = re.findall(r"^\| (C[1-3]-F\d+) \| ([^|]+) \| ([^|]+) \|", section, re.M)
     ids = [row[0] for row in rows]
     assert len(ids) == len(set(ids))
     assert set(ids) == raised
     assert all(sev.strip() in {"blocking", "suggestion"} and disp.strip() for _, sev, disp in rows)
+    rounds = re.findall(r"^\| (\d) \| `([0-9a-f]{40})` \| (AGREE|DISAGREE) \|", section, re.M)
+    assert [int(r[0]) for r in rounds] == list(range(1, len(reports) + 1))
+    body = " ".join(section.split())
+    for phrase in [
+        "`REVIEWER`",
+        "`mantle/gpt-6-astra`",
+        "native thinking **`medium`**",
+        "Fresh context:",
+        "co-designed `R023-C/1`",
+        "3 reviews / 2 fix batches",
+    ]:
+        assert phrase in body, phrase
