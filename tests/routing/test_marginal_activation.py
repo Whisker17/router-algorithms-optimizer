@@ -954,13 +954,21 @@ def test_the_documented_worked_example(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_every_number_of_chapter_24_is_asserted() -> None:
     """`routing-algorithms.md` §24 publishes only numbers that this file asserts, that the
-    contract states (tuning evidence), or the chapter's own option ranges and ids."""
+    contract states (tuning evidence), that the committed research-023 campaign evidence states
+    (report-split results: `report-analysis.json` and `report-tables.md`, which `tests/research_023`
+    regenerates byte-identically from it; `tests/docs/test_r023_examples.py` also pins each cited
+    row), or the chapter's own option ranges and ids. Section references (§23.9) are anchors."""
     guide = (REPO / "docs" / "references" / "routing-algorithms.md").read_text(encoding="utf-8")
     chapter = guide[guide.index("## 24. ") :]
     chapter = re.sub(r"```.*?```", " ", chapter, flags=re.S)  # pseudocode and diagram
     chapter = re.sub(r"^#+ .*$", " ", chapter, flags=re.M)  # headings
-    contract = (REPO / "docs" / "references" / "research-023" / "contract.md").read_text()
-    backed = Path(__file__).read_text(encoding="utf-8") + contract + " 1000000000 1623 1624 1.0 "
+    chapter = re.sub(r"§§?\s*\d+(?:\.\d+)?(?:\s*(?:,|and|–|-)\s*\d+(?:\.\d+)?)*", " ", chapter)
+    r023 = REPO / "docs" / "references" / "research-023"
+    contract = (r023 / "contract.md").read_text()
+    campaign = "".join((r023 / "campaign" / f).read_text()
+                       for f in ("report-analysis.json", "report-tables.md"))  # fmt: skip
+    backed = (Path(__file__).read_text(encoding="utf-8") + contract + campaign
+              + " 1000000000 1623 1624 1627 1.0 ")  # fmt: skip
     number = r"(?<![\w.])\d+(?:\.\d+)?(?![\w])"
     published = {n for n in re.findall(number, chapter) if len(n) >= 3 or "." in n}
     assert len(published) >= 15  # not vacuous
