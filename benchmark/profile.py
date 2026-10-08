@@ -72,6 +72,15 @@ them resolve to that same `{kind: preset, ...pin}` (verified like the current on
 several pins is refused as ambiguous), so a saved profile keeps its original source identity;
 only the current pin is ever written out as a default. A profile without the section resolves
 exactly as before (the key is omitted).
+
+Historical provenance (WHI-1632, R024-C/1 §6.3, design finding D1-F2): the presets of the
+identities in `ALL_SCOPED_PRESETS` (`split_polish`, `marginal_activation`) were registered after
+explicit profiles with their options had been written (the 0.2.3 campaign and the 0.2.4 selection
+profiles). Their pins are recognised only inside a document `--strategies all` derived
+(`selection.mode: all`, the only way the preset is ever written out); in any other document equal
+options stay `{kind: override}`, so an older document keeps its resolved identity whatever the
+selection picked. The pins are still verified on every load (a changed file is refused
+everywhere), and `source` is still derived from content alone.
 """
 
 from __future__ import annotations
@@ -577,12 +586,21 @@ def preset_options(
         raise ProfileError(f"{where} {pin['path']}: {exc}") from exc
 
 
-def options_entry(factory: AlgorithmFactory, options: Any) -> dict[str, Any]:
+# WHI-1632 (R024-C/1 §6.3): identities whose preset pins are recognised only in a
+# `selection.mode: all` document (module docstring, "Historical provenance").
+ALL_SCOPED_PRESETS = frozenset({"split_polish", "marginal_activation"})
+
+
+def options_entry(
+    factory: AlgorithmFactory, options: Any, selection_mode: str | None = None
+) -> dict[str, Any]:
     """The resolved `{options, source, settings_sha256}` of `factory`'s (declared) options.
     `source` is a preset pin only when the normalized options equal that pinned preset's:
     the current `options_preset` or one of the factory's registered `historical_presets`
     (WHI-1559; each verified like the current one). Options equal to more than one pin are
-    refused as ambiguous, never resolved by order."""
+    refused as ambiguous, never resolved by order. A pin of an `ALL_SCOPED_PRESETS` identity
+    counts only when the document's `selection_mode` is `all` (WHI-1632); it is verified
+    either way."""
     try:
         normalized = validated_options(factory, options)
     except OptionsError as exc:
@@ -590,6 +608,8 @@ def options_entry(factory: AlgorithmFactory, options: Any) -> dict[str, Any]:
     pins = [factory.options_preset] if factory.options_preset is not None else []
     pins += factory.historical_presets
     matched = [pin for pin in pins if normalized == preset_options(factory, pin)]
+    if factory.name in ALL_SCOPED_PRESETS and selection_mode != "all":
+        matched = []
     if len(matched) > 1:
         names = ", ".join(f"{pin['key']} v{pin['version']}" for pin in matched)
         raise ProfileError(
@@ -607,9 +627,10 @@ def options_entry(factory: AlgorithmFactory, options: Any) -> dict[str, Any]:
 
 
 def _parse_algorithm_options(
-    obj: Any, where: str, algorithms: list[str]
+    obj: Any, where: str, algorithms: list[str], selection_mode: str | None = None
 ) -> dict[str, dict[str, Any]]:
-    """`obj` is the declared section, or `None` when the profile omits it."""
+    """`obj` is the declared section, or `None` when the profile omits it; `selection_mode` is
+    the document's parsed `selection.mode` (`None` without a selection record)."""
     if obj is not None and (not isinstance(obj, dict) or not obj):
         raise ProfileError(f"{where}: expected a non-empty mapping (omit the section instead)")
     declared: dict[Any, Any] = obj or {}
@@ -635,7 +656,7 @@ def _parse_algorithm_options(
                     "explicitly (no built-in default; only an identity --strategies all adds "
                     f"itself receives its pinned preset): {exc}"
                 ) from exc
-        out[name] = options_entry(factory, declared.get(name, {}))
+        out[name] = options_entry(factory, declared.get(name, {}), selection_mode)
     return out
 
 
@@ -766,6 +787,7 @@ def parse_profile(raw: Any, source_path: str) -> RunProfile:
         raw["algorithm_options"] if "algorithm_options" in raw else None,
         "algorithm_options",
         algorithms_obj,
+        selection.get("mode"),
     )
     for name, entry in algorithm_options.items():  # WHI-1626: graph keys given the options
         hook = ALGORITHMS[name].graph_params_for

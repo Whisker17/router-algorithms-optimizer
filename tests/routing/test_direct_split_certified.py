@@ -289,12 +289,12 @@ def test_registered_once_as_a_custom_identity_between_history_and_repair() -> No
             source_path=f"config/{name}",
             source_sha256="x",
         )
-        assert list(profile.algorithms)[-9:] == [
+        assert list(profile.algorithms)[-11:] == [
             "metis_inspired", metis_history.NAME, NAME, incremental_graph_repair.NAME,
             "uni_sor_cycle_safe", "cfmm_dual", "single_path_bounded", "incremental_graph_bounded",
-            "metis_history_bounded",
+            "metis_history_bounded", "split_polish", "marginal_activation",
         ]  # fmt: skip
-        assert len(profile.algorithms) == 17
+        assert len(profile.algorithms) == 19
         assert document["algorithm_options"][NAME] == PRESET  # repository_grid only in `all`
         assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
         assert dict(profile.algorithm_config(FACTORY).options) == PRESET
@@ -1220,7 +1220,9 @@ def test_saved_pre_whi_1552_profiles_replay_literally() -> None:
         "single_path_bounded",
         "incremental_graph_bounded",
         "metis_history_bounded",
-    ]  # WHI-1556/1558/1599/1600, later
+        "split_polish",
+        "marginal_activation",
+    ]  # WHI-1556/1558/1599/1600/1632, later
     for drop in (
         [NAME, *cyc],
         [NAME, metis_history.NAME, *cyc],
@@ -1238,6 +1240,6 @@ def test_saved_pre_whi_1552_profiles_replay_literally() -> None:
             saved["algorithm_options"] = options
         literal, profile = derive(saved, "profile", source_path="s", source_sha256="x")
         assert literal == saved and NAME not in profile.algorithms
-        assert len(profile.algorithms) == 17 - len(drop)
+        assert len(profile.algorithms) == 19 - len(drop)
     for mode in ("base", "optimized"):
         assert NAME not in derive(source, mode, source_path="s", source_sha256="x")[1].algorithms

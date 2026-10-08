@@ -1011,6 +1011,23 @@ def algorithm_params(manifest: RunManifest, algorithm: str) -> dict[str, Any]:
     return params if isinstance(params, dict) else {}
 
 
+def options_provenance(manifest: RunManifest, algorithm: str) -> str | None:
+    """WHI-1632: the recorded `algorithm_options` provenance of `algorithm` (preset identity or
+    override, and the `settings_sha256`), read only from the run's own resolved profile; `None`
+    for an algorithm without an entry (older records included)."""
+    entry = manifest.resolved_profile.get("algorithm_options", {}).get(algorithm)
+    if not isinstance(entry, dict):
+        return None
+    source = entry.get("source") or {}
+    settings = str(entry.get("settings_sha256"))[:12]
+    if source.get("kind") == "preset":
+        return (
+            f"preset {source.get('key')} v{source.get('version')} ({source.get('path')}, sha256 "
+            f"{str(source.get('sha256'))[:12]}); settings_sha256 {settings}"
+        )
+    return f"{source.get('kind', 'unknown')} (explicit options); settings_sha256 {settings}"
+
+
 def metis_settings(manifest: RunManifest, algorithm: str) -> str | None:
     """WHI-1540: the recorded label-search settings of a Metis-inspired algorithm, stated
     against the run's shared `search.max_hops` (its hop domain may differ), or `None`."""

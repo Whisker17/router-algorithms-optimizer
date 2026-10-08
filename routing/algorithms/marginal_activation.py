@@ -4,8 +4,13 @@ strategy's plan, it appends up to K new branches found by a delta-amount label s
 post-plan pool states, re-splits them and keeps one only if an independent replay confirms a
 strict gain with positive flow on the new branch. Jupiter-inspired, **NOT Jupiter Metis**;
 PRIME-Flow-like (overlapping paths, a split between the current flow and a new path). Not an
-optimum and not a certificate: a local heuristic. Experimental, `custom` group, selected only by
-a profile that names it (`--strategies all` does not add it).
+optimum and not a certificate: a local heuristic. Experimental, `custom` group. A profile that names
+it runs it; since WHI-1632 (R024-C/1 §6) `--strategies all` also appends it, after `split_polish`,
+with its selected preset (`PRESET`: `R024-P02-marginal_activation`, WHI-1631; `incremental_graph`,
+PF, K 4, top-9, delta 10**-3, E1 stage brent/2/10**-4, arm `treatment`; selected by the registered
+rule R024-C/1 §5.7 among 108 candidates under P*, on the already exposed tuning split). It is
+recognised as `{kind: preset}` only in a `--strategies all` document
+(`benchmark.profile.ALL_SCOPED_PRESETS`); equal options elsewhere stay an override.
 
 **Domain** (§3): E1's fixed funding topology plus appended branches. A reused pool executes as a
 new sequential call (`shared_sequential`). A plan E1 refuses (`unsupported_topology`) is returned
@@ -97,6 +102,13 @@ NOT_REACHED = "activation/control not reached: E1 truncated"
 CAPABILITIES = sp.CAPABILITIES
 SEARCH_PARAMS = sp.SEARCH_PARAMS
 GRAPH_PARAMS = sp.GRAPH_PARAMS
+# The selected preset v1 (R024-C/1 §5.1, WHI-1631), frozen by its bytes (WHI-1632).
+PRESET: dict[str, Any] = {
+    "path": "config/marginal_activation/preset_v1.yaml",
+    "sha256": "553ba71c8569eee67710587dda4a7e24e7dccee1f44ead6107944abc3db76cba",
+    "key": "R024-P02-marginal_activation",
+    "version": 1,
+}
 
 PROVENANCE = {
     "experimental": True,
@@ -665,4 +677,5 @@ FACTORY = AlgorithmFactory(
     graph_params=GRAPH_PARAMS,
     provenance=PROVENANCE,
     options_validator=validate_options,
+    options_preset=MappingProxyType(PRESET),
 )
