@@ -44,7 +44,7 @@ def _load(name: str, relative: str) -> ModuleType:
     return module
 
 
-C: Any = _load("r024_campaign", "tools/research_024/campaign.py")
+C: Any = _load("r024_campaign", "tools/research_024/r024_campaign.py")
 CA: Any = sys.modules["r024_campaign_analysis"]
 RR: Any = sys.modules["r024_rule"]
 RAW = C.load_raw()

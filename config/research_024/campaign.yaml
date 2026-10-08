@@ -5,7 +5,7 @@
 # (group runs of that roster on both cohorts, the base-control decisions, the E2 attribution arms,
 # the untimed work passes), the stages, the timing protocol L01-R024 of §8 and the pre-registered
 # rules. Validated, rendered, executed, checked, analysed and tabulated ONLY by
-# `tools/research_024/campaign.py` (`profiles`, `check`, `freeze`, `inputs`, `run`, `timing`,
+# `tools/research_024/r024_campaign.py` (`profiles`, `check`, `freeze`, `inputs`, `run`, `timing`,
 # `analyze`, `tables`); its pure analysis is `tools/research_024/r024_campaign_analysis.py`, the
 # §5.4 gates and Rule P/M are `tools/research_024/r024_rule.py` (WHI-1631), all imported, never
 # copied. Execution reuses the 0.2.1 executor (`tools/research_021/campaign.py`: ledger, lanes,
@@ -22,7 +22,7 @@
 #   R  every quality arm and work pass on the REPORT bundles, ONCE, from a fresh clone of the freeze
 #      commit (this file + the final analysis code, pushed before the first report-split solve);
 #   L  the timing units of §8.2 (L01-R024), after R, alone on the host, one lane, from the freeze
-#      commit, by `campaign.py timing` (launch gate, triggers T1-T5, N = 3, first valid attempt).
+#      commit, by `r024_campaign.py timing` (launch gate, triggers T1-T5, N = 3, first valid attempt).
 schema: r024.campaign/1
 issue: WHI-1633
 contract: {key: R024-C/1, path: docs/references/research-024/contract.md,
