@@ -645,3 +645,22 @@ def test_a_missing_work_pass_is_reported_and_inconclusive(stage_t: dict[str, Any
     row = result["rows"]["Q19-full/marginal_activation"]
     assert row["rule_p"] == {RR.P2: 4} and row["work"]["cl_swap_steps"] is None
     assert result["dispositions"][C.E2]["disposition"] == "inconclusive"
+
+
+# ----------------------------------------------------------------------------- committed evidence
+
+EVIDENCE = REPO / "docs" / "references" / "research-024" / "campaign"
+
+
+@pytest.mark.skipif(not (EVIDENCE / "tuning-analysis.json").is_file(), reason="stage T not pinned")
+def test_the_committed_tables_regenerate_from_the_pinned_analyses() -> None:
+    analyses = {}
+    for stage, name in (("T", "tuning"), ("R", "report"), ("L", "timing")):
+        path = EVIDENCE / f"{name}-analysis.json"
+        if path.is_file():
+            analyses[stage] = json.loads(path.read_text())
+    tuning = CA.render_tables(RAW, {"T": analyses["T"]})
+    assert (EVIDENCE / "tuning-tables.md").read_text() == tuning
+    if (EVIDENCE / "tables.md").is_file():
+        assert (EVIDENCE / "tables.md").read_text() == CA.render_tables(RAW, analyses)
+    assert analyses["T"]["problems"] == []
