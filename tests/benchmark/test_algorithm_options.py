@@ -112,6 +112,10 @@ NEW_PROFILES = (
     # (drift-checked by `campaign.py check`; one opt-in identity each, `--strategies profile`)
     | {p.relative_to(REPO).as_posix() for p in (REPO / "config" / "research_023" / "profiles")
        .glob("*.yaml")}  # fmt: skip
+    # WHI-1631: the 0.2.4 selection profiles, GENERATED from full_gross by tools/research_024
+    # (drift-checked by `selection.py check`; one identity each, `--strategies profile`)
+    | {p.relative_to(REPO).as_posix() for p in (REPO / "config" / "research_024" / "profiles")
+       .glob("*.yaml")}  # fmt: skip
 )
 TEST_ALARM_SECONDS = 240
 
