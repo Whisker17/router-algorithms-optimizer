@@ -1,0 +1,307 @@
+# WHI-1633 research-024 19-strategy campaign schedule (contract R024-C/1 §7, §8, §9, §10.2-§10.4, §12).
+#
+# The single machine-readable schedule of the 0.2.4 campaign: the inputs and their hashes, the
+# 19-row roster `--strategies all` derives from `config/full_gross.yaml`, the quality arms of §7.2
+# (group runs of that roster on both cohorts, the base-control decisions, the E2 attribution arms,
+# the untimed work passes), the stages, the timing protocol L01-R024 of §8 and the pre-registered
+# rules. Validated, rendered, executed, checked, analysed and tabulated ONLY by
+# `tools/research_024/campaign.py` (`profiles`, `check`, `freeze`, `inputs`, `run`, `timing`,
+# `analyze`, `tables`); its pure analysis is `tools/research_024/r024_campaign_analysis.py`, the
+# §5.4 gates and Rule P/M are `tools/research_024/r024_rule.py` (WHI-1631), all imported, never
+# copied. Execution reuses the 0.2.1 executor (`tools/research_021/campaign.py`: ledger, lanes,
+# 30-s load sampler, `caffeinate`, `pmset` capture, the single infrastructure retry) through the
+# 0.2.2 driver (`tools/research_022/pruning_campaign.py`, which adds the work pass
+# `tools/research_022/pruning_work.py`); no earlier campaign file is modified.
+#
+# This file and every generated profile are committed and PUSHED BEFORE STAGE T (§7.1). Every
+# value below is the contract's (§12), `config/full_gross.yaml`'s or a selected preset's; `check`
+# refuses a difference from the contract registry. Nothing here is tuned after observation.
+#
+# Stages (the 0.2.1 executor's stage letters):
+#   T  every quality arm and work pass on the TUNING bundles (both cohorts), 6 lanes;
+#   R  every quality arm and work pass on the REPORT bundles, ONCE, from a fresh clone of the freeze
+#      commit (this file + the final analysis code, pushed before the first report-split solve);
+#   L  the timing units of §8.2 (L01-R024), after R, alone on the host, one lane, from the freeze
+#      commit, by `campaign.py timing` (launch gate, triggers T1-T5, N = 3, first valid attempt).
+schema: r024.campaign/1
+issue: WHI-1633
+contract: {key: R024-C/1, path: docs/references/research-024/contract.md,
+           sha256: d458fbdefc501369cd10ec9d3d3527534df82d93cab20ff9af6dbd9ffe884065}
+release: {version: 0.2.4, id: 0beaa4c3-2721-4618-b687-ac70d4d54e6a}
+base_commit: b17e1192feb4e16314346f50edd53a75a8ba499b
+holdout_exposure:
+  tuning: exploration_data          # used to choose the 0.2.3 nominees and the 0.2.4 presets (§3)
+  report: previously_exposed        # 0.1.0, 0.2.0, 0.2.1, 0.2.2, 0.2.3 (§9.2)
+  all: matrix_and_sentinel          # stage L: the L01 matrix (tuning + held-out twins) and sentinel
+host:
+  logical_cpus: 10
+  load_sample_seconds: 30
+
+# ----------------------------------------------------------------------------- inputs
+# `source` is relative to the primary clone; `inputs --keys ...` copies each into the durable
+# inputs root (outside every worktree) and refuses a copy whose manifest.json sha256 (the bundle
+# hash, which pins every bundle file's checksum) differs. Values = contract §12 `campaign.inputs`.
+inputs:
+  tuning_full:
+    source: data/corpus/mantle-5src-101082044/bundle_tuning
+    bundle_hash: ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b
+    cases: 96
+    split: tuning
+    cohort: full_source
+  tuning_sor:
+    source: data/corpus/mantle-5src-101082044/sor_cohort_tuning
+    bundle_hash: b900b866d4a0ef6a3b33546f1d262ed3fc836847ef30da9e975c5bae75107ade
+    cases: 96
+    split: tuning
+    cohort: sor_compatible
+  report_full:
+    source: data/corpus/mantle-5src-101082044/bundle_report
+    bundle_hash: 85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0
+    cases: 302
+    split: report
+    cohort: full_source
+  report_sor:
+    source: data/corpus/mantle-5src-101082044/sor_cohort_report
+    bundle_hash: 8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640
+    cases: 302
+    split: report
+    cohort: sor_compatible
+  full:
+    source: data/corpus/mantle-5src-101082044/bundle
+    bundle_hash: 717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143
+    cases: 398
+    split: all
+    cohort: full_source
+# the bundle of each (stage, cohort); a report bundle is copied and read only after the freeze push
+stage_bundles:
+  T: {full: tuning_full, sor: tuning_sor}
+  R: {full: report_full, sor: report_sor}
+requests:
+  sentinel: {token_in: USDC, token_out: USDT, amount: "1000"}
+
+# ----------------------------------------------------------------------------- roster (§6.1, §7.2)
+canonical: {path: config/full_gross.yaml,
+            sha256: 51a8a65184ae765867fd9d7763776852b2b4576e3cf7116a8dc15ccd87028177}
+m4_settings: {path: config/metis_challenge/m4.yaml,
+              sha256: 661311df6ff7a36a43954fff0e42f6b30b824d35d96c06f0e215960f256d4471}
+presets:                            # the selected presets (WHI-1631), byte-pinned
+  split_polish: {path: config/split_polish/preset_v1.yaml,
+                 sha256: bdaba97b702c205fe6fae0b6ce2a439f550f8b0f263713c702789358f92dc533}
+  marginal_activation: {path: config/marginal_activation/preset_v1.yaml,
+                        sha256: 553ba71c8569eee67710587dda4a7e24e7dccee1f44ead6107944abc3db76cba}
+# §12 roster.all19: the 19 rows `--strategies all` derives from `canonical` (live roster, all
+# releases' additions), and the canonical sha256 of that derivation's resolved profile.
+all19: [direct, single_path, direct_split, path_split, incremental_graph, uni_sor_port,
+        uni_sor_adaptive, uni_sor_optimized, metis_inspired, metis_history,
+        direct_split_certified, incremental_graph_repair, uni_sor_cycle_safe, cfmm_dual,
+        single_path_bounded, incremental_graph_bounded, metis_history_bounded,
+        split_polish, marginal_activation]
+all19_resolved_sha256: d57f1ef108933eacea8206739f6bba1d9e7441372327d38da4edd2c58ca75b24
+# P* graph (§4.4) for the separate arms rendered under P* (E2-E1only, E2-wm, E2-cm)
+pstar_graph: {chunks: 50, label_hops: 4, label_pruning: true}
+profile_dir: config/research_024/campaign_profiles
+
+# Q19 group runs (§7.2: "registered group runs whose resolved per-identity values equal the derived
+# roster's; `check` enforces it"). Each group profile is the 19-row `all` document restricted to the
+# group: its `strategies` and `algorithm_options` entries, and its `selection` record restricted to
+# the group with `mode: all` kept (so both R024 presets keep `source.kind: preset`, WHI-1632);
+# every other section is the derived document's. The groups partition the 19 rows, each once; they
+# are the timing units' identity sets (U1-U6) plus one group per new identity, so heavy rows run in
+# parallel lanes. One profile per group serves both cohorts.
+groups:
+  u1: [direct, single_path, direct_split, path_split, incremental_graph]
+  u2: [uni_sor_port]
+  u3: [uni_sor_adaptive, uni_sor_optimized, metis_inspired, metis_history, direct_split_certified]
+  u4: [incremental_graph_repair]
+  u5: [uni_sor_cycle_safe]
+  u6: [cfmm_dual, single_path_bounded, incremental_graph_bounded, metis_history_bounded]
+  e1: [split_polish]
+  e2: [marginal_activation]
+
+# §7.2 base controls, DECIDED BY THE STATED RULE BEFORE STAGE T (accepted by the orchestrator,
+# WHI-1633 comment 2026-10-08 11:30 UTC, decision 3). `check` re-derives each from the code and the
+# profiles and refuses a schedule whose decision differs:
+#  - BASE-<id>: the `Q19` row of the base identity serves iff, restricted to the keys the base
+#    factory declares (`search_params`, `graph_params`, `graph_params_for`), its
+#    `algorithm_config.params` equal those the post-processor hands its base, and its options equal
+#    the preset's `base_options` (none when absent); otherwise a separate P* arm;
+#  - E2-E1only: the `Q19` `split_polish` row serves iff it is CEC-equal (§4.3) to `split_polish`
+#    with E2's base and E2's six E1 keys; otherwise a separate arm.
+base_controls:
+  BASE-E1: {post_processor: split_polish, base: metis_inspired, served_by: Q19,
+            reason: "params equal on the 6 keys metis_inspired reads; no base_options, no row options"}
+  BASE-E2: {post_processor: marginal_activation, base: incremental_graph, served_by: Q19,
+            reason: "params equal on the 4 keys incremental_graph reads; no base_options, no row options"}
+  E2-E1only: {post_processor: split_polish, served_by: arm,
+              reason: "Q19 split_polish is metis_inspired/golden/1e-5, E2's E1 stage
+                       incremental_graph/brent/1e-4: not CEC-equal"}
+e1only_keys: [base, solver, rounds, tolerance, grid, maxiter]   # E2's E1 stage (R023-C/1 §5.3)
+
+# The quality arms (§7.2). `q19` arms are one invocation per (group, cohort); the separate arms are
+# P*-rendered single-identity profiles on the full cohort. `work_pass: true` adds the untimed twin
+# `<stage>-WP-<id>` (none for the E2 controls, §7.2 / C14). `estimate` = report-split minutes of one
+# invocation (§10.2 basis: the 0.2.2 / 0.2.3 report ledgers), used ONLY for the stage-T launch order.
+arms:
+  - {arm: Q19-full, kind: q19, cohort: full, work_pass: true}
+  - {arm: Q19-sor, kind: q19, cohort: sor, work_pass: true}
+  - {arm: E2-E1only, kind: e1only, cohort: full, work_pass: true}
+  - {arm: E2-wm, kind: e2_control, e2_arm: work_matched, cohort: full, work_pass: false}
+  - {arm: E2-cm, kind: e2_control, e2_arm: call_matched, cohort: full, work_pass: false}
+estimate_minutes:
+  q19-u1: 105
+  q19-u2: 135
+  q19-u3: 130
+  q19-u4: 100
+  q19-u5: 135
+  q19-u6: 120
+  q19-e1: 50
+  q19-e2: 80
+  e2-e1only: 65
+  e2-wm: 150
+  e2-cm: 150
+# Contract §7.2 arms NOT scheduled; their earlier results stand as history.
+not_scheduled: >-
+  historical mechanism ablations: R021 E/L/S, same-grid allocation, repair off/on, cycle-safe SOR,
+  CFMM CPMM-vs-CL, max_splits scan; R022 A2-A5; R023 golden control, E2-full ablation, C100/C200
+  arms, CFMM + E1.
+
+# C15 (descriptive): the 0.2.2 report-split records of the 17 earlier identities (R-A1 pair groups and
+# R-B14 reference groups, both cohorts), located under the artifacts root and verified against the
+# `cases_sha256` the committed 0.2.2 analysis pins.
+baseline_022:
+  analysis: {path: docs/references/research-022/campaign/report-analysis.json,
+             sha256: 468c4645e3c71600f59dbf938296999712703cd8eaed81d985b90322ee166f91}
+  artifacts_marker: router-algorithms-optimizer-artifacts
+  invocations: [R-A1-sp-full, R-A1-ig-full, R-A1-mh-full, R-B14-ra-full, R-B14-rb-full,
+                R-B14-rc-full, R-B14-rd-full, R-A1-sp-sor, R-A1-ig-sor, R-A1-mh-sor,
+                R-B14-ra-sor, R-B14-rb-sor, R-B14-rc-sor, R-B14-rd-sor]
+
+# ----------------------------------------------------------------------------- stages
+# `lanes` = concurrent invocations (one worker process each). T launches the ordinary invocations
+# in descending `estimate_minutes`, full cohort first, then the work passes in the same order. R
+# (registered here, before T, so nothing is settled after observation) launches in descending
+# stage-T wall time of the same invocation (the T ledger; ties by the T order). Per-solve hard
+# limits are the canonical budget (900 s, 300,000 quotes); a runner kill is a `timeout` outcome.
+stages:
+  T: {split: tuning, lanes: 6, caffeinate: true, pmset_capture: true, order: estimate,
+      owner: "the implementer, from a fresh clone of the pushed schedule commit"}
+  R: {split: report, lanes: 6, caffeinate: true, pmset_capture: true, order: stage_t_wall,
+      owner: "the implementer, ONCE, from a fresh clone of the pushed freeze commit"}
+  L: {split: all, lanes: 1, caffeinate: true, pmset_capture: true,
+      owner: "the implementer, after R, alone on the host, from the freeze commit"}
+
+# ----------------------------------------------------------------------------- timing (§8, §12)
+# L01-R024: `config/latency/l01.yaml` with only `key` and the pinned `profile` replaced; the
+# profile is the effective 19-identity `all` document of `canonical` at this commit, written out.
+# The arms file defines the units UP (as two arms UP-base / UP-cand and their heuristic-lane
+# comparison) and U1-U6; UQ is 5 sequential `main.py quote --details --strategies all --profile
+# config/full_gross.yaml` processes on the sentinel of `full`. Every value below is §12 `timing`.
+timing:
+  protocol: {path: config/research_024/latency/l01-r024.yaml, key: L01-R024,
+             source: config/latency/l01.yaml, replaced: [key, profile],
+             source_sha256: 961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b}
+  profile: {path: config/research_024/latency/all19.yaml}
+  arms: {path: config/research_024/latency/timing-arms.yaml, key: L08-R024}
+  sufficient_budget: {path: config/latency/l01-sufficient-budget.yaml,
+                      sha256: 4059506da09280cdb0e8d4a94ac6ecef1c786113016e8eee430bef38089db43b}
+  bundle: full
+  units:
+    - {unit: UP, kind: paired, candidate: [split_polish, marginal_activation],
+       baseline: bases_of_selected_presets}
+    - {unit: U1, kind: descriptive,
+       algorithms: [direct, single_path, direct_split, path_split, incremental_graph]}
+    - {unit: U2, kind: descriptive, algorithms: [uni_sor_port]}
+    - {unit: U3, kind: descriptive,
+       algorithms: [uni_sor_adaptive, uni_sor_optimized, metis_inspired, metis_history,
+                    direct_split_certified]}
+    - {unit: U4, kind: descriptive, algorithms: [incremental_graph_repair]}
+    - {unit: U5, kind: descriptive, algorithms: [uni_sor_cycle_safe]}
+    - {unit: U6, kind: descriptive,
+       algorithms: [cfmm_dual, single_path_bounded, incremental_graph_bounded,
+                    metis_history_bounded]}
+    - {unit: UQ, kind: quote_cli, invocations: 5, strategies: all}
+  quote_cli: {request: sentinel, profile: config/full_gross.yaml, strategies: all, details: true}
+  max_started_attempts_per_unit: 3
+  launch: {samples: 5, interval_seconds: 30, headroom_load1: 3.0,
+           resample_every_seconds: 300, max_wait_seconds: 21600}
+  validity: {max_load1_per_cpu: 0.5, sample_interval_seconds: 30, max_sample_gap_seconds: 90,
+             sleep_entries_allowed: 0, caffeinate: "caffeinate -i -m -s"}
+  triggers: [T1_load, T2_sampling_coverage, T3_sleep, T4_sleep_prevention_or_capture,
+             T5_incomplete_execution]
+  never_triggers: [solver_timeout, regression, insufficient_speedup, noisy_comparison,
+                   l01_inconclusive, insufficient_cases, aa_noise, semantic_difference]
+  outcomes: [valid, inconclusive_no_launch, inconclusive_cap_exhausted,
+             inconclusive_protocol_breach]
+  # T3 READING (orchestrator decision 2, WHI-1633 comment 2026-10-08 11:30 UTC; registered before
+  # the schedule push and before stage T): literal. A `pmset -g log` line is `<date> <time> <tz>
+  # <type><padding>\t<details>`; its TYPE COLUMN is the text between the timezone field and the
+  # first tab, trailing blanks removed. Only an entry whose type column is EXACTLY one of
+  # `trigger_types` and whose second lies inside the attempt window is trigger T3. Every other type
+  # in the window (e.g. `Wake Requests`, `WakeDetails`, `WakeTime`, `Assertions`) is retained in
+  # the attempt's capture and reported per attempt and type, never a trigger. A line without a
+  # parsable timestamp and type column is retained and counted as `unparsed`.
+  t3_reading:
+    match: exact_type_column
+    trigger_types: [Sleep, Wake, DarkWake]
+    decision: "orchestrator, WHI-1633 comment 2026-10-08 11:30 UTC, decision 2"
+  # Early abort (§8.4 item 2: only on a detected T1-T5 event; the abort and its reason are
+  # recorded): the driver checks the stage's own 30-s load samples, the sampling gap and the
+  # caffeinate process every 30 s, and the pmset log every 300 s, and aborts the attempt
+  # (SIGTERM, then SIGKILL after 120 s) on a detected T1, T2, T3 or T4 event.
+  monitor: {check_seconds: 30, pmset_check_seconds: 300, terminate_grace_seconds: 120}
+
+# ----------------------------------------------------------------------------- rules
+rules:
+  one_pass: >-
+    One frozen pass per arm and stage. The only re-execution is the 0.2.1 infrastructure deviation
+    (`run --retry-infrastructure ID`: once, into `<id>.retry1`, only for an attempt that ended
+    without a complete manifest, its reason recorded); a completed run is never repeated and a rerun
+    never replaces a recorded outcome. A `timeout` or truncated row is an outcome. No record of an
+    earlier campaign or of WHI-1631 is reused (§7.1).
+  groups: >-
+    `check`: the groups partition `all19` (each identity exactly once, roster order inside a group);
+    every group profile equals its rendering, and per identity its resolved values (algorithm_config,
+    options with their source and settings_sha256, strategies entry, and the shared objective, budget,
+    measurement, worker, search and graph sections) equal the 19-row derivation's.
+  gates: >-
+    Contract §5.4 / §7.4 C12 per arm, against the base record of the SAME cohort and split: the Q19
+    `split_polish` / `marginal_activation` rows and the `E2-E1only` arm G2-G7 (their base references:
+    BASE-E1 = the Q19 `metis_inspired` row, BASE-E2 = the Q19 `incremental_graph` row; E2-E1only's
+    base is incremental_graph = BASE-E2); `E2-wm` / `E2-cm` G2-G5 and G7, no G6, plus the §7.5
+    control audit and C14; the other Q19 rows completeness, C1 and C13 only. Branches B0-B3 from the
+    fields a record carries (`r024_rule.branch`).
+  reconciliation: >-
+    Rule P (§5.4.1) on every cell of every arm with a WP twin, whatever the identity; P2-P4 are
+    labels, P5 is a defect. Rule M: a value a record does not carry is missing, never 0.
+  check_problems: >-
+    Exactly: a missing or duplicate scheduled record (G1 / C1), every defect (a §5.4 gate on an
+    applicable branch per C12, a P5 `differs`, a K4 row, a failed §7.5 audit), plus the provenance
+    checks (resolved profile, bundle hash, one source revision, a clean tree). Branches B0-B3, the
+    P2-P4 labels, K0-K3 and `treatment_unavailable` are reported outcomes, not problems.
+  ranking: >-
+    §7.3: a pairwise comparison on a cohort is rankable iff both identities' protocol ceilings
+    (`capabilities.protocols`; absent = all three families) intersected with the families present in
+    that cohort's bundle are equal; non-rankable comparisons go to the expanded-protocol section,
+    never ranked or pooled. SOR like-for-like statements come only from the sor cohort. C9(b): the
+    envelope of a row on a cohort is, per case, the largest gross among the `ok` records of the Q19
+    rows rankable with it on that cohort, the row itself included (an oracle, not a portfolio); a
+    case where none is `ok` has no envelope value (counted as `no_ok_row`). Comparisons (C2-C6): a
+    candidate vs a baseline over the identical schedule; bps = 10^4 (cand - base) / base on cases
+    where both are `ok` and the base gross > 0 (exact rationals until the final float); base gross
+    0 counted apart (`zero_baseline_na`); every status transition kept; nearest-rank percentiles;
+    family = the case's (token_in, token_out); stratum per C6.
+  disposition: >-
+    §9.1 per new identity on the report split: `reject` on a defect of C12 / C13 on any record of the
+    identity or its controls, an `invalid_plan` / `algorithm_error` where its base record of the same
+    cohort and split is not the same status, a control above its work target or not call-matched, a
+    refusal whose gross differs from the base record; else `inconclusive` when more than 1/10 of the
+    identity's scheduled `report_full` cases are truncated (`truncated_by` set),
+    `unsupported_topology`, branch B2, branch B0 with an `ok` base record, or carry a P2-P4 label, or
+    a base or control arm is missing, or a scheduled arm is incomplete; else `keep_experimental`.
+    The timing verdict is separate and never changes the disposition.
+  timing: >-
+    §8.4 exactly: per unit up to N = 3 started attempts, each after its own launch gate; an attempt
+    is invalid iff T1-T5 holds in its window (T3 per `timing.t3_reading`); the first valid attempt by
+    start time supplies the unit's result, whole attempts only; terminal outcomes valid (attempt id),
+    inconclusive (no_launch), inconclusive (cap_exhausted), inconclusive (protocol_breach). No
+    result is ever a trigger. An interrupted attempt (the driver died) counts as aborted (T5).
