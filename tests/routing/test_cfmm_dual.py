@@ -1253,8 +1253,10 @@ def test_saved_pre_whi_1558_profiles_replay_literally() -> None:
             "single_path_bounded",
             "incremental_graph_bounded",
             "metis_history_bounded",
+            "split_polish",
+            "marginal_activation",
             *later[:k],
-        ]  # WHI-1599/1600 are added after this identity
+        ]  # WHI-1599/1600, WHI-1632 are added after this identity
         saved = json.loads(json.dumps(document))
         saved["algorithms"] = [a for a in saved["algorithms"] if a not in drop]
         saved["selection"]["groups"]["custom"] = [

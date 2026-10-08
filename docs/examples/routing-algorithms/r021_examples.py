@@ -2425,6 +2425,10 @@ def real_state_walkthrough() -> dict[str, Any]:
     ):
         expected[name] = sum(split)
     expected["direct_split_certified"] = None  # unsupported: the pair's direct pools are CL/LB
+    # WHI-1632: the 0.2.3 post-processors with their selected presets (R024-C/1), never worse
+    # than their bases (metis_inspired, incremental_graph: sum(split)); observed values
+    expected["split_polish"] = 10_000_663_635
+    expected["marginal_activation"] = 10_000_663_636
     rows = []
     for name in profile.algorithms:
         factory = ALGORITHMS[name]

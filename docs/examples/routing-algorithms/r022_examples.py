@@ -1989,14 +1989,25 @@ def _walkthrough() -> dict[str, Any]:
 
 
 def example_roster() -> dict[str, Any]:
-    """`--strategies all` is 17 after the three bounded strategies; `profile` replays literally;
-    the bounded Metis strategy carries the reference's options under its own preset file."""
+    """`--strategies all` is 17 after the three bounded strategies (the 0.2.2 roster, derived with
+    `frozen_roster`; since 0.2.4, WHI-1632, `all` appends `R024_ADDITIONS` after it); `profile`
+    replays literally; the bounded Metis strategy carries the reference's options under its own
+    preset file."""
     import yaml
 
     from benchmark.profile import options_entry, strategy_group
-    from benchmark.strategies import R022_ADDITIONS, derive
+    from benchmark.strategies import (
+        R021_ADDITIONS,
+        R022_ADDITIONS,
+        R024_ADDITIONS,
+        derive,
+        frozen_roster,
+    )
 
-    _document, profile, _sha = r21.all_profile()
+    with frozen_roster((*R021_ADDITIONS, *R022_ADDITIONS)):
+        _document, profile, _sha = r21.all_profile()
+    live = list(r21.all_profile()[1].algorithms)
+    equal(live, [*ALL_ROSTER, *R024_ADDITIONS], "0.2.4 appends exactly R024_ADDITIONS")
     equal(list(profile.algorithms), ALL_ROSTER, "`all` roster of daily_gross.yaml")
     equal(tuple(R022_ADDITIONS), BOUNDED, "R022_ADDITIONS order")
     equal([strategy_group(n) for n in BOUNDED], ["custom"] * 3, "bounded strategies are `custom`")

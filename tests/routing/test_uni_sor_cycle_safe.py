@@ -891,7 +891,8 @@ def test_saved_pre_whi_1556_profiles_replay_literally() -> None:
              "metis_inspired"]  # fmt: skip
     for k in range(len(later) + 1):
         drop = [NAME, "cfmm_dual", "single_path_bounded", "incremental_graph_bounded",
-                "metis_history_bounded", *later[:k]]  # added after this identity
+                "metis_history_bounded", "split_polish", "marginal_activation",
+                *later[:k]]  # added after this identity (WHI-1632's two included)
         saved = json.loads(json.dumps(document))
         saved["algorithms"] = [a for a in saved["algorithms"] if a not in drop]
         saved["selection"]["groups"]["custom"] = [

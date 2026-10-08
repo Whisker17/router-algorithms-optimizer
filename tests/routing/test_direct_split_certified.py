@@ -1240,6 +1240,6 @@ def test_saved_pre_whi_1552_profiles_replay_literally() -> None:
             saved["algorithm_options"] = options
         literal, profile = derive(saved, "profile", source_path="s", source_sha256="x")
         assert literal == saved and NAME not in profile.algorithms
-        assert len(profile.algorithms) == 17 - len(drop)
+        assert len(profile.algorithms) == 19 - len(drop)
     for mode in ("base", "optimized"):
         assert NAME not in derive(source, mode, source_path="s", source_sha256="x")[1].algorithms
