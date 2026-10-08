@@ -592,3 +592,56 @@ def test_the_fixture_dispositions_and_tables(stage_t: dict[str, Any], tmp_path: 
     path.write_text(json.dumps(stage_t["result"], indent=1, sort_keys=True, default=str))
     again = CA.render_tables(raw, {"T": json.loads(path.read_text())})
     assert first == again and "C9(b)" in first and "C13" in first
+
+
+def _reanalyze(stage_t: dict[str, Any], runs: dict[str, Any]) -> dict[str, Any]:
+    raw = stage_t["raw"]
+    bundles = {
+        c: CA.bundle_view(stage_t["inputs"] / b) for c, b in raw["stage_bundles"]["T"].items()
+    }
+    expected = {k: C.expected_resolved(raw, k) for k in C.profiles(raw)}
+    return dict(
+        CA.analyze_stage(
+            raw,
+            "R",
+            {"R" + k[1:]: v for k, v in runs.items()},
+            bundles,
+            expected,
+            bundle_hashes={
+                c: raw["inputs"][b]["bundle_hash"] for c, b in raw["stage_bundles"]["T"].items()
+            },
+            stage_revision=None,
+        )
+    )
+
+
+def test_a_worse_polish_record_is_a_defect_and_rejects(
+    stage_t: dict[str, Any], tmp_path: Path
+) -> None:
+    runs, _ = C.stage_runs(stage_t["raw"], "T", stage_t["out"])
+    inv = "T-q19-e1-full"
+    copy_dir = tmp_path / "run"
+    shutil.copytree(runs[inv]["run_dir"], copy_dir)
+    lines = (copy_dir / "cases.jsonl").read_text().splitlines()
+    record = json.loads(lines[0])
+    assert record["status"] == "ok"
+    record["evaluation"]["gross_output"] = "1"  # below its base: never-worse (G3) and G7 break
+    lines[0] = json.dumps(record)
+    (copy_dir / "cases.jsonl").write_text("\n".join(lines) + "\n")
+    manifest = json.loads((copy_dir / "manifest.json").read_text())
+    manifest["cases_sha256"] = _sha(copy_dir / "cases.jsonl")  # a consistent, tampered run
+    (copy_dir / "manifest.json").write_text(json.dumps(manifest))
+    runs[inv] = {**runs[inv], "run_dir": str(copy_dir)}
+    result = _reanalyze(stage_t, runs)
+    assert any("G3 fails" in p for p in result["problems"])
+    assert result["dispositions"][C.E1]["disposition"] == "reject"
+    assert result["dispositions"][C.E2]["disposition"] != "reject"
+
+
+def test_a_missing_work_pass_is_reported_and_inconclusive(stage_t: dict[str, Any]) -> None:
+    runs, _ = C.stage_runs(stage_t["raw"], "T", stage_t["out"])
+    del runs["T-WP-q19-e2-full"]
+    result = _reanalyze(stage_t, runs)
+    row = result["rows"]["Q19-full/marginal_activation"]
+    assert row["rule_p"] == {RR.P2: 4} and row["work"]["cl_swap_steps"] is None
+    assert result["dispositions"][C.E2]["disposition"] == "inconclusive"

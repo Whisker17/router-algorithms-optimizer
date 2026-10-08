@@ -458,6 +458,7 @@ def analyze_stage(
             key = row_key(str(inv["arm"]), cohort, identity)
             recs: dict[str, Mapping[str, Any] | None] = {}
             wps: dict[str, Mapping[str, Any] | None] | None = None
+            incomplete: list[str] = []
             if ordinary is not None:
                 found = rr.completeness(
                     ordinary[0],
@@ -466,9 +467,9 @@ def analyze_stage(
                     case_ids,
                     bundle_hashes[cohort],
                 )
-                problems += [
-                    f"{inv_id}/{identity}: {p}" for p in found if not p.startswith("runs ")
-                ]
+                found = [p for p in found if not p.startswith("runs ")]
+                incomplete += [f"{inv_id}: {p}" for p in found]
+                problems += [f"{inv_id}/{identity}: {p}" for p in found]
                 recs = {str(r["case_id"]): r for r in ordinary[1] if r.get("algorithm") == identity}
             if "work_pass" in loaded:
                 wp = loaded["work_pass"]
@@ -481,13 +482,16 @@ def analyze_stage(
                         case_ids,
                         bundle_hashes[cohort],
                     )
-                    problems += [
-                        f"{twin_id}/{identity}: {p}" for p in found if not p.startswith("runs ")
-                    ]
+                    found = [p for p in found if not p.startswith("runs ")]
+                    incomplete += [f"{twin_id}: {p}" for p in found]
+                    problems += [f"{twin_id}/{identity}: {p}" for p in found]
                     wps = {str(r["case_id"]): r for r in wp[1] if r.get("algorithm") == identity}
             rows[key] = _row_view(
                 identity, cohort, str(inv["arm"]), case_ids, recs, wps, ordinary is not None
             )
+            if "work_pass" in loaded and loaded["work_pass"] is None:
+                incomplete.append(f"{twin_id}: no work-pass run")
+            rows[key]["completeness"] = incomplete
             if wps is not None and ordinary is not None:
                 problems += [f"{key}: P5 differs on {c}" for c in rows[key]["rule_p_cells"]["P5"]]
             if identity in keep_full or not str(inv["arm"]).startswith("Q19"):
@@ -886,7 +890,9 @@ def dispositions_of(
                 )
         for key in (*own, *base_rows, *controls_of):
             if key not in rows or not rows[key]["present"]:
-                inconclusive.append(f"{key}: arm missing or incomplete")
+                inconclusive.append(f"{key}: arm missing")
+            elif rows[key]["completeness"]:
+                inconclusive.append(f"{key}: arm incomplete ({rows[key]['completeness'][0]})")
         verdict = "reject" if reject else "inconclusive" if inconclusive else "keep_experimental"
         out[identity] = {"disposition": verdict, "reject": reject, "inconclusive": inconclusive}
     return out
