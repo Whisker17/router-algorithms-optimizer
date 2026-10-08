@@ -469,16 +469,29 @@ def arm_profile(arm: Arm, protocol: Protocol | str) -> RunProfile:
     profile_path = protocol if isinstance(protocol, str) else protocol.profile_path
     raw = read_profile_document(REPO_ROOT / profile_path)
     if arm.algorithms is not None:
+        if raw.keys() & {"strategies", "selection"}:  # WHI-1686: restrict only a valid record
+            try:
+                parse_profile(raw, profile_path)
+            except ProfileError as exc:
+                raise LatencyError(f"arm {arm.name}: pinned profile: {exc}") from exc
         raw["algorithms"] = list(arm.algorithms)
-        # an arm that selects a subset keeps only the options of the algorithms it runs (the
-        # loader refuses options declared for an algorithm that is not selected); a pinned
-        # profile without `algorithm_options` -- every L08 arm so far -- is unchanged
-        options = {k: v for k, v in (raw.get("algorithm_options") or {}).items()
-                   if k in arm.algorithms}  # fmt: skip
-        if options:
-            raw["algorithm_options"] = options
-        else:
-            raw.pop("algorithm_options", None)
+        # an arm that selects a subset keeps only the options and named-strategy entries of
+        # the algorithms it runs (the loader refuses either for an unselected algorithm); a
+        # pinned profile without these sections -- every L08/L01-R022 arm -- is unchanged
+        for section in ("algorithm_options", "strategies"):
+            kept = {k: v for k, v in (raw.get(section) or {}).items() if k in arm.algorithms}
+            if kept:
+                raw[section] = kept
+            else:
+                raw.pop(section, None)
+        # WHI-1686: a `selection` record keeps its mode (an R024 preset counts only under
+        # `mode: all`, WHI-1632) and source; its groups (every key stays, the loader requires
+        # it) list just the arm's algorithms, in the arm's order
+        if "selection" in raw:
+            groups = raw["selection"]["groups"]
+            raw["selection"]["groups"] = {
+                g: [a for a in arm.algorithms if a in members] for g, members in groups.items()
+            }
     for key in ("shortlist", "sampling"):
         if getattr(arm, key):
             raw[key] = dict(getattr(arm, key))
