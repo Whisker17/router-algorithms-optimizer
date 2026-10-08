@@ -299,12 +299,12 @@ def test_registered_once_as_a_custom_identity_right_after_metis_inspired() -> No
         source_path="config/daily_gross.yaml",
         source_sha256="x",
     )
-    assert list(profile.algorithms)[-9:] == [
+    assert list(profile.algorithms)[-11:] == [
         metis_inspired.NAME, NAME, "direct_split_certified", "incremental_graph_repair",
         "uni_sor_cycle_safe", "cfmm_dual", "single_path_bounded", "incremental_graph_bounded",
-        "metis_history_bounded",
+        "metis_history_bounded", "split_polish", "marginal_activation",
     ]  # fmt: skip
-    assert len(profile.algorithms) == 17  # + the 0.2.2 bounded identities (WHI-1599, WHI-1600)
+    assert len(profile.algorithms) == 19  # + 0.2.2 bounded (WHI-1599/1600), 0.2.4 (WHI-1632)
     assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
     assert dict(profile.algorithm_config(FACTORY).options) == PRESET
     assert profile.algorithm_config(FACTORY).params == {
@@ -1222,7 +1222,9 @@ def test_saved_eight_nine_and_ten_strategy_profiles_replay_literally() -> None:
         "single_path_bounded",
         "incremental_graph_bounded",
         "metis_history_bounded",
-    ]  # WHI-1556/1558/1599/1600, later
+        "split_polish",
+        "marginal_activation",
+    ]  # WHI-1556/1558/1599/1600/1632, later
     for drop in ([NAME, dsc, "incremental_graph_repair", *cyc, metis_inspired.NAME],
                  [NAME, dsc, "incremental_graph_repair", *cyc], [NAME, dsc, *cyc]):  # fmt: skip
         saved = json.loads(json.dumps(document))

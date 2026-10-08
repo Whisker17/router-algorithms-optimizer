@@ -641,16 +641,22 @@ def test_registered_as_a_custom_profile_selected_identity() -> None:
     factory = ALGORITHMS[NAME]
     assert factory is sp.FACTORY and list(ALGORITHMS).count(NAME) == 1
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES
-    assert strategy_group(NAME) == "custom" and factory.options_preset is None
+    assert strategy_group(NAME) == "custom"
+    assert (factory.options_preset or {}).get("key") == "R024-P01-split_polish"
     assert factory.search_params == ("max_hops", "max_splits", "percent_step")
     assert factory.graph_params == ("chunks",)
     assert "NOT Jupiter Metis" in str(factory.provenance)
-    # `--strategies all` and every saved/default profile are unchanged: it is never added
+    # WHI-1632: `--strategies all` appends it once, with its selected preset; the other modes
+    # and every saved/default profile are unchanged
     for name in ("daily_gross.yaml", "full_gross.yaml", "daily.yaml", "full.yaml"):
         source = read_profile_document(REPO / "config" / name)
         for mode in ("all", "base", "optimized", "profile"):
             document, profile = derive(source, mode, source_path=name, source_sha256="x")
-            assert NAME not in profile.algorithms and NAME not in json.dumps(document)
+            if mode != "all":
+                assert NAME not in profile.algorithms and NAME not in json.dumps(document)
+                continue
+            assert list(profile.algorithms).count(NAME) == 1
+            assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
     # a profile without its options is refused (no built-in default)
     doc = read_profile_document(REPO / "config" / "full_gross.yaml")
     doc["algorithms"] = [NAME]

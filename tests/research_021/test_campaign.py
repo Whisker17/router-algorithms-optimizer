@@ -51,7 +51,8 @@ ALL14 = ["direct", "single_path", "direct_split", "path_split", "incremental_gra
          "metis_history", "direct_split_certified", "incremental_graph_repair",
          "uni_sor_cycle_safe", "cfmm_dual"]  # fmt: skip
 R022 = ["single_path_bounded", "incremental_graph_bounded", "metis_history_bounded"]
-ALL17 = [*ALL14, *R022]  # the live `--strategies all` (WHI-1599, WHI-1600)
+R024 = ["split_polish", "marginal_activation"]  # WHI-1632: their selected presets
+LIVE = [*ALL14, *R022, *R024]  # the live `--strategies all` (WHI-1599, WHI-1600, WHI-1632)
 RESTRICTED = ("direct_split_certified", "uni_sor_cycle_safe", "cfmm_dual")
 
 
@@ -91,14 +92,16 @@ def the_021_roster(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     identities of that release. WHI-1599's `R022_ADDITIONS` (0.2.2) are not part of it, so the
     tests that compare the frozen manifest with an in-process derivation run with them switched
     off, as `test_algorithm_options` does for `R021_ADDITIONS`. (The bounded-fixture executor
-    test launches real `main.py` processes, which derive the live 17-identity roster.)
+    test launches real `main.py` processes, which derive the live 19-identity roster.)
 
     The frozen `freeze_record` also lists the pinned preset of every registered factory, so the
     0.2.2 strategy that carries one (`metis_history_bounded`, WHI-1600) is taken out of the
-    registry here too: the 0.2.1 record regenerates from the 0.2.1 registry."""
+    registry here too: the 0.2.1 record regenerates from the 0.2.1 registry. The same holds for
+    WHI-1632's `R024_ADDITIONS` (0.2.4), whose identities carry their selected presets."""
     monkeypatch.setattr(strategies_module, "R022_ADDITIONS", ())
+    monkeypatch.setattr(strategies_module, "R024_ADDITIONS", ())
     saved = dict(ALGORITHMS)
-    for name in R022:
+    for name in (*R022, *R024):
         del ALGORITHMS[name]
     try:
         yield
@@ -455,14 +458,14 @@ def _fixture_campaign(tmp_path: Path) -> Any:
         "known_report_defects": {"cases": []},
         "invocations": [
             {"id": "X-mixed", "stage": "T", "kind": "run", "bundle": "mixed", "profile": "small",
-             "strategies": "all", "algorithms": ALL17},
+             "strategies": "all", "algorithms": LIVE},
             {"id": "X-lb", "stage": "T", "kind": "run", "bundle": "lb", "profile": "small",
-             "strategies": "all", "algorithms": ALL17},
+             "strategies": "all", "algorithms": LIVE},
             {"id": "X-scan1", "stage": "T", "kind": "run", "bundle": "mixed", "profile": "scan1",
              "strategies": "profile", "algorithms": ["direct_split", "direct_split_certified"]},
             {"id": "X-quote", "stage": "T", "kind": "quote", "bundle": "corpus",
              "profile": "small", "strategies": "all", "details": True, "request": "one",
-             "algorithms": ALL17, "derive": ["report", "replay", "order_check"]},
+             "algorithms": LIVE, "derive": ["report", "replay", "order_check"]},
         ],
         "comparisons": [
             {"id": "grid", "stage": "T", "kind": "equal_value", "class": "same_domain",
@@ -516,7 +519,7 @@ def test_stage_executor_and_analysis_on_bounded_fixtures(tmp_path: Path) -> None
     assert cycle["identity_on_comparable_identical"]["gate"] == "pass"
     assert [r["unit"] for r in cycle["same_unit_ratios"]] == ["quotes_counted", "admission_checks"]
     quote = result["invocations"]["X-quote"]
-    assert [a["status"]["arm"].split("/")[1] for a in quote["arms"]] == ALL17
+    assert [a["status"]["arm"].split("/")[1] for a in quote["arms"]] == LIVE
     assert result["invocations"]["X-quote.order"]["result"] == "ok"  # replay == original
     assert (out / "X-quote.report" / "report" / "single_request.txt").is_file()
     assert "p95" not in C.render_markdown(result)

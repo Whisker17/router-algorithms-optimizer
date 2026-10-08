@@ -58,7 +58,13 @@ from benchmark.profile import (  # noqa: E402
     read_profile_document,
 )
 from benchmark.results import load_case_records, load_manifest  # noqa: E402
-from benchmark.strategies import derive, effective_document  # noqa: E402
+from benchmark.strategies import (  # noqa: E402
+    R021_ADDITIONS,
+    R022_ADDITIONS,
+    derive,
+    effective_document,
+    frozen_roster,
+)
 
 
 def _load_021() -> ModuleType:
@@ -83,6 +89,9 @@ PROFILE_DIR = "config/research_022/profiles"
 SCHEMA = "r022.campaign/1"
 WORK_SCRIPT = "tools/research_022/pruning_work.py"
 KINDS = ("run", "quote", "report", "replay", "order_check", "l01_run", "l01_compare")
+# WHI-1632 (R024-C/1 §6.4): the registered `all17` is the 0.2.1 + 0.2.2 additions; every derivation
+# and registered resolved identity of this campaign uses exactly this frozen roster.
+FROZEN_ADDITIONS = (*R021_ADDITIONS, *R022_ADDITIONS)
 
 
 class CampaignError(ValueError):
@@ -228,8 +237,10 @@ def _pinned(campaign: Any, key: str) -> dict[str, Any]:
 def roster_document(campaign: Any, base_key: str) -> dict[str, Any]:
     """The base's `--strategies all` derivation: the full roster with every strategy's values."""
     spec = campaign.raw["profiles"][base_key]
-    return effective_document(_pinned(campaign, base_key), "all", source_path=str(spec["path"]),
-                              source_sha256=str(spec["sha256"]))  # fmt: skip
+    with frozen_roster(FROZEN_ADDITIONS):
+        return effective_document(_pinned(campaign, base_key), "all",
+                                  source_path=str(spec["path"]),
+                                  source_sha256=str(spec["sha256"]))  # fmt: skip
 
 
 def restrict(doc: Mapping[str, Any], algorithms: Sequence[str]) -> dict[str, Any]:
@@ -441,8 +452,9 @@ def check(campaign: Any) -> list[str]:
         path = profile_path(campaign, str(inv.get("profile")))
         try:
             source = read_profile_document(REPO / path)
-            document, _ = derive(source, str(inv.get("strategies")), source_path=path,
-                                 source_sha256="0" * 64)  # fmt: skip
+            with frozen_roster(FROZEN_ADDITIONS):
+                document, _ = derive(source, str(inv.get("strategies")), source_path=path,
+                                     source_sha256="0" * 64)  # fmt: skip
         except (ProfileError, OSError) as exc:
             problems.append(f"{inv.id}: profile {inv.get('profile')} does not derive: {exc}")
             continue
@@ -616,6 +628,13 @@ def write_a5_values(path: Path, values: Mapping[str, Any]) -> None:
 # ----------------------------------------------------------------------------- freeze
 
 
+def resolved_identity(campaign: Any, inv: Any) -> dict[str, Any] | None:
+    """The 0.2.1 executor's registered resolved identity, derived with this campaign's frozen
+    roster (WHI-1632)."""
+    with frozen_roster(FROZEN_ADDITIONS):
+        return c21.resolved_identity(campaign, inv)  # type: ignore[no-any-return]
+
+
 def _file_pin(path: str) -> dict[str, str]:
     return {"path": path, "sha256": sha256_bytes((REPO / path).read_bytes())}
 
@@ -653,7 +672,7 @@ def freeze_record(campaign: Any) -> dict[str, Any]:
         ),
         "effective_settings": {
             inv.id: ident for inv in campaign.invocations
-            if (ident := c21.resolved_identity(campaign, inv)) is not None
+            if (ident := resolved_identity(campaign, inv)) is not None
         },
         "inventory": {s: c21.schedule(campaign, s) for s in stages},
     }  # fmt: skip
@@ -797,7 +816,7 @@ def analyze(
             problems.append(f"{inv.id}: run from a dirty tree")
         if revision and m.git_revision != revision:
             problems.append(f"{inv.id}: run revision {m.git_revision} != stage {revision}")
-        identity = c21.resolved_identity(campaign, inv)
+        identity = resolved_identity(campaign, inv)
         if identity is not None and identity["resolved_profile_sha256"] != sha256_bytes(
             json.dumps(m.resolved_profile, sort_keys=True).encode()
         ):

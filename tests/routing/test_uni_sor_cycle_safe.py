@@ -211,11 +211,12 @@ def test_registered_once_as_a_custom_identity_after_incremental_graph_repair() -
             yaml.safe_load((REPO / "config" / name).read_text()),
             "all", source_path=f"config/{name}", source_sha256="x",
         )  # fmt: skip
-        assert list(profile.algorithms)[-6:] == [
+        assert list(profile.algorithms)[-8:] == [
             incremental_graph_repair.NAME, NAME, "cfmm_dual", "single_path_bounded",
-            "incremental_graph_bounded", "metis_history_bounded",
-        ]  # WHI-1599/1600 append the 0.2.2 bounded identities after the 0.2.1 ones
-        assert len(profile.algorithms) == 17
+            "incremental_graph_bounded", "metis_history_bounded", "split_polish",
+            "marginal_activation",
+        ]  # WHI-1599/1600 (0.2.2) and WHI-1632 (0.2.4) append after the 0.2.1 ones
+        assert len(profile.algorithms) == 19
         assert document["algorithm_options"][NAME] == {}
         assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
         assert profile.algorithm_options[NAME]["settings_sha256"] == EMPTY_SHA

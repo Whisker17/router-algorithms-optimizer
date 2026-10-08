@@ -2,7 +2,8 @@
 a gross-only, never-worse post-processor that re-optimises the split shares of a
 declared base strategy's finished plan with exact integer replay (E1). Jupiter-inspired
 (Ultra V3 / Metis v7 Brent splitting), **NOT Jupiter Metis**; not SCO, not an optimum, a local
-heuristic. Experimental, `custom` group, selected only by a profile that names it.
+heuristic. Experimental, `custom` group. A profile that names it runs it; since WHI-1632 (R024-C/1
+§6) `--strategies all` also appends it with its selected preset (`PRESET`, below).
 
 **Domain** (§3): the base plan's evaluated trace, canonicalised (zero references and zero-input
 steps dropped). Every consumed fund must be fully consumed, otherwise the case is refused
@@ -40,7 +41,12 @@ equal to the base returns the base's own plan and evaluation. A polished plan is
 `BASES`: `incremental_graph`, `path_split` (WHI-1623), `metis_inspired`, `metis_history`,
 `incremental_graph_repair` (WHI-1626)), `solver` (`brent` / `golden`), `rounds`, `tolerance`
 (share of a fund, converted exactly to grid units), `grid` (D), `maxiter`. The E1 nominee is
-`incremental_graph`, `brent`, 2, 0.0001, 10**9, 60.
+`incremental_graph`, `brent`, 2, 0.0001, 10**9, 60. The selected preset v1 (`PRESET`,
+`R024-P01-split_polish`, WHI-1631: selected by the registered rule R024-C/1 §5.7 among 90
+candidates under P*, on the already exposed tuning split) is `metis_inspired`, `golden`, 2,
+0.00001, 10**9, 60; `--strategies all` writes it out. It is recognised as `{kind: preset}` only in
+a `--strategies all` document (`benchmark.profile.ALL_SCOPED_PRESETS`): equal options in an
+explicit profile stay an override, so the 0.2.3/0.2.4 explicit profiles keep their identity.
 
 **The base runs as its own registered identity** (WHI-1626). Its configuration has one source
 each, so there is nothing to reconcile: (a) the profile's `search.*` and `graph.chunks` plus the
@@ -120,6 +126,14 @@ BASE_OPTIONS = "base_options"  # the base's own algorithm_options (WHI-1626)
 CAPABILITIES = incremental_graph.CAPABILITIES  # a ceiling: every base's plans are a subset
 SEARCH_PARAMS = incremental_graph.SEARCH_PARAMS
 GRAPH_PARAMS = incremental_graph.GRAPH_PARAMS
+
+# The selected preset v1 (R024-C/1 §5.1, WHI-1631), frozen by its bytes (WHI-1632).
+PRESET: dict[str, Any] = {
+    "path": "config/split_polish/preset_v1.yaml",
+    "sha256": "bdaba97b702c205fe6fae0b6ce2a439f550f8b0f263713c702789358f92dc533",
+    "key": "R024-P01-split_polish",
+    "version": 1,
+}
 
 GOLDEN = (math.sqrt(5) - 1) / 2
 PENALTY = 1.0  # Brent: finite relative penalty of an infeasible point (losing 100 %), §4.4
@@ -732,5 +746,6 @@ FACTORY = AlgorithmFactory(
     graph_params=GRAPH_PARAMS,
     provenance=PROVENANCE,
     options_validator=validate_split_polish_options,
+    options_preset=MappingProxyType(PRESET),
     graph_params_for=graph_params_for,
 )
