@@ -665,6 +665,19 @@ def test_the_committed_tables_regenerate_from_the_pinned_analyses() -> None:
         report = CA.render_tables(RAW, {"R": analyses["R"]})
         assert (EVIDENCE / "report-tables.md").read_text() == report
         assert analyses["R"]["problems"] == []
+        counters: Any = _load("r024_counters", "tools/research_024/r024_counters.py")
+        rendered = counters.render(RAW, analyses["R"])
+        assert (EVIDENCE / "report-search-counters.md").read_text() == rendered
+    if "L" in analyses:
+        timing = CA.render_tables(RAW, {"L": analyses["L"]})
+        assert (EVIDENCE / "timing-tables.md").read_text() == timing
+        assert analyses["L"]["problems"] == []
+        view: Any = _load("r024_timing_view", "tools/research_024/r024_timing_view.py")
+        ledger = [
+            json.loads(x) for x in (EVIDENCE / "timing-ledger.jsonl").read_text().splitlines()
+        ]
+        rendered = view.render(RAW, analyses["L"], ledger)
+        assert (EVIDENCE / "timing-attempts.md").read_text() == rendered
     if (EVIDENCE / "tables.md").is_file():
         assert (EVIDENCE / "tables.md").read_text() == CA.render_tables(RAW, analyses)
     assert analyses["T"]["problems"] == []
