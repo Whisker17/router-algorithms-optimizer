@@ -1,0 +1,1664 @@
+{
+ "base_controls": {
+  "BASE-E1": {
+   "base": "metis_inspired",
+   "post_processor": "split_polish",
+   "reason": "params equal on the 6 keys metis_inspired reads; no base_options, no row options",
+   "served_by": "Q19"
+  },
+  "BASE-E2": {
+   "base": "incremental_graph",
+   "post_processor": "marginal_activation",
+   "reason": "params equal on the 4 keys incremental_graph reads; no base_options, no row options",
+   "served_by": "Q19"
+  },
+  "E2-E1only": {
+   "post_processor": "split_polish",
+   "reason": "Q19 split_polish is metis_inspired/golden/1e-5, E2's E1 stage incremental_graph/brent/1e-4: not CEC-equal",
+   "served_by": "arm"
+  }
+ },
+ "contract": "R024-C/1",
+ "effective_settings": {
+  "T-WP-e2-e1only-full": {
+   "algorithms": {
+    "split_polish": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "b11a503a9234a0771ce706ea930d7b232487d0ffb767013a2eb7d7ba8fd181e6"
+    }
+   },
+   "resolved_profile_sha256": "9313b2bc93b031fbc48396c5292b83e79dcadf7489b9a7fbb3d210ffba75b505"
+  },
+  "T-WP-q19-e1-full": {
+   "algorithms": {
+    "split_polish": {
+     "options_source": {
+      "key": "R024-P01-split_polish",
+      "kind": "preset",
+      "path": "config/split_polish/preset_v1.yaml",
+      "sha256": "bdaba97b702c205fe6fae0b6ce2a439f550f8b0f263713c702789358f92dc533",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "04b363a7d22959202b2d1d7bd4da909968d2d144d1f8b40969ce8afc5a53c1ee"
+    }
+   },
+   "resolved_profile_sha256": "77989ce5f021c55f5c34ac51fd7bce579115a0f989720c9ef1f308d0c0bee8a6"
+  },
+  "T-WP-q19-e1-sor": {
+   "algorithms": {
+    "split_polish": {
+     "options_source": {
+      "key": "R024-P01-split_polish",
+      "kind": "preset",
+      "path": "config/split_polish/preset_v1.yaml",
+      "sha256": "bdaba97b702c205fe6fae0b6ce2a439f550f8b0f263713c702789358f92dc533",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "04b363a7d22959202b2d1d7bd4da909968d2d144d1f8b40969ce8afc5a53c1ee"
+    }
+   },
+   "resolved_profile_sha256": "77989ce5f021c55f5c34ac51fd7bce579115a0f989720c9ef1f308d0c0bee8a6"
+  },
+  "T-WP-q19-e2-full": {
+   "algorithms": {
+    "marginal_activation": {
+     "options_source": {
+      "key": "R024-P02-marginal_activation",
+      "kind": "preset",
+      "path": "config/marginal_activation/preset_v1.yaml",
+      "sha256": "553ba71c8569eee67710587dda4a7e24e7dccee1f44ead6107944abc3db76cba",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "6aec619ddf9fdaca5d0bca7127f52e331f0b3361c95c6712245ada7f34460056"
+    }
+   },
+   "resolved_profile_sha256": "b7381d323cac14f12888c5d401fa268633a5dc56aca60175a40c748be37fe3a5"
+  },
+  "T-WP-q19-e2-sor": {
+   "algorithms": {
+    "marginal_activation": {
+     "options_source": {
+      "key": "R024-P02-marginal_activation",
+      "kind": "preset",
+      "path": "config/marginal_activation/preset_v1.yaml",
+      "sha256": "553ba71c8569eee67710587dda4a7e24e7dccee1f44ead6107944abc3db76cba",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "6aec619ddf9fdaca5d0bca7127f52e331f0b3361c95c6712245ada7f34460056"
+    }
+   },
+   "resolved_profile_sha256": "b7381d323cac14f12888c5d401fa268633a5dc56aca60175a40c748be37fe3a5"
+  },
+  "T-WP-q19-u1-full": {
+   "algorithms": {
+    "direct": {
+     "options_source": null,
+     "params": {},
+     "settings_sha256": null
+    },
+    "direct_split": {
+     "options_source": null,
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "path_split": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "1d8d033b93117573475fc857c7b6861dc786f8faa00b80b8636db7db4ec7aab0"
+  },
+  "T-WP-q19-u1-sor": {
+   "algorithms": {
+    "direct": {
+     "options_source": null,
+     "params": {},
+     "settings_sha256": null
+    },
+    "direct_split": {
+     "options_source": null,
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "path_split": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "1d8d033b93117573475fc857c7b6861dc786f8faa00b80b8636db7db4ec7aab0"
+  },
+  "T-WP-q19-u2-full": {
+   "algorithms": {
+    "uni_sor_port": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "9001ef78ee4c2b8dce83d22a83b1fc1a57b71f266b79b262f7b7dcd40349317f"
+  },
+  "T-WP-q19-u2-sor": {
+   "algorithms": {
+    "uni_sor_port": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "9001ef78ee4c2b8dce83d22a83b1fc1a57b71f266b79b262f7b7dcd40349317f"
+  },
+  "T-WP-q19-u3-full": {
+   "algorithms": {
+    "direct_split_certified": {
+     "options_source": {
+      "key": "R021-P06-direct_split_certified",
+      "kind": "preset",
+      "path": "config/direct_split_certified/preset_v1.yaml",
+      "sha256": "d2653303f33d8bd9391c5ee6ae564c2c1fa83366a548063691e87d148e23c70f",
+      "version": 1
+     },
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_inspired": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_adaptive": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {},
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       25,
+       50,
+       75,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 1000000,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_optimized": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {
+       "L02": {
+        "skip_empty_spans": true
+       },
+       "L03": {
+        "bin_capacity": 4096,
+        "lifetime": "per_solve",
+        "tick_capacity": 16384
+       },
+       "L04": {
+        "lifetime": "per_solve",
+        "max_checkpoints": 262144,
+        "max_keys": 4096
+       }
+      },
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       5,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 8,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "bff813cb1e1b0d7821b24ca652e3c2ede10bb29891b4641023ed39e3b1beca8f"
+  },
+  "T-WP-q19-u3-sor": {
+   "algorithms": {
+    "direct_split_certified": {
+     "options_source": {
+      "key": "R021-P06-direct_split_certified",
+      "kind": "preset",
+      "path": "config/direct_split_certified/preset_v1.yaml",
+      "sha256": "d2653303f33d8bd9391c5ee6ae564c2c1fa83366a548063691e87d148e23c70f",
+      "version": 1
+     },
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_inspired": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_adaptive": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {},
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       25,
+       50,
+       75,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 1000000,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_optimized": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {
+       "L02": {
+        "skip_empty_spans": true
+       },
+       "L03": {
+        "bin_capacity": 4096,
+        "lifetime": "per_solve",
+        "tick_capacity": 16384
+       },
+       "L04": {
+        "lifetime": "per_solve",
+        "max_checkpoints": 262144,
+        "max_keys": 4096
+       }
+      },
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       5,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 8,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "bff813cb1e1b0d7821b24ca652e3c2ede10bb29891b4641023ed39e3b1beca8f"
+  },
+  "T-WP-q19-u4-full": {
+   "algorithms": {
+    "incremental_graph_repair": {
+     "options_source": {
+      "key": "R021-P08-incremental_graph_repair",
+      "kind": "preset",
+      "path": "config/incremental_graph_repair/preset_v1.yaml",
+      "sha256": "13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "89af50289837bb6929f1f184f342db974da0cbe134dda5ed4497b12df7264abf"
+    }
+   },
+   "resolved_profile_sha256": "b6e2200f0e5f25b9120c5b6276d63776195f53c90a302e9e36bfd2638d1b8f82"
+  },
+  "T-WP-q19-u4-sor": {
+   "algorithms": {
+    "incremental_graph_repair": {
+     "options_source": {
+      "key": "R021-P08-incremental_graph_repair",
+      "kind": "preset",
+      "path": "config/incremental_graph_repair/preset_v1.yaml",
+      "sha256": "13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "89af50289837bb6929f1f184f342db974da0cbe134dda5ed4497b12df7264abf"
+    }
+   },
+   "resolved_profile_sha256": "b6e2200f0e5f25b9120c5b6276d63776195f53c90a302e9e36bfd2638d1b8f82"
+  },
+  "T-WP-q19-u5-full": {
+   "algorithms": {
+    "uni_sor_cycle_safe": {
+     "options_source": {
+      "key": "uni_sor_cycle_safe",
+      "kind": "preset",
+      "path": "config/uni_sor_cycle_safe/preset_v1.yaml",
+      "sha256": "668e9d42d99b9ecce09fb044f827d4f0a4eec281cab401fb0cd74917557e739a",
+      "version": 1
+     },
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    }
+   },
+   "resolved_profile_sha256": "fdcc7eec751483ec50951cf85b251f9a0e66e21c92b8132704a39dd92e1d709a"
+  },
+  "T-WP-q19-u5-sor": {
+   "algorithms": {
+    "uni_sor_cycle_safe": {
+     "options_source": {
+      "key": "uni_sor_cycle_safe",
+      "kind": "preset",
+      "path": "config/uni_sor_cycle_safe/preset_v1.yaml",
+      "sha256": "668e9d42d99b9ecce09fb044f827d4f0a4eec281cab401fb0cd74917557e739a",
+      "version": 1
+     },
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    }
+   },
+   "resolved_profile_sha256": "fdcc7eec751483ec50951cf85b251f9a0e66e21c92b8132704a39dd92e1d709a"
+  },
+  "T-WP-q19-u6-full": {
+   "algorithms": {
+    "cfmm_dual": {
+     "options_source": {
+      "key": "R021-P12-cfmm_dual",
+      "kind": "preset",
+      "path": "config/cfmm_dual/preset_v2.yaml",
+      "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+      "version": 2
+     },
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": "aa6eea57323764328d2432421b43e658e79b438c5b9533a0ac40f8ed9937b2ea"
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "5498b6e4425787502db696de9a82f44f391613addb55fa6483565320b9285be8"
+  },
+  "T-WP-q19-u6-sor": {
+   "algorithms": {
+    "cfmm_dual": {
+     "options_source": {
+      "key": "R021-P12-cfmm_dual",
+      "kind": "preset",
+      "path": "config/cfmm_dual/preset_v2.yaml",
+      "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+      "version": 2
+     },
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": "aa6eea57323764328d2432421b43e658e79b438c5b9533a0ac40f8ed9937b2ea"
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "5498b6e4425787502db696de9a82f44f391613addb55fa6483565320b9285be8"
+  },
+  "T-e2-cm-full": {
+   "algorithms": {
+    "marginal_activation": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "0a75b7bc13c569a49d7e23dd2a78fc9c237f1d51468e3e0946627dc0e9d896a0"
+    }
+   },
+   "resolved_profile_sha256": "a4af8d63ea59ebe2aad87d87d063eb4b26cb3d82b9a3bd3cdb9f33aafac775fc"
+  },
+  "T-e2-e1only-full": {
+   "algorithms": {
+    "split_polish": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "b11a503a9234a0771ce706ea930d7b232487d0ffb767013a2eb7d7ba8fd181e6"
+    }
+   },
+   "resolved_profile_sha256": "9313b2bc93b031fbc48396c5292b83e79dcadf7489b9a7fbb3d210ffba75b505"
+  },
+  "T-e2-wm-full": {
+   "algorithms": {
+    "marginal_activation": {
+     "options_source": {
+      "kind": "override"
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "857aba71e78759c65a80550c3124203c76d0d49155941c1e5a7689d8dc62b8d3"
+    }
+   },
+   "resolved_profile_sha256": "4bc6e95f1915a535acbc5ba7b3876c0dec676774a6b5fb1541a29cc67daf6109"
+  },
+  "T-q19-e1-full": {
+   "algorithms": {
+    "split_polish": {
+     "options_source": {
+      "key": "R024-P01-split_polish",
+      "kind": "preset",
+      "path": "config/split_polish/preset_v1.yaml",
+      "sha256": "bdaba97b702c205fe6fae0b6ce2a439f550f8b0f263713c702789358f92dc533",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "04b363a7d22959202b2d1d7bd4da909968d2d144d1f8b40969ce8afc5a53c1ee"
+    }
+   },
+   "resolved_profile_sha256": "77989ce5f021c55f5c34ac51fd7bce579115a0f989720c9ef1f308d0c0bee8a6"
+  },
+  "T-q19-e1-sor": {
+   "algorithms": {
+    "split_polish": {
+     "options_source": {
+      "key": "R024-P01-split_polish",
+      "kind": "preset",
+      "path": "config/split_polish/preset_v1.yaml",
+      "sha256": "bdaba97b702c205fe6fae0b6ce2a439f550f8b0f263713c702789358f92dc533",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "04b363a7d22959202b2d1d7bd4da909968d2d144d1f8b40969ce8afc5a53c1ee"
+    }
+   },
+   "resolved_profile_sha256": "77989ce5f021c55f5c34ac51fd7bce579115a0f989720c9ef1f308d0c0bee8a6"
+  },
+  "T-q19-e2-full": {
+   "algorithms": {
+    "marginal_activation": {
+     "options_source": {
+      "key": "R024-P02-marginal_activation",
+      "kind": "preset",
+      "path": "config/marginal_activation/preset_v1.yaml",
+      "sha256": "553ba71c8569eee67710587dda4a7e24e7dccee1f44ead6107944abc3db76cba",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "6aec619ddf9fdaca5d0bca7127f52e331f0b3361c95c6712245ada7f34460056"
+    }
+   },
+   "resolved_profile_sha256": "b7381d323cac14f12888c5d401fa268633a5dc56aca60175a40c748be37fe3a5"
+  },
+  "T-q19-e2-sor": {
+   "algorithms": {
+    "marginal_activation": {
+     "options_source": {
+      "key": "R024-P02-marginal_activation",
+      "kind": "preset",
+      "path": "config/marginal_activation/preset_v1.yaml",
+      "sha256": "553ba71c8569eee67710587dda4a7e24e7dccee1f44ead6107944abc3db76cba",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "6aec619ddf9fdaca5d0bca7127f52e331f0b3361c95c6712245ada7f34460056"
+    }
+   },
+   "resolved_profile_sha256": "b7381d323cac14f12888c5d401fa268633a5dc56aca60175a40c748be37fe3a5"
+  },
+  "T-q19-u1-full": {
+   "algorithms": {
+    "direct": {
+     "options_source": null,
+     "params": {},
+     "settings_sha256": null
+    },
+    "direct_split": {
+     "options_source": null,
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "path_split": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "1d8d033b93117573475fc857c7b6861dc786f8faa00b80b8636db7db4ec7aab0"
+  },
+  "T-q19-u1-sor": {
+   "algorithms": {
+    "direct": {
+     "options_source": null,
+     "params": {},
+     "settings_sha256": null
+    },
+    "direct_split": {
+     "options_source": null,
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "incremental_graph": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "path_split": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "single_path": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "1d8d033b93117573475fc857c7b6861dc786f8faa00b80b8636db7db4ec7aab0"
+  },
+  "T-q19-u2-full": {
+   "algorithms": {
+    "uni_sor_port": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "9001ef78ee4c2b8dce83d22a83b1fc1a57b71f266b79b262f7b7dcd40349317f"
+  },
+  "T-q19-u2-sor": {
+   "algorithms": {
+    "uni_sor_port": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "9001ef78ee4c2b8dce83d22a83b1fc1a57b71f266b79b262f7b7dcd40349317f"
+  },
+  "T-q19-u3-full": {
+   "algorithms": {
+    "direct_split_certified": {
+     "options_source": {
+      "key": "R021-P06-direct_split_certified",
+      "kind": "preset",
+      "path": "config/direct_split_certified/preset_v1.yaml",
+      "sha256": "d2653303f33d8bd9391c5ee6ae564c2c1fa83366a548063691e87d148e23c70f",
+      "version": 1
+     },
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_inspired": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_adaptive": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {},
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       25,
+       50,
+       75,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 1000000,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_optimized": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {
+       "L02": {
+        "skip_empty_spans": true
+       },
+       "L03": {
+        "bin_capacity": 4096,
+        "lifetime": "per_solve",
+        "tick_capacity": 16384
+       },
+       "L04": {
+        "lifetime": "per_solve",
+        "max_checkpoints": 262144,
+        "max_keys": 4096
+       }
+      },
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       5,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 8,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "bff813cb1e1b0d7821b24ca652e3c2ede10bb29891b4641023ed39e3b1beca8f"
+  },
+  "T-q19-u3-sor": {
+   "algorithms": {
+    "direct_split_certified": {
+     "options_source": {
+      "key": "R021-P06-direct_split_certified",
+      "kind": "preset",
+      "path": "config/direct_split_certified/preset_v1.yaml",
+      "sha256": "d2653303f33d8bd9391c5ee6ae564c2c1fa83366a548063691e87d148e23c70f",
+      "version": 1
+     },
+     "params": {
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "03cfe30130831ee0426822d26fc4513c95af19693c6869e8e29e85b0749d8406"
+    },
+    "metis_history": {
+     "options_source": {
+      "key": "R021-P04-metis_history",
+      "kind": "preset",
+      "path": "config/metis_history/preset_v1.yaml",
+      "sha256": "f4510b5181b1152786b0a637cd462734e31988b7890487c6ee6d396d37965799",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "metis_inspired": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "label_pruning": true,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_adaptive": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {},
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       25,
+       50,
+       75,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 1000000,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    },
+    "uni_sor_optimized": {
+     "options_source": null,
+     "params": {
+      "coarse_step": 25,
+      "controls": {
+       "L02": {
+        "skip_empty_spans": true
+       },
+       "L03": {
+        "bin_capacity": 4096,
+        "lifetime": "per_solve",
+        "tick_capacity": 16384
+       },
+       "L04": {
+        "lifetime": "per_solve",
+        "max_checkpoints": 262144,
+        "max_keys": 4096
+       }
+      },
+      "direct_routes": 0,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5,
+      "probe_percents": [
+       5,
+       100
+      ],
+      "refine_radius": 1,
+      "routes_per_probe": 8,
+      "soft_max_quotes": null
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "bff813cb1e1b0d7821b24ca652e3c2ede10bb29891b4641023ed39e3b1beca8f"
+  },
+  "T-q19-u4-full": {
+   "algorithms": {
+    "incremental_graph_repair": {
+     "options_source": {
+      "key": "R021-P08-incremental_graph_repair",
+      "kind": "preset",
+      "path": "config/incremental_graph_repair/preset_v1.yaml",
+      "sha256": "13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "89af50289837bb6929f1f184f342db974da0cbe134dda5ed4497b12df7264abf"
+    }
+   },
+   "resolved_profile_sha256": "b6e2200f0e5f25b9120c5b6276d63776195f53c90a302e9e36bfd2638d1b8f82"
+  },
+  "T-q19-u4-sor": {
+   "algorithms": {
+    "incremental_graph_repair": {
+     "options_source": {
+      "key": "R021-P08-incremental_graph_repair",
+      "kind": "preset",
+      "path": "config/incremental_graph_repair/preset_v1.yaml",
+      "sha256": "13774bcd2225ee17d3635bae509ac2a5a888d5c2801006a200e01788ca35786a",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "89af50289837bb6929f1f184f342db974da0cbe134dda5ed4497b12df7264abf"
+    }
+   },
+   "resolved_profile_sha256": "b6e2200f0e5f25b9120c5b6276d63776195f53c90a302e9e36bfd2638d1b8f82"
+  },
+  "T-q19-u5-full": {
+   "algorithms": {
+    "uni_sor_cycle_safe": {
+     "options_source": {
+      "key": "uni_sor_cycle_safe",
+      "kind": "preset",
+      "path": "config/uni_sor_cycle_safe/preset_v1.yaml",
+      "sha256": "668e9d42d99b9ecce09fb044f827d4f0a4eec281cab401fb0cd74917557e739a",
+      "version": 1
+     },
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    }
+   },
+   "resolved_profile_sha256": "fdcc7eec751483ec50951cf85b251f9a0e66e21c92b8132704a39dd92e1d709a"
+  },
+  "T-q19-u5-sor": {
+   "algorithms": {
+    "uni_sor_cycle_safe": {
+     "options_source": {
+      "key": "uni_sor_cycle_safe",
+      "kind": "preset",
+      "path": "config/uni_sor_cycle_safe/preset_v1.yaml",
+      "sha256": "668e9d42d99b9ecce09fb044f827d4f0a4eec281cab401fb0cd74917557e739a",
+      "version": 1
+     },
+     "params": {
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    }
+   },
+   "resolved_profile_sha256": "fdcc7eec751483ec50951cf85b251f9a0e66e21c92b8132704a39dd92e1d709a"
+  },
+  "T-q19-u6-full": {
+   "algorithms": {
+    "cfmm_dual": {
+     "options_source": {
+      "key": "R021-P12-cfmm_dual",
+      "kind": "preset",
+      "path": "config/cfmm_dual/preset_v2.yaml",
+      "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+      "version": 2
+     },
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": "aa6eea57323764328d2432421b43e658e79b438c5b9533a0ac40f8ed9937b2ea"
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "5498b6e4425787502db696de9a82f44f391613addb55fa6483565320b9285be8"
+  },
+  "T-q19-u6-sor": {
+   "algorithms": {
+    "cfmm_dual": {
+     "options_source": {
+      "key": "R021-P12-cfmm_dual",
+      "kind": "preset",
+      "path": "config/cfmm_dual/preset_v2.yaml",
+      "sha256": "865ad5929c0c3ce6548e6ff5b2ef5d99703c72fb1cdc4a0cbae2d61f436142c2",
+      "version": 2
+     },
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": "aa6eea57323764328d2432421b43e658e79b438c5b9533a0ac40f8ed9937b2ea"
+    },
+    "incremental_graph_bounded": {
+     "options_source": null,
+     "params": {
+      "chunks": 50,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": null
+    },
+    "metis_history_bounded": {
+     "options_source": {
+      "key": "R022-Q04-metis_history_bounded",
+      "kind": "preset",
+      "path": "config/metis_history_bounded/preset_v1.yaml",
+      "sha256": "242d5b81ebb7a8c3da74751ae162721e674f4bfe3b046f8cb5a208eaba90b6ce",
+      "version": 1
+     },
+     "params": {
+      "chunks": 50,
+      "label_hops": 4,
+      "max_hops": 3,
+      "max_splits": 4,
+      "percent_step": 5
+     },
+     "settings_sha256": "183bb1ff3bb8b0baee7b72720a2c27fd306d5656f71e44cb96767094bb1fceb6"
+    },
+    "single_path_bounded": {
+     "options_source": null,
+     "params": {
+      "max_hops": 3
+     },
+     "settings_sha256": null
+    }
+   },
+   "resolved_profile_sha256": "5498b6e4425787502db696de9a82f44f391613addb55fa6483565320b9285be8"
+  }
+ },
+ "files": {
+  "canonical": {
+   "path": "config/full_gross.yaml",
+   "sha256": "51a8a65184ae765867fd9d7763776852b2b4576e3cf7116a8dc15ccd87028177"
+  },
+  "contract": {
+   "path": "docs/references/research-024/contract.md",
+   "sha256": "d458fbdefc501369cd10ec9d3d3527534df82d93cab20ff9af6dbd9ffe884065"
+  },
+  "m4_settings": {
+   "path": "config/metis_challenge/m4.yaml",
+   "sha256": "661311df6ff7a36a43954fff0e42f6b30b824d35d96c06f0e215960f256d4471"
+  },
+  "preset:marginal_activation": {
+   "path": "config/marginal_activation/preset_v1.yaml",
+   "sha256": "553ba71c8569eee67710587dda4a7e24e7dccee1f44ead6107944abc3db76cba"
+  },
+  "preset:split_polish": {
+   "path": "config/split_polish/preset_v1.yaml",
+   "sha256": "bdaba97b702c205fe6fae0b6ce2a439f550f8b0f263713c702789358f92dc533"
+  },
+  "profile:e2-cm": {
+   "path": "config/research_024/campaign_profiles/e2-cm.yaml",
+   "sha256": "6e16aea466d705ee9d9854e863bcc274d524cff5cbbf9c4f16755efd3a192a47"
+  },
+  "profile:e2-e1only": {
+   "path": "config/research_024/campaign_profiles/e2-e1only.yaml",
+   "sha256": "01e03643e6d185d2300c89456e2912000e5831ee57a5ff52fa9adfa84d8882a3"
+  },
+  "profile:e2-wm": {
+   "path": "config/research_024/campaign_profiles/e2-wm.yaml",
+   "sha256": "28a2a8f1f679cc5bdf7a63a3bce26f74feda6a806811269c00c21bbf13c0e55d"
+  },
+  "profile:q19-e1": {
+   "path": "config/research_024/campaign_profiles/q19-e1.yaml",
+   "sha256": "a724d195f3280d44401f7cc2ec6bc41f0e4f198ed08c4b6fdb4fbf13c79a29aa"
+  },
+  "profile:q19-e2": {
+   "path": "config/research_024/campaign_profiles/q19-e2.yaml",
+   "sha256": "6cc0ba773e4bc1992f1d107515a9654e7dfc0fb4e5ad5b382b23f9445824d7dd"
+  },
+  "profile:q19-u1": {
+   "path": "config/research_024/campaign_profiles/q19-u1.yaml",
+   "sha256": "e6a60680c40e15e4d5135649455184ed913f30a3175178a36941f916a8ac3320"
+  },
+  "profile:q19-u2": {
+   "path": "config/research_024/campaign_profiles/q19-u2.yaml",
+   "sha256": "0dcd056309bcc9311e008fb8803576828768ffccd77a0a5de2fdae3bbcf5cba8"
+  },
+  "profile:q19-u3": {
+   "path": "config/research_024/campaign_profiles/q19-u3.yaml",
+   "sha256": "954150850134008c55390b327c4d6dc61ea1eb1cdce3e3567b25100861d2b0f0"
+  },
+  "profile:q19-u4": {
+   "path": "config/research_024/campaign_profiles/q19-u4.yaml",
+   "sha256": "3805c63d4fa770f5e9f96417f1be58cfa4b3ad981edea55fdd9afc088b22589b"
+  },
+  "profile:q19-u5": {
+   "path": "config/research_024/campaign_profiles/q19-u5.yaml",
+   "sha256": "816a07a3b9d99324b38f9a6e4f7a00de8a3470267202ede142dada4bbd9e677d"
+  },
+  "profile:q19-u6": {
+   "path": "config/research_024/campaign_profiles/q19-u6.yaml",
+   "sha256": "645787b8e41374ccb7daa903c0f26a3091c44abba02945c3d248834b238f4b33"
+  },
+  "schedule": {
+   "path": "config/research_024/campaign.yaml",
+   "sha256": "ca8869e6ab23c343782244be139f956dbe7dff816b766575ea97137844a408d2"
+  },
+  "sufficient_budget": {
+   "path": "config/latency/l01-sufficient-budget.yaml",
+   "sha256": "4059506da09280cdb0e8d4a94ac6ecef1c786113016e8eee430bef38089db43b"
+  },
+  "timing:all19.yaml": {
+   "path": "config/research_024/latency/all19.yaml",
+   "sha256": "b984f10faaf95c3ebd9c2d8b716b9eaa6e8a944bdd6f229a1de77538f95bbc5f"
+  },
+  "timing:l01-r024.yaml": {
+   "path": "config/research_024/latency/l01-r024.yaml",
+   "sha256": "9c92dc5df32c0684a715fd087ca02585712d40e1f13b033b91b7391dd09c50c8"
+  },
+  "timing:timing-arms.yaml": {
+   "path": "config/research_024/latency/timing-arms.yaml",
+   "sha256": "8e6512691c9f44aca777dfb6636e5eb74bec4233ced4d30865f18087fb2c2150"
+  },
+  "tool:tools/research_021/analysis.py": {
+   "path": "tools/research_021/analysis.py",
+   "sha256": "311a92988ffdc42901de65adc6199e16d5a0faa849447a12ed6accff562b2288"
+  },
+  "tool:tools/research_021/campaign.py": {
+   "path": "tools/research_021/campaign.py",
+   "sha256": "2307d801d5f25fdd742208cf7c8b16483853e5a3e80351187121574b797c65c4"
+  },
+  "tool:tools/research_022/pruning_campaign.py": {
+   "path": "tools/research_022/pruning_campaign.py",
+   "sha256": "712ba85ddd5a411ee71466c66d99225dad841360bf26ff8e9c9140657dabe22c"
+  },
+  "tool:tools/research_022/pruning_work.py": {
+   "path": "tools/research_022/pruning_work.py",
+   "sha256": "f40d1488c41e38e213c080c2c312bc5d5c586059a6636e88bf5d076aeec3a01c"
+  },
+  "tool:tools/research_024/r024_campaign.py": {
+   "path": "tools/research_024/r024_campaign.py",
+   "sha256": "f6c876d05000f4c5a80c5f172ca3d1648b3c6101ccf10d78f0fa293f4d7482cd"
+  },
+  "tool:tools/research_024/r024_campaign_analysis.py": {
+   "path": "tools/research_024/r024_campaign_analysis.py",
+   "sha256": "47a4a14b241d706798f2817c672426cf0248458fe6650bc187667c82c62b5f37"
+  },
+  "tool:tools/research_024/r024_rule.py": {
+   "path": "tools/research_024/r024_rule.py",
+   "sha256": "3c6e1013a6f3d654f084fa2c0488a82db20c95749db44db6dfa16991836babdd"
+  }
+ },
+ "inputs": {
+  "full": {
+   "bundle_hash": "717c21f35d1f7f6a02f7076b40793eaba564148cc4d187392049e503fa4d3143",
+   "cases": 398,
+   "cohort": "full_source",
+   "source": "data/corpus/mantle-5src-101082044/bundle",
+   "split": "all"
+  },
+  "report_full": {
+   "bundle_hash": "85202b20c13685af6fd999fe3d228ca6de37abb5914b5459621e9a67a71971c0",
+   "cases": 302,
+   "cohort": "full_source",
+   "source": "data/corpus/mantle-5src-101082044/bundle_report",
+   "split": "report"
+  },
+  "report_sor": {
+   "bundle_hash": "8213b7b07222c98a5ec99f0bae53d0876d2d14dc7dfd3cb7aa6cec1e20afe640",
+   "cases": 302,
+   "cohort": "sor_compatible",
+   "source": "data/corpus/mantle-5src-101082044/sor_cohort_report",
+   "split": "report"
+  },
+  "tuning_full": {
+   "bundle_hash": "ee7afa7e2d1ef43dde67cada11aeb15e064e2b90ed9bff57113f04268b70279b",
+   "cases": 96,
+   "cohort": "full_source",
+   "source": "data/corpus/mantle-5src-101082044/bundle_tuning",
+   "split": "tuning"
+  },
+  "tuning_sor": {
+   "bundle_hash": "b900b866d4a0ef6a3b33546f1d262ed3fc836847ef30da9e975c5bae75107ade",
+   "cases": 96,
+   "cohort": "sor_compatible",
+   "source": "data/corpus/mantle-5src-101082044/sor_cohort_tuning",
+   "split": "tuning"
+  }
+ },
+ "inventory": {
+  "R": [
+   "R-e2-wm-full",
+   "R-e2-cm-full",
+   "R-q19-u2-full",
+   "R-q19-u5-full",
+   "R-q19-u2-sor",
+   "R-q19-u5-sor",
+   "R-q19-u3-full",
+   "R-q19-u3-sor",
+   "R-q19-u6-full",
+   "R-q19-u6-sor",
+   "R-q19-u1-full",
+   "R-q19-u1-sor",
+   "R-q19-u4-full",
+   "R-q19-u4-sor",
+   "R-q19-e2-full",
+   "R-q19-e2-sor",
+   "R-e2-e1only-full",
+   "R-q19-e1-full",
+   "R-q19-e1-sor",
+   "R-WP-q19-u2-full",
+   "R-WP-q19-u5-full",
+   "R-WP-q19-u2-sor",
+   "R-WP-q19-u5-sor",
+   "R-WP-q19-u3-full",
+   "R-WP-q19-u3-sor",
+   "R-WP-q19-u6-full",
+   "R-WP-q19-u6-sor",
+   "R-WP-q19-u1-full",
+   "R-WP-q19-u1-sor",
+   "R-WP-q19-u4-full",
+   "R-WP-q19-u4-sor",
+   "R-WP-q19-e2-full",
+   "R-WP-q19-e2-sor",
+   "R-WP-e2-e1only-full",
+   "R-WP-q19-e1-full",
+   "R-WP-q19-e1-sor"
+  ],
+  "T": [
+   "T-e2-wm-full",
+   "T-e2-cm-full",
+   "T-q19-u2-full",
+   "T-q19-u5-full",
+   "T-q19-u2-sor",
+   "T-q19-u5-sor",
+   "T-q19-u3-full",
+   "T-q19-u3-sor",
+   "T-q19-u6-full",
+   "T-q19-u6-sor",
+   "T-q19-u1-full",
+   "T-q19-u1-sor",
+   "T-q19-u4-full",
+   "T-q19-u4-sor",
+   "T-q19-e2-full",
+   "T-q19-e2-sor",
+   "T-e2-e1only-full",
+   "T-q19-e1-full",
+   "T-q19-e1-sor",
+   "T-WP-q19-u2-full",
+   "T-WP-q19-u5-full",
+   "T-WP-q19-u2-sor",
+   "T-WP-q19-u5-sor",
+   "T-WP-q19-u3-full",
+   "T-WP-q19-u3-sor",
+   "T-WP-q19-u6-full",
+   "T-WP-q19-u6-sor",
+   "T-WP-q19-u1-full",
+   "T-WP-q19-u1-sor",
+   "T-WP-q19-u4-full",
+   "T-WP-q19-u4-sor",
+   "T-WP-q19-e2-full",
+   "T-WP-q19-e2-sor",
+   "T-WP-e2-e1only-full",
+   "T-WP-q19-e1-full",
+   "T-WP-q19-e1-sor"
+  ]
+ },
+ "issue": "WHI-1633",
+ "rules_sha256": "56dca0105490d41dcc1318aea48d8e75d7bc01a2ca7dea42c0b8373d37be0b94",
+ "schema": "r024.campaign-freeze/1",
+ "timing": {
+  "arms": {
+   "key": "L08-R024",
+   "path": "config/research_024/latency/timing-arms.yaml"
+  },
+  "bundle": "full",
+  "launch": {
+   "headroom_load1": 3.0,
+   "interval_seconds": 30,
+   "max_wait_seconds": 21600,
+   "resample_every_seconds": 300,
+   "samples": 5
+  },
+  "max_started_attempts_per_unit": 3,
+  "monitor": {
+   "check_seconds": 30,
+   "pmset_check_seconds": 300,
+   "terminate_grace_seconds": 120
+  },
+  "never_triggers": [
+   "solver_timeout",
+   "regression",
+   "insufficient_speedup",
+   "noisy_comparison",
+   "l01_inconclusive",
+   "insufficient_cases",
+   "aa_noise",
+   "semantic_difference"
+  ],
+  "outcomes": [
+   "valid",
+   "inconclusive_no_launch",
+   "inconclusive_cap_exhausted",
+   "inconclusive_protocol_breach"
+  ],
+  "profile": {
+   "path": "config/research_024/latency/all19.yaml"
+  },
+  "protocol": {
+   "key": "L01-R024",
+   "path": "config/research_024/latency/l01-r024.yaml",
+   "replaced": [
+    "key",
+    "profile"
+   ],
+   "source": "config/latency/l01.yaml",
+   "source_sha256": "961fb52208c7baac3d0ffe492cef89818498543f1f00f56217d2f99113e27f1b"
+  },
+  "quote_cli": {
+   "details": true,
+   "profile": "config/full_gross.yaml",
+   "request": "sentinel",
+   "strategies": "all"
+  },
+  "sufficient_budget": {
+   "path": "config/latency/l01-sufficient-budget.yaml",
+   "sha256": "4059506da09280cdb0e8d4a94ac6ecef1c786113016e8eee430bef38089db43b"
+  },
+  "t3_reading": {
+   "decision": "orchestrator, WHI-1633 comment 2026-10-08 11:30 UTC, decision 2",
+   "match": "exact_type_column",
+   "trigger_types": [
+    "Sleep",
+    "Wake",
+    "DarkWake"
+   ]
+  },
+  "triggers": [
+   "T1_load",
+   "T2_sampling_coverage",
+   "T3_sleep",
+   "T4_sleep_prevention_or_capture",
+   "T5_incomplete_execution"
+  ],
+  "units": [
+   {
+    "baseline": "bases_of_selected_presets",
+    "candidate": [
+     "split_polish",
+     "marginal_activation"
+    ],
+    "kind": "paired",
+    "unit": "UP"
+   },
+   {
+    "algorithms": [
+     "direct",
+     "single_path",
+     "direct_split",
+     "path_split",
+     "incremental_graph"
+    ],
+    "kind": "descriptive",
+    "unit": "U1"
+   },
+   {
+    "algorithms": [
+     "uni_sor_port"
+    ],
+    "kind": "descriptive",
+    "unit": "U2"
+   },
+   {
+    "algorithms": [
+     "uni_sor_adaptive",
+     "uni_sor_optimized",
+     "metis_inspired",
+     "metis_history",
+     "direct_split_certified"
+    ],
+    "kind": "descriptive",
+    "unit": "U3"
+   },
+   {
+    "algorithms": [
+     "incremental_graph_repair"
+    ],
+    "kind": "descriptive",
+    "unit": "U4"
+   },
+   {
+    "algorithms": [
+     "uni_sor_cycle_safe"
+    ],
+    "kind": "descriptive",
+    "unit": "U5"
+   },
+   {
+    "algorithms": [
+     "cfmm_dual",
+     "single_path_bounded",
+     "incremental_graph_bounded",
+     "metis_history_bounded"
+    ],
+    "kind": "descriptive",
+    "unit": "U6"
+   },
+   {
+    "invocations": 5,
+    "kind": "quote_cli",
+    "strategies": "all",
+    "unit": "UQ"
+   }
+  ],
+  "validity": {
+   "caffeinate": "caffeinate -i -m -s",
+   "max_load1_per_cpu": 0.5,
+   "max_sample_gap_seconds": 90,
+   "sample_interval_seconds": 30,
+   "sleep_entries_allowed": 0
+  }
+ }
+}
