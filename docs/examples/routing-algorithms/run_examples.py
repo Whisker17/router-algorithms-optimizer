@@ -22,7 +22,10 @@ per-pool bounds, `single_path_bounded`, `incremental_graph_bounded`, `metis_hist
 and the roster / preset checks, then (sections 23-26, WHI-1628, `r023_examples.py`) the 0.2.3
 post-processors: the `split_polish` and `marginal_activation` worked examples, the same
 fixed-block request through an explicit profile that names them, and the research-023 campaign
-figures read from the committed `report-analysis.json`.
+figures read from the committed `report-analysis.json`, then (sections 27-29, WHI-1634,
+`r024_examples.py`) Release 0.2.4: the two post-processors as rows 18 and 19 of `--strategies all`
+on the same fixed-block fixture with their selected presets, the research-024 selection figures
+and the research-024 campaign figures and timing outcomes, read from the committed analyses.
 
 Run with:
     uv run python docs/examples/routing-algorithms/run_examples.py
@@ -42,6 +45,7 @@ for _path in (ROOT, HERE):
 import r021_examples  # noqa: E402  (sections 12-17: the 0.2.1 strategies, WHI-1561)
 import r022_examples  # noqa: E402  (sections 18-22: upper-bound pruning, WHI-1601)
 import r023_examples  # noqa: E402  (sections 23-26: the 0.2.3 post-processors, WHI-1628)
+import r024_examples  # noqa: E402  (sections 27-29: the 0.2.4 roster and results, WHI-1634)
 
 from benchmark.objective import gross_only  # noqa: E402
 from benchmark.profile import load_profile  # noqa: E402
@@ -657,6 +661,11 @@ def run_all() -> None:
     # 23-26. The 0.2.3 post-processors (WHI-1628): r023_examples.py
     # -------------------------------------------------------------
     r023_examples.run_all()
+
+    # -------------------------------------------------------------
+    # 27-29. The 0.2.4 roster, presets and results (WHI-1634): r024_examples.py
+    # -------------------------------------------------------------
+    r024_examples.run_all()
 
 
 if __name__ == "__main__":
