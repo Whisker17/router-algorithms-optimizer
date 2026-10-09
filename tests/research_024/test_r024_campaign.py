@@ -661,6 +661,10 @@ def test_the_committed_tables_regenerate_from_the_pinned_analyses() -> None:
             analyses[stage] = json.loads(path.read_text())
     tuning = CA.render_tables(RAW, {"T": analyses["T"]})
     assert (EVIDENCE / "tuning-tables.md").read_text() == tuning
+    if "R" in analyses:
+        report = CA.render_tables(RAW, {"R": analyses["R"]})
+        assert (EVIDENCE / "report-tables.md").read_text() == report
+        assert analyses["R"]["problems"] == []
     if (EVIDENCE / "tables.md").is_file():
         assert (EVIDENCE / "tables.md").read_text() == CA.render_tables(RAW, analyses)
     assert analyses["T"]["problems"] == []
