@@ -550,9 +550,7 @@ def run_all() -> None:
     assert r_ds.search_stats["quotes_executed"] == 80
 
     # 4. path_split
-    prep_real_ps = path_split.prepare(
-        corpus_bundle, AlgorithmConfig("path_split", profile.search)
-    )
+    prep_real_ps = path_split.prepare(corpus_bundle, AlgorithmConfig("path_split", profile.search))
     ctx_rps = SolveContext(bundle=corpus_bundle, objective=obj, prepared=prep_real_ps)
     r_ps = path_split.solve(real_case, ctx_rps, real_budget)
     assert r_ps.status == SolveStatus.OK and r_ps.evaluation is not None

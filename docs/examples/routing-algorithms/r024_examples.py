@@ -13,9 +13,10 @@ come from the code under test:
   post-plan states and the `r021_examples` hand quote;
 - section 28 (guide §§23.10, 24.10, the selection): the pinned stage-T / stage-I analyses of
   `research-024/selection/`, each figure also found in its row of the generated `tables.md`;
-- section 29 (guide §§23.10, 24.10, §13): the committed `research-024/campaign/report-analysis.json`,
-  each figure also found in its row of the byte-identically regenerated `report-tables.md`, and the
-  timing outcomes and statements of `timing-analysis.json` (`timing-tables.md`).
+- section 29 (guide §§23.10, 24.10, §13): the committed
+  `research-024/campaign/report-analysis.json`, each figure also found in its row of the
+  byte-identically regenerated `report-tables.md`, and the timing outcomes and statements of
+  `timing-analysis.json` (`timing-tables.md`).
 
 Counters only a factory can report (simulations, quotes, the activation log) are *factory
 counters*: regression-pinned outputs, not independently derived. The §11 rows are one exploratory
@@ -249,10 +250,10 @@ def _rows(pins: Mapping[str, Any]) -> dict[str, Any]:
     } | {"scope": e1["scope"], "truncated_by": e1["truncated_by"]}
     e2 = rows["marginal_activation"]["stats"]
     act = e2["activation"]
-    equal(rows["marginal_activation"]["stats"]["e1"]["gross"], str(rows["marginal_activation"]["score"]), "E2 keeps its E1 plan")
+    equal(e2["e1"]["gross"], str(rows["marginal_activation"]["score"]), "E2 keeps its E1 plan")
     equal(e2["quotes"], e2["e1"]["quotes"] + act["quotes"], "E2: E1 + activation quotes")
-    delta = int(Fraction(str(pins["marginal_activation"]["options"]["delta_share"])) * case.amount_in)
-    delta = max(1, delta)
+    share = Fraction(str(pins["marginal_activation"]["options"]["delta_share"]))
+    delta = max(1, int(share * case.amount_in))
     (agni_in, _), (lb_in, _) = ((leg[1], leg[2]) for leg in rows["marginal_activation"]["legs"])
     post = [
         quote_exact_in(agni, r21.USDC, agni_in).new_state,
@@ -373,8 +374,11 @@ def example_selection() -> dict[str, Any]:
             sensitivity[chunks] = {"own_base": row[9], "hel": row[10], "base_arm": row[2]}
         figures["sensitivity"] = sensitivity
         out[name] = figures
-    for name, nominee in (("split_polish", "sp|incremental_graph|brent|r2|t1e-4"),
-                          ("marginal_activation", "ma|incremental_graph|pf|k2|top3|d1e-4")):  # fmt: skip
+    nominees = {  # the 0.2.3 nominees (R023-C/1 §4.7, §5.2) as registered candidates
+        "split_polish": "sp|incremental_graph|brent|r2|t1e-4",
+        "marginal_activation": "ma|incremental_graph|pf|k2|top3|d1e-4",
+    }
+    for name, nominee in nominees.items():
         ident = T_ANALYSIS["identities"][name]
         out[name]["nominee_rank"] = ident["ranking"].index(nominee) + 1
     return out
@@ -427,7 +431,7 @@ def comparison(kind: str, candidate: str, baseline: str) -> dict[str, Any]:
     section = TABLES.split(SECTIONS[kind], 1)[1].split("\n### ")[0]
     cells = _cells(section, f"| {c['cohort']} | `{candidate}` | `{baseline}` |")
     equal(
-        [cells[3], cells[4], cells[7], cells[8], cells[9], cells[10], cells[12], cells[13], cells[14]],
+        [cells[i] for i in (3, 4, 7, 8, 9, 10, 12, 13, 14)],
         [str(out["scheduled"]), str(out["common_ok"]), str(out["zero_baseline"]), out["hel"],
          out["mean"], out["min"], out["p50"], out["p95"], out["max"]],
         f"{candidate} vs {baseline}: report-tables.md row",
@@ -508,7 +512,11 @@ def example_campaign() -> dict[str, Any]:
     for name in R024_ADDITIONS:
         (c,) = [x for x in ANALYSIS["comparisons"]["envelope"]
                 if x["candidate"] == f"Q19-full/{name}"]  # fmt: skip
-        envelope[name] = {"equal": c["equal"], "scored": c["bps"]["n"], "mean": f3(c["bps"]["mean"])}
+        envelope[name] = {
+            "equal": c["equal"],
+            "scored": c["bps"]["n"],
+            "mean": f3(c["bps"]["mean"]),
+        }
         section = TABLES.split(SECTIONS["envelope"], 1)[1].split("\n### ")[0]
         cells = _cells(section, f"| full | `Q19-full/{name}` | `envelope(")
         equal((cells[8], cells[9]), (f"0/{c['equal']}/{c['lower']}", f3(c["bps"]["mean"])),
@@ -545,12 +553,14 @@ def example_campaign() -> dict[str, Any]:
     equal(statements["usable_latency_obtained"], ["U6", "UQ"], "§8.7 (b) units")
     equal(statements["measurement_attempted_correctly"], True, "§8.7 (a)")
     equal(outcomes["UP"], "inconclusive_cap_exhausted", "UP (post-processor overhead)")
-    check(f"(b) usable latency obtained (units with outcome `valid`): **U6, UQ**" in TIMING_TABLES,
+    check("(b) usable latency obtained (units with outcome `valid`): **U6, UQ**" in TIMING_TABLES,
           "timing-tables.md statement (b)")  # fmt: skip
     for unit, outcome in outcomes.items():
         check(f"| {unit} | outcome | {outcome} |" in TIMING_TABLES, f"{unit}: timing-tables.md")
     rows = {
-        "own_base": [_own_row(f"{label} vs base", own[f"{c} vs {b}"]) for label, _, c, b in OWN_BASE],
+        "own_base": [
+            _own_row(f"{label} vs base", own[f"{c} vs {b}"]) for label, _, c, b in OWN_BASE
+        ],
         "attribution": [_own_row(label, attribution[b]) for label, _, _, b in ATTRIBUTION],
     }
     return {
@@ -600,9 +610,10 @@ def _print(data: Mapping[str, Any]) -> None:
     r = w["roster"]
     _p("--- 27. The 19-row walkthrough: the two 0.2.4 rows on the section 11 FIXTURE request ---")
     _p(
-        f"--strategies all of daily_gross.yaml: {r['size']} rows ({r['frozen_size']} of 0.2.2/0.2.3 "
-        f"+ {r['last_two']}); presets {[(p['key'], p['sha256'][:12]) for p in w['presets'].values()]}"
-        "; equal options outside `all` stay {kind: override}"
+        f"--strategies all of daily_gross.yaml: {r['size']} rows ({r['frozen_size']} of "
+        f"0.2.2/0.2.3 + {r['last_two']}); presets "
+        f"{[(p['key'], p['sha256'][:12]) for p in w['presets'].values()]}; equal options "
+        "outside `all` stay {kind: override}"
     )
     rows = w["rows"]
     for name in R024_ADDITIONS:
