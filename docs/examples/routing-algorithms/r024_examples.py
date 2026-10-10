@@ -360,6 +360,8 @@ def example_selection() -> dict[str, Any]:
             "eligible": len(ident["eligible"]),
             "ineligible": sorted(set(ident["ineligible"].values())),
             "ineligible_count": len(ident["ineligible"]),
+            "ineligible_ids": sorted(ident["ineligible"]),
+            "highest_q": max(q, key=lambda c: q[c]),
             "band": len(ident["band"]),
             "q_star": f"{float(Fraction(ident['q_star'])):+.4f}",
             "q_winner": f"{q[winner]:+.4f}",

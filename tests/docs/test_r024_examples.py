@@ -260,7 +260,8 @@ def test_the_quote_command_of_section_11(
 
 def test_selection_figures() -> None:
     s = data("selection")
-    assert {n: {k: v for k, v in f.items() if k != "sensitivity"} for n, f in s.items()} == {
+    skip = ("sensitivity", "ineligible_ids", "highest_q")
+    assert {n: {k: v for k, v in f.items() if k not in skip} for n, f in s.items()} == {
         "split_polish": {
             "candidates": 90,
             "eligible": 88,
@@ -298,6 +299,15 @@ def test_selection_figures() -> None:
             "nominee_rank": 21,
         },
     }
+    # the work limit excludes only `full`-mode E2 candidates, among them the grid's highest Q
+    ma = s["marginal_activation"]
+    assert (
+        all("|full|" in c for c in ma["ineligible_ids"]) and ma["highest_q"] in ma["ineligible_ids"]
+    )
+    assert s["split_polish"]["ineligible_ids"] == [
+        "sp|incremental_graph_repair|golden|r4|t1e-4",
+        "sp|incremental_graph_repair|golden|r4|t1e-5",
+    ]
     sens = {
         n: {c: (v["own_base"], v["hel"]) for c, v in f["sensitivity"].items()} for n, f in s.items()
     }
