@@ -48,10 +48,9 @@ pythonpath = ["."]
 [tool.mypy]
 python_version = "3.12"
 strict = true
+# tools/research_023/campaign.py is not listed: mypy maps it and tools/research_021/campaign.py
+# to the same module `campaign` ("Duplicate module named"), and their bare-name sibling imports rule
+# out package-base remapping without editing frozen code. Its strict check is the separate
+# invocation in the required test tests/research_023/test_r023_campaign_mypy.py (§10.4, WHI-1745).
 # Mirror the wheel packages list once modules land:
-# tools/research_023/campaign.py is checked by tests/research_023/test_r023_campaign_mypy.py with
-# these settings: it and tools/research_021/campaign.py are both module `campaign` (WHI-1745).
-# tools/research_023/campaign.py is not listed: mypy names it and tools/research_021/campaign.py
-# both `campaign` (duplicate module). Its strict check is the required test
-# tests/research_023/test_r023_driver_mypy.py (R024-C/1 §10.4, WHI-1745).
 files = ["main.py", "snapshot", "pools", "routing", "benchmark", "report", "tests", "tools/upstream/uni_sor/author_inputs.py", "tools/research_021/analysis.py", "tools/research_021/campaign.py", "tools/research_022/pruning_analysis.py", "tools/research_022/pruning_campaign.py", "tools/research_022/pruning_work.py", "tools/research_023/r023_analysis.py", "tools/research_024/*.py"]
