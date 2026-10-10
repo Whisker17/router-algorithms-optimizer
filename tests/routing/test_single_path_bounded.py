@@ -42,7 +42,7 @@ from benchmark.objective import (
 from benchmark.profile import parse_profile, read_profile_document, strategy_group
 from benchmark.results import load_case_records, load_manifest
 from benchmark.runner import compare_runs
-from benchmark.strategies import R021_ADDITIONS, R022_ADDITIONS, derive
+from benchmark.strategies import R021_ADDITIONS, R022_ADDITIONS, R024_ADDITIONS, derive
 from pools import bounds as bounds_module
 from pools.bounds import BoundTable
 from routing.algorithms import single_path, single_path_bounded
@@ -487,11 +487,11 @@ def test_the_factory_is_picklable_by_reference_for_the_worker() -> None:
 def test_all_appends_it_after_the_021_identities_and_profile_replays_literally() -> None:
     source = yaml.safe_load((REPO / "config" / "daily_gross.yaml").read_text())
     document, profile = derive(source, "all", source_path="s", source_sha256="x")
-    names = list(profile.algorithms)
+    names = list(profile.algorithms)[: -len(R024_ADDITIONS)]  # WHI-1632's two follow the 0.2.2 ones
     after = len(R022_ADDITIONS) - 1  # WHI-1600's two bounded identities follow this one
     assert names[-1 - after - len(R021_ADDITIONS) : -1 - after] == list(R021_ADDITIONS)
     assert names[-1 - after] == NAME and names[-after:] == list(R022_ADDITIONS[1:])
-    assert document["selection"]["groups"]["custom"][-1 - after] == NAME
+    assert document["selection"]["groups"]["custom"][-1 - after - len(R024_ADDITIONS)] == NAME
     assert "algorithm_options" in document and NAME not in document["algorithm_options"]
     config = profile.resolved()["algorithm_config"][NAME]
     assert config["provenance"]["reference"] == "single_path"

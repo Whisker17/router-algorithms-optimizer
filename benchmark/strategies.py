@@ -55,12 +55,22 @@ without options derives exactly as before.
 `docs/references/research-022/pruning-contract.md` §10.1) follow the 0.2.1 identities under
 `all`. Only `metis_history_bounded` carries `algorithm_options`: exactly `metis_history`'s, from
 its own preset file (same options, same `settings_sha256`).
+
+`R024_ADDITIONS` (WHI-1632, R024-C/1 §6): the 0.2.3 post-processors `split_polish` and
+`marginal_activation` follow the 0.2.2 accelerations under `all`, each with its selected preset
+(WHI-1631), recognised as a preset only inside a `selection.mode: all` document
+(`benchmark.profile.ALL_SCOPED_PRESETS`). A frozen earlier campaign tool derives its own registered
+roster inside `frozen_roster(additions)` (R024-C/1 §6.4: the identities `all` appended after
+`metis_inspired` when that campaign was registered); outside it every release's additions apply.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
@@ -80,10 +90,12 @@ from routing.algorithms import (
     direct_split_certified,
     incremental_graph_bounded,
     incremental_graph_repair,
+    marginal_activation,
     metis_history,
     metis_history_bounded,
     metis_inspired,
     single_path_bounded,
+    split_polish,
     uni_sor_cycle_safe,
 )
 from routing.algorithms.registry import ALGORITHMS, OPTIMIZED_STRATEGIES
@@ -124,6 +136,9 @@ R022_ADDITIONS: tuple[str, ...] = (
     incremental_graph_bounded.NAME,  # WHI-1600
     metis_history_bounded.NAME,  # WHI-1600 (its own copy of metis_history's preset)
 )
+# WHI-1632 (R024-C/1 §6.1): the 0.2.3 post-processors, appended after `R022_ADDITIONS` with their
+# selected presets (WHI-1631). Earlier saved profiles never gain them.
+R024_ADDITIONS: tuple[str, ...] = (split_polish.NAME, marginal_activation.NAME)
 DERIVATION_NOTE = (
     "`algorithms`, `strategies` and `selection` are derived from the source; under `all`, a "
     f"graph.label_hops / label_pruning / chunks the source does not declare is copied for {METIS} "
@@ -134,6 +149,27 @@ DERIVATION_NOTE = (
 
 class StrategySelectionError(ProfileError):
     """The requested strategy selection cannot be derived from the source profile."""
+
+
+_FROZEN_ADDITIONS: ContextVar[tuple[str, ...] | None] = ContextVar("frozen_additions", default=None)
+
+
+@contextmanager
+def frozen_roster(additions: Sequence[str]) -> Iterator[None]:
+    """Within the block, `all` appends exactly `additions` after `metis_inspired`: the roster an
+    earlier campaign registered (R024-C/1 §6.4), so its tool keeps deriving it."""
+    token = _FROZEN_ADDITIONS.set(tuple(additions))
+    try:
+        yield
+    finally:
+        _FROZEN_ADDITIONS.reset(token)
+
+
+def all_additions() -> tuple[str, ...]:
+    """The identities `all` appends after `metis_inspired`, in order: a `frozen_roster`'s, else
+    every release's."""
+    frozen = _FROZEN_ADDITIONS.get()
+    return frozen if frozen is not None else (*R021_ADDITIONS, *R022_ADDITIONS, *R024_ADDITIONS)
 
 
 def effective_document(
@@ -159,7 +195,7 @@ def effective_document(
     if mode == "all" and METIS not in selected:
         selected.append(METIS)
     if mode == "all":
-        selected += [a for a in (*R021_ADDITIONS, *R022_ADDITIONS) if a not in selected]
+        selected += [a for a in all_additions() if a not in selected]
     if not selected:
         raise StrategySelectionError(
             f"--strategies {mode}: {source_path} selects no base strategy (algorithms "
@@ -225,8 +261,8 @@ def derive(
     try:
         return document, parse_profile(document, source_path)
     except ProfileError as exc:
-        additions = (*OPTIMIZED_STRATEGIES, METIS, *R021_ADDITIONS, *R022_ADDITIONS)
-        added = ", ".join(a for a in document["algorithms"] if a in additions)
+        appended = (*OPTIMIZED_STRATEGIES, METIS, *all_additions())
+        added = ", ".join(a for a in document["algorithms"] if a in appended)
         raise StrategySelectionError(
             f"--strategies {mode}: {source_path} cannot run the added strategies ({added}): "
             f"{exc}. They share the profile's objective, budget and search.max_hops/"
@@ -262,10 +298,13 @@ __all__ = [
     "MODES",
     "R021_ADDITIONS",
     "R022_ADDITIONS",
+    "R024_ADDITIONS",
     "StrategySelectionError",
+    "all_additions",
     "announce",
     "derive",
     "effective_document",
+    "frozen_roster",
     "metis_graph_settings",
     "selected_groups",
 ]

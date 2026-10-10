@@ -70,7 +70,10 @@ BOUNDED = "single_path_bounded"  # WHI-1599: R022_ADDITIONS, after the 0.2.1 ide
 GRAPH_BOUNDED = "incremental_graph_bounded"  # WHI-1600: appended after BOUNDED
 HISTORY_BOUNDED = "metis_history_bounded"  # WHI-1600: appended after GRAPH_BOUNDED
 R022 = [BOUNDED, GRAPH_BOUNDED, HISTORY_BOUNDED]
-ADDED = [METIS, HISTORY, CERTIFIED, REPAIR, CYCLE, CFMM, *R022]
+POLISH, ACTIVATION = "split_polish", "marginal_activation"  # WHI-1632: R024_ADDITIONS, last
+R024 = [POLISH, ACTIVATION]
+R024_KEYS = {POLISH: "R024-P01-split_polish", ACTIVATION: "R024-P02-marginal_activation"}
+ADDED = [METIS, HISTORY, CERTIFIED, REPAIR, CYCLE, CFMM, *R022, *R024]
 ALL = [*EIGHT, *ADDED]
 M4_GRAPH = {"label_hops": 4, "label_pruning": True}  # config/metis_challenge/m4.yaml's
 STANDARD = ("daily_gross.yaml", "daily.yaml", "full_gross.yaml", "full.yaml")
@@ -224,15 +227,16 @@ def test_custom_subsets_are_kept_and_nothing_is_duplicated() -> None:
         (["direct", METIS, "path_split"],
          {"chunks": 20, "label_hops": 3, "label_pruning": False},
          ["direct", METIS, "path_split", *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR,
-          CYCLE, CFMM, *R022],
+          CYCLE, CFMM, *R022, *R024],
          {"chunks": 20, "label_hops": 3, "label_pruning": False}),
         # listed last among base/custom, no optimized entries: optimized appended AFTER it
         (["direct", METIS], {"chunks": 11, "label_hops": 3, "label_pruning": False},
          ["direct", METIS, *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR, CYCLE, CFMM,
-          *R022],
+          *R022, *R024],
          {"chunks": 11, "label_hops": 3, "label_pruning": False}),
         ([*SIX, METIS], {"chunks": 200, "label_hops": 5, "label_pruning": True},
-         [*SIX, METIS, *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR, CYCLE, CFMM, *R022],
+         [*SIX, METIS, *OPTIMIZED_STRATEGIES, HISTORY, CERTIFIED, REPAIR, CYCLE, CFMM, *R022,
+          *R024],
          {"chunks": 200, "label_hops": 5, "label_pruning": True}),
         # not listed, no graph at all: every key from M4 (chunks 50 only because it is absent)
         (["direct", "path_split"], None,
@@ -507,6 +511,13 @@ def test_quote_defaults_to_the_all_roster_once_each_and_replays_exactly(
         status = "unsupported" if name == CERTIFIED else "ok"  # USDC/USDT0 has CL/LB pools
         assert re.search(rf"^{name}\s+{status}\s", metis_rows.split("\n\n")[0], re.M), name
     assert f"[{CERTIFIED}] unsupported" in out
+    for name, key in R024_KEYS.items():
+        details = out.split(f"[{name}] ok", 1)[1].split("\n\n", 1)[0]  # WHI-1632: once, counted
+        assert out.count(f"[{name}] ok") == 1
+        assert f"post-processor (R023-C/1): options preset {key} v1" in details
+        assert re.search(r"base \w+: status ok, quotes \d+, gross \d+", details), details
+        assert re.search(r"result: gross \d+, own quotes \d+, scope ", details), details
+    assert "    activation: gross " in out.split(f"[{ACTIVATION}] ok", 1)[1]
     assert "scope: UNSUPPORTED (non_constant_product_direct_pool)" in out
     # its identity and recorded (different) hop domain; no claim of one shared search
     assert (
@@ -580,8 +591,9 @@ def test_run_keeps_measurement_saves_the_selection_and_replays_it(
     assert "strategies: all -- Base strategies (6): direct" in out
     assert "Optimized strategies (2): uni_sor_adaptive, uni_sor_optimized; " in out
     assert (
-        f"Experimental and other strategies (9): {METIS}, {HISTORY}, {CERTIFIED}, {REPAIR}, "
-        f"{CYCLE}, {CFMM}, {BOUNDED}, {GRAPH_BOUNDED}, {HISTORY_BOUNDED}" in out
+        f"Experimental and other strategies (11): {METIS}, {HISTORY}, {CERTIFIED}, {REPAIR}, "
+        f"{CYCLE}, {CFMM}, {BOUNDED}, {GRAPH_BOUNDED}, {HISTORY_BOUNDED}, {POLISH}, "
+        f"{ACTIVATION}" in out
     )
     (run_dir,) = results.iterdir()  # the effective profile lives inside the run directory
     manifest = load_manifest(run_dir)
@@ -641,7 +653,7 @@ def test_reports_group_strategies_with_failures_and_escape_text(
     assert "<h2>Strategy groups</h2>" in grouped_html and "Strategy groups" not in legacy_html
     assert "<h3>Base strategies (6)</h3>" in grouped_html
     assert "<h3>Optimized strategies (2)</h3>" in grouped_html
-    assert "<h3>Experimental and other strategies (9)</h3>" in grouped_html
+    assert "<h3>Experimental and other strategies (11)</h3>" in grouped_html
     assert "Optimized strategy — experimental heuristic" in grouped_html
     assert "Metis-inspired experimental Python variant — NOT Jupiter Metis" in grouped_html
     assert (
@@ -649,6 +661,9 @@ def test_reports_group_strategies_with_failures_and_escape_text(
         "DIFFERENT hop domain from the shared search.max_hops 2"
     ) in grouped_html
     assert "same objective, budget and search settings" not in html
+    for name, key in R024_KEYS.items():
+        cells = f'<td class="l"><code>{name}</code></td><td class="l">preset {key} v1 ('
+        assert grouped_html.count(cells) == 1, name  # WHI-1632: its options provenance, once
     assert "src&lt;b&gt;&amp;&#x27;x&#x27;.yaml" in grouped_html and "src<b>" not in html
     rows = list(csv.DictReader((out / "strategy_groups.csv").open()))
     assert [r["run_id"] for r in rows] == [grouped.name] * len(ALL)  # only the grouped run
@@ -664,6 +679,8 @@ def test_reports_group_strategies_with_failures_and_escape_text(
         ("custom", BOUNDED),
         ("custom", GRAPH_BOUNDED),
         ("custom", HISTORY_BOUNDED),
+        ("custom", POLISH),
+        ("custom", ACTIVATION),
     ]
     by_name = {r["algorithm"]: r for r in rows}
     lb_cases = len(load_manifest(grouped).measurement["case_order"])
@@ -722,4 +739,4 @@ def test_custom_profile_reports_the_recorded_execution_order_not_the_group_order
     html = (tmp_path / "report" / "report.html").read_text()
     assert f"the recorded order <code>{', '.join(order)}</code>" in html
     assert "base strategies first" not in html
-    assert "<h3>Experimental and other strategies (10)</h3>" in html  # uni_sor_fast + ADDED
+    assert "<h3>Experimental and other strategies (12)</h3>" in html  # uni_sor_fast + ADDED

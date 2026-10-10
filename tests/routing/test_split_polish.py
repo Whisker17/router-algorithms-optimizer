@@ -641,16 +641,22 @@ def test_registered_as_a_custom_profile_selected_identity() -> None:
     factory = ALGORITHMS[NAME]
     assert factory is sp.FACTORY and list(ALGORITHMS).count(NAME) == 1
     assert NAME not in BASE_STRATEGIES and NAME not in OPTIMIZED_STRATEGIES
-    assert strategy_group(NAME) == "custom" and factory.options_preset is None
+    assert strategy_group(NAME) == "custom"
+    assert (factory.options_preset or {}).get("key") == "R024-P01-split_polish"
     assert factory.search_params == ("max_hops", "max_splits", "percent_step")
     assert factory.graph_params == ("chunks",)
     assert "NOT Jupiter Metis" in str(factory.provenance)
-    # `--strategies all` and every saved/default profile are unchanged: it is never added
+    # WHI-1632: `--strategies all` appends it once, with its selected preset; the other modes
+    # and every saved/default profile are unchanged
     for name in ("daily_gross.yaml", "full_gross.yaml", "daily.yaml", "full.yaml"):
         source = read_profile_document(REPO / "config" / name)
         for mode in ("all", "base", "optimized", "profile"):
             document, profile = derive(source, mode, source_path=name, source_sha256="x")
-            assert NAME not in profile.algorithms and NAME not in json.dumps(document)
+            if mode != "all":
+                assert NAME not in profile.algorithms and NAME not in json.dumps(document)
+                continue
+            assert list(profile.algorithms).count(NAME) == 1
+            assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
     # a profile without its options is refused (no built-in default)
     doc = read_profile_document(REPO / "config" / "full_gross.yaml")
     doc["algorithms"] = [NAME]
@@ -827,6 +833,51 @@ def test_the_pinned_probe_outputs_are_reproduced_on_the_tuning_split(
     assert differences == [] and improved == improved_cases
 
 
+# the committed research-024 evidence that backs §§23.10 / 24.10 (Release 0.2.4)
+R024_EVIDENCE = ("contract.md", "selection.md", "selection/tables.md", "results.md",
+                 "campaign/report-tables.md")  # fmt: skip
+
+
+def test_the_derived_0_2_4_figures_of_chapter_23() -> None:
+    """§23.10 prints the preset's tolerance as an exact decimal and the work ratio of the two
+    committed quote totals (`results.md` §3.4) rounded to three places."""
+    preset = yaml.safe_load((REPO / "config" / "split_polish" / "preset_v1.yaml").read_text())
+    assert format(Fraction(str(preset["options"]["tolerance"])), "") == "1/100000"
+    assert f"{Fraction(1, 100000):.5f}" == "0.00001"
+    tables = (REPO / "docs/references/research-024/campaign/report-tables.md").read_text()
+    totals = []
+    for name in ("split_polish", "metis_inspired"):
+        match = re.search(rf"\| `Q19-full/{name}` \| ([\d,]+) \|", tables)
+        assert match is not None
+        totals.append(int(match[1].replace(",", "")))
+    assert totals == [9299891, 5324859] and f"{totals[0] / totals[1]:.3f}" == "1.747"
+
+
+def _section_11_row(name: str) -> tuple[int, int]:
+    """The guide's §11 row of `name` (0.2.4): `--strategies all` of `config/daily_gross.yaml` on the
+    tracked 19-pool fixture, 10 000 USDC -> USDT0, one solve; (gross, counted quotes)."""
+    source = (REPO / "config" / "daily_gross.yaml").read_bytes()
+    _, profile = derive(yaml.safe_load(source), "all", source_path="config/daily_gross.yaml",
+                        source_sha256="-")  # fmt: skip
+    factory = ALGORITHMS[name]
+    bundle = load_bundle(TRACKED_CORPUS)
+    assert factory.prepare is not None
+    prepared = factory.prepare(bundle, profile.algorithm_config(factory))
+    case = Case("section_11", "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9",
+                "0x779ded0c9e1022225f8e0630b35a9b54be713736", 10_000_000_000)  # fmt: skip
+    with metered_quotes(None) as meter:
+        result = factory.solve(case, SolveContext(bundle, profile.objective, prepared),
+                               profile.budget)  # fmt: skip
+    assert result.status is SolveStatus.OK and result.score is not None
+    return int(result.score), meter.counted
+
+
+def test_the_section_11_fixture_row_cited_in_chapter_23() -> None:
+    """§23.10 cites the §11 fixture row (one request under `daily_gross.yaml`, kept apart from the
+    campaign); `tests/docs/test_r024_examples.py` checks its legs against exact quotes."""
+    assert _section_11_row("split_polish") == (10000663635, 376)
+
+
 def test_every_number_of_chapter_23_is_asserted() -> None:
     """`routing-algorithms.md` §23 publishes only numbers that this file asserts, that the
     contract states (tuning evidence), that the committed research-023 campaign evidence states
@@ -843,8 +894,12 @@ def test_every_number_of_chapter_23_is_asserted() -> None:
     contract = (r023 / "contract.md").read_text()
     campaign = "".join((r023 / "campaign" / f).read_text()
                        for f in ("report-analysis.json", "report-tables.md"))  # fmt: skip
-    backed = (Path(__file__).read_text(encoding="utf-8") + contract + campaign
-              + " 1000000000 1623 1624 1627 1.0 ")  # fmt: skip
+    # §23.10 (Release 0.2.4): the research-024 contract, selection record and campaign record
+    # (`tests/docs/test_r024_examples.py` pins each figure against the pinned analyses)
+    r024 = REPO / "docs" / "references" / "research-024"
+    evidence = "".join((r024 / f).read_text() for f in R024_EVIDENCE)
+    backed = (Path(__file__).read_text(encoding="utf-8") + contract + campaign + evidence
+              + " 1000000000 1623 1624 1627 1631 1632 1633 1.0 ")  # fmt: skip
     number = r"(?<![\w.])\d+(?:\.\d+)?(?![\w])"
     published = {n for n in re.findall(number, chapter) if len(n) >= 3 or "." in n}
     assert len(published) >= 20  # not vacuous

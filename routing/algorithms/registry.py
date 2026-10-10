@@ -79,19 +79,25 @@ sha256-pinned preset `cfmm_dual/2`, CL stage; `cfmm_dual/1` stays a historical p
 `uni_sor_cycle_safe` (contract order 5). Importing it loads no NumPy/SciPy.
 
 `split_polish` (WHI-1623, R023-C/1 §4, E1) is a gross-only, never-worse post-processor of a
-declared base strategy (`incremental_graph` or `path_split`): it re-optimises the exact rational
-split shares of the base's canonical plan by pairwise Brent/golden line search over exact integer
-replay (Jupiter-inspired, NOT Jupiter Metis). It is `custom`, configured by validated
-`algorithm_options` (all six keys required, no preset) and selected only by a profile that names
-it: `--strategies all` does not add it. Importing it loads no SciPy.
+declared base strategy (one of `split_polish.BASES`: `incremental_graph`, `path_split`,
+`metis_inspired`, `metis_history`, `incremental_graph_repair`; WHI-1626): it re-optimises the exact
+rational split shares of the base's canonical plan by pairwise Brent/golden line search over exact
+integer replay (Jupiter-inspired, NOT Jupiter Metis). It is `custom`, configured by validated
+`algorithm_options` (all six keys required, no default). Importing it loads no SciPy.
 
 `marginal_activation` (WHI-1624, R023-C/1 §5, E2) runs `split_polish` and then appends up to K new
 branches from a delta-amount label search on the post-plan pool states, admitted only when the
 token graph over all union steps is acyclic and kept only on a strictly higher gross that an
-evaluator replay (charged) confirms, with positive flow on the new branch. Its `arm` option also
-runs the campaign's work- and call-matched controls (§5.3). It is `custom`, configured by
-validated `algorithm_options` (all twelve keys required, no preset) and selected only by a profile
-that names it: `--strategies all` does not add it. Importing it loads no SciPy.
+evaluator replay (charged) confirms, with positive flow on the new branch. Its base is one of
+`split_polish.E1_BASES` (`incremental_graph`, `path_split`). Its `arm` option also runs the
+campaign's work- and call-matched controls (§5.3). It is `custom`, configured by validated
+`algorithm_options` (all twelve keys required, no default). Importing it loads no SciPy.
+
+Both were profile-selected only in 0.2.3. Since WHI-1632 (R024-C/1 §6) `--strategies all` appends
+them after the 0.2.2 accelerations (`benchmark.strategies.R024_ADDITIONS`), each with its selected,
+sha256-pinned preset (WHI-1631: `R024-P01-split_polish`, `R024-P02-marginal_activation`), which is
+recognised as a preset only in a `--strategies all` document (`benchmark.profile.
+ALL_SCOPED_PRESETS`), so the earlier explicit profiles keep their resolved identity.
 """
 
 from __future__ import annotations
@@ -143,8 +149,8 @@ ALGORITHMS: dict[str, AlgorithmFactory] = {
     single_path_bounded.NAME: single_path_bounded.FACTORY,  # WHI-1599
     incremental_graph_bounded.NAME: incremental_graph_bounded.FACTORY,  # WHI-1600
     metis_history_bounded.NAME: metis_history_bounded.FACTORY,  # WHI-1600
-    # 0.2.3 split polishing (R023-C/1 §4) and marginal activation (§5), `custom` group,
-    # profile-selected only.
+    # 0.2.3 split polishing (R023-C/1 §4) and marginal activation (§5), `custom` group;
+    # appended by `--strategies all` with their selected presets since 0.2.4 (WHI-1632).
     split_polish.NAME: split_polish.FACTORY,  # WHI-1623
     marginal_activation.NAME: marginal_activation.FACTORY,  # WHI-1624
 }

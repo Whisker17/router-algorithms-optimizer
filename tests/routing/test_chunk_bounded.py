@@ -37,7 +37,7 @@ from benchmark.objective import ObjectiveContext, gross_only, synthetic_fixed_co
 from benchmark.profile import parse_profile, preset_options, read_profile_document, strategy_group
 from benchmark.results import load_case_records, load_manifest
 from benchmark.runner import compare_runs
-from benchmark.strategies import R021_ADDITIONS, R022_ADDITIONS, derive
+from benchmark.strategies import R021_ADDITIONS, R022_ADDITIONS, R024_ADDITIONS, derive
 from pools import bounds as bounds_module
 from pools.bounds import BoundTable, OutputBound
 from pools.quote import quote_exact_in
@@ -1018,9 +1018,10 @@ def test_all_appends_them_after_single_path_bounded_and_profile_replays_literall
     source = yaml.safe_load((REPO / "config" / "daily_gross.yaml").read_text())
     document, profile = derive(source, "all", source_path="s", source_sha256="x")
     names = list(profile.algorithms)
+    names = names[: -len(R024_ADDITIONS)]  # WHI-1632: the 0.2.4 additions follow
     assert names[-3:] == ["single_path_bounded", IG_B, MH_B] and len(names) == 17
     assert names[-3 - len(R021_ADDITIONS) : -3] == list(R021_ADDITIONS)
-    assert document["selection"]["groups"]["custom"][-2:] == [IG_B, MH_B]
+    assert document["selection"]["groups"]["custom"][-4:-2] == [IG_B, MH_B]
     options = document["algorithm_options"]
     assert IG_B not in options and options[MH_B] == options[MH] == PRESET
     entry = profile.algorithm_options[MH_B]

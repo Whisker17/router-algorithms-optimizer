@@ -9,7 +9,7 @@ import json
 import pytest
 
 from benchmark.diagnostics import IDENTITIES, PROTOCOLS
-from benchmark.strategies import R021_ADDITIONS, R022_ADDITIONS
+from benchmark.strategies import R021_ADDITIONS, R022_ADDITIONS, R024_ADDITIONS
 from routing.algorithms import direct_split, direct_split_certified
 from routing.algorithms.base import Capabilities, protocol_families
 from routing.algorithms.registry import ALGORITHMS
@@ -50,10 +50,9 @@ def test_new_factories_agree_with_the_identity_table(name: str) -> None:
 def test_pre_existing_identities_record_byte_identical_capabilities() -> None:
     for name, recorded in PRE_EXISTING.items():
         assert json.dumps(ALGORITHMS[name].capabilities.to_dict(), sort_keys=True) == recorded
-    assert set(ALGORITHMS) == set(PRE_EXISTING) | set(R021_ADDITIONS) | set(R022_ADDITIONS) | {
-        "split_polish",  # WHI-1623: registered, profile-selected only (not in `all`)
-        "marginal_activation",  # WHI-1624: likewise
-    }
+    assert set(ALGORITHMS) == (  # WHI-1623/1624 registered, WHI-1632 added to `all`
+        set(PRE_EXISTING) | set(R021_ADDITIONS) | set(R022_ADDITIONS) | set(R024_ADDITIONS)
+    )
 
 
 def test_protocol_families_mapping() -> None:

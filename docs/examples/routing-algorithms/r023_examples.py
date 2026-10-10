@@ -43,7 +43,13 @@ import yaml  # noqa: E402
 
 from benchmark.objective import gross_only  # noqa: E402
 from benchmark.profile import strategy_group  # noqa: E402
-from benchmark.strategies import R021_ADDITIONS, R022_ADDITIONS, derive  # noqa: E402
+from benchmark.strategies import (  # noqa: E402
+    R021_ADDITIONS,
+    R022_ADDITIONS,
+    R024_ADDITIONS,
+    derive,
+    frozen_roster,
+)
 from pools.quote import metered_quotes, quote_exact_in  # noqa: E402
 from pools.result import QuoteStatus  # noqa: E402
 from routing.algorithms import marginal_activation as ma  # noqa: E402
@@ -503,10 +509,15 @@ def _walkthrough() -> dict[str, Any]:
 
 
 def example_walkthrough() -> dict[str, Any]:
-    """§11.5 plus the roster facts of §13: `all` is still the 17 rows, neither 0.2.3 identity is
-    in it, and the frozen 0.2.1 / 0.2.2 campaign rosters are untouched."""
-    _document, profile, _sha = r21.all_profile()
+    """§11.5 plus the roster facts of §13 as of 0.2.3: `all` is still the 17 rows, neither 0.2.3
+    identity is in it, and the frozen 0.2.1 / 0.2.2 campaign rosters are untouched. Since 0.2.4
+    (WHI-1632) `all` appends exactly `R024_ADDITIONS` to that roster; the 0.2.3 one is derived
+    with `frozen_roster`."""
+    with frozen_roster((*R021_ADDITIONS, *R022_ADDITIONS)):
+        _document, profile, _sha = r21.all_profile()
     roster = list(profile.algorithms)
+    live = list(r21.all_profile()[1].algorithms)
+    equal(live, [*roster, *R024_ADDITIONS], "0.2.4 appends exactly the two 0.2.3 identities")
     equal(len(roster), 17, "`--strategies all` of daily_gross.yaml")
     check(not set(R023_IDS) & set(roster), "`all` adds neither 0.2.3 identity")
     check(not set(R023_IDS) & {*R021_ADDITIONS, *R022_ADDITIONS}, "no 0.2.3 roster addition")
