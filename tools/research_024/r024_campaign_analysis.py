@@ -1179,29 +1179,107 @@ def unit_experiments(unit: Mapping[str, Any]) -> list[str]:
     return [str(unit["unit"])]
 
 
-def gate_passes(gate: Mapping[str, Any], launch: Mapping[str, Any]) -> bool:
-    """§8.4 launch gate re-read from its own samples: all of them taken, none above the headroom."""
-    loads = [float(s["load1"]) for s in gate.get("samples") or []]
-    return len(loads) == int(launch["samples"]) and max(loads) <= float(launch["headroom_load1"])
+CADENCE_TOLERANCE_SECONDS = 1.0
+"""How far a retained launch-gate spacing may stray from the registered one (30 s within a group,
+300 s from one group's last sample to the next group's first, 0 s from the passing group's last
+sample to the attempt start), and a no-launch record's wait from its groups (WHI-1746). The driver
+takes these from one clock with only a ledger write in between: the retained stage-L records stray
+by at most 0.016 s (30.0006-30.0153 s, 300.0020-300.0131 s, 0.0004-0.0044 s over 93 groups and 20
+starts). 1 s is far above that jitter and far below the 30 s cadence, so no duplicated, compressed,
+sparse or stale sample passes. Attempt windows have no tolerance: the driver reads the window start
+before and the window end after every execution record of the attempt (observed margins 0.0003 s
+and more)."""
 
 
-def no_launch_covered(gates: Sequence[Mapping[str, Any]], timing: Mapping[str, Any]) -> bool:
-    """`no_launch` evidence: only failing gate groups, re-sampled without a gap longer than the
-    re-sample interval (+ the T2 gap), spanning the whole wait (the driver stops once another
-    re-sample would pass `max_wait_seconds`)."""
-    launch = timing["launch"]
-    every = float(launch["resample_every_seconds"])
-    slack = every + float(timing["validity"]["max_sample_gap_seconds"])
-    spans = [
-        (min(times), max(times))
-        for g in gates
-        if (times := [float(s["t"]) for s in g.get("samples") or []])
-    ]
-    if not gates or len(spans) != len(gates) or any(gate_passes(g, launch) for g in gates):
-        return False
-    if any(b[0] - a[1] > slack for a, b in zip(spans, spans[1:], strict=False)):
-        return False
-    return spans[-1][1] - spans[0][0] + every > float(launch["max_wait_seconds"])
+def _num(value: Any) -> float | None:
+    """A finite JSON number as a float; None for a missing, non-numeric or non-finite value."""
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return None
+    return float(value) if math.isfinite(value) else None
+
+
+def gate_status(
+    gate: Mapping[str, Any], launch: Mapping[str, Any], known: set[tuple[float, float]]
+) -> str:
+    """One retained launch-gate group (§8.4): `passed`, `failed_on_load` (complete, a sample above
+    the headroom) or `incomplete: <why>`. Complete means exactly the registered number of samples,
+    each one of the stage's own load samples (`known`, from `load.jsonl`), the registered spacing
+    apart, and the recorded peak and verdict those samples give."""
+    samples = gate.get("samples")
+    if not isinstance(samples, list) or len(samples) != int(launch["samples"]):
+        return "incomplete: not the registered number of samples"
+    points: list[tuple[float, float]] = []
+    for s in samples:
+        t, load = (
+            (_num(s.get("t")), _num(s.get("load1"))) if isinstance(s, Mapping) else (None, None)
+        )
+        if t is None or load is None or (t, load) not in known:
+            return "incomplete: a sample that is not in the stage's load record"
+        points.append((t, load))
+    interval = float(launch["interval_seconds"])
+    if any(
+        abs(b[0] - a[0] - interval) > CADENCE_TOLERANCE_SECONDS
+        for a, b in zip(points, points[1:], strict=False)
+    ):
+        return f"incomplete: samples not {interval:g} s apart"
+    peak = max(load for _, load in points)
+    passed = peak <= float(launch["headroom_load1"])
+    if gate.get("max_load1") != peak or gate.get("passed") is not passed:
+        return "incomplete: the recorded peak or verdict is not its samples'"
+    return "passed" if passed else "failed_on_load"
+
+
+def launch_windows(
+    gates: Sequence[tuple[int, Mapping[str, Any]]],
+    launch: Mapping[str, Any],
+    known: set[tuple[float, float]],
+    after: float | None,
+    label: str,
+) -> tuple[list[str], list[str], tuple[float, float] | None]:
+    """The launch windows of one attempt number, `(driver run, launch_gate entry)` in ledger order:
+    one window per driver run that gated it (a resumed stage gates again from group 1), the last
+    one decides. In each window the groups are numbered 1, 2, ...; every group is complete; each
+    complete group follows the previous one by `resample_every_seconds`, opens within
+    `max_wait_seconds` of the window's first sample and after `after` (the end of the unit's
+    previous attempt or window); only the last group may pass. Returns the last window's group
+    statuses, the problems and its (first, last) sample time."""
+    every, wait = float(launch["resample_every_seconds"]), float(launch["max_wait_seconds"])
+    tolerance = CADENCE_TOLERANCE_SECONDS
+    runs: dict[int, list[Mapping[str, Any]]] = defaultdict(list)
+    for run, gate in gates:
+        runs[run].append(gate)
+    problems: list[str] = []
+    statuses: list[str] = []
+    span: tuple[float, float] | None = None
+    for groups in runs.values():
+        statuses, span = [], None
+        numbers = [g.get("group") for g in groups]
+        if numbers != list(range(1, len(groups) + 1)):
+            problems.append(f"{label}: launch-gate groups {numbers} are not 1, 2, ... in order")
+        for g in groups:
+            statuses.append(gate_status(g, launch, known))
+            if statuses[-1].startswith("incomplete"):
+                problems.append(f"{label}: launch-gate group {g.get('group')} {statuses[-1]}")
+                continue
+            first, last = float(g["samples"][0]["t"]), float(g["samples"][-1]["t"])
+            if span is None and after is not None and first < after:
+                problems.append(
+                    f"{label}: launch gate opened before the unit's previous attempt ended"
+                )
+            if span is not None and abs(first - span[1] - every) > tolerance:
+                problems.append(
+                    f"{label}: launch-gate group {g.get('group')} not re-sampled {every:g} s after "
+                    "the previous group"
+                )
+            span = (first if span is None else span[0], last)
+            if first - span[0] > wait + tolerance:
+                problems.append(
+                    f"{label}: launch-gate group {g.get('group')} outside its {wait:g} s window"
+                )
+        if "passed" in statuses[:-1]:
+            problems.append(f"{label}: a launch-gate group passed before the window's last")
+        after = span[1] if span is not None else after
+    return statuses, problems, span
 
 
 def verify_unit(
@@ -1214,33 +1292,47 @@ def verify_unit(
     """§8.4 re-derived from the retained evidence, never from the recorded labels: per started
     attempt its launch gate, chronology, aborts and triggers (`attempt_validity` over the retained
     load samples, window, `<unit>/a<k>/pmset.txt` and caffeinate record); then the terminal outcome
-    this evidence supports (None: none). Returns it with every disagreement with the ledger."""
+    this evidence supports (None: none). Returns it with every disagreement with the ledger.
+    `samples` are the stage's well-formed load samples.
+
+    WHI-1746: a launch gate counts only as complete groups at the registered cadence
+    (`launch_windows`); a started attempt needs a passing group just before its start, `no_launch`
+    complete failing groups re-sampled over the whole window. An attempt window must end after its
+    start and contain every execution record of the attempt (experiment starts and ends, aborts),
+    which must agree with `attempt_end`; the triggers are evaluated over the window that contains
+    them."""
     timing = raw["timing"]
+    launch = timing["launch"]
+    tolerance = CADENCE_TOLERANCE_SECONDS
     name = str(unit["unit"])
     prefix = f"L-{name}-a"
     cap = int(timing["max_started_attempts_per_unit"])
+    known = {(float(s["t"]), float(s["load1"])) for s in samples}
     order: list[str] = []
     starts: dict[str, Mapping[str, Any]] = {}
     ends: dict[str, Mapping[str, Any]] = {}
     recorded: dict[str, Mapping[str, Any]] = {}
     host: dict[str, tuple[Any, Any]] = {}  # attempt -> (logical CPUs, caffeinate start) at its end
-    aborts: dict[str, list[str]] = defaultdict(list)
-    gates: dict[int, list[Mapping[str, Any]]] = defaultdict(list)
-    gave_up: set[int] = set()
+    executed: dict[str, dict[str, list[Mapping[str, Any]]]] = {
+        kind: defaultdict(list) for kind in ("abort", "experiment_start", "experiment_end")
+    }
+    gates: dict[Any, list[tuple[int, Mapping[str, Any]]]] = defaultdict(list)
+    gave_up: dict[Any, Mapping[str, Any]] = {}
+    run = 0  # driver runs (`stage` entries) so far
     cpus: Any = None
     awake: Any = None
     for e in entries:
         kind, attempt = e.get("event"), str(e.get("attempt"))
         if kind == "stage":
-            cpus = e.get("logical_cpus")
+            cpus, run = e.get("logical_cpus"), run + 1
         elif kind == "caffeinate":
             awake = e.get("t_started")
         elif kind == "launch_gate" and e.get("unit") == name:
-            gates[int(e["attempt"])].append(e)
+            gates[e.get("attempt")].append((run, e))
         elif kind == "no_launch" and e.get("unit") == name:
-            gave_up.add(int(e["attempt"]))
-        elif kind == "abort" and attempt.startswith(prefix):
-            aborts[attempt].append(str(e.get("trigger")))
+            gave_up[e.get("attempt")] = e
+        elif kind in executed and attempt.startswith(prefix):
+            executed[str(kind)][attempt].append(e)
         elif e.get("unit") != name:
             continue
         elif kind == "attempt_start":
@@ -1251,46 +1343,117 @@ def verify_unit(
             host[attempt] = (cpus, awake)
         elif kind == "attempt_validity":
             recorded[attempt] = e
+    aborts, began, finished = (executed[k] for k in ("abort", "experiment_start", "experiment_end"))
     problems: list[str] = []
     if order != [f"{prefix}{k}" for k in range(1, len(order) + 1)]:
         problems.append(f"{name}: started attempts {order} are not {prefix}1, a2, ... in order")
     if len(order) > cap:
         problems.append(f"{name}: {len(order)} started attempts, more than N = {cap}")
+    stray = sorted({*aborts, *began, *finished, *ends, *recorded} - set(starts))
+    if stray:
+        problems.append(f"{name}: records of attempts that never started: {stray}")
     valid: list[str] = []
     breach = False
     previous_end: float | None = None
     for k, attempt in enumerate(order, 1):
-        start = float(starts[attempt]["t_start"])
-        if not any(
-            gate_passes(g, timing["launch"]) and max(float(s["t"]) for s in g["samples"]) <= start
-            for g in gates[k]
+        start = _num(starts[attempt].get("t_start"))
+        statuses, gate_problems, span = launch_windows(
+            gates.pop(k, []), launch, known, previous_end, attempt
+        )
+        problems += gate_problems
+        if start is None:
+            problems.append(f"{attempt}: no window start")
+            continue
+        if not (
+            statuses and statuses[-1] == "passed" and span and 0 <= start - span[1] <= tolerance
         ):
-            problems.append(f"{attempt}: no passing launch gate before its start")
+            problems.append(f"{attempt}: no passing launch gate immediately before its start")
         if previous_end is not None and start < previous_end:
             problems.append(f"{attempt}: starts before the previous attempt ended")
         end = ends.get(attempt) or {}
+        listed = end.get("experiments") or []
+        listed = listed if isinstance(listed, list) else [listed]
+        # every execution record of the attempt: they bound the window the triggers are read over
+        stamps = [
+            *(x.get("t") for x in [*began[attempt], *aborts[attempt]]),
+            *(x.get(f) for x in finished[attempt] for f in ("t_start", "t_end")),
+            *(
+                x.get(f)
+                for x in listed
+                if isinstance(x, Mapping)
+                for f in ("t_start", "t_end")
+                if f in x
+            ),
+        ]
+        times = [t for t in map(_num, stamps) if t is not None]
+        if len(times) != len(stamps):
+            problems.append(f"{attempt}: an execution record without a valid time")
+        triggers = [x.get("trigger") for x in aborts[attempt]]
+        if triggers != ([end["aborted"]] if end.get("aborted") else []) and not (
+            end.get("aborted") == "driver_interrupted" and not triggers
+        ):
+            problems.append(
+                f"{attempt}: abort records {triggers} disagree with attempt_end "
+                f"({end.get('aborted')})"
+            )
         cpu_count, awake_started = host.get(attempt, (None, None))
         derived: dict[str, Any] = {"valid": False, "triggers": ["T5_incomplete_execution"]}
+        previous_end = max([start, *times])
         if end.get("t_end") is not None and cpu_count is not None:
             if end.get("t_start") != starts[attempt]["t_start"]:
                 problems.append(f"{attempt}: attempt_end has another window start")
-            previous_end = float(end["t_end"])
+            stop = _num(end["t_end"])
+            if stop is None or stop <= start:
+                problems.append(
+                    f"{attempt}: its window ends at {end['t_end']}, not after its start"
+                )
+            elif min([start, *times]) < start or max([stop, *times]) > stop:
+                problems.append(
+                    f"{attempt}: its window [{start}, {stop}] does not contain its execution "
+                    f"records [{min(times)}, {max(times)}]"
+                )
+            previous_end = max([start, stop or start, *times])  # the window that contains them
+            # attempt_end lists the experiments as the driver recorded them, in order; an entry
+            # without `t_start` and exit code is one the driver could not start (no record)
+            ran = [
+                x
+                for x in listed
+                if not (
+                    isinstance(x, Mapping) and "t_start" not in x and x.get("exit_code") is None
+                )
+            ]
+            if ran != [
+                {f: v for f, v in x.items() if f not in ("event", "attempt", "t")}
+                for x in finished[attempt]
+            ] or [x.get("t") for x in began[attempt]] != [x.get("t_start") for x in ran]:
+                problems.append(
+                    f"{attempt}: attempt_end's experiments are not its experiment records"
+                )
+            sequence = [
+                _num(x.get(f)) for x in ran if isinstance(x, Mapping) for f in ("t_start", "t_end")
+            ]
+            if any(
+                b is None or a is None or b < a
+                for a, b in zip(sequence, sequence[1:], strict=False)
+            ):
+                problems.append(f"{attempt}: its experiments do not run one after another")
             pmset = out / name / f"a{k}" / "pmset.txt"
             derived = attempt_validity(
                 unit=unit,
                 # each experiment read from this attempt's own slot, where the driver ran it
                 experiments=[
                     {**x, "dir": str(out / name / f"a{k}" / str(x.get("experiment")))}
-                    for x in end.get("experiments") or []
+                    for x in listed
+                    if isinstance(x, Mapping)
                 ],
-                start=start,
+                start=min([start, *times]),
                 end=previous_end,
                 samples=samples,
                 cpus=int(cpu_count),
                 validity=timing["validity"],
                 pmset_text=pmset.read_text(encoding="utf-8") if pmset.is_file() else None,
                 caffeinate_held=end.get("caffeinate_held") is True,
-                caffeinate_started=None if awake_started is None else float(awake_started),
+                caffeinate_started=_num(awake_started),
                 aborted=end.get("aborted"),
                 expected=unit_experiments(unit),
             )
@@ -1303,11 +1466,40 @@ def verify_unit(
                 f"{attempt}: recorded validity {mine.get('valid')} {mine.get('triggers')} differs "
                 f"from the retained evidence: {derived['valid']} {derived['triggers']}"
             )
-        reasons = {*aborts[attempt], *([end["aborted"]] if end.get("aborted") else [])}
+        reasons = {*map(str, triggers), *([end["aborted"]] if end.get("aborted") else [])}
         if any(r != "driver_interrupted" and r not in derived["triggers"] for r in reasons):
             breach = True  # §8.4 item 2: an abort without a detected T1-T5 event
         if derived["valid"]:
             valid.append(attempt)
+    # the launch window after the last started attempt: a no-launch, or a stage that stopped in it
+    following = len(order) + 1
+    statuses, gate_problems, span = (
+        launch_windows(
+            gates.pop(following, []), launch, known, previous_end, f"{prefix}{following}"
+        )
+        if following <= cap
+        else ([], [], None)
+    )
+    problems += gate_problems
+    if gates:
+        problems.append(
+            f"{name}: launch gates of attempts {sorted(map(str, gates))} out of sequence"
+        )
+    if set(gave_up) - ({following} if following <= cap else set()):
+        problems.append(f"{name}: no_launch records of attempts {sorted(map(str, gave_up))}")
+    record = gave_up.get(following) or {}
+    waited = _num(record.get("waited_seconds"))
+    no_launch = (
+        bool(statuses)
+        and all(s == "failed_on_load" for s in statuses)
+        and span is not None
+        # the driver gives up once another re-sample would pass the window, and says so
+        and span[1] - span[0] + float(launch["resample_every_seconds"]) + tolerance
+        > float(launch["max_wait_seconds"])
+        and record.get("groups") == len(statuses)
+        and waited is not None
+        and abs(waited - (span[1] - span[0])) <= tolerance
+    )
     supported: dict[str, Any] | None = None
     if breach:
         supported = {"outcome": "inconclusive_protocol_breach"}
@@ -1321,7 +1513,7 @@ def verify_unit(
             "attempt": None,
             "invalid_attempts": order,
         }
-    elif len(order) + 1 in gave_up and no_launch_covered(gates[len(order) + 1], timing):
+    elif record and no_launch:
         supported = {
             "outcome": "inconclusive_no_launch",
             "attempt": None,
@@ -1348,14 +1540,37 @@ def analyze_timing(
     )
     state = timing_state(entries, raw)
     load = out / "load.jsonl"
-    samples = (
+    retained = (
         [json.loads(x) for x in load.read_text(encoding="utf-8").splitlines() if x]
         if load.is_file()
         else []
     )
-    units: dict[str, Any] = {}
+    # WHI-1746: stage-wide evidence every unit's verification rests on (a malformed load sample
+    # would pass T1 or the gate unseen; another CPU count moves the T1 threshold)
+    samples = [
+        s
+        for s in retained
+        if isinstance(s, Mapping)
+        and _num(s.get("t")) is not None
+        and _num(s.get("load1")) is not None
+    ]
     problems: list[str] = []
+    if len(samples) != len(retained):
+        problems.append(
+            f"load.jsonl: {len(retained) - len(samples)} samples without a time and load"
+        )
+    if any(b["t"] < a["t"] for a, b in zip(samples, samples[1:], strict=False)):
+        problems.append("load.jsonl: samples out of time order")
+    for e in entries:
+        if e.get("event") == "stage" and e.get("logical_cpus") != raw["host"]["logical_cpus"]:
+            problems.append(
+                f"stage record: {e.get('logical_cpus')} logical CPUs, not the registered host's "
+                f"{raw['host']['logical_cpus']}"
+            )
+    stage_problems = bool(problems)
+    units: dict[str, Any] = {}
     verified: list[str] = []  # units whose recorded outcome the retained evidence supports
+    previous: tuple[str, float] | None = None  # the last unit with evidence, and its last time
     for unit in raw["timing"]["units"]:
         name = str(unit["unit"])
         gates = [
@@ -1375,6 +1590,21 @@ def analyze_timing(
                 )
         outcome = state["outcomes"].get(name)
         supported, unit_problems = verify_unit(raw, unit, out, entries, samples)
+        # §8.4: each unit opens its own launch window after the previous unit in the order
+        times = [
+            t
+            for e in entries
+            if e.get("unit") == name
+            for v in (
+                e.get("t_start"),
+                e.get("t_end"),
+                *(s.get("t") for s in e.get("samples") or [] if isinstance(s, Mapping)),
+            )
+            if (t := _num(v)) is not None
+        ]
+        if times and previous is not None and min(times) < previous[1]:
+            unit_problems.append(f"{name}: its records overlap those of {previous[0]}")
+        previous = (name, max(times)) if times else previous
         problems += unit_problems
         if outcome is None:
             problems.append(f"{name}: no terminal outcome")
@@ -1384,7 +1614,7 @@ def analyze_timing(
             problems.append(
                 f"{name}: recorded outcome {outcome} differs from the evidence {supported}"
             )
-        elif not unit_problems:
+        elif not unit_problems and not stage_problems:
             verified.append(name)
         view: dict[str, Any] = {
             "launch_gates": [
