@@ -511,6 +511,23 @@ def _rewrite(stage: Any, change: Callable[[list[dict[str, Any]]], list[dict[str,
     stage.ledger.path.write_text("".join(json.dumps(e) + "\n" for e in entries))
 
 
+def _resample(stage: Any, change: Callable[[dict[str, Any]], dict[str, Any]]) -> None:
+    """`change` applied to every load sample, in `load.jsonl` and in the launch-gate groups alike
+    (the driver writes each gate sample to both)."""
+    load = stage.out / "load.jsonl"
+    rows = [change(json.loads(x)) for x in load.read_text().splitlines() if x]
+    load.write_text("".join(json.dumps(x) + "\n" for x in rows))
+    _rewrite(
+        stage,
+        lambda es: [
+            {**e, "samples": [change(s) for s in e["samples"]]}
+            if e["event"] == "launch_gate"
+            else e
+            for e in es
+        ],
+    )
+
+
 def _refuted(analysis: Mapping[str, Any]) -> list[str]:
     """The problems of an analysis that must not make the positive §8.7 statement."""
     assert analysis["statements"]["measurement_attempted_correctly"] is False
@@ -669,6 +686,8 @@ def test_the_experiments_are_read_from_the_attempts_own_slot(tmp_path: Path) -> 
         lambda es: [
             {**e, "experiments": [{**x, "dir": str(copy_)} for x in e["experiments"]]}
             if e["event"] == "attempt_end"
+            else {**e, "dir": str(copy_)}
+            if e["event"] == "experiment_end"
             else e
             for e in es
         ],
@@ -684,18 +703,29 @@ def test_the_experiments_are_read_from_the_attempts_own_slot(tmp_path: Path) -> 
 def test_an_attempt_needs_its_passing_gate_and_its_place_in_the_sequence(tmp_path: Path) -> None:
     stage = _stage(tmp_path, FakeHost(), ["U2"])
     stage.run()
-    entries = stage.ledger.entries()
-    # the passing gate group's samples above the headroom: the launch is not supported
+    entries, clean = stage.ledger.entries(), (stage.out / "load.jsonl").read_text()
+    # the passing gate group's samples above the headroom, in the ledger and the load record alike
+    # (its recorded verdict kept): the group is not the passing one its label claims
+    gate = {
+        (s["t"], s["load1"]) for e in entries if e["event"] == "launch_gate" for s in e["samples"]
+    }
+    _resample(stage, lambda s: {**s, "load1": 3.5} if (s["t"], s["load1"]) in gate else s)
+    assert _refuted(_verified(stage)) == [
+        "L-U2-a1: launch-gate group 1 incomplete: the recorded peak or verdict is not its samples'",
+        "L-U2-a1: no passing launch gate immediately before its start",
+    ]
+    # ... and with the verdict recorded as the samples give it
     _rewrite(
         stage,
         lambda es: [
-            {**e, "samples": [{**s, "load1": 3.5} for s in e["samples"]]}
-            if e["event"] == "launch_gate"
-            else e
+            {**e, "max_load1": 3.5, "passed": False} if e["event"] == "launch_gate" else e
             for e in es
         ],
     )
-    assert _refuted(_verified(stage)) == ["L-U2-a1: no passing launch gate before its start"]
+    assert _refuted(_verified(stage)) == [
+        "L-U2-a1: no passing launch gate immediately before its start"
+    ]
+    (stage.out / "load.jsonl").write_text(clean)
     # the only attempt recorded as a2: no a1 was started
     _rewrite(
         stage,
