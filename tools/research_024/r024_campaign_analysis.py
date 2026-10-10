@@ -1169,12 +1169,174 @@ def timing_state(entries: Sequence[Mapping[str, Any]], raw: Mapping[str, Any]) -
     return {"attempts": dict(attempts), "outcomes": outcomes, "interrupted": interrupted}
 
 
+def unit_experiments(unit: Mapping[str, Any]) -> list[str]:
+    """The registered experiments of one attempt of `unit`, in order (§8.2; the driver's
+    `TimingStage.commands`)."""
+    if unit["kind"] == "paired":
+        return ["UP-base", "UP-cand", "compare"]
+    if unit["kind"] == "quote_cli":
+        return [f"q{index}" for index in range(1, int(unit["invocations"]) + 1)]
+    return [str(unit["unit"])]
+
+
+def gate_passes(gate: Mapping[str, Any], launch: Mapping[str, Any]) -> bool:
+    """§8.4 launch gate re-read from its own samples: all of them taken, none above the headroom."""
+    loads = [float(s["load1"]) for s in gate.get("samples") or []]
+    return len(loads) == int(launch["samples"]) and max(loads) <= float(launch["headroom_load1"])
+
+
+def no_launch_covered(gates: Sequence[Mapping[str, Any]], timing: Mapping[str, Any]) -> bool:
+    """`no_launch` evidence: only failing gate groups, re-sampled without a gap longer than the
+    re-sample interval (+ the T2 gap), spanning the whole wait (the driver stops once another
+    re-sample would pass `max_wait_seconds`)."""
+    launch = timing["launch"]
+    every = float(launch["resample_every_seconds"])
+    slack = every + float(timing["validity"]["max_sample_gap_seconds"])
+    spans = [
+        (min(times), max(times))
+        for g in gates
+        if (times := [float(s["t"]) for s in g.get("samples") or []])
+    ]
+    if not gates or len(spans) != len(gates) or any(gate_passes(g, launch) for g in gates):
+        return False
+    if any(b[0] - a[1] > slack for a, b in zip(spans, spans[1:], strict=False)):
+        return False
+    return spans[-1][1] - spans[0][0] + every > float(launch["max_wait_seconds"])
+
+
+def verify_unit(
+    raw: Mapping[str, Any],
+    unit: Mapping[str, Any],
+    out: Path,
+    entries: Sequence[Mapping[str, Any]],
+    samples: Sequence[Mapping[str, Any]],
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """§8.4 re-derived from the retained evidence, never from the recorded labels: per started
+    attempt its launch gate, chronology, aborts and triggers (`attempt_validity` over the retained
+    load samples, window, `<unit>/a<k>/pmset.txt` and caffeinate record); then the terminal outcome
+    this evidence supports (None: none). Returns it with every disagreement with the ledger."""
+    timing = raw["timing"]
+    name = str(unit["unit"])
+    prefix = f"L-{name}-a"
+    cap = int(timing["max_started_attempts_per_unit"])
+    order: list[str] = []
+    starts: dict[str, Mapping[str, Any]] = {}
+    ends: dict[str, Mapping[str, Any]] = {}
+    recorded: dict[str, Mapping[str, Any]] = {}
+    host: dict[str, tuple[Any, Any]] = {}  # attempt -> (logical CPUs, caffeinate start) at its end
+    aborts: dict[str, list[str]] = defaultdict(list)
+    gates: dict[int, list[Mapping[str, Any]]] = defaultdict(list)
+    gave_up: set[int] = set()
+    cpus: Any = None
+    awake: Any = None
+    for e in entries:
+        kind, attempt = e.get("event"), str(e.get("attempt"))
+        if kind == "stage":
+            cpus = e.get("logical_cpus")
+        elif kind == "caffeinate":
+            awake = e.get("t_started")
+        elif kind == "launch_gate" and e.get("unit") == name:
+            gates[int(e["attempt"])].append(e)
+        elif kind == "no_launch" and e.get("unit") == name:
+            gave_up.add(int(e["attempt"]))
+        elif kind == "abort" and attempt.startswith(prefix):
+            aborts[attempt].append(str(e.get("trigger")))
+        elif e.get("unit") != name:
+            continue
+        elif kind == "attempt_start":
+            order.append(attempt)
+            starts[attempt] = e
+        elif kind == "attempt_end":
+            ends[attempt] = e
+            host[attempt] = (cpus, awake)
+        elif kind == "attempt_validity":
+            recorded[attempt] = e
+    problems: list[str] = []
+    if order != [f"{prefix}{k}" for k in range(1, len(order) + 1)]:
+        problems.append(f"{name}: started attempts {order} are not {prefix}1, a2, ... in order")
+    if len(order) > cap:
+        problems.append(f"{name}: {len(order)} started attempts, more than N = {cap}")
+    valid: list[str] = []
+    breach = False
+    previous_end: float | None = None
+    for k, attempt in enumerate(order, 1):
+        start = float(starts[attempt]["t_start"])
+        if not any(
+            gate_passes(g, timing["launch"]) and max(float(s["t"]) for s in g["samples"]) <= start
+            for g in gates[k]
+        ):
+            problems.append(f"{attempt}: no passing launch gate before its start")
+        if previous_end is not None and start < previous_end:
+            problems.append(f"{attempt}: starts before the previous attempt ended")
+        end = ends.get(attempt) or {}
+        cpu_count, awake_started = host.get(attempt, (None, None))
+        derived: dict[str, Any] = {"valid": False, "triggers": ["T5_incomplete_execution"]}
+        if end.get("t_end") is not None and cpu_count is not None:
+            if end.get("t_start") != starts[attempt]["t_start"]:
+                problems.append(f"{attempt}: attempt_end has another window start")
+            previous_end = float(end["t_end"])
+            pmset = out / name / f"a{k}" / "pmset.txt"
+            derived = attempt_validity(
+                unit=unit,
+                # each experiment read from this attempt's own slot, where the driver ran it
+                experiments=[
+                    {**x, "dir": str(out / name / f"a{k}" / str(x.get("experiment")))}
+                    for x in end.get("experiments") or []
+                ],
+                start=start,
+                end=previous_end,
+                samples=samples,
+                cpus=int(cpu_count),
+                validity=timing["validity"],
+                pmset_text=pmset.read_text(encoding="utf-8") if pmset.is_file() else None,
+                caffeinate_held=end.get("caffeinate_held") is True,
+                caffeinate_started=None if awake_started is None else float(awake_started),
+                aborted=end.get("aborted"),
+                expected=unit_experiments(unit),
+            )
+        elif end.get("aborted") != "driver_interrupted":  # §10.4: only that one has no window end
+            problems.append(f"{attempt}: no attempt end, window or CPU count to evaluate")
+        mine = recorded.get(attempt) or {}
+        # the verdict, not `detail`: the driver's counts are of the samples written by then
+        if (mine.get("valid"), mine.get("triggers")) != (derived["valid"], derived["triggers"]):
+            problems.append(
+                f"{attempt}: recorded validity {mine.get('valid')} {mine.get('triggers')} differs "
+                f"from the retained evidence: {derived['valid']} {derived['triggers']}"
+            )
+        reasons = {*aborts[attempt], *([end["aborted"]] if end.get("aborted") else [])}
+        if any(r != "driver_interrupted" and r not in derived["triggers"] for r in reasons):
+            breach = True  # §8.4 item 2: an abort without a detected T1-T5 event
+        if derived["valid"]:
+            valid.append(attempt)
+    supported: dict[str, Any] | None = None
+    if breach:
+        supported = {"outcome": "inconclusive_protocol_breach"}
+    elif valid:
+        supported = {"outcome": "valid", "attempt": valid[0]}
+        if order[-1] != valid[0]:
+            problems.append(f"{name}: attempts started after the first valid attempt {valid[0]}")
+    elif len(order) >= cap:
+        supported = {
+            "outcome": "inconclusive_cap_exhausted",
+            "attempt": None,
+            "invalid_attempts": order,
+        }
+    elif len(order) + 1 in gave_up and no_launch_covered(gates[len(order) + 1], timing):
+        supported = {
+            "outcome": "inconclusive_no_launch",
+            "attempt": None,
+            "invalid_attempts": order,
+        }
+    return supported, problems
+
+
 def analyze_timing(
     raw: Mapping[str, Any], out: Path, summarize: Callable[[Path], Any] | None = None
 ) -> dict[str, Any]:
     """Stage L: per unit the launch-gate history, every attempt with its triggers, the terminal
     outcome and the selected attempt; the two §8.7 statements; the §8.6 yield of each valid unit
-    (`summarize`: `report.latency.summarize`, replaceable in tests)."""
+    (`summarize`: `report.latency.summarize`, replaceable in tests). Each recorded outcome is
+    checked against the retained evidence (`verify_unit`); only a verified one counts."""
     if summarize is None:
         from report.latency import summarize
 
@@ -1185,8 +1347,15 @@ def analyze_timing(
         else []
     )
     state = timing_state(entries, raw)
+    load = out / "load.jsonl"
+    samples = (
+        [json.loads(x) for x in load.read_text(encoding="utf-8").splitlines() if x]
+        if load.is_file()
+        else []
+    )
     units: dict[str, Any] = {}
     problems: list[str] = []
+    verified: list[str] = []  # units whose recorded outcome the retained evidence supports
     for unit in raw["timing"]["units"]:
         name = str(unit["unit"])
         gates = [
@@ -1205,8 +1374,18 @@ def analyze_timing(
                     {k: v for k, v in e.items() if k not in ("event", "unit", "attempt")}
                 )
         outcome = state["outcomes"].get(name)
+        supported, unit_problems = verify_unit(raw, unit, out, entries, samples)
+        problems += unit_problems
         if outcome is None:
             problems.append(f"{name}: no terminal outcome")
+        elif supported is None:
+            problems.append(f"{name}: the retained evidence supports no terminal outcome")
+        elif any(outcome.get(k) != v for k, v in supported.items()):
+            problems.append(
+                f"{name}: recorded outcome {outcome} differs from the evidence {supported}"
+            )
+        elif not unit_problems:
+            verified.append(name)
         view: dict[str, Any] = {
             "launch_gates": [
                 {
@@ -1218,15 +1397,15 @@ def analyze_timing(
             "attempts": attempts,
             "outcome": outcome,
         }
-        if outcome and outcome.get("outcome") == "valid":
+        if name in verified and outcome and outcome.get("outcome") == "valid":
             slot = out / name / str(outcome["attempt"]).rsplit("-", 1)[1]
             view["yield"] = _unit_yield(raw, unit, slot, summarize)
         units[name] = view
     terminal = [u["outcome"] for u in units.values()]
-    attempted_correctly = all(
+    attempted_correctly = not problems and all(  # missing evidence is a problem, never a "yes"
         t is not None and t.get("outcome") != "inconclusive_protocol_breach" for t in terminal
     )
-    usable = [n for n, u in units.items() if (u["outcome"] or {}).get("outcome") == "valid"]
+    usable = [n for n in verified if units[n]["outcome"]["outcome"] == "valid"]
     sums = {}
     for path in sorted(out.rglob("*")):
         if path.is_file() and path.name in (
