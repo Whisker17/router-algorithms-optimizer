@@ -35,6 +35,7 @@ import hashlib
 import json
 import sys
 from collections.abc import Callable, Mapping
+from decimal import Decimal
 from fractions import Fraction
 from pathlib import Path
 from typing import Any
@@ -48,7 +49,7 @@ for _path in (ROOT, HERE):
 import r021_examples as r21  # noqa: E402  (the shared independent toolkit)
 import yaml  # noqa: E402
 
-from benchmark.profile import strategy_group  # noqa: E402
+from benchmark.profile import parse_profile, strategy_group  # noqa: E402
 from benchmark.strategies import (  # noqa: E402
     R021_ADDITIONS,
     R022_ADDITIONS,
@@ -97,6 +98,12 @@ def presets() -> dict[str, dict[str, Any]]:
             "key": document["key"],
             "version": document["version"],
             "options": dict(document["options"]),
+            # the guide prints exact decimals (`tolerance 0.00001`), never `1e-05`
+            "decimals": {
+                k: format(Decimal(str(v)), "f")
+                for k, v in document["options"].items()
+                if isinstance(v, float)
+            },
         }
     return out
 
@@ -137,6 +144,10 @@ def _roster(pins: Mapping[str, Any]) -> dict[str, Any]:
         entry = explicit.algorithm_options[name]
         equal(entry["source"], {"kind": "override"}, f"{name}: equal options outside `all`")
         equal(entry["settings_sha256"], entries[name]["settings"], f"{name}: same settings")
+    # a saved `all` document replays literally and keeps the preset provenance
+    saved = parse_profile(yaml.safe_load(yaml.safe_dump(document, sort_keys=False)), "saved")
+    for name in R024_ADDITIONS:
+        equal(saved.algorithm_options[name]["source"]["kind"], "preset", f"{name}: saved replay")
     params = {n: dict(profile.algorithm_config(ALGORITHMS[n]).params) for n in R024_ADDITIONS}
     for name, base in BASES.items():
         equal(
@@ -281,6 +292,7 @@ def _rows(pins: Mapping[str, Any]) -> dict[str, Any]:
     out["marginal_activation"]["delta"] = delta
     out["marginal_activation"]["terminals"] = terminals[0]
     out["marginal_activation"]["dead_pool_status"] = dead_status
+    out["moe_output_reserve"] = moe.reserve1 if moe.token1 == r21.USDT0 else moe.reserve0
     out["split_polish_vs_marginal_activation_raw"] = (
         rows["marginal_activation"]["score"] - rows["split_polish"]["score"]
     )
@@ -460,10 +472,15 @@ def _work(row: str) -> dict[str, int]:
 # (guide label, comparison kind, candidate, baseline) of the guide's 0.2.4 tables
 SP, MA = "Q19-full/split_polish", "Q19-full/marginal_activation"
 OWN_BASE = [
-    ("full", "base_control", SP, "Q19-full/metis_inspired"),
-    ("SOR", "base_control", "Q19-sor/split_polish", "Q19-sor/metis_inspired"),
-    ("full", "base_control", MA, "Q19-full/incremental_graph"),
-    ("SOR", "base_control", "Q19-sor/marginal_activation", "Q19-sor/incremental_graph"),
+    ("`full_source`", "base_control", SP, "Q19-full/metis_inspired"),
+    ("`sor_compatible`", "base_control", "Q19-sor/split_polish", "Q19-sor/metis_inspired"),
+    ("`full_source`", "base_control", MA, "Q19-full/incremental_graph"),
+    (
+        "`sor_compatible`",
+        "base_control",
+        "Q19-sor/marginal_activation",
+        "Q19-sor/incremental_graph",
+    ),
 ]
 ATTRIBUTION = [
     ("`E2-E1only` (E2's own E1 stage on its base)", "attribution", MA, "E2-E1only"),
@@ -558,9 +575,7 @@ def example_campaign() -> dict[str, Any]:
     for unit, outcome in outcomes.items():
         check(f"| {unit} | outcome | {outcome} |" in TIMING_TABLES, f"{unit}: timing-tables.md")
     rows = {
-        "own_base": [
-            _own_row(f"{label} vs base", own[f"{c} vs {b}"]) for label, _, c, b in OWN_BASE
-        ],
+        "own_base": [_own_row(label, own[f"{c} vs {b}"]) for label, _, c, b in OWN_BASE],
         "attribution": [_own_row(label, attribution[b]) for label, _, _, b in ATTRIBUTION],
     }
     return {

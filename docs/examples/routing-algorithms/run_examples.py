@@ -15,8 +15,9 @@ and the experimental Metis-inspired (NOT Jupiter Metis) strategy:
 along with the real-state fixed-block snapshot case, then (sections 12-17, WHI-1561,
 `r021_examples.py`) the five 0.2.1 experimental strategies -- metis_history,
 direct_split_certified, incremental_graph_repair, uni_sor_cycle_safe and cfmm_dual (CPMM and
-CL stages) -- through their registered factories, and all seventeen `--strategies all` rows on
-the same fixed-block fixture (the fourteen 0.2.1 rows plus the three 0.2.2 bounded strategies),
+CL stages) -- through their registered factories, and all nineteen `--strategies all` rows on
+the same fixed-block fixture (the fourteen 0.2.1 rows, the three 0.2.2 bounded strategies and,
+since 0.2.4, the two post-processors with their selected presets),
 then (sections 18-22, WHI-1601, `r022_examples.py`) the 0.2.2 upper-bound pruning examples:
 per-pool bounds, `single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`
 and the roster / preset checks, then (sections 23-26, WHI-1628, `r023_examples.py`) the 0.2.3
