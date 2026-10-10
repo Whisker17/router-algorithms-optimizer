@@ -156,7 +156,8 @@ enforces them, and C10 confirms them per case (§2).
    N = 3) and that the launch redesign goes to 0.2.5 (R025-C/1, WHI-1636). Stage L ran as one
    driver process and was never interrupted: its resume state is empty, and no attempt was
    re-launched by hand. `caffeinate -i -m -s` was held for the whole stage.
-9. **The timing verification changed after the freeze (WHI-1744, release review round 1, R1-F1).**
+9. **The timing verification changed after the freeze (WHI-1744 and WHI-1746, release review
+   rounds 1 and 2, R1-F1, R2-F1, R2-F2).**
    As frozen, `analyze_timing` took statement (a) of §8.7 from the ledger's `unit_outcome` labels
    alone. A ledger with one `inconclusive_cap_exhausted` label per unit and no attempt gave 0 problems
    and "yes". WHI-1744 added `verify_unit` to `r024_campaign_analysis.py`. It re-derives each unit's
@@ -168,9 +169,26 @@ enforces them, and C10 confirms them per case (§2).
    without a detected trigger is `protocol_breach`. `valid` must name the earliest valid attempt with
    none after it, `cap_exhausted` needs N invalid attempts, and `no_launch` needs failing gate groups
    spanning the 21,600 s window. Statement (a) is "yes" only with zero problems; the §8.6 yield and
-   statement (b) count only verified units. No timing rule, threshold, record or driver run path
-   changed. The file is therefore no longer the one pinned in `freeze.json` and in the T and R
-   analyses' `analysis_source` (`47a4a14b…`). Those pins stay as the record of the frozen analysis.
+   statement (b) count only verified units.
+   Round 2 found that this still certified malformed evidence: gate groups with 2 of 5 samples, one
+   "group" of two samples 21,600 s apart, five samples sharing one timestamp, and an attempt window
+   that ends before its start or before its experiment ends. WHI-1746 makes the verifier check the
+   completeness and timing of that evidence. A gate group counts only if it holds 5 samples, each
+   also in the stage load record (`load.jsonl`), 30 s apart, with the peak and verdict its samples
+   give. Otherwise it is incomplete, which is a problem. A launch window's groups are numbered 1,
+   2, … and follow each other by 300 s. Each opens after the unit's previous attempt and within
+   21,600 s of the window's first sample, and only the last may pass. A started attempt needs a
+   passing group immediately before its start. `no_launch` needs complete failing groups up to the
+   point where another re-sample would pass 21,600 s, with the `no_launch` record's group count
+   and wait. The tolerance is 1 s; the retained records stray from the registered spacing by at
+   most 0.016 s. An attempt window must end after its start and contain every experiment start
+   and end and every abort of the attempt. These records must agree with `attempt_end` (the same
+   experiments, in sequence, the same abort), and T1–T5 are evaluated over the window that
+   contains them. The stage-wide evidence is checked too: finite load samples in time order, the
+   registered host's 10 logical CPUs, and units whose records follow the registered order.
+   No timing rule, threshold, record or driver run path changed. The file is therefore no longer
+   the one pinned in `freeze.json` and in the T and R analyses' `analysis_source` (`47a4a14b…`).
+   Those pins stay as the record of the frozen analysis.
    The re-run on the retained records with the changed code
    (`router-algorithms-optimizer-artifacts/research-024/whi-1744/r2/`) gives:
    - stage T and R: the analyses equal the committed ones in every field except that tool hash; their
@@ -180,6 +198,11 @@ enforces them, and C10 confirms them per case (§2).
      supports.
      `timing-analysis.json`, `timing-SHA256SUMS`, `timing-tables.md` and `timing-attempts.md` are
      byte-identical, so none was regenerated, and §4.3 is unchanged.
+
+   The same re-run with the WHI-1746 code
+   (`router-algorithms-optimizer-artifacts/research-024/whi-1746/`) gives the same result. T and R
+   differ from the committed analyses only in that tool hash. Stage L has 0 problems and the
+   published outcomes, and its four outputs are byte-identical.
 10. **A rounding correction (release review R1-F3).** §0 and §3.4 printed the `split_polish` quote ratio
     as 1.746. 9,299,891 / 5,324,859 = 1.74650… is **1.747**, as the guide already had. A test now ties
     every §3.4 ratio to the totals in `report-analysis.json`. No other figure changed.
