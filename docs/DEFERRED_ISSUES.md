@@ -111,6 +111,20 @@ soon — anything touching high-risk paths defaults to at least High), **Medium*
   0.1.2 baseline `d5061563` and the 0.2.1 stage-L experiments) would stop being comparable.
   `main.py quote` records it (WHI-1606). Fix: pass `record_cohort=True` there under a new
   latency protocol version, whose derived-bundle hashes are recorded afresh.
+- **The R024 timing driver does not catch the experiment-directory resolution error it
+  meets** (Low, WHI-1747). `tools/research_024/r024_campaign.py::TimingStage.run_attempt`
+  catches its own `CampaignError` around `_resolve`, but `_resolve` calls
+  `r021_campaign._single_child`, which raises `r021_campaign.CampaignError` (a different
+  class). An empty or ambiguous `{dir:<experiment>}` directory (e.g. `UP-base` without its
+  one output directory before `compare`) therefore escapes and stops the stage, leaving an
+  `attempt_start` without an `attempt_end`. Confirmed by release review round 3 on H3
+  `3346454` (`review-r3/reviewer-probes/probes.py`, `named_driver`: ledger `stage`,
+  `caffeinate`, `launch_gate`, `attempt_start`). Deferred: the driver's run path is frozen,
+  the retained stage L never took this path, and the result is never a certified success:
+  on resume the attempt counts as interrupted (T5, §10.4) and the verifier accepts it as
+  that. Fix: translate the foreign exception at the resolution boundary (catch
+  `c21.CampaignError` in `_resolve`, or both classes in `run_attempt`), with an
+  empty/ambiguous-directory regression that expects the unstarted experiment entry.
 
 ---
 
