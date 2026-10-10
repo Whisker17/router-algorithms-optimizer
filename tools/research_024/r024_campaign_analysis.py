@@ -1482,6 +1482,7 @@ def verify_unit(
     if set(gave_up) - ({following} if following <= cap else set()):
         problems.append(f"{name}: no_launch records of attempts {sorted(map(str, gave_up))}")
     record = gave_up.get(following) or {}
+    waited = _num(record.get("waited_seconds"))
     no_launch = (
         bool(statuses)
         and all(s == "failed_on_load" for s in statuses)
@@ -1490,8 +1491,8 @@ def verify_unit(
         and span[1] - span[0] + float(launch["resample_every_seconds"]) + tolerance
         > float(launch["max_wait_seconds"])
         and record.get("groups") == len(statuses)
-        and abs((_num(record.get("waited_seconds")) or -math.inf) - (span[1] - span[0]))
-        <= tolerance
+        and waited is not None
+        and abs(waited - (span[1] - span[0])) <= tolerance
     )
     supported: dict[str, Any] | None = None
     if breach:

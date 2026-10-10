@@ -369,6 +369,7 @@ def _stage(tmp_path: Path, host: FakeHost, units: list[str] | None = None) -> An
     raw = copy.deepcopy(RAW)
     if units is not None:
         raw["timing"]["units"] = [u for u in raw["timing"]["units"] if u["unit"] in units]
+    raw["host"]["logical_cpus"] = os.cpu_count()  # the host the driver records (WHI-1746)
     return C.TimingStage(
         raw,
         tmp_path / "inputs",
@@ -744,6 +745,453 @@ def test_no_launch_needs_gate_evidence_over_the_whole_window(tmp_path: Path) -> 
         stage, lambda es: [e for e in es if not (e["event"] == "launch_gate" and e["group"] > 3)]
     )
     assert _refuted(_verified(stage)) == ["U2: the retained evidence supports no terminal outcome"]
+
+
+# WHI-1746 (release review R2-F1, R2-F2): a launch gate counts only as complete groups at the
+# registered cadence, and an attempt window must contain the execution it is read over.
+
+
+def test_the_reviewers_round_2_reproductions_never_certify(tmp_path: Path) -> None:
+    """`r024-r2-probes.py` (review round 2), verbatim; plus the shortened window of R2-F2 and the
+    reversed window with every load sample at 10.0."""
+    found = {}
+    for what in ["compressed_gate", "old_gate", "reversed_window", "short", "reversed_busy"]:
+        st = _stage(tmp_path / what, FakeHost(), ["U2"])
+        st.run()
+        es = st.ledger.entries()
+        if what in ("compressed_gate", "old_gate"):
+            for e in es:
+                if e["event"] == "launch_gate":
+                    for sample in e["samples"]:
+                        sample["t"] = (
+                            e["samples"][0]["t"]
+                            if what == "compressed_gate"
+                            else sample["t"] - 86400
+                        )
+        for e in es:
+            if e["event"] == "attempt_end" and what != "short" and what.startswith("reversed"):
+                e["t_end"] = e["t_start"] - 1
+            if e["event"] == "attempt_end" and what == "short":
+                e["t_end"] = e["t_start"] + 1
+        st.ledger.path.write_text("".join(json.dumps(e) + "\n" for e in es))
+        if what == "reversed_busy":
+            _resample(st, lambda s: {**s, "load1": 10.0})
+        found[what] = _verified(st)
+    for what in ["one_sparse_gate", "incomplete_groups"]:
+        st = _stage(tmp_path / what, FakeHost(load=lambda t: 3.5), ["U2"])
+        st.run()
+        es = st.ledger.entries()
+        gs = [e for e in es if e["event"] == "launch_gate"]
+        if what == "one_sparse_gate":
+            es = [e for e in es if e["event"] != "launch_gate"]
+            g = gs[0]
+            g["samples"] = [{"t": 1800000000.0, "load1": 0.5}, {"t": 1800021600.0, "load1": 0.5}]
+            es.insert(2, g)
+        if what == "incomplete_groups":
+            for g in gs:
+                g["samples"] = [g["samples"][0], g["samples"][-1]]
+        st.ledger.path.write_text("".join(json.dumps(e) + "\n" for e in es))
+        found[what] = _verified(st)
+    for what, analysis in found.items():
+        assert _refuted(analysis), what
+        assert analysis["statements"]["usable_latency_obtained"] == [], what
+    assert (
+        "L-U2-a1: no passing launch gate immediately before its start"
+        in found["old_gate"]["problems"]
+    )
+    assert (
+        "L-U2-a1: launch-gate group 1 incomplete: samples not 30 s apart"
+        in (found["compressed_gate"]["problems"])
+    )
+    assert found["reversed_window"]["problems"] == [
+        "L-U2-a1: its window ends at 1800000119.0, not after its start"
+    ]
+    # the triggers are read over the window that contains the execution, not the recorded one
+    assert any(
+        "from the retained evidence: False ['T1_load']" in p
+        for p in found["reversed_busy"]["problems"]
+    )
+    assert found["short"]["problems"] == [
+        "L-U2-a1: its window [1800000120.0, 1800000121.0] does not contain its execution records "
+        "[1800000120.0, 1800000720.0]"
+    ]
+    for what in ("one_sparse_gate", "incomplete_groups"):
+        assert "U2: the retained evidence supports no terminal outcome" in found[what]["problems"]
+
+
+def _perturbed(
+    stage: Any, change: Callable[[list[dict[str, Any]], list[dict[str, Any]]], Any]
+) -> Any:
+    """The analysis after `change(ledger entries, load samples)` edits them in place; the stage's
+    records are restored afterwards."""
+    ledger, load = stage.ledger.path, stage.out / "load.jsonl"
+    texts = ledger.read_text(), load.read_text()
+    entries = [json.loads(x) for x in texts[0].splitlines() if x]
+    samples = [json.loads(x) for x in texts[1].splitlines() if x]
+    raw = change(entries, samples)  # a schedule, when the change is to the registered order
+    raw = raw if isinstance(raw, dict) and "timing" in raw else stage.raw
+    ledger.write_text("".join(json.dumps(e) + "\n" for e in entries))
+    load.write_text("".join(json.dumps(s) + "\n" for s in samples))
+    try:
+        return CA.analyze_timing(raw, stage.out, summarize=_summary)
+    finally:
+        ledger.write_text(texts[0])
+        load.write_text(texts[1])
+
+
+def _of(entries: list[dict[str, Any]], kind: str, **match: Any) -> list[dict[str, Any]]:
+    return [
+        e for e in entries if e["event"] == kind and all(e.get(k) == v for k, v in match.items())
+    ]
+
+
+def _move(
+    entries: list[dict[str, Any]], samples: list[dict[str, Any]], times: set[float], **new: Any
+) -> None:
+    """The samples at `times` changed (`dt`: shifted; else the fields given), in the load record and
+    the gate groups alike, as the driver would have written them."""
+    for s in [*samples, *(x for g in _of(entries, "launch_gate") for x in g["samples"])]:
+        if s["t"] in times:
+            s.update({"t": s["t"] + new["dt"]} if "dt" in new else new)
+
+
+def _group_times(entries: list[dict[str, Any]], number: int = 1, attempt: int = 1) -> set[float]:
+    return {
+        s["t"] for s in _of(entries, "launch_gate", group=number, attempt=attempt)[0]["samples"]
+    }
+
+
+def _drop_group(entries: list[dict[str, Any]], number: int) -> None:
+    entries.remove(_of(entries, "launch_gate", group=number)[0])
+
+
+def _set(entries: list[dict[str, Any]], kind: str, field: str, value: Any, **match: Any) -> None:
+    for e in _of(entries, kind, **match):
+        e[field] = value(e) if callable(value) else value
+
+
+def _experiments(entries: list[dict[str, Any]], name: str, field: str, value: Any) -> None:
+    """One experiment's time changed in all three records of it."""
+    for e in [
+        *_of(entries, "experiment_end"),
+        *(x for a in _of(entries, "attempt_end") for x in a["experiments"]),
+    ]:
+        if e["experiment"] == name:
+            e[field] = value(e[field])
+    if field == "t_start":
+        _set(entries, "experiment_start", "t", lambda e: value(e["t"]), experiment=name)
+
+
+def _pass_group(entries: list[dict[str, Any]], samples: list[dict[str, Any]], number: int) -> None:
+    """Gate group `number` (attempt 1) quiet, with the verdict its samples then give."""
+    _move(entries, samples, _group_times(entries, number), load1=0.5)
+    _set(entries, "launch_gate", "passed", True, group=number)
+    _set(entries, "launch_gate", "max_load1", 0.5, group=number)
+
+
+def _group_past_the_window(entries: list[dict[str, Any]], samples: list[dict[str, Any]]) -> None:
+    """One more no-launch group 420 s after the last (52nd), recorded as the driver would."""
+    last = _of(entries, "launch_gate", group=52)[0]
+    extra = [{**s, "t": s["t"] + 420} for s in last["samples"]]
+    entries.insert(
+        entries.index(_of(entries, "no_launch")[0]), {**last, "group": 53, "samples": extra}
+    )
+    samples.extend(copy.deepcopy(extra))
+    _set(entries, "no_launch", "groups", 53)
+    _set(entries, "no_launch", "waited_seconds", lambda e: e["waited_seconds"] + 420)
+
+
+def _resampled_late(
+    entries: list[dict[str, Any]], samples: list[dict[str, Any]], number: int
+) -> None:
+    """Every sample from gate group `number` on 60 s later, the no-launch wait with them."""
+    first = min(_group_times(entries, number))
+    _move(entries, samples, {s["t"] for s in samples if s["t"] >= first}, dt=60.0)
+    _set(entries, "no_launch", "waited_seconds", lambda e: e["waited_seconds"] + 60)
+
+
+def _start_late(entries: list[dict[str, Any]], seconds: float) -> None:
+    for kind in ("attempt_start", "attempt_end"):
+        _set(entries, kind, "t_start", lambda e: e["t_start"] + seconds)
+
+
+PERTURBATIONS: dict[str, tuple[str, Callable[..., Any]]] = {
+    # the passing gate group of a valid attempt
+    "gate: a sample missing": ("valid", lambda es, ss: _of(es, "launch_gate")[0]["samples"].pop(2)),
+    "gate: a sample too many": (
+        "valid",
+        lambda es, ss: _of(es, "launch_gate")[0]["samples"].append(
+            _of(es, "launch_gate")[0]["samples"][-1]
+        ),
+    ),
+    "gate: a sample 5 s late": (
+        "valid",
+        lambda es, ss: _move(es, ss, {_of(es, "launch_gate")[0]["samples"][2]["t"]}, dt=5.0),
+    ),
+    "gate: samples out of order": (
+        "valid",
+        lambda es, ss: _of(es, "launch_gate")[0]["samples"].reverse(),
+    ),
+    "gate: one timestamp": (
+        "valid",
+        lambda es, ss: [
+            s.update(t=_of(es, "launch_gate")[0]["samples"][0]["t"])
+            for s in _of(es, "launch_gate")[0]["samples"]
+        ],
+    ),
+    "gate: a day before the start": (
+        "valid",
+        lambda es, ss: _move(es, ss, _group_times(es), dt=-86400.0),
+    ),
+    "gate: after the start": ("valid", lambda es, ss: _move(es, ss, _group_times(es), dt=200.0)),
+    "gate: not in the load record": (
+        "valid",
+        lambda es, ss: _of(es, "launch_gate")[0]["samples"][1].update(load1=0.4),
+    ),
+    "gate: verdict not its samples'": (
+        "valid",
+        lambda es, ss: _set(es, "launch_gate", "passed", False),
+    ),
+    "gate: peak not its samples'": (
+        "valid",
+        lambda es, ss: _set(es, "launch_gate", "max_load1", 0.1),
+    ),
+    "gate: numbered 2": ("valid", lambda es, ss: _set(es, "launch_gate", "group", 2)),
+    "gate: none": ("valid", lambda es, ss: [es.remove(g) for g in _of(es, "launch_gate")]),
+    "gate: a stray one": (
+        "valid",
+        lambda es, ss: es.append({**_of(es, "launch_gate")[0], "attempt": 3}),
+    ),
+    # the launch windows of a no-launch outcome
+    "no_launch: last group missing": ("no_launch", lambda es, ss: _drop_group(es, 52)),
+    "no_launch: first group missing": ("no_launch", lambda es, ss: _drop_group(es, 1)),
+    "no_launch: a group missing": ("no_launch", lambda es, ss: _drop_group(es, 20)),
+    "no_launch: a group 60 s late": (
+        "no_launch",
+        lambda es, ss: _move(es, ss, _group_times(es, 20), dt=60.0),
+    ),
+    "no_launch: a group passing": ("no_launch", lambda es, ss: _pass_group(es, ss, 20)),
+    "no_launch: a group past the window": (
+        "no_launch",
+        lambda es, ss: _group_past_the_window(es, ss),
+    ),
+    "no_launch: group count": ("no_launch", lambda es, ss: _set(es, "no_launch", "groups", 51)),
+    "no_launch: wait": (
+        "no_launch",
+        lambda es, ss: _set(es, "no_launch", "waited_seconds", lambda e: e["waited_seconds"] - 600),
+    ),
+    "no_launch: another attempt's": (
+        "no_launch",
+        lambda es, ss: _set(es, "no_launch", "attempt", 2),
+    ),
+    # the window of a valid attempt
+    "window: reversed": (
+        "valid",
+        lambda es, ss: _set(es, "attempt_end", "t_end", lambda e: e["t_start"] - 1),
+    ),
+    "window: empty": (
+        "valid",
+        lambda es, ss: _set(es, "attempt_end", "t_end", lambda e: e["t_start"]),
+    ),
+    "window: shorter than the execution": (
+        "valid",
+        lambda es, ss: _set(es, "attempt_end", "t_end", lambda e: e["t_start"] + 1),
+    ),
+    "window: end not a number": ("valid", lambda es, ss: _set(es, "attempt_end", "t_end", "late")),
+    "window: end missing": ("valid", lambda es, ss: es.remove(_of(es, "attempt_end")[0])),
+    "window: start after the gate": ("valid", lambda es, ss: _start_late(es, 5.0)),
+    "window: the other start": (
+        "valid",
+        lambda es, ss: _set(es, "attempt_end", "t_start", lambda e: e["t_start"] - 5),
+    ),
+    "experiment: ends after the window": (
+        "valid",
+        lambda es, ss: _experiments(es, "U2", "t_end", lambda t: t + 1000),
+    ),
+    "experiment: starts before the window": (
+        "valid",
+        lambda es, ss: _experiments(es, "U2", "t_start", lambda t: t - 10),
+    ),
+    "experiment: exit code in attempt_end": (
+        "valid",
+        lambda es, ss: _of(es, "attempt_end")[0]["experiments"][0].update(exit_code=1),
+    ),
+    "experiment: exit code in its record": (
+        "valid",
+        lambda es, ss: _set(es, "experiment_end", "exit_code", 1),
+    ),
+    "experiment: record missing": ("valid", lambda es, ss: es.remove(_of(es, "experiment_end")[0])),
+    "experiment: start record missing": (
+        "valid",
+        lambda es, ss: es.remove(_of(es, "experiment_start")[0]),
+    ),
+    "experiment: not run in order": (
+        "quote",
+        lambda es, ss: _experiments(es, "q2", "t_start", lambda t: t - 100),
+    ),
+    "abort: recorded only as an event": (
+        "valid",
+        lambda es, ss: es.append(
+            {
+                "event": "abort",
+                "attempt": "L-U2-a1",
+                "experiment": "U2",
+                "trigger": "driver_interrupted",
+                "t": _of(es, "attempt_end")[0]["t_end"],
+            }
+        ),
+    ),
+    "abort: recorded only in attempt_end": (
+        "valid",
+        lambda es, ss: _set(es, "attempt_end", "aborted", "T1_load"),
+    ),
+    "abort: after the window": (
+        "retried",
+        lambda es, ss: _set(es, "abort", "t", lambda e: e["t"] + 5000),
+    ),
+    "attempt: records of one never started": (
+        "valid",
+        lambda es, ss: es.append({**_of(es, "experiment_end")[0], "attempt": "L-U2-a2"}),
+    ),
+    "attempt: previous one ends after the next gate": (
+        "retried",
+        lambda es, ss: _set(
+            es, "attempt_end", "t_end", lambda e: e["t_end"] + 1000, attempt="L-U2-a1"
+        ),
+    ),
+    # cases where exactly one check is load-bearing (the mutation table of WHI-1746)
+    "gate: the first sample missing": (
+        "valid",
+        lambda es, ss: _of(es, "launch_gate")[0]["samples"].pop(0),
+    ),
+    "gate: an earlier group passing": ("late_launch", lambda es, ss: _pass_group(es, ss, 2)),
+    "gate: opened before the previous attempt ended": (
+        "retried",
+        lambda es, ss: _set(
+            es,
+            "attempt_end",
+            "t_end",
+            min(_group_times(es, 1, 2)) + 1,
+            attempt="L-U2-a1",
+        ),
+    ),
+    "no_launch: re-sampled late": ("no_launch", lambda es, ss: _resampled_late(es, ss, 20)),
+    "no_launch: the last group passing": ("no_launch", lambda es, ss: _pass_group(es, ss, 52)),
+    "no_launch: a second record": (
+        "no_launch",
+        lambda es, ss: es.append({**_of(es, "no_launch")[0], "attempt": 2}),
+    ),
+    "window: start not a number": (
+        "valid",
+        lambda es, ss: _set(es, "attempt_start", "t_start", None),
+    ),
+    "experiment: attempt_end's list not a list": (
+        "valid",
+        lambda es, ss: _set(es, "attempt_end", "experiments", 5),
+    ),
+    "experiment: attempt_end's list with a non-record": (
+        "valid",
+        lambda es, ss: _of(es, "attempt_end")[0]["experiments"].append(5),
+    ),
+    "abort: a time not a number": ("retried", lambda es, ss: _set(es, "abort", "t", None)),
+    "abort: the interrupted attempt's after the next gate": (
+        "resumed",
+        lambda es, ss: _set(es, "abort", "t", lambda e: e["t"] + 5000),
+    ),
+    # stage-wide evidence
+    "load: a sample without a load": ("valid", lambda es, ss: ss[len(ss) // 2].update(load1=None)),
+    "load: a sample not finite": (
+        "valid",
+        lambda es, ss: ss[len(ss) // 2].update(load1=float("nan")),
+    ),
+    "load: samples out of order": ("valid", lambda es, ss: ss.insert(0, ss.pop())),
+    "stage: another CPU count": ("valid", lambda es, ss: _set(es, "stage", "logical_cpus", 1000)),
+    "units: out of the registered order": (
+        "pair",
+        lambda es, ss: {
+            **RAW,
+            "host": {**RAW["host"], "logical_cpus": os.cpu_count()},
+            "timing": {
+                **RAW["timing"],
+                "units": [u for u in RAW["timing"]["units"] if u["unit"] in ("U4", "U2")][::-1],
+            },
+        },
+    ),
+}
+
+
+def _perturbation_stages(tmp_path: Path) -> dict[str, Any]:
+    """The driver's own clean records the perturbations start from."""
+    start = 1_800_000_000.0
+    fixtures = {
+        "valid": (FakeHost(), ["U2"]),
+        "retried": (FakeHost(load=lambda t: 6.0 if start + 200 < t < start + 400 else 0.5), ["U2"]),
+        "late_launch": (FakeHost(load=lambda t: 3.5 if t < start + 1000 else 0.5), ["U2"]),
+        "no_launch": (FakeHost(load=lambda t: 3.5), ["U2"]),
+        "quote": (FakeHost(), ["UQ"]),
+        "pair": (FakeHost(), ["U2", "U4"]),
+    }
+    stages = {}
+    for label, (host, units) in fixtures.items():
+        stages[label] = _stage(tmp_path / label, host, units)
+        stages[label].run()
+    resumed = FakeHost()  # the driver stopped inside the first attempt's experiment, then resumed
+    stages["resumed"] = _stage(tmp_path / "resumed", resumed, ["U4"])
+
+    def interrupted(seconds: float) -> None:
+        resumed.sleep(seconds)
+        if resumed.started:
+            raise KeyboardInterrupt
+
+    stages["resumed"].sleep = interrupted
+    assert stages["resumed"].run() == 130
+    stages["resumed"].sleep = resumed.sleep
+    assert stages["resumed"].run() == 0
+    return stages
+
+
+def test_no_perturbed_evidence_field_certifies(tmp_path: Path) -> None:
+    """Each perturbation of one evidence field of the driver's own clean records (gate samples,
+    their count, spacing, order and labels; no-launch groups, cadence, coverage and record; window
+    ends; experiment, abort and attempt records; load samples; the host) is a problem: never the
+    positive §8.7 statement, never a usable unit."""
+    stages = _perturbation_stages(tmp_path)
+    for stage in stages.values():
+        clean = _verified(stage)
+        assert clean["problems"] == [] and clean["statements"]["measurement_attempted_correctly"]
+    assert len(_of(stages["no_launch"].ledger.entries(), "launch_gate")) == 52
+    assert len(_of(stages["late_launch"].ledger.entries(), "launch_gate")) == 4
+    for what, (label, change) in PERTURBATIONS.items():
+        analysis = _perturbed(stages[label], change)
+        assert analysis["problems"], what
+        assert analysis["statements"]["measurement_attempted_correctly"] is False, what
+        usable = set(analysis["statements"]["usable_latency_obtained"])
+        # the pair's U4 records are untouched: only U2, the unit out of order, loses its yield
+        assert usable <= ({"U4"} if label == "pair" else set()), what
+
+
+def test_a_resumed_stage_gates_again_in_a_new_launch_window(tmp_path: Path) -> None:
+    """The driver stopped while it gated (a busy host), resumed later: the new run's groups start
+    again at 1 after the earlier ones, and only the last window decides."""
+    start = 1_800_000_000.0
+    host = FakeHost(load=lambda t: 3.5 if t < start + 1000 else 0.5)
+    stage = _stage(tmp_path, host, ["U2"])
+
+    def interrupted(seconds: float) -> None:
+        host.sleep(seconds)
+        if host.now > start + 800:
+            raise KeyboardInterrupt
+
+    stage.sleep = interrupted
+    assert stage.run() == 130
+    host.now += 3600
+    stage.sleep = host.sleep
+    assert stage.run() == 0
+    groups = [g["group"] for g in _events(stage, "launch_gate")]
+    assert groups[0] == 1 and groups.count(1) == 2
+    analysis = _verified(stage)
+    assert analysis["problems"] == []
+    assert analysis["units"]["U2"]["outcome"]["attempt"] == "L-U2-a1"
 
 
 def test_the_retained_campaign_records_verify_to_the_published_outcomes() -> None:
