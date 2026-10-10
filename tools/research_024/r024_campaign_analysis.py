@@ -1278,7 +1278,11 @@ def verify_unit(
             pmset = out / name / f"a{k}" / "pmset.txt"
             derived = attempt_validity(
                 unit=unit,
-                experiments=end.get("experiments") or [],
+                # each experiment read from this attempt's own slot, where the driver ran it
+                experiments=[
+                    {**x, "dir": str(out / name / f"a{k}" / str(x.get("experiment")))}
+                    for x in end.get("experiments") or []
+                ],
                 start=start,
                 end=previous_end,
                 samples=samples,
@@ -1293,7 +1297,8 @@ def verify_unit(
         elif end.get("aborted") != "driver_interrupted":  # §10.4: only that one has no window end
             problems.append(f"{attempt}: no attempt end, window or CPU count to evaluate")
         mine = recorded.get(attempt) or {}
-        if any(mine.get(key) != value for key, value in derived.items()):
+        # the verdict, not `detail`: the driver's counts are of the samples written by then
+        if (mine.get("valid"), mine.get("triggers")) != (derived["valid"], derived["triggers"]):
             problems.append(
                 f"{attempt}: recorded validity {mine.get('valid')} {mine.get('triggers')} differs "
                 f"from the retained evidence: {derived['valid']} {derived['triggers']}"
@@ -1330,7 +1335,8 @@ def analyze_timing(
 ) -> dict[str, Any]:
     """Stage L: per unit the launch-gate history, every attempt with its triggers, the terminal
     outcome and the selected attempt; the two §8.7 statements; the §8.6 yield of each valid unit
-    (`summarize`: `report.latency.summarize`, replaceable in tests)."""
+    (`summarize`: `report.latency.summarize`, replaceable in tests). Each recorded outcome is
+    checked against the retained evidence (`verify_unit`); only a verified one counts."""
     if summarize is None:
         from report.latency import summarize
 
@@ -1349,6 +1355,7 @@ def analyze_timing(
     )
     units: dict[str, Any] = {}
     problems: list[str] = []
+    verified: list[str] = []  # units whose recorded outcome the retained evidence supports
     for unit in raw["timing"]["units"]:
         name = str(unit["unit"])
         gates = [
@@ -1377,6 +1384,8 @@ def analyze_timing(
             problems.append(
                 f"{name}: recorded outcome {outcome} differs from the evidence {supported}"
             )
+        elif not unit_problems:
+            verified.append(name)
         view: dict[str, Any] = {
             "launch_gates": [
                 {
@@ -1388,7 +1397,7 @@ def analyze_timing(
             "attempts": attempts,
             "outcome": outcome,
         }
-        if outcome and outcome.get("outcome") == "valid":
+        if name in verified and outcome and outcome.get("outcome") == "valid":
             slot = out / name / str(outcome["attempt"]).rsplit("-", 1)[1]
             view["yield"] = _unit_yield(raw, unit, slot, summarize)
         units[name] = view
@@ -1396,7 +1405,7 @@ def analyze_timing(
     attempted_correctly = not problems and all(  # missing evidence is a problem, never a "yes"
         t is not None and t.get("outcome") != "inconclusive_protocol_breach" for t in terminal
     )
-    usable = [n for n, u in units.items() if (u["outcome"] or {}).get("outcome") == "valid"]
+    usable = [n for n in verified if units[n]["outcome"]["outcome"] == "valid"]
     sums = {}
     for path in sorted(out.rglob("*")):
         if path.is_file() and path.name in (

@@ -20,9 +20,10 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import os
 import shutil
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -491,6 +492,246 @@ def test_an_interrupted_attempt_counts_as_t5_on_resume(tmp_path: Path) -> None:
     assert validity[0]["attempt"] == "L-U4-a1" and validity[0]["valid"] is False
     assert validity[0]["triggers"] == ["T5_incomplete_execution"]
     assert _events(stage, "unit_outcome")[0]["attempt"] == "L-U4-a2"
+
+
+# ----------------------------------------------------------------------------- stage L verification
+# WHI-1744 (release review R1-F1): statement (a) of §8.7 rests on the retained evidence, re-derived
+# with the driver's own trigger evaluator, never on the ledger's terminal labels alone.
+
+TIMING_RECORDS = "ROUTER_R024_TIMING_RECORDS"
+
+
+def _verified(stage: Any) -> dict[str, Any]:
+    return dict(CA.analyze_timing(stage.raw, stage.out, summarize=_summary))
+
+
+def _rewrite(stage: Any, change: Callable[[list[dict[str, Any]]], list[dict[str, Any]]]) -> None:
+    entries = change(stage.ledger.entries())
+    stage.ledger.path.write_text("".join(json.dumps(e) + "\n" for e in entries))
+
+
+def _refuted(analysis: Mapping[str, Any]) -> list[str]:
+    """The problems of an analysis that must not make the positive §8.7 statement."""
+    assert analysis["statements"]["measurement_attempted_correctly"] is False
+    assert analysis["problems"]
+    return list(analysis["problems"])
+
+
+def test_the_drivers_own_records_verify_clean_for_every_outcome(tmp_path: Path) -> None:
+    start = 1_800_000_000.0
+    scenarios: dict[str, tuple[FakeHost, str]] = {
+        "valid": (FakeHost(), "UP"),
+        "retried": (FakeHost(load=lambda t: 6.0 if start + 200 < t < start + 400 else 0.5), "U2"),
+        "no_launch": (FakeHost(load=lambda t: 3.5), "U2"),
+        "cap": (FakeHost(fail="benchmark.latency"), "U4"),
+        "quote": (FakeHost(), "UQ"),
+    }
+    outcomes = {}
+    for label, (host, unit) in scenarios.items():
+        stage = _stage(tmp_path / label, host, [unit])
+        stage.run()
+        analysis = _verified(stage)
+        assert analysis["problems"] == [], label
+        assert analysis["statements"]["measurement_attempted_correctly"] is True
+        outcome = analysis["units"][unit]["outcome"]
+        outcomes[label] = (outcome["outcome"], outcome["attempt"])
+    assert outcomes == {
+        "valid": ("valid", "L-UP-a1"),
+        "retried": ("valid", "L-U2-a2"),
+        "no_launch": ("inconclusive_no_launch", None),
+        "cap": ("inconclusive_cap_exhausted", None),
+        "quote": ("valid", "L-UQ-a1"),
+    }
+    for unit in RAW["timing"]["units"]:  # the analysis' experiment list is the driver's
+        assert CA.unit_experiments(unit) == [e for e, _ in stage.commands(unit, tmp_path)]
+
+
+def test_a_resumed_stage_with_an_interrupted_attempt_verifies_clean(tmp_path: Path) -> None:
+    host = FakeHost()
+    stage = _stage(tmp_path, host, ["U4"])
+
+    def interrupted(seconds: float) -> None:  # the driver stopped inside its first experiment
+        host.sleep(seconds)
+        if host.started:
+            raise KeyboardInterrupt
+
+    stage.sleep = interrupted
+    assert stage.run() == 130
+    stage.sleep = host.sleep
+    assert stage.run() == 0
+    assert _events(stage, "abort")[0]["trigger"] == "driver_interrupted"
+    analysis = _verified(stage)
+    assert analysis["problems"] == []
+    assert analysis["units"]["U4"]["outcome"]["attempt"] == "L-U4-a2"
+
+
+def test_terminal_labels_without_attempts_are_never_attempted_correctly(tmp_path: Path) -> None:
+    """The reviewer's reproduction: one `inconclusive_cap_exhausted` per unit, no attempt_start,
+    no attempt completion, no monitoring file."""
+    (tmp_path / "ledger.jsonl").write_text(
+        "".join(
+            json.dumps(
+                {
+                    "event": "unit_outcome",
+                    "unit": u["unit"],
+                    "outcome": "inconclusive_cap_exhausted",
+                }
+            )
+            + "\n"
+            for u in RAW["timing"]["units"]
+        )
+    )
+    analysis = CA.analyze_timing(RAW, tmp_path, summarize=_summary)
+    assert _refuted(analysis) == [
+        f"{u['unit']}: the retained evidence supports no terminal outcome"
+        for u in RAW["timing"]["units"]
+    ]
+    # a `valid` label without its attempt is refuted the same way
+    (tmp_path / "ledger.jsonl").write_text(
+        json.dumps(
+            {"event": "unit_outcome", "unit": "U6", "outcome": "valid", "attempt": "L-U6-a1"}
+        )
+    )
+    raw = copy.deepcopy(RAW)
+    raw["timing"]["units"] = [u for u in raw["timing"]["units"] if u["unit"] == "U6"]
+    assert _refuted(CA.analyze_timing(raw, tmp_path, summarize=_summary)) == [
+        "U6: the retained evidence supports no terminal outcome"
+    ]
+
+
+def test_a_later_attempt_selected_over_an_earlier_valid_one_is_a_problem(tmp_path: Path) -> None:
+    stage = _stage(tmp_path, FakeHost(), ["U2"])
+    stage.run()
+    # a1 is valid by its evidence; its recorded validity is flipped and its outcome dropped, and the
+    # driver resumes: it starts a2 and selects it
+    _rewrite(
+        stage,
+        lambda es: [
+            {**e, "valid": False} if e["event"] == "attempt_validity" else e
+            for e in es
+            if e["event"] != "unit_outcome"
+        ],
+    )
+    stage.run()
+    assert _events(stage, "unit_outcome")[0]["attempt"] == "L-U2-a2"
+    problems = _refuted(_verified(stage))
+    assert any(p.startswith("L-U2-a1: recorded validity False") for p in problems)
+    assert "U2: attempts started after the first valid attempt L-U2-a1" in problems
+    assert any(p.startswith("U2: recorded outcome") and "'L-U2-a1'" in p for p in problems)
+
+
+def test_cap_exhausted_needs_exactly_n_started_invalid_attempts(tmp_path: Path) -> None:
+    stage = _stage(tmp_path, FakeHost(fail="benchmark.latency"), ["U4"])
+    stage.raw["timing"]["max_started_attempts_per_unit"] = 2  # a driver that stops after two
+    stage.run()
+    assert _events(stage, "unit_outcome")[0]["outcome"] == "inconclusive_cap_exhausted"
+    assert len(_events(stage, "attempt_start")) == 2
+    raw = copy.deepcopy(stage.raw)
+    raw["timing"]["max_started_attempts_per_unit"] = 3
+    analysis = CA.analyze_timing(raw, stage.out, summarize=_summary)
+    assert _refuted(analysis) == ["U4: the retained evidence supports no terminal outcome"]
+    raw["timing"]["max_started_attempts_per_unit"] = 1
+    analysis = CA.analyze_timing(raw, stage.out, summarize=_summary)
+    assert "U4: 2 started attempts, more than N = 1" in _refuted(analysis)
+
+
+def test_recorded_validity_must_match_the_retained_evidence(tmp_path: Path) -> None:
+    start = 1_800_000_000.0
+    host = FakeHost(load=lambda t: 6.0 if start + 200 < t < start + 400 else 0.5)
+    stage = _stage(tmp_path, host, ["U2"])
+    stage.run()
+    assert _verified(stage)["problems"] == []
+    load = stage.out / "load.jsonl"
+    clean = load.read_text()
+    # the busy samples gone: a1's recorded T1 has no evidence, so its T1 abort is a protocol breach
+    load.write_text("".join(x + "\n" for x in clean.splitlines() if json.loads(x)["load1"] <= 5.0))
+    problems = _refuted(_verified(stage))
+    assert any(p.startswith("L-U2-a1: recorded validity False ['T1_load'") for p in problems)
+    assert any("'inconclusive_protocol_breach'" in p for p in problems)
+    load.write_text(clean)
+    # the valid attempt's pmset capture gone: T4 by the evidence, `valid` in the ledger
+    (stage.out / "U2" / "a2" / "pmset.txt").unlink()
+    problems = _refuted(_verified(stage))
+    assert any(p.startswith("L-U2-a2: recorded validity True") for p in problems)
+
+
+def test_the_experiments_are_read_from_the_attempts_own_slot(tmp_path: Path) -> None:
+    stage = _stage(tmp_path, FakeHost(), ["U2"])
+    stage.run()
+    # the attempt's experiment moved out of its slot, the ledger pointing at the moved copy
+    moved = tmp_path / "elsewhere" / "U2"
+    shutil.move(stage.out / "U2" / "a1" / "U2", moved)
+    _rewrite(
+        stage,
+        lambda es: [
+            {**e, "experiments": [{**x, "dir": str(moved)} for x in e["experiments"]]}
+            if e["event"] == "attempt_end"
+            else e
+            for e in es
+        ],
+    )
+    problems = _refuted(_verified(stage))
+    assert any(p.startswith("L-U2-a1: recorded validity True") for p in problems)
+
+
+def test_an_attempt_needs_its_passing_gate_and_its_place_in_the_sequence(tmp_path: Path) -> None:
+    stage = _stage(tmp_path, FakeHost(), ["U2"])
+    stage.run()
+    entries = stage.ledger.entries()
+    # the passing gate group's samples above the headroom: the launch is not supported
+    _rewrite(
+        stage,
+        lambda es: [
+            {**e, "samples": [{**s, "load1": 3.5} for s in e["samples"]]}
+            if e["event"] == "launch_gate"
+            else e
+            for e in es
+        ],
+    )
+    assert _refuted(_verified(stage)) == ["L-U2-a1: no passing launch gate before its start"]
+    # the only attempt recorded as a2: no a1 was started
+    _rewrite(
+        stage,
+        lambda es: [json.loads(json.dumps(e).replace("L-U2-a1", "L-U2-a2")) for e in entries],
+    )
+    problems = _refuted(_verified(stage))
+    assert "U2: started attempts ['L-U2-a2'] are not L-U2-a1, a2, ... in order" in problems
+
+
+def test_no_launch_needs_gate_evidence_over_the_whole_window(tmp_path: Path) -> None:
+    stage = _stage(tmp_path, FakeHost(load=lambda t: 3.5), ["U2"])
+    stage.run()
+    assert _verified(stage)["problems"] == []
+    # the later gate groups dropped: the recorded `no_launch` covers too little of 21,600 s
+    _rewrite(
+        stage, lambda es: [e for e in es if not (e["event"] == "launch_gate" and e["group"] > 3)]
+    )
+    assert _refuted(_verified(stage)) == ["U2: the retained evidence supports no terminal outcome"]
+
+
+def test_the_retained_campaign_records_verify_to_the_published_outcomes() -> None:
+    """The H1 stage-L raw records (outside the repository, pinned by `timing-SHA256SUMS`): the
+    verified analysis is the committed one, 0 problems, the published outcomes and attempts."""
+    path = os.environ.get(TIMING_RECORDS)
+    if not path:
+        pytest.skip(f"set {TIMING_RECORDS} to the retained campaign `L` directory")
+    out = Path(path)
+    assert C.verify_sums(out, EVIDENCE / "timing-SHA256SUMS") == []
+    analysis = CA.analyze_timing(RAW, out)
+    assert analysis["problems"] == []
+    published = json.loads((EVIDENCE / "timing-analysis.json").read_text())
+    assert json.loads(json.dumps(analysis, sort_keys=True, default=str)) == published
+    assert {
+        u: (v["outcome"]["outcome"], v["outcome"]["attempt"]) for u, v in analysis["units"].items()
+    } == {
+        **{u: ("inconclusive_cap_exhausted", None) for u in ("UP", "U1", "U2", "U3", "U4", "U5")},
+        "U6": ("valid", "L-U6-a1"),
+        "UQ": ("valid", "L-UQ-a1"),
+    }
+    assert analysis["statements"] == {
+        "measurement_attempted_correctly": True,
+        "usable_latency_obtained": ["U6", "UQ"],
+    }
 
 
 # ----------------------------------------------------------------------------- fixture stage T
