@@ -1093,6 +1093,12 @@ PERTURBATIONS: dict[str, tuple[str, Callable[..., Any]]] = {
         "valid",
         lambda es, ss: _of(es, "attempt_end")[0]["experiments"].append(5),
     ),
+    "experiment: listed as run without its records": (
+        "valid",
+        lambda es, ss: _of(es, "attempt_end")[0]["experiments"].append(
+            {"experiment": "U2", "exit_code": 0}
+        ),
+    ),
     "abort: a time not a number": ("retried", lambda es, ss: _set(es, "abort", "t", None)),
     "abort: the interrupted attempt's after the next gate": (
         "resumed",

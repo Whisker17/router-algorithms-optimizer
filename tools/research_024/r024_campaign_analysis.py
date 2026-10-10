@@ -1414,8 +1414,14 @@ def verify_unit(
                 )
             previous_end = max([start, stop or start, *times])  # the window that contains them
             # attempt_end lists the experiments as the driver recorded them, in order; an entry
-            # without `t_start` is one the driver could not start (no execution record)
-            ran = [x for x in listed if not (isinstance(x, Mapping) and "t_start" not in x)]
+            # without `t_start` and exit code is one the driver could not start (no record)
+            ran = [
+                x
+                for x in listed
+                if not (
+                    isinstance(x, Mapping) and "t_start" not in x and x.get("exit_code") is None
+                )
+            ]
             if ran != [
                 {f: v for f, v in x.items() if f not in ("event", "attempt", "t")}
                 for x in finished[attempt]
