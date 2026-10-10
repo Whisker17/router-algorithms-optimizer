@@ -24,6 +24,7 @@ import os
 import shutil
 import sys
 from collections.abc import Callable, Mapping
+from fractions import Fraction
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -928,3 +929,45 @@ def test_the_committed_tables_regenerate_from_the_pinned_analyses() -> None:
     if (EVIDENCE / "tables.md").is_file():
         assert (EVIDENCE / "tables.md").read_text() == CA.render_tables(RAW, analyses)
     assert analyses["T"]["problems"] == []
+
+
+def test_the_published_work_ratios_are_the_recorded_totals() -> None:
+    """`results.md` §3.4 and §0 (release review R1-F3): every printed total is the work-pass total
+    of `report-analysis.json`, every ratio its quotient to the base, rounded to three places."""
+    rows = json.loads((EVIDENCE / "report-analysis.json").read_text())["rows"]
+    units = ("quotes", "cl_swap_steps", "lb_bins_swapped")
+    keys = {
+        "metis_inspired": "Q19-full/metis_inspired",
+        "split_polish": "Q19-full/split_polish",
+        "incremental_graph": "Q19-full/incremental_graph",
+        "E2-E1only": "E2-E1only",
+        "marginal_activation": "Q19-full/marginal_activation",
+    }
+    base = {
+        "split_polish": "metis_inspired",
+        "E2-E1only": "incremental_graph",
+        "marginal_activation": "incremental_graph",
+    }
+
+    def ratios(name: str) -> list[str]:
+        work, ref = rows[keys[name]]["work"], rows[keys[base[name]]]["work"]
+        return [f"{Fraction(work[u], ref[u]):.3f}" for u in units]
+
+    results = (REPO / "docs" / "references" / "research-024" / "results.md").read_text()
+    section = results.split("### 3.4 Work", 1)[1].split("\n### ", 1)[0]
+    printed = {}
+    for line in (x for x in section.splitlines() if x.startswith("| `")):
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        printed[cells[0].split("`")[1]] = (cells[1:4], cells[4])
+    assert set(printed) == set(keys)
+    for name, (totals, quotients) in printed.items():
+        work = rows[keys[name]]["work"]
+        assert totals == [f"{work[u]:,}" for u in units], name
+        assert quotients == (" / ".join(ratios(name)) if name in base else ""), name
+    assert ratios("split_polish")[0] == "1.747"  # 9,299,891 / 5,324,859 = 1.74650...
+    summary = next(x for x in results.splitlines() if x.startswith("| Work (C8, C13) |"))
+    for name, ratio in (
+        ("split_polish", ratios("split_polish")),
+        ("marginal_activation", ratios("marginal_activation")),
+    ):
+        assert all(f"{r}×" in summary for r in ratio), name
