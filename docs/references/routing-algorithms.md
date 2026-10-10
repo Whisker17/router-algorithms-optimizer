@@ -5412,7 +5412,7 @@ the cases with a non-zero baseline gross (10 zero on `full_source`, 12 on `sor_c
   +0.958 with 13 / 16 pairs: neither dominates. It equals the per-case best of the 13 all-protocol rows
   on 154 of 291 scored cases (`marginal_activation` 190); that is an envelope, not a portfolio.
 - **Work** (untimed work pass; totals over 302 cases): 9,299,891 quotes against the base's 5,324,859
-  (1.747×; `results.md` §3.4 prints this ratio of its two totals as 1.746), but CL swap steps 1.043×
+  (1.747×), but CL swap steps 1.043×
   and LB bins 1.127×: a polish quote re-quotes the pools of a finished plan at nearby amounts.
 - **Disposition (contract §9.1): `keep_experimental`.** No reject and no inconclusive condition: 0
   gate defects, 0 work-pass differences, no invalid plan, no truncated or refused case. It carries the

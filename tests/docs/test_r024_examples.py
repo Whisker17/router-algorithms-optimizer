@@ -399,7 +399,7 @@ def test_campaign_other_rows_envelope_and_work() -> None:
         11581715,
         8591807,
     )
-    # results.md §3.4 prints 1.746 for the first ratio; 9299891 / 5324859 = 1.74650... -> 1.747
+    # 9299891 / 5324859 = 1.74650... -> 1.747; results.md §3.4 now agrees (WHI-1744 / R1-F3)
     assert c["ratios"] == {
         "split_polish": {"quotes": "1.747", "cl_swap_steps": "1.043", "lb_bins_swapped": "1.127"},
         "marginal_activation": {
