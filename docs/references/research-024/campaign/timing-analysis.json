@@ -1,0 +1,2878 @@
+{
+ "problems": [],
+ "raw_sha256": {
+  "U1/a1/U1/20261009T043059696720Z-62744128/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U1/a1/U1/20261009T043059696720Z-62744128/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U1/a1/U1/20261009T043059696720Z-62744128/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U1/a1/U1/20261009T043059696720Z-62744128/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U1/a1/U1/20261009T043059696720Z-62744128/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U1/a1/U1/20261009T043059696720Z-62744128/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U1/a1/U1/20261009T043059696720Z-62744128/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U1/a1/U1/20261009T043059696720Z-62744128/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U1/a1/U1/20261009T043059696720Z-62744128/experiment.json": "c4098023e8b34724ea2b02dcd9137ce2383e32b59bc578789da2bfc3452a4a7b",
+  "U1/a1/U1/20261009T043059696720Z-62744128/load.jsonl": "5e59644bf2eade4a83793d6023f0653fcb63d6b6857e0f16ca3aa480360cfe8f",
+  "U1/a1/U1/20261009T043059696720Z-62744128/runs/timing-fixed-full_source-matrix/cases.jsonl": "cd443feccb87d94ebd9763846ebca297a39a159de0bfe7f02aaeb29ae5ec6bcc",
+  "U1/a1/U1/20261009T043059696720Z-62744128/runs/timing-fixed-full_source-matrix/manifest.json": "e709f62874750f5a9ea2b04e76c43dd1fffc72135441d75cabfe7e5a7bb2874a",
+  "U1/a1/U1/20261009T043059696720Z-62744128/runs/timing-fixed-full_source-sentinel/cases.jsonl": "0cc4765f606f14466ac0f0343faa447f4a6d5a289822b36ef789419881aff516",
+  "U1/a1/U1/20261009T043059696720Z-62744128/runs/timing-fixed-full_source-sentinel/manifest.json": "94a970ea44af9af393e5def77b70a41a8de81043613f68becdfdb853e6d4df56",
+  "U1/a1/U1/20261009T043059696720Z-62744128/runs/timing-fixed-sor_compatible-matrix/cases.jsonl": "a0a92d86121aa324755ca5fe5babdf4b2ae5d4a55198ce1369b3f0115456b437",
+  "U1/a1/U1/20261009T043059696720Z-62744128/runs/timing-fixed-sor_compatible-matrix/manifest.json": "0e4a209cd68a142041f63df5656d7b23212b2055814b9ead67b686b8d3edfda6",
+  "U1/a1/pmset.txt": "47c8cfafdc301c1b3b7fa29c93dc2d57b1749e379b419e3ac61adf6cd0d6349d",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/experiment.json": "d8e9a31d0f753a9feca0992090824c67d3de1ae81edaad98ec6243cc8a338ab7",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/load.jsonl": "844dd7f1d6a15e7689a667c82e9e4a64614cb4273bdab20740860d8968eb777b",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/runs/timing-fixed-full_source-matrix/cases.jsonl": "baa4be223b88baf791725d0698f97085282452279bf795d95e357e83012261ea",
+  "U1/a2/U1/20261009T073124983166Z-aee843cb/runs/timing-fixed-full_source-matrix/manifest.json": "7d655878450d647131fa164581a42fc00f6b4813a29527cf6ab68e4bf8ea0b5c",
+  "U1/a2/pmset.txt": "11c7e7de6e6219633f8453bbe653d35ce1d179419541e26183690b5b40a7aba0",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/experiment.json": "21356ea5acd674c53f97bc3439a47f34613077bf7d04dddb2a2c7d1dc9ea4ced",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/load.jsonl": "92d9f48585385b29dd92ab517e7ac5d0e1d79633c90e95677ace690832bb648e",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/runs/timing-fixed-full_source-matrix/cases.jsonl": "98fa909e1ea0ab3a2fcb31dd68773dd2441239936e9209cf02dff49284ed6927",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/runs/timing-fixed-full_source-matrix/manifest.json": "c56aa8ffccb37b9139a572d1562ace6ad2d2bafa374698e63237a67d20d69ecb",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/runs/timing-fixed-full_source-sentinel/cases.jsonl": "2b4f6778e2e49210131c7d7e1fab8cb1a393291ebb52cb35d8c69b1c3d5ae4dd",
+  "U1/a3/U1/20261009T082540931049Z-d7a3c409/runs/timing-fixed-full_source-sentinel/manifest.json": "85ed0514a2b49e0666ae2fb4c4f3caf4be1826cf2275c190d5102ae0c9122c6c",
+  "U1/a3/pmset.txt": "d2456a2fda2c9fa9034fd3aa5d1bcb06cfcb47ea0362ab072237fc655d7fbec6",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/experiment.json": "d462574369cc9913c187a059193ece59b6c40faf58fea47f3d90d552b9556227",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/load.jsonl": "4bab3fb7c52a11fb8f2057b68f21a3033dd7cd09b74c0eea99acf3b4c149455f",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/runs/timing-fixed-full_source-matrix/cases.jsonl": "0fb8f3020dfd7b702b5c629995831ea9d4333a7ae1812d8fce6478dff93a8259",
+  "U2/a1/U2/20261009T093727264174Z-49c97483/runs/timing-fixed-full_source-matrix/manifest.json": "630b9a856cf97ef5d19f7286800adccb3a129d0b2353e9b0c4ea74c38aba7f27",
+  "U2/a1/pmset.txt": "d982d7cc08bfd65c989f7abf4b6c29cd7564a768b0c77f012306eb764c1cda68",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/experiment.json": "3679cf401ce41875ee2118e9d2ecad3ea0bb6eccdbba54e139859ed2c13b2dbd",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/load.jsonl": "1826bdbe31066f29944da94cdc5f9d67fdcaa972696664c3876c29b312156ff4",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/runs/timing-fixed-full_source-matrix/cases.jsonl": "c1ff9573103b67716dba9e92feeb390eb263c66d1544ceaa85b6492ef56eedb9",
+  "U2/a2/U2/20261009T112637166019Z-0cc7afa4/runs/timing-fixed-full_source-matrix/manifest.json": "fa4e28479887c02ac14e4d417da94ff6b244fe3d93d6344952be9c745ba95a52",
+  "U2/a2/pmset.txt": "315e4bd078a97d5ba5b9ed056c64c28f2d40bc25bc64eb75bcabd82de3b079b0",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/experiment.json": "1f4e38e57428241237a8aa9fd6825e774016344e787af9e0efb21b7d1786a86f",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/load.jsonl": "7ec58e2f88c22bea7916e7659fc875028f68dddbcf33ea8460c9942c515c301d",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/runs/timing-fixed-full_source-matrix/cases.jsonl": "83a11f7ee6933aa794ec7f55cd330537fb2e1d23fa035140128935e11a286194",
+  "U2/a3/U2/20261009T113939624512Z-c974327f/runs/timing-fixed-full_source-matrix/manifest.json": "d2570b797f351717a5fc8a6fb27b1497ac16c746cf64a50b9ef80fd9cf2ba0c5",
+  "U2/a3/pmset.txt": "756520fa75d6af8403581ebaa5589a0be5023dfa9dc26bddcb700256165b0c99",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/experiment.json": "daedfc40218d84f7e0881017379e94ec87e6d8df21d48d705b53f6370a47181a",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/load.jsonl": "a58915c751d71692561f50f6e26b038c804b7ec6387c417406e664a8b52ea40e",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/runs/timing-fixed-full_source-matrix/cases.jsonl": "60ca437e578b7c9cb24c34c2360bd417bb5cbd5b8255c19b71e1379f04486ec6",
+  "U3/a1/U3/20261009T115213369168Z-3f526c65/runs/timing-fixed-full_source-matrix/manifest.json": "1f5aa6c569ffd5cfc211589f8f8a83139721f2c57d7737542a3c7c2e061f7c9a",
+  "U3/a1/pmset.txt": "40c48f4c2d2c6d46794a2e9258ccc0d52639fa23eceec77156ebebf544de9a1b",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/experiment.json": "a9e608fc1a39098a083acd0d08cfcd41f7657e8edb9caf2f2d60f7a3bd4fffda",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/load.jsonl": "596244ac8e13f59d7ff305f5fcdf1dae9c3a5da493950c4546bae4f65b8c972b",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/runs/timing-fixed-full_source-matrix/cases.jsonl": "998d38b76b65ef31650f60a483669cdf4a5c1ed0a26ddaf06e2637474d35b655",
+  "U3/a2/U3/20261009T121519826813Z-5c27c797/runs/timing-fixed-full_source-matrix/manifest.json": "688eeedfb0c4bf8b4f4107c5dade5d0c2aa198d673bee45745ab157e3ab4ea65",
+  "U3/a2/pmset.txt": "d9c9b646acd789d53de424bfdb71104a09947a588ea9fc8e68eea748284aa6f9",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/experiment.json": "d77397519c74cf04f20e11936217efac71127f1f7cf2ada24f543e9d924cf67e",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/load.jsonl": "142021a0cebed24de69c8afa8a1024be968dd6883758c9a9558660f7fdb565e2",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/runs/timing-fixed-full_source-matrix/cases.jsonl": "cd964ab559d9d27abd66e3c9b41829ef0e3b6b9f58cba9d9a1b561059d65a211",
+  "U3/a3/U3/20261009T123459288292Z-a889ab9c/runs/timing-fixed-full_source-matrix/manifest.json": "45084ca049a44bde7a969d6839c2dfa625d74b3ba06170e13af76102742f0a4e",
+  "U3/a3/pmset.txt": "aac604d739e447b3122f25a36e383fdcbe4fa069fe63c6934561c64fa20b023b",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/experiment.json": "89cc6a5e18f3549dd1b32eb11b0b3c3f49cdede72663293783bcbbbdbaf05786",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/load.jsonl": "3c515b6dedaa2534d149bd9bcaed23e2aec0e3c3c8f1da2dba226dcab07cad94",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-fixed-full_source-matrix/cases.jsonl": "066c23c3097c19c4e27bc8aa9c56c7991812de5b3cdb072a2d03121bcb981e65",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-fixed-full_source-matrix/manifest.json": "ffa46a5a928877082968d85f88d58db153164d501bc0b4d8ddcee8514a06f327",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-fixed-full_source-sentinel/cases.jsonl": "2143afed044229306e26f55594a1390c0a0f72e5326f72c54e0760dfe7aeac1e",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-fixed-full_source-sentinel/manifest.json": "a5b7dad03b5c2a037421cb768d6a7e13889b2d7f41d59b653ca5a8150947a7a8",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-fixed-sor_compatible-matrix/cases.jsonl": "2c8c11e8e57bc97cf00a16529332adf0130c15deb69ba7f068dc9428ed5fa88b",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-fixed-sor_compatible-matrix/manifest.json": "a251196bc27d0849b39467737e612fea0654cc237fdd6a7cfaaa04654a7b6a52",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-fixed-sor_compatible-sentinel/cases.jsonl": "1f9645fd1ce84fb1add7ade874edffc11f1ad53b78cf4bef6f14d7d1d67c684d",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-fixed-sor_compatible-sentinel/manifest.json": "5691131f308b9ee7e9501d09acabf165517f77e889a29b94c34e3797078a380b",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-reverse-sor_compatible-matrix/cases.jsonl": "8cc57fb4ddfa1c33ad2c92841f94a960dc890591249f36b9e4614dd1772b8ae2",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-reverse-sor_compatible-matrix/manifest.json": "cfe2441c6daaa1440a42fa2f87d776165d14e13a5bf0d541f8323b7299efb2ea",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-reverse-sor_compatible-sentinel/cases.jsonl": "3133413e46f1a6be44626080f500849112cecc9e709168c4dbc9cf1c4bfd1d7e",
+  "U4/a1/U4/20261009T130632852045Z-18acf3f5/runs/timing-reverse-sor_compatible-sentinel/manifest.json": "f41362d20238af5c34b536e674b2ee1aa090b315779578a8fe3d02a359c0e486",
+  "U4/a1/pmset.txt": "faaf438b8825fca6d0bdd4bfd7184c3860c158491982c6e2a90b6284a6267967",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/experiment.json": "6192247f73e4d7533703452f0c652df37ba2345652fbccd310f44ffcc007a472",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/load.jsonl": "61f50c7132c92c39d28058cd8da0f948265405378ba8dad475e1f69cc3351d45",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/runs/timing-fixed-full_source-matrix/cases.jsonl": "626fdc601341e404748f44591c0bfe0e465a0c559f9c28eb8aecedd12c3f4170",
+  "U4/a2/U4/20261009T154558261862Z-aa9a0812/runs/timing-fixed-full_source-matrix/manifest.json": "e8ea862bf1c63483531d9fe34cfb09d22397677c7b3fc8dea53c0d9cde81c135",
+  "U4/a2/pmset.txt": "b7e7ab75dee2a12931c29f18550290c5ac5f694a1d2db5ebbd28328c002611e8",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/experiment.json": "dcece0ab955e957b9fd293578d9201aa100a5073d92b79fca065e205097557fd",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/load.jsonl": "67be67d80fac7a171c9bc0a729682bf4ccc616cb2136f5b781f30cef7437a713",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/runs/timing-fixed-full_source-matrix/cases.jsonl": "6107e98ad2ad3df38437b7a412457023e047d44b3f2a7df4e0ed9ec847055550",
+  "U4/a3/U4/20261009T165531263496Z-9eadb622/runs/timing-fixed-full_source-matrix/manifest.json": "3144e85eaa6c2cf04ac251a61766e7159e7ba7f3d0b899f726de2e2c79663337",
+  "U4/a3/pmset.txt": "6e5e43e5f8e23308a5e71a6350073dce09acc0c3466e1a6e45a81a7fb13d7fb3",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/experiment.json": "e345618705e27ed16409876b4d193cc9d44e246c55fac37045c90d67a6db112f",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/load.jsonl": "5ba3f3006b8e50bffa6f33c1202f419498e819afd49de564c80621ce6c443f53",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/runs/timing-fixed-full_source-matrix/cases.jsonl": "4c430672dabb5fc4367bb7868cd52d0ff02892c56fb4e073e6c0c47f3bc862c8",
+  "U5/a1/U5/20261009T171433920711Z-b71af815/runs/timing-fixed-full_source-matrix/manifest.json": "f24e4fd24137330d419a71027d7827736a76748b040521bad08939fa8f40ea3e",
+  "U5/a1/pmset.txt": "066eb5722c8a2cdd8fcc2ea319b193fdb7da30f00cfa1ce2ddf0d9c110b052ea",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/experiment.json": "ea952d27a5192792d2deb462c0f6c442fac70d356774465f201dbc09b6311e24",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/load.jsonl": "f23d207ed144bba92eb5c1a62c645cc16e2cd968fb177bd3286b1d9dceb6764a",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/runs/timing-fixed-full_source-matrix/cases.jsonl": "b35e942bde3f7a7c455fc1716dc38ed784e49a20144df368c700ab860e76a1df",
+  "U5/a2/U5/20261009T172606623442Z-b97d6c45/runs/timing-fixed-full_source-matrix/manifest.json": "bdcce978d31944687e247a2f85dafd7ff223635c47c702e31b69f23d75ac6a0b",
+  "U5/a2/pmset.txt": "68be60e438cf794e6d1afe6df91a8ef0da35bf195627084fb23baa2143fa694a",
+  "U5/a3/U5/20261009T174713945833Z-67530057/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U5/a3/U5/20261009T174713945833Z-67530057/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U5/a3/U5/20261009T174713945833Z-67530057/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U5/a3/U5/20261009T174713945833Z-67530057/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U5/a3/U5/20261009T174713945833Z-67530057/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U5/a3/U5/20261009T174713945833Z-67530057/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U5/a3/U5/20261009T174713945833Z-67530057/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U5/a3/U5/20261009T174713945833Z-67530057/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U5/a3/U5/20261009T174713945833Z-67530057/experiment.json": "31b0dbc6e4270fb294fd71cdc881ea46e3811fdf9907615672702dad7c27e87b",
+  "U5/a3/U5/20261009T174713945833Z-67530057/load.jsonl": "e775e85e2fede0a265c6db87a5ef8259416a1a325d5c7968de99ae0b124a097f",
+  "U5/a3/U5/20261009T174713945833Z-67530057/runs/timing-fixed-full_source-matrix/cases.jsonl": "9a778fa2c0d62d22abb55ad0cb1f9ef550dfe7cef34f8070506d714e36a3c1ed",
+  "U5/a3/U5/20261009T174713945833Z-67530057/runs/timing-fixed-full_source-matrix/manifest.json": "8b1d93650779402661036e19a81ad56cf44ffa9572003ca146f38cebc6fc21d3",
+  "U5/a3/pmset.txt": "82022d66f985a42dd8bd13ad9818fd59666778c25b3c060caaa706c744b2092d",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/experiment.json": "c2c7c074a3c55f0433a65644a6b1d12856cc491871d24de7ca9b68cfe6816c3e",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/load.jsonl": "64d957774e8f60b1c0b39968c74f29b25aa6c5832258afdc3c89b6c98a8b32f9",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/cold-fixed-full_source-matrix/cases.jsonl": "221a2a28cad165de90beb508ce6247fbcaaad5dc33a23f0f9c9db1fa4d4d5cee",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/cold-fixed-full_source-matrix/manifest.json": "b8603721c9fb39ccf03bf7e082373f814c018eb96d974f3ebcc1755c7208677d",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/cold-fixed-full_source-matrix/memory.jsonl": "416cd61e970c807c164480e8798e52bf25fddec2ea94405e2c018879c351c844",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/cold-fixed-full_source-sentinel/cases.jsonl": "e124ee51e4bfd2c32fdafd8ce77fa66fea23a44d53c7c04953137e38ba10a6e3",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/cold-fixed-full_source-sentinel/manifest.json": "031b6d09d32f33c8cddad5c13479e6d562db42433bd853f53b9891ba1047dd52",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/cold-fixed-full_source-sentinel/memory.jsonl": "a3eaedb11f33daee93d31fdebb38beebbd26b28acc0424e91c2fe10da3511e67",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-fixed-full_source-matrix/cases.jsonl": "149310fab1086e1a4619101baf3698a4cc1dbda80e07e14b33dcd03abe6a89aa",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-fixed-full_source-matrix/manifest.json": "9d3baa786d2b041cf479a43fb2991dedb953f6f92291562dcacd9861ea323cd9",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-fixed-full_source-sentinel/cases.jsonl": "22aaf7f2f5d3ada369a4a538bfa104696a94301896799a8f8e32bc8b2caf25e3",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-fixed-full_source-sentinel/manifest.json": "0bc3bfab945b79615793f9c31b1f6b3b222b8bbd72e61f8e666d33b13f144e61",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-fixed-sor_compatible-matrix/cases.jsonl": "3d098977ecb2eba587576aa833b51867e8ceef2f2eb21f162c2b9ca34aae06d4",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-fixed-sor_compatible-matrix/manifest.json": "8545dbc030b245e56568fda0cfc59fa8975fadf17a40199997a113ba934b233c",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-fixed-sor_compatible-sentinel/cases.jsonl": "7e5faeff68400b7f36acc029b635b631ce7828ba065ea32c5f088407cb2e84b9",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-fixed-sor_compatible-sentinel/manifest.json": "90686887f8ab71882e92385defe6268a1ebc5d383a92a89386b785e1df059717",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-reverse-full_source-matrix/cases.jsonl": "44e409cba32cdc1fcdcc7127583331c06e6713df67f14b7ac8ab32d5df806655",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-reverse-full_source-matrix/manifest.json": "99dec4eba4bb26c50dfa048e474d1541563c618abf154cd5fae35eab0fcb0801",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-reverse-full_source-sentinel/cases.jsonl": "08226bba75eeb26282a460d4f400927bb53b8a58b6902a21b31554d758abc1bd",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-reverse-full_source-sentinel/manifest.json": "8f374a7300d78ab7750a0a71dbeda564d2196ab3dc1276ab2e57cf85766bf412",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-reverse-sor_compatible-matrix/cases.jsonl": "c8049adac15c7522d8ed8740718315bf939944a8bab9d775d594f7dd683ffd86",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-reverse-sor_compatible-matrix/manifest.json": "6f7182e5258a4e3c119dec5a0e3a943ecc4df6da0e847b94e91ce6060e1469f9",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-reverse-sor_compatible-sentinel/cases.jsonl": "72a03624663d65e38ee4000534fcc2d61df6301945d60e5fb4bacbeef63e2716",
+  "U6/a1/U6/20261009T180016630573Z-65f3b47b/runs/timing-reverse-sor_compatible-sentinel/manifest.json": "1deffd18d30e4d2d53e828bd9a31a0c94ec80672298388bc7e4f34d8c485edbb",
+  "U6/a1/pmset.txt": "851a8e35e7fbb1878b4b8cc3c145b2bea8f2ad05d66ff1633e6f28a1ec0ce624",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/experiment.json": "6c11ce029ea8e912874a2a9f3842c3aee6a359753ca41a0b34fbe263f15ad130",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/load.jsonl": "4ce341ffa6068ed3e7f122c16920b64586c2b7ed45c9a06e7dd173af3c13aa26",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/runs/timing-fixed-full_source-matrix/cases.jsonl": "89c584aa9936155cc5fe40767907e74502029b996c70c640c60d6a804fa7a5cb",
+  "UP/a1/UP-base/20261009T034144772505Z-859a6f7a/runs/timing-fixed-full_source-matrix/manifest.json": "87b05f60ad6b977eff7c6786016eddb8dcd83e68b433dafb3912c7130bd84926",
+  "UP/a1/pmset.txt": "29670939c40351e8e103ce46a644e9d50bd75b4bcc518d787ef787343cc3b4d2",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/experiment.json": "8b2ec6de4dedaf218ff87b7fa25f537fff80a07e544c8bbff6b5204c43fcc760",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/load.jsonl": "e0f508f9f22a03cfd362f2fca868fee70a0115523655e26fab188446efea8071",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/runs/timing-fixed-full_source-matrix/cases.jsonl": "bf6e89aafdbebe6762f639462c7c2e1d79e9511ae6b3a505e3a2d4b4ea2c124b",
+  "UP/a2/UP-base/20261009T040422131384Z-76708555/runs/timing-fixed-full_source-matrix/manifest.json": "44ee39fd32b3b41b1fd625c4562f0071bc3074152a24f572c9b29c62ff361f18",
+  "UP/a2/pmset.txt": "57d6b701bc051e1aed4bf60d10b63930f85339573be1c8ddfd5ff4415df28d65",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/bundles/full_source-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/bundles/full_source-matrix/manifest.json": "801c82cc3d196415fb4aa4c8974160d65dcb6a9cd1ca7dfa537b74a99179f35b",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/bundles/full_source-sentinel/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/bundles/full_source-sentinel/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/bundles/sor_compatible-matrix/cases.jsonl": "f1736610db3c552e53c9d56f6c505ca28da39fc6d6072dd3ca56d70596eef845",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/bundles/sor_compatible-matrix/manifest.json": "519eda6db746aabc555a568976616a8585aa3346173c4835aec37c41c8d2fc0c",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/bundles/sor_compatible-sentinel/cases.jsonl": "df139a31ee8a6e3d16f9353205ddea0888f07c13db1abb6b7ddac821cb1f92a0",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/bundles/sor_compatible-sentinel/manifest.json": "c5a34483cd73acc4d6e1c47c32c2f2c9a0b1678998930bbda732a494e2b4a2f4",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/experiment.json": "e90880dea19cdf76da46b02a1b627bda16fc688d3795bf6e83b1644c7be202be",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/load.jsonl": "3ffed112cc5636ffb4791f11be3683c3d36db1b3a1d6b0c4e3db07af4e0b5380",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/runs/timing-fixed-full_source-matrix/cases.jsonl": "df53c28a098f5a4dd22f7c2433392004c2426f3d219e09f3d8f5455a3ba1a399",
+  "UP/a3/UP-base/20261009T042057063872Z-54d8a717/runs/timing-fixed-full_source-matrix/manifest.json": "9b7763694f24ef91e33dc694f19ce4312cd37b98c9cfb3d5c29dce26cc67417e",
+  "UP/a3/pmset.txt": "2d254efe87f5350b00feac961509a06779853a234ac95991ae6929436c30aa07",
+  "UQ/a1/pmset.txt": "93772573594e1d1de3f66e2d92f53e16f375cc95d0ab128d4e8e497c66e7ca31",
+  "UQ/a1/q1/20261009T210739241834Z-87d09fe3/bundle/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "UQ/a1/q1/20261009T210739241834Z-87d09fe3/bundle/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "UQ/a1/q1/20261009T210739241834Z-87d09fe3/runs/20261009T210739558061Z-09ed2561/cases.jsonl": "d81dc5b8213f5eb06da72e28c15134c545a983266732ff993c364e710d4e2e01",
+  "UQ/a1/q1/20261009T210739241834Z-87d09fe3/runs/20261009T210739558061Z-09ed2561/manifest.json": "23de1e135ce9b1a27912760edb8f89872051300357ee8bf60025246d6f24a2b1",
+  "UQ/a1/q2/20261009T211139301862Z-e48b8468/bundle/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "UQ/a1/q2/20261009T211139301862Z-e48b8468/bundle/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "UQ/a1/q2/20261009T211139301862Z-e48b8468/runs/20261009T211139617479Z-01ab2461/cases.jsonl": "252ab66051113dbcf64579beac78609b866c44041409f44be6b08f25b4ad2815",
+  "UQ/a1/q2/20261009T211139301862Z-e48b8468/runs/20261009T211139617479Z-01ab2461/manifest.json": "d785205985d93497fb41268734977cbcb400f9ddd22e7489eeaa5e87f151c14f",
+  "UQ/a1/q3/20261009T211541509627Z-68355902/bundle/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "UQ/a1/q3/20261009T211541509627Z-68355902/bundle/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "UQ/a1/q3/20261009T211541509627Z-68355902/runs/20261009T211541815097Z-4833a21a/cases.jsonl": "c580ca0b2bf31c2bb8ba0ae0382a45a818e30455a48f334ef2dacbe9560d1544",
+  "UQ/a1/q3/20261009T211541509627Z-68355902/runs/20261009T211541815097Z-4833a21a/manifest.json": "badbe325b22cecaf90406e96f1ce66a08361b2e003516d9b4de16d2ff7dd1a03",
+  "UQ/a1/q4/20261009T211943735450Z-368b098c/bundle/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "UQ/a1/q4/20261009T211943735450Z-368b098c/bundle/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "UQ/a1/q4/20261009T211943735450Z-368b098c/runs/20261009T211944045428Z-727410fe/cases.jsonl": "1528f3aded9fca3a40c61de4b8f796471d140234692d0a79481526124a0e87a8",
+  "UQ/a1/q4/20261009T211943735450Z-368b098c/runs/20261009T211944045428Z-727410fe/manifest.json": "5aca8edaaf78ba1b792496e896617b1e66c70a269da949d0c94a5e75e22c1c82",
+  "UQ/a1/q5/20261009T212345976942Z-c7e34877/bundle/cases.jsonl": "4dbda8ef612a5a8e14193a45497fd62c8ef7901d742e10b3adb33031f1afa78b",
+  "UQ/a1/q5/20261009T212345976942Z-c7e34877/bundle/manifest.json": "f67f9d2bab91be39e05c8fdb621a7c2e4f1689c106160944ad71f65969445693",
+  "UQ/a1/q5/20261009T212345976942Z-c7e34877/runs/20261009T212346282567Z-c3a61b51/cases.jsonl": "ca6f726a09959fd916682869f867c96656980b7d1c72477913f46918d13053ca",
+  "UQ/a1/q5/20261009T212345976942Z-c7e34877/runs/20261009T212346282567Z-c3a61b51/manifest.json": "84a12b9d16b9da948aa060f55612bbd4db89644d81b02c3890966d0ed1a692d8",
+  "ledger.jsonl": "74164af135b619cad63577978b2532c7041c799db16512976868e90be47b98bf",
+  "load.jsonl": "669a8352944777168bd95ca7fa7f16417ca51014e75641fae5b43124e4660f2d"
+ },
+ "schema": "r024.timing-analysis/1",
+ "statements": {
+  "measurement_attempted_correctly": true,
+  "usable_latency_obtained": [
+   "U6",
+   "UQ"
+  ]
+ },
+ "t3_reading": {
+  "decision": "orchestrator, WHI-1633 comment 2026-10-08 11:30 UTC, decision 2",
+  "match": "exact_type_column",
+  "trigger_types": [
+   "Sleep",
+   "Wake",
+   "DarkWake"
+  ]
+ },
+ "units": {
+  "U1": {
+   "attempts": {
+    "L-U1-a1": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 11.44921875,
+       "over": 2,
+       "samples": 106,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.183974742889404
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U1: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U1/a1/U1",
+       "exit_code": 130,
+       "experiment": "U1",
+       "t_end": 1791523401.491552,
+       "t_start": 1791520259.2038138
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 29
+      },
+      "unparsed": 0
+     },
+     "t": 1791523403.9086,
+     "t_end": 1791523401.491951,
+     "t_start": 1791520259.20292,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U1-a2": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 12.794921875,
+       "over": 2,
+       "samples": 64,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.44259309768677
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U1: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U1/a2/U1",
+       "exit_code": 130,
+       "experiment": "U1",
+       "t_end": 1791532957.914826,
+       "t_start": 1791531084.429108
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 40
+      },
+      "unparsed": 0
+     },
+     "t": 1791532960.339665,
+     "t_end": 1791532957.915193,
+     "t_start": 1791531084.427742,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U1-a3": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 8.46142578125,
+       "over": 1,
+       "samples": 70,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.16620087623596
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U1: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U1/a3/U1",
+       "exit_code": 130,
+       "experiment": "U1",
+       "t_end": 1791536423.73787,
+       "t_start": 1791534340.41747
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 195
+      },
+      "unparsed": 0
+     },
+     "t": 1791536426.60835,
+     "t_end": 1791536423.7383192,
+     "t_start": 1791534340.415581,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    }
+   },
+   "launch_gates": [
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 5.05029296875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 2.1015625,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 11.44921875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 3.3701171875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 3.478515625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 4,
+     "max_load1": 3.123046875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 5,
+     "max_load1": 3.3876953125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 6,
+     "max_load1": 9.912109375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 7,
+     "max_load1": 3.140625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 8,
+     "max_load1": 4.09375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 9,
+     "max_load1": 4.193359375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 10,
+     "max_load1": 3.8681640625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 11,
+     "max_load1": 3.06640625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 12,
+     "max_load1": 9.794921875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 13,
+     "max_load1": 4.20556640625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 14,
+     "max_load1": 4.29443359375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 15,
+     "max_load1": 5.46337890625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 16,
+     "max_load1": 5.4482421875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 17,
+     "max_load1": 4.78955078125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 18,
+     "max_load1": 9.22802734375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 19,
+     "max_load1": 2.0146484375,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 11.93017578125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 3.3173828125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 5.7177734375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 4,
+     "max_load1": 2.56787109375,
+     "passed": true,
+     "waited_seconds": null
+    }
+   ],
+   "outcome": {
+    "attempt": null,
+    "invalid_attempts": [
+     "L-U1-a1",
+     "L-U1-a2",
+     "L-U1-a3"
+    ],
+    "outcome": "inconclusive_cap_exhausted"
+   }
+  },
+  "U2": {
+   "attempts": {
+    "L-U2-a1": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 6.25732421875,
+       "over": 1,
+       "samples": 33,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.19199013710022
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U2: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U2/a1/U2",
+       "exit_code": 130,
+       "experiment": "U2",
+       "t_end": 1791539613.570051,
+       "t_start": 1791538646.7530801
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 9
+      },
+      "unparsed": 0
+     },
+     "t": 1791539616.02094,
+     "t_end": 1791539613.570463,
+     "t_start": 1791538646.7515981,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U2-a2": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 6.93896484375,
+       "over": 2,
+       "samples": 10,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 30.00990629196167
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U2: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U2/a2/U2",
+       "exit_code": 130,
+       "experiment": "U2",
+       "t_end": 1791545436.6001642,
+       "t_start": 1791545196.4074318
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 77
+      },
+      "unparsed": 0
+     },
+     "t": 1791545439.060192,
+     "t_end": 1791545436.6006,
+     "t_start": 1791545196.406496,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U2-a3": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 5.453125,
+       "over": 1,
+       "samples": 8,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 30.012660026550293
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U2: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U2/a3/U2",
+       "exit_code": 130,
+       "experiment": "U2",
+       "t_end": 1791546189.302618,
+       "t_start": 1791545979.1059892
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 59
+      },
+      "unparsed": 0
+     },
+     "t": 1791546192.569005,
+     "t_end": 1791546189.303574,
+     "t_start": 1791545979.104952,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    }
+   },
+   "launch_gates": [
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 8.10400390625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 3.63720703125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 4.3388671875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 4,
+     "max_load1": 4.576171875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 5,
+     "max_load1": 4.19873046875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 6,
+     "max_load1": 2.40869140625,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 9.599609375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 5.65283203125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 12.59765625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 4,
+     "max_load1": 4.23974609375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 5,
+     "max_load1": 4.123046875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 6,
+     "max_load1": 5.41357421875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 7,
+     "max_load1": 5.1748046875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 8,
+     "max_load1": 3.73828125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 9,
+     "max_load1": 3.71630859375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 10,
+     "max_load1": 5.22412109375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 11,
+     "max_load1": 3.58203125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 12,
+     "max_load1": 3.8232421875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 13,
+     "max_load1": 3.5927734375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 14,
+     "max_load1": 2.99658203125,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 6.93896484375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 2.59375,
+     "passed": true,
+     "waited_seconds": null
+    }
+   ],
+   "outcome": {
+    "attempt": null,
+    "invalid_attempts": [
+     "L-U2-a1",
+     "L-U2-a2",
+     "L-U2-a3"
+    ],
+    "outcome": "inconclusive_cap_exhausted"
+   }
+  },
+  "U3": {
+   "attempts": {
+    "L-U3-a1": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 10.14404296875,
+       "over": 1,
+       "samples": 15,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.82831811904907
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U3: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U3/a1/U3",
+       "exit_code": 130,
+       "experiment": "U3",
+       "t_end": 1791547155.758446,
+       "t_start": 1791546732.640665
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 1
+      },
+      "unparsed": 0
+     },
+     "t": 1791547158.987849,
+     "t_end": 1791547155.759029,
+     "t_start": 1791546732.637232,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U3-a2": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 5.3837890625,
+       "over": 1,
+       "samples": 22,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.91700291633606
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U3: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U3/a2/U3",
+       "exit_code": 130,
+       "experiment": "U3",
+       "t_end": 1791548755.287999,
+       "t_start": 1791548119.1161149
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {},
+      "unparsed": 0
+     },
+     "t": 1791548758.5052328,
+     "t_end": 1791548755.2884579,
+     "t_start": 1791548119.1151528,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U3-a3": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 6.75244140625,
+       "over": 1,
+       "samples": 4,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 30.014035940170288
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U3: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U3/a3/U3",
+       "exit_code": 130,
+       "experiment": "U3",
+       "t_end": 1791549388.7424362,
+       "t_start": 1791549298.562492
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {},
+      "unparsed": 0
+     },
+     "t": 1791549392.0071812,
+     "t_end": 1791549388.7428968,
+     "t_start": 1791549298.562057,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    }
+   },
+   "launch_gates": [
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 6.841796875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 2.4521484375,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 10.14404296875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 3.6865234375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 2.52685546875,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 5.19287109375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 2.4248046875,
+     "passed": true,
+     "waited_seconds": null
+    }
+   ],
+   "outcome": {
+    "attempt": null,
+    "invalid_attempts": [
+     "L-U3-a1",
+     "L-U3-a2",
+     "L-U3-a3"
+    ],
+    "outcome": "inconclusive_cap_exhausted"
+   }
+  },
+  "U4": {
+   "attempts": {
+    "L-U4-a1": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 18.251953125,
+       "over": 1,
+       "samples": 242,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 35.933446168899536
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U4: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U4/a1/U4",
+       "exit_code": 130,
+       "experiment": "U4",
+       "t_end": 1791558534.73388,
+       "t_start": 1791551192.198047
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 190
+      },
+      "unparsed": 0
+     },
+     "t": 1791558537.6010969,
+     "t_end": 1791558534.734823,
+     "t_start": 1791551192.1974678,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U4-a2": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 5.130859375,
+       "over": 1,
+       "samples": 10,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 30.01318597793579
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U4: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U4/a2/U4",
+       "exit_code": 130,
+       "experiment": "U4",
+       "t_end": 1791561027.998497,
+       "t_start": 1791560757.7477639
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 18
+      },
+      "unparsed": 0
+     },
+     "t": 1791561030.499178,
+     "t_end": 1791561027.999048,
+     "t_start": 1791560757.747297,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U4-a3": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 5.1845703125,
+       "over": 2,
+       "samples": 8,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 30.013914108276367
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U4: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U4/a3/U4",
+       "exit_code": 130,
+       "experiment": "U4",
+       "t_end": 1791565110.938009,
+       "t_start": 1791564930.740431
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {},
+      "unparsed": 0
+     },
+     "t": 1791565113.323275,
+     "t_end": 1791565110.938368,
+     "t_start": 1791564930.740063,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    }
+   },
+   "launch_gates": [
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 7.09228515625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 4.265625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 3.8623046875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 4,
+     "max_load1": 3.728515625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 5,
+     "max_load1": 2.021484375,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 20.189453125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 5.9697265625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 7.97509765625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 4,
+     "max_load1": 7.15576171875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 5,
+     "max_load1": 3.412109375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 6,
+     "max_load1": 2.67138671875,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 5.25390625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 4.52197265625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 3.3974609375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 4,
+     "max_load1": 6.26171875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 5,
+     "max_load1": 3.37451171875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 6,
+     "max_load1": 3.89990234375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 7,
+     "max_load1": 3.720703125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 8,
+     "max_load1": 7.48876953125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 9,
+     "max_load1": 3.10888671875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 10,
+     "max_load1": 2.42919921875,
+     "passed": true,
+     "waited_seconds": null
+    }
+   ],
+   "outcome": {
+    "attempt": null,
+    "invalid_attempts": [
+     "L-U4-a1",
+     "L-U4-a2",
+     "L-U4-a3"
+    ],
+    "outcome": "inconclusive_cap_exhausted"
+   }
+  },
+  "U5": {
+   "attempts": {
+    "L-U5-a1": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 5.08935546875,
+       "over": 2,
+       "samples": 7,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 30.013822078704834
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U5: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U5/a1/U5",
+       "exit_code": 130,
+       "experiment": "U5",
+       "t_end": 1791566223.590123,
+       "t_start": 1791566073.410476
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 6
+      },
+      "unparsed": 0
+     },
+     "t": 1791566226.054255,
+     "t_end": 1791566223.590848,
+     "t_start": 1791566073.410021,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U5-a2": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 6.06982421875,
+       "over": 1,
+       "samples": 25,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.16425395011902
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U5: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U5/a2/U5",
+       "exit_code": 130,
+       "experiment": "U5",
+       "t_end": 1791567490.780002,
+       "t_start": 1791566766.126865
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 6
+      },
+      "unparsed": 0
+     },
+     "t": 1791567493.377919,
+     "t_end": 1791567490.780427,
+     "t_start": 1791566766.125867,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-U5-a3": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 5.0703125,
+       "over": 2,
+       "samples": 10,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 30.017560720443726
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "U5: exit 130"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U5/a3/U5",
+       "exit_code": 130,
+       "experiment": "U5",
+       "t_end": 1791568273.608622,
+       "t_start": 1791568033.4484842
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {},
+      "unparsed": 0
+     },
+     "t": 1791568276.079474,
+     "t_end": 1791568273.608943,
+     "t_start": 1791568033.4471161,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    }
+   },
+   "launch_gates": [
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 5.1845703125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 5.19384765625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 2.82958984375,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 5.08935546875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 2.04248046875,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 6.06982421875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 2.7236328125,
+     "passed": true,
+     "waited_seconds": null
+    }
+   ],
+   "outcome": {
+    "attempt": null,
+    "invalid_attempts": [
+     "L-U5-a1",
+     "L-U5-a2",
+     "L-U5-a3"
+    ],
+    "outcome": "inconclusive_cap_exhausted"
+   }
+  },
+  "U6": {
+   "attempts": {
+    "L-U6-a1": {
+     "aborted": null,
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 4.599609375,
+       "over": 0,
+       "samples": 370,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.16834902763367
+      },
+      "T3": [],
+      "T4": [],
+      "T5": []
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/U6/a1/U6",
+       "exit_code": 0,
+       "experiment": "U6",
+       "t_end": 1791579936.309477,
+       "t_start": 1791568816.1405818
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 94
+      },
+      "unparsed": 0
+     },
+     "t": 1791579938.772555,
+     "t_end": 1791579936.3100119,
+     "t_start": 1791568816.140162,
+     "triggers": [],
+     "valid": true
+    }
+   },
+   "launch_gates": [
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 5.0703125,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 2.57421875,
+     "passed": true,
+     "waited_seconds": null
+    }
+   ],
+   "outcome": {
+    "attempt": "L-U6-a1",
+    "invalid_attempts": null,
+    "outcome": "valid"
+   },
+   "yield": {
+    "U6": {
+     "cold": {
+      "full_source/matrix": {
+       "cfmm_dual": {
+        "charged_seconds": {
+         "max": 1.505639292,
+         "median": 0.4860939995,
+         "min": 0.436154082,
+         "n": 24
+        },
+        "prepare_peak_bytes": {
+         "max": 31919037,
+         "median": 31916267.5,
+         "min": 31915032,
+         "n": 24
+        },
+        "prepare_seconds": {
+         "max": 0.304743584,
+         "median": 0.28940970850000003,
+         "min": 0.282582334,
+         "n": 24
+        },
+        "solve_peak_bytes": {
+         "max": 37890191,
+         "median": 1969676.0,
+         "min": 133525,
+         "n": 24
+        }
+       },
+       "incremental_graph_bounded": {
+        "charged_seconds": {
+         "max": 18.757035708,
+         "median": 8.000058750500001,
+         "min": 0.156408458,
+         "n": 24
+        },
+        "prepare_peak_bytes": {
+         "max": 157250,
+         "median": 157250.0,
+         "min": 157250,
+         "n": 24
+        },
+        "prepare_seconds": {
+         "max": 0.005206417,
+         "median": 0.004304187500000001,
+         "min": 0.004121666,
+         "n": 24
+        },
+        "solve_peak_bytes": {
+         "max": 1242948105,
+         "median": 396892727.5,
+         "min": 150640,
+         "n": 24
+        }
+       },
+       "metis_history_bounded": {
+        "charged_seconds": {
+         "max": 11.139267666999999,
+         "median": 5.5239706045000005,
+         "min": 0.156030292,
+         "n": 24
+        },
+        "prepare_peak_bytes": {
+         "max": 164791,
+         "median": 164791.0,
+         "min": 164791,
+         "n": 24
+        },
+        "prepare_seconds": {
+         "max": 0.004789792,
+         "median": 0.0044011465,
+         "min": 0.004262125,
+         "n": 24
+        },
+        "solve_peak_bytes": {
+         "max": 1025395651,
+         "median": 382035700.5,
+         "min": 151166,
+         "n": 24
+        }
+       },
+       "single_path_bounded": {
+        "charged_seconds": {
+         "max": 1.751139583,
+         "median": 0.5326979789999999,
+         "min": 0.148803251,
+         "n": 24
+        },
+        "prepare_peak_bytes": {
+         "max": 157106,
+         "median": 157106.0,
+         "min": 157106,
+         "n": 24
+        },
+        "prepare_seconds": {
+         "max": 0.004566625,
+         "median": 0.0042551665,
+         "min": 0.0041985,
+         "n": 24
+        },
+        "solve_peak_bytes": {
+         "max": 29540773,
+         "median": 5870556.0,
+         "min": 11777,
+         "n": 24
+        }
+       }
+      },
+      "full_source/sentinel": {
+       "cfmm_dual": {
+        "charged_seconds": {
+         "max": 0.566466208,
+         "median": 0.566466208,
+         "min": 0.566466208,
+         "n": 1
+        },
+        "prepare_peak_bytes": {
+         "max": 31945033,
+         "median": 31945033,
+         "min": 31945033,
+         "n": 1
+        },
+        "prepare_seconds": {
+         "max": 0.399027209,
+         "median": 0.399027209,
+         "min": 0.399027209,
+         "n": 1
+        },
+        "solve_peak_bytes": {
+         "max": 1248547,
+         "median": 1248547,
+         "min": 1248547,
+         "n": 1
+        }
+       },
+       "incremental_graph_bounded": {
+        "charged_seconds": {
+         "max": 13.827829707,
+         "median": 13.827829707,
+         "min": 13.827829707,
+         "n": 1
+        },
+        "prepare_peak_bytes": {
+         "max": 159362,
+         "median": 159362,
+         "min": 159362,
+         "n": 1
+        },
+        "prepare_seconds": {
+         "max": 0.004358666,
+         "median": 0.004358666,
+         "min": 0.004358666,
+         "n": 1
+        },
+        "solve_peak_bytes": {
+         "max": 888783583,
+         "median": 888783583,
+         "min": 888783583,
+         "n": 1
+        }
+       },
+       "metis_history_bounded": {
+        "charged_seconds": {
+         "max": 11.462861041,
+         "median": 11.462861041,
+         "min": 11.462861041,
+         "n": 1
+        },
+        "prepare_peak_bytes": {
+         "max": 166903,
+         "median": 166903,
+         "min": 166903,
+         "n": 1
+        },
+        "prepare_seconds": {
+         "max": 0.004372292,
+         "median": 0.004372292,
+         "min": 0.004372292,
+         "n": 1
+        },
+        "solve_peak_bytes": {
+         "max": 876368354,
+         "median": 876368354,
+         "min": 876368354,
+         "n": 1
+        }
+       },
+       "single_path_bounded": {
+        "charged_seconds": {
+         "max": 0.576193458,
+         "median": 0.576193458,
+         "min": 0.576193458,
+         "n": 1
+        },
+        "prepare_peak_bytes": {
+         "max": 159218,
+         "median": 159218,
+         "min": 159218,
+         "n": 1
+        },
+        "prepare_seconds": {
+         "max": 0.004209041,
+         "median": 0.004209041,
+         "min": 0.004209041,
+         "n": 1
+        },
+        "solve_peak_bytes": {
+         "max": 11090076,
+         "median": 11090076,
+         "min": 11090076,
+         "n": 1
+        }
+       }
+      }
+     },
+     "experiment": "20261009T180016630573Z-65f3b47b",
+     "load": {
+      "contaminated": false,
+      "cpu_count": 10,
+      "max_loadavg_1m": 4.28857421875,
+      "samples": 520,
+      "threshold_loadavg_1m": 5.0
+     },
+     "timing": {
+      "full_source/matrix": {
+       "cfmm_dual": {
+        "case_median_cpu_seconds": {
+         "max": 1.0827295000000001,
+         "median": 0.02694,
+         "min": 0.0005835,
+         "n": 24
+        },
+        "case_median_wall_seconds": {
+         "max": 1.0844668545,
+         "median": 0.02695810425,
+         "min": 0.0005850619999999999,
+         "n": 24
+        },
+        "noise_cpu": {
+         "cases": 10,
+         "geomean_ratio": 1.021054949701466,
+         "noise": 0.02105494970146604
+        },
+        "noise_wall": {
+         "cases": 10,
+         "geomean_ratio": 1.0280622015628076,
+         "noise": 0.028062201562807587
+        },
+        "prepare_seconds": {
+         "max": 0.752771042,
+         "median": 0.581372125,
+         "min": 0.409973208,
+         "n": 2
+        }
+       },
+       "incremental_graph_bounded": {
+        "case_median_cpu_seconds": {
+         "max": 18.216631,
+         "median": 7.72036675,
+         "min": 0.0020675,
+         "n": 24
+        },
+        "case_median_wall_seconds": {
+         "max": 18.250272416500003,
+         "median": 7.727731562500001,
+         "min": 0.0020667295,
+         "n": 24
+        },
+        "noise_cpu": {
+         "cases": 13,
+         "geomean_ratio": 0.994478638239717,
+         "noise": 0.005552016451611408
+        },
+        "noise_wall": {
+         "cases": 13,
+         "geomean_ratio": 0.99283718188658,
+         "noise": 0.007214494223321877
+        },
+        "prepare_seconds": {
+         "max": 0.004231375,
+         "median": 0.0042285415,
+         "min": 0.004225708,
+         "n": 2
+        }
+       },
+       "metis_history_bounded": {
+        "case_median_cpu_seconds": {
+         "max": 11.138879,
+         "median": 5.58818325,
+         "min": 0.00101,
+         "n": 24
+        },
+        "case_median_wall_seconds": {
+         "max": 11.1509059375,
+         "median": 5.598028823,
+         "min": 0.001009354,
+         "n": 24
+        },
+        "noise_cpu": {
+         "cases": 12,
+         "geomean_ratio": 0.995448290595133,
+         "noise": 0.0045725221971557595
+        },
+        "noise_wall": {
+         "cases": 12,
+         "geomean_ratio": 0.9955339514100823,
+         "noise": 0.004486083657510687
+        },
+        "prepare_seconds": {
+         "max": 0.004510167,
+         "median": 0.004472521,
+         "min": 0.004434875,
+         "n": 2
+        }
+       },
+       "single_path_bounded": {
+        "case_median_cpu_seconds": {
+         "max": 1.596441,
+         "median": 0.37817225,
+         "min": 0.000554,
+         "n": 24
+        },
+        "case_median_wall_seconds": {
+         "max": 1.5997733125,
+         "median": 0.378419521,
+         "min": 0.0005532915,
+         "n": 24
+        },
+        "noise_cpu": {
+         "cases": 12,
+         "geomean_ratio": 1.0146647442301062,
+         "noise": 0.01466474423010622
+        },
+        "noise_wall": {
+         "cases": 12,
+         "geomean_ratio": 1.0148306029060281,
+         "noise": 0.014830602906028112
+        },
+        "prepare_seconds": {
+         "max": 0.004234833,
+         "median": 0.004192625,
+         "min": 0.004150417,
+         "n": 2
+        }
+       }
+      },
+      "sor_compatible/matrix": {
+       "cfmm_dual": {
+        "case_median_cpu_seconds": {
+         "max": 1.0750865,
+         "median": 0.027223249999999997,
+         "min": 0.0005679999999999999,
+         "n": 24
+        },
+        "case_median_wall_seconds": {
+         "max": 1.075837812,
+         "median": 0.02723132275,
+         "min": 0.0005672920000000001,
+         "n": 24
+        },
+        "noise_cpu": {
+         "cases": 10,
+         "geomean_ratio": 0.9959922650335968,
+         "noise": 0.004023861536984974
+        },
+        "noise_wall": {
+         "cases": 10,
+         "geomean_ratio": 0.9980701434726438,
+         "noise": 0.001933588074923831
+        },
+        "prepare_seconds": {
+         "max": 0.431520292,
+         "median": 0.366428688,
+         "min": 0.301337084,
+         "n": 2
+        }
+       },
+       "incremental_graph_bounded": {
+        "case_median_cpu_seconds": {
+         "max": 11.479012,
+         "median": 6.43088325,
+         "min": 9.1e-05,
+         "n": 24
+        },
+        "case_median_wall_seconds": {
+         "max": 11.492790687500001,
+         "median": 6.4351047395,
+         "min": 9.0479e-05,
+         "n": 24
+        },
+        "noise_cpu": {
+         "cases": 12,
+         "geomean_ratio": 1.0032540937853447,
+         "noise": 0.0032540937853446916
+        },
+        "noise_wall": {
+         "cases": 12,
+         "geomean_ratio": 1.0035024089412565,
+         "noise": 0.0035024089412565296
+        },
+        "prepare_seconds": {
+         "max": 0.003646958,
+         "median": 0.0036414165,
+         "min": 0.003635875,
+         "n": 2
+        }
+       },
+       "metis_history_bounded": {
+        "case_median_cpu_seconds": {
+         "max": 11.0974955,
+         "median": 5.40006725,
+         "min": 0.0001475,
+         "n": 24
+        },
+        "case_median_wall_seconds": {
+         "max": 11.113875521,
+         "median": 5.40930786475,
+         "min": 0.0001461255,
+         "n": 24
+        },
+        "noise_cpu": {
+         "cases": 12,
+         "geomean_ratio": 1.0000416497272753,
+         "noise": 4.16497272752725e-05
+        },
+        "noise_wall": {
+         "cases": 12,
+         "geomean_ratio": 0.9998388257686673,
+         "noise": 0.0001612002126529788
+        },
+        "prepare_seconds": {
+         "max": 0.003886125,
+         "median": 0.0038151455,
+         "min": 0.003744166,
+         "n": 2
+        }
+       },
+       "single_path_bounded": {
+        "case_median_cpu_seconds": {
+         "max": 0.813949,
+         "median": 0.319546,
+         "min": 3.35e-05,
+         "n": 24
+        },
+        "case_median_wall_seconds": {
+         "max": 0.814532042,
+         "median": 0.319777896,
+         "min": 3.2958000000000005e-05,
+         "n": 24
+        },
+        "noise_cpu": {
+         "cases": 12,
+         "geomean_ratio": 0.9995181970745536,
+         "noise": 0.0004820351714021065
+        },
+        "noise_wall": {
+         "cases": 12,
+         "geomean_ratio": 0.9998355434102184,
+         "noise": 0.0001644836402001637
+        },
+        "prepare_seconds": {
+         "max": 0.003574917,
+         "median": 0.0035688539999999998,
+         "min": 0.003562791,
+         "n": 2
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "UP": {
+   "attempts": {
+    "L-UP-a1": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 5.224609375,
+       "over": 1,
+       "samples": 28,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.17749786376953
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "UP-base: exit 130",
+       "UP-cand: not run",
+       "compare: not run"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/UP/a1/UP-base",
+       "exit_code": 130,
+       "experiment": "UP-base",
+       "t_end": 1791518118.8479528,
+       "t_start": 1791517304.3043
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 15
+      },
+      "unparsed": 0
+     },
+     "t": 1791518121.5676842,
+     "t_end": 1791518118.848237,
+     "t_start": 1791517304.294751,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-UP-a2": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 5.2255859375,
+       "over": 1,
+       "samples": 16,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.17980694770813
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "UP-base: exit 130",
+       "UP-cand: not run",
+       "compare: not run"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/UP/a2/UP-base",
+       "exit_code": 130,
+       "experiment": "UP-base",
+       "t_end": 1791519113.992116,
+       "t_start": 1791518661.617929
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 64
+      },
+      "unparsed": 0
+     },
+     "t": 1791519116.492286,
+     "t_end": 1791519113.9925609,
+     "t_start": 1791518661.612728,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    },
+    "L-UP-a3": {
+     "aborted": "T1_load",
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 5.14208984375,
+       "over": 1,
+       "samples": 3,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 30.017058849334717
+      },
+      "T3": [],
+      "T4": [],
+      "T5": [
+       "aborted: T1_load",
+       "UP-base: exit 130",
+       "UP-cand: not run",
+       "compare: not run"
+      ]
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/UP/a3/UP-base",
+       "exit_code": 130,
+       "experiment": "UP-base",
+       "t_end": 1791519716.669145,
+       "t_start": 1791519656.5623648
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {},
+      "unparsed": 0
+     },
+     "t": 1791519719.121954,
+     "t_end": 1791519716.669421,
+     "t_start": 1791519656.556524,
+     "triggers": [
+      "T1_load",
+      "T5_incomplete_execution"
+     ],
+     "valid": false
+    }
+   },
+   "launch_gates": [
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 3.83154296875,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 3.48974609375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 3,
+     "max_load1": 5.90478515625,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 4,
+     "max_load1": 2.1298828125,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 5.76708984375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 2,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 2.24755859375,
+     "passed": true,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 5.2255859375,
+     "passed": false,
+     "waited_seconds": null
+    },
+    {
+     "attempt": 3,
+     "event": "launch_gate",
+     "group": 2,
+     "max_load1": 2.146484375,
+     "passed": true,
+     "waited_seconds": null
+    }
+   ],
+   "outcome": {
+    "attempt": null,
+    "invalid_attempts": [
+     "L-UP-a1",
+     "L-UP-a2",
+     "L-UP-a3"
+    ],
+    "outcome": "inconclusive_cap_exhausted"
+   }
+  },
+  "UQ": {
+   "attempts": {
+    "L-UQ-a1": {
+     "aborted": null,
+     "caffeinate_held": true,
+     "detail": {
+      "T1": {
+       "max_load1": 4.42724609375,
+       "over": 0,
+       "samples": 41,
+       "threshold": 5.0
+      },
+      "T2": {
+       "max_gap_seconds": 32.15472197532654
+      },
+      "T3": [],
+      "T4": [],
+      "T5": []
+     },
+     "experiments": [
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/UQ/a1/q1",
+       "exit_code": 0,
+       "experiment": "q1",
+       "t_end": 1791580298.896872,
+       "t_start": 1791580058.805686
+      },
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/UQ/a1/q2",
+       "exit_code": 0,
+       "experiment": "q2",
+       "t_end": 1791580541.105567,
+       "t_start": 1791580298.897574
+      },
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/UQ/a1/q3",
+       "exit_code": 0,
+       "experiment": "q3",
+       "t_end": 1791580783.3294039,
+       "t_start": 1791580541.106275
+      },
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/UQ/a1/q4",
+       "exit_code": 0,
+       "experiment": "q4",
+       "t_end": 1791581025.561811,
+       "t_start": 1791580783.329984
+      },
+      {
+       "dir": "/Users/whisker/Work/src/tools/work/mantle-router/router-algorithms-optimizer-artifacts/research-024/campaign/d3280f0d2e2dcb83998d3cd7703dca6f15775fe1/L/UQ/a1/q5",
+       "exit_code": 0,
+       "experiment": "q5",
+       "t_end": 1791581267.796918,
+       "t_start": 1791581025.562631
+      }
+     ],
+     "pmset_captured": true,
+     "pmset_window": {
+      "types": {
+       "Assertions": 12
+      },
+      "unparsed": 0
+     },
+     "t": 1791581270.2455628,
+     "t_end": 1791581267.7981162,
+     "t_start": 1791580058.805283,
+     "triggers": [],
+     "valid": true
+    }
+   },
+   "launch_gates": [
+    {
+     "attempt": 1,
+     "event": "launch_gate",
+     "group": 1,
+     "max_load1": 2.671875,
+     "passed": true,
+     "waited_seconds": null
+    }
+   ],
+   "outcome": {
+    "attempt": "L-UQ-a1",
+    "invalid_attempts": null,
+    "outcome": "valid"
+   },
+   "yield": {
+    "per_identity": {
+     "cfmm_dual": {
+      "solve_seconds": [
+       0.017820209,
+       0.017539834,
+       0.017662458,
+       0.0174615,
+       0.017478
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "direct": {
+      "solve_seconds": [
+       0.012224625,
+       0.012259584,
+       0.012355291,
+       0.012142667,
+       0.012382375
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "direct_split": {
+      "solve_seconds": [
+       0.217004542,
+       0.21619575,
+       0.217285333,
+       0.216787041,
+       0.216583333
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "direct_split_certified": {
+      "solve_seconds": [
+       9.8333e-05,
+       0.000102541,
+       0.000104416,
+       8.9208e-05,
+       9.2792e-05
+      ],
+      "statuses": [
+       "unsupported",
+       "unsupported",
+       "unsupported",
+       "unsupported",
+       "unsupported"
+      ]
+     },
+     "incremental_graph": {
+      "solve_seconds": [
+       14.551889708,
+       14.585773375,
+       14.579569958,
+       14.541408917,
+       14.528819917
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "incremental_graph_bounded": {
+      "solve_seconds": [
+       13.6801985,
+       13.722271667,
+       13.700129459,
+       13.808808541,
+       13.711471208
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "incremental_graph_repair": {
+      "solve_seconds": [
+       20.063041,
+       20.06934275,
+       20.314135667,
+       20.039110708,
+       19.952551667
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "marginal_activation": {
+      "solve_seconds": [
+       15.1979765,
+       15.249232,
+       15.231974208,
+       15.195555334,
+       15.28411725
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "metis_history": {
+      "solve_seconds": [
+       11.306436625,
+       11.3223755,
+       11.338001125,
+       11.363866666,
+       11.398878958
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "metis_history_bounded": {
+      "solve_seconds": [
+       11.274527125,
+       11.310724875,
+       11.310719167,
+       11.271865791,
+       11.284753917
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "metis_inspired": {
+      "solve_seconds": [
+       11.034324583,
+       11.057204708,
+       11.019885708,
+       11.022354583,
+       11.0445475
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "path_split": {
+      "solve_seconds": [
+       10.385587542,
+       10.374902458,
+       10.360444042,
+       10.325293834,
+       10.344518334
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "single_path": {
+      "solve_seconds": [
+       2.645868708,
+       2.653950875,
+       2.647356208,
+       2.689406041,
+       2.6487975
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "single_path_bounded": {
+      "solve_seconds": [
+       0.422748083,
+       0.426410292,
+       0.424876958,
+       0.424875875,
+       0.426947875
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "split_polish": {
+      "solve_seconds": [
+       11.10084825,
+       11.108579625,
+       11.062801708,
+       11.084556583,
+       11.060898625
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "uni_sor_adaptive": {
+      "solve_seconds": [
+       13.997384875,
+       13.9322005,
+       13.985096125,
+       13.921269542,
+       13.939874667
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "uni_sor_cycle_safe": {
+      "solve_seconds": [
+       39.337655042,
+       39.274408709,
+       39.189564416,
+       39.210209959,
+       39.148305334
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "uni_sor_optimized": {
+      "solve_seconds": [
+       0.574884667,
+       0.57541075,
+       0.573295625,
+       0.572632041,
+       0.568067209
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     },
+     "uni_sor_port": {
+      "solve_seconds": [
+       39.2265125,
+       39.450567583,
+       39.313277875,
+       39.209094167,
+       39.283920958
+      ],
+      "statuses": [
+       "ok",
+       "ok",
+       "ok",
+       "ok",
+       "ok"
+      ]
+     }
+    }
+   }
+  }
+ }
+}

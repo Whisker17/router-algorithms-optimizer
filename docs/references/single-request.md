@@ -2,7 +2,7 @@
 
 Compare the routing strategies on **one** exact-input request against a frozen snapshot,
 with exactly one solve attempt per strategy. By default (`--strategies all`, WHI-1528,
-WHI-1540, Release 0.2.1 and Release 0.2.2) these are seventeen for a six-algorithm profile:
+WHI-1540, Releases 0.2.1, 0.2.2 and 0.2.4) these are nineteen for a six-algorithm profile:
 
 1. the profile's six base algorithms;
 2. the two named optimized strategies `uni_sor_adaptive` and `uni_sor_optimized`;
@@ -12,7 +12,11 @@ WHI-1540, Release 0.2.1 and Release 0.2.2) these are seventeen for a six-algorit
    current preset;
 5. the three 0.2.2 exact bound-pruned accelerations `single_path_bounded`,
    `incremental_graph_bounded` and `metis_history_bounded` (`metis_history_bounded` with a copy of
-   `metis_history`'s preset under its own key). Each returns its reference's plan and claims no speedup.
+   `metis_history`'s preset under its own key). Each returns its reference's plan and claims no speedup;
+6. since Release 0.2.4, the two 0.2.3 post-processors `split_polish` (base `metis_inspired`) and
+   `marginal_activation` (base `incremental_graph`), each with its selected preset
+   (`R024-P01-split_polish`, `R024-P02-marginal_activation`). Each runs its base as its own identity
+   and polishes that base's plan; inclusion is not adoption.
 
 `--strategies base|optimized` runs one group, and `--strategies profile` runs the profile's exact
 selection ([`strategy-groups.md`](strategy-groups.md)).
@@ -26,7 +30,8 @@ uv run python main.py quote \
   --token-in USDC --token-out USDT0 --amount 10000 --details
 ```
 
-Its 17 rows are the walkthrough of [`routing-algorithms.md`](routing-algorithms.md) §11. With the
+Its 19 rows are the walkthrough of [`routing-algorithms.md`](routing-algorithms.md) §11 (17 through
+Release 0.2.3). With the
 frozen five-source corpus prepared locally (the primary clone's gitignored
 `data/corpus/mantle-5src-101082044/`), the same command runs against the whole corpus bundle:
 
@@ -51,7 +56,8 @@ terminal outputs, residuals) and a reconciliation check — plus this execution'
 preparation, worker start-up, solve and final-evaluation durations, counters and limit
 hit. `--details` changes presentation only; it adds no solver run or measurement pass.
 For the 0.2.1 rows it also prints the research diagnostics block (§ *Research diagnostics and
-work units* below), and for the 0.2.2 bounded rows the bound-pruning block (§ *Bound-pruning
+work units* below), for the 0.2.2 bounded rows the bound-pruning block (§ *Bound-pruning
+counters* below), and for the two post-processors the post-processor block (§ *Post-processor
 counters* below).
 
 With `config/daily_gross.yaml`, `metis_inspired` uses the source's `chunks: 200`, budget
@@ -192,6 +198,27 @@ show it. On the 10000 USDC → USDT0 request above the three bounded rows prune 
 their references' plans and counted quotes (`routing-algorithms.md` §11.3 item 11). A saved quote or
 run made before Release 0.2.2 replays its own algorithms and never gains a bounded row.
 
+## Post-processor counters
+
+The two 0.2.4 rows (`split_polish`, `marginal_activation`) each run their base as its own registered
+identity on the same quote ledger, then polish its plan; the row's quotes are the base's plus its own.
+`--details` adds a `post-processor (R023-C/1)` block:
+
+- the recorded **options provenance**: under `all`, `preset R024-P01-split_polish v1` /
+  `preset R024-P02-marginal_activation v1` with the preset file, its sha256 and the
+  `settings_sha256`; the same options in any other profile are recorded as an override
+  ([`strategy-groups.md`](strategy-groups.md));
+- the **base row** (`search.base`): its identity, status, quotes and gross;
+- the **result**: gross, own quotes, scope (`fixed_funding_topology` or the refusal) and any
+  cooperative truncation;
+- for `marginal_activation`, its **E1 polish** and **activation** stages (gross, quotes, optimiser
+  invocations, truncation).
+
+The same blocks are stored in the case record as `search.<name>` and `search.base`. The counters are
+work, not time. On the 10000 USDC → USDT0 request above both rows re-split the incremental plan's two
+pools and add no branch (`routing-algorithms.md` §11.3 item 12). A saved quote or run made before
+Release 0.2.4 replays its own algorithms and never gains a post-processor row.
+
 ## Replay and report
 
 `quote.json` and the run manifest record the exact replay command (`replay_command`), which
@@ -207,7 +234,8 @@ uv run python main.py run --bundle data/quotes/<quote id>/bundle \
 
 It reruns exactly the saved algorithms, preset identities and recipe/graph settings, never a
 re-expansion: a quote saved before WHI-1540 replays its eight algorithms, without
-`metis_inspired`, and one saved before 0.2.1 replays its nine without any 0.2.1 identity. The
+`metis_inspired`, one saved before 0.2.1 replays its nine without any 0.2.1 identity, and one saved
+before 0.2.4 replays its seventeen without the two post-processors. The
 replay is a new solve with its own timings; its statuses, plans and scores should match, and
 `main.py order-check <original run> <replay run>` compares the deterministic outputs. The saved
 run also renders offline without credentials:
@@ -226,7 +254,7 @@ A batch `run` uses the same `--strategies` modes over every case of a bundle. Bo
 examples on checked-in fixtures:
 
 ```bash
-# all 17 strategies of the ordinary roster over the 4 cases of the mantle_mixed fixture
+# all 19 strategies of the ordinary roster over the 4 cases of the mantle_mixed fixture
 uv run python main.py run --bundle tests/fixtures/routing/mantle_mixed \
   --profile config/daily_gross.yaml --results-dir <results dir>
 
@@ -260,4 +288,8 @@ their shared vocabulary in §1.8; their research contracts are in
 [`research-021/`](research-021/contract.md). The three 0.2.2 bound-pruned strategies
 (`single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`) are explained in §§19–22
 (theory in §19); their contract is [`research-022/pruning-contract.md`](research-022/pruning-contract.md).
+The two post-processors (`split_polish`, `marginal_activation`) are explained in §§23–24, with their
+0.2.4 presets and campaign results in §§23.10 and 24.10; their contracts are
+[`research-023/contract.md`](research-023/contract.md) and
+[`research-024/contract.md`](research-024/contract.md).
 

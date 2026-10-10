@@ -23,10 +23,18 @@ ordinary CLI compares. It covers:
   strategies. They claim no speedup: timing is a separate measurement (WHI-1602);
 - the **0.2.3 post-processors** `split_polish` (§23) and `marginal_activation` (§24), contract
   `R023-C/1`: exact split-share polishing of a declared base strategy's plan, then activation of
-  new branches (Jupiter-inspired, **NOT Jupiter Metis**). Each is selected only by a profile that
-  names it; `--strategies all` adds neither and still compares **17** strategies. The research-023
+  new branches (Jupiter-inspired, **NOT Jupiter Metis**). In Release 0.2.3 each was selected only by
+  a profile that named it, and `--strategies all` still compared **17** strategies. The research-023
   campaign kept both `keep_experimental` ([`research-023/results.md`](research-023/results.md)):
-  nothing is adopted, no default changes and no speed is claimed.
+  nothing was adopted, no default changed and no speed was claimed;
+- the **0.2.4 roster** (contract `R024-C/1`): `--strategies all` now also runs `split_polish` and
+  `marginal_activation`, last, each with its **selected preset**, so it compares **19** strategies
+  (§§11, 23.10, 24.10). Each preset was "selected by the registered rule `R024-C/1` §5.7 among these
+  90 (`split_polish`) / 108 (`marginal_activation`) candidates under P\*, on the already exposed
+  tuning split" ([`research-024/selection.md`](research-024/selection.md)); that is not a claim of
+  optimality, of validity outside block 101082044 or of being best under another profile. The
+  research-024 campaign kept both `keep_experimental` ([`research-024/results.md`](research-024/results.md)).
+  Inclusion in `--strategies all` is not adoption: no default changes and no speed is claimed.
 
 For each strategy it describes the mathematical foundations, search mechanics, state management
 and practical trade-offs against frozen Mantle liquidity snapshots. To compare them on a single
@@ -57,14 +65,28 @@ Inspected source commits:
   figures of §§23.9 and 24.9. Their worked examples are `docs/examples/routing-algorithms/r023_examples.py`;
   `tests/routing/test_split_polish.py` and `tests/routing/test_marginal_activation.py` check them too.
   §§23–24 name functions, not lines.
+- The 0.2.4 parts (the two 0.2.4 rows and settings of §11, §§23.10 and 24.10, and the 0.2.4
+  passages of Sections 1, 12 and 13): `benchmark/strategies.py` (`R024_ADDITIONS`),
+  `benchmark/profile.py` (`ALL_SCOPED_PRESETS`) and the preset files
+  `config/split_polish/preset_v1.yaml` and `config/marginal_activation/preset_v1.yaml` at
+  `8106cbf295ce8d9344068c11fbc92524c0306222` (WHI-1633 merged on `release/v0.2.4`; the presets were
+  selected by WHI-1631 `d7f2719` and added to the roster by WHI-1632 `b17e119`). The selection
+  figures are [`research-024/selection.md`](research-024/selection.md) and its `selection/` analyses,
+  the campaign figures [`research-024/results.md`](research-024/results.md) and its `campaign/`
+  analyses. Their checks are `docs/examples/routing-algorithms/r024_examples.py` and
+  `tests/docs/test_r024_examples.py`.
 
 All numeric traces and intermediate transitions are verified offline by
 `tests/docs/test_routing_algorithm_examples.py`, `tests/docs/test_r021_examples.py`,
-`tests/docs/test_r022_examples.py` and `tests/docs/test_r023_examples.py`, and can be run via
+`tests/docs/test_r022_examples.py`, `tests/docs/test_r023_examples.py` and
+`tests/docs/test_r024_examples.py`, and can be run via
 `docs/examples/routing-algorithms/run_examples.py` (sections 1–11: the nine original strategies;
-sections 12–17: the five 0.2.1 identities and the 17-row fixed-block walkthrough; sections 18–22: the
+sections 12–17: the five 0.2.1 identities and the fixed-block walkthrough of all `--strategies all`
+rows (19 since 0.2.4); sections 18–22: the
 0.2.2 upper-bound pruning examples; sections 23–26: the 0.2.3 worked examples of §§23.5 and 24.5, the
-§11.5 request and the research-023 campaign figures, read from the committed `report-analysis.json`).
+§11.5 request and the research-023 campaign figures, read from the committed `report-analysis.json`;
+sections 27–29: the two 0.2.4 rows of §11 on the fixture, the research-024 selection figures and the
+research-024 campaign figures and timing outcomes, read from the committed analyses).
 No example requires RPC, Dune or credentials, and none depends on the gitignored `data/`.
 
 ---
@@ -101,8 +123,8 @@ subject to:
 - **Section 8:** `uni_sor_adaptive` (optimized, recipe H3) — Coarse-to-fine percentage sampling over the unchanged SOR core, validated anytime incumbent.
 - **Section 9:** `uni_sor_optimized` (optimized, recipe H4) — Amount-aware 5 % / 100 % route shortlist, the same sampling, and the exact L02–L04 quote controls.
 - **Section 10:** `metis_inspired` (experimental, NOT Jupiter Metis) — Hop-layered, quote-driven label search replacing `incremental_graph`'s per-chunk path enumeration.
-- **Section 11:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044) — all 17 `--strategies all` rows, including the visible `unsupported` row, plus the quote/details/replay commands, and (§11.5, separately) the two profile-selected 0.2.3 post-processors on the same request.
-- **Section 12:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map — for all 17 strategies and the two 0.2.3 post-processors.
+- **Section 11:** Reproducible Real-State Fixed-Block Walkthrough (Block 101082044) — all 19 `--strategies all` rows on the 19-pool fixture, including the visible `unsupported` row and the two post-processors with their selected 0.2.4 presets, plus the quote/details/replay commands, and (§11.5, kept as 0.2.3 history) the two 0.2.3 nominees through an explicit profile on the same request.
+- **Section 12:** Algorithmic Comparison Matrix, Complexity Bounds, and Source-Reading Map — for all 19 strategies.
 - **Section 13:** Operational Boundaries, Limitations, and Known Debt.
 - **Section 14:** `metis_history` (0.2.1, experimental, NOT Jupiter Metis) — History-signature labels with proven dominance, retained unknowns and visible caps.
 - **Section 15:** `direct_split_certified` (0.2.1, experimental) — Exact-rational branch and bound over `direct_split`'s grid, with a certified lower/upper interval.
@@ -113,13 +135,14 @@ subject to:
 - **Section 20:** `single_path_bounded` (0.2.2, experimental) — `single_path` with rule S1: skip a path whose nested-floor bound is at most the incumbent.
 - **Section 21:** `incremental_graph_bounded` (0.2.2, experimental) — `incremental_graph` with rule I1: skip a path whose chunk chain bound is at most the chunk's best marginal.
 - **Section 22:** `metis_history_bounded` (0.2.2, experimental) — `metis_history` with rule M1 (arrivals) and rule M2 (labels) behind the structural gate `G_M2`.
-- **Section 23:** `split_polish` (0.2.3, experimental, NOT Jupiter Metis, profile-selected) — Exact pairwise re-splitting of a declared base strategy's finished plan over its fixed funding topology, the campaign results, and why the measured gain is small next to Jupiter's announcements.
-- **Section 24:** `marginal_activation` (0.2.3, experimental, NOT Jupiter Metis, profile-selected) — Split polishing, then new branches from a small-amount label search on the post-plan pool states, checked against matched controls.
+- **Section 23:** `split_polish` (0.2.3, experimental, NOT Jupiter Metis; a `--strategies all` row since 0.2.4) — Exact pairwise re-splitting of a declared base strategy's finished plan over its fixed funding topology, the 0.2.3 campaign results (history), why the measured gain is small next to Jupiter's announcements, and (§23.10) the selected 0.2.4 preset and the 0.2.4 campaign results.
+- **Section 24:** `marginal_activation` (0.2.3, experimental, NOT Jupiter Metis; a `--strategies all` row since 0.2.4) — Split polishing, then new branches from a small-amount label search on the post-plan pool states, checked against matched controls, with the 0.2.3 campaign results (history) and (§24.10) the selected 0.2.4 preset and the 0.2.4 campaign results.
 
 The five 0.2.1 chapters, the four 0.2.2 chapters and the two 0.2.3 chapters follow Section 13 so that
-every earlier section number and anchor stays unchanged. Sections 11–13 cover the whole 17-strategy
-`--strategies all` roster and, kept apart from it, the two profile-selected 0.2.3 post-processors
-(§11.5, §12, §13 item 16). §1.8 introduces the vocabulary of the 0.2.1 chapters, §19 that of the
+every earlier section number and anchor stays unchanged. Sections 11–13 cover the whole 19-strategy
+`--strategies all` roster of Release 0.2.4, in which the two 0.2.3 post-processors are rows 18 and 19
+with their selected presets (§11, §12, §13 items 16–17); §11.5 keeps their 0.2.3 explicit-profile
+run as labelled history. §1.8 introduces the vocabulary of the 0.2.1 chapters, §19 that of the
 0.2.2 chapters, and §23.2 that of the 0.2.3 chapters (fixed funding topology, exact shares, one attempt
 ledger with the base), which §24 reuses.
 
@@ -1867,10 +1890,10 @@ $1\,000$, `search.max_hops` 3, `label_hops` 3, `label_pruning` true.
 
 ## 11. Real-State Fixed-Block Walkthrough (Block 101082044)
 
-To demonstrate how these strategies behave on real blockchain liquidity, we execute all seventeen
-`--strategies all` strategies (six base, two optimized, `metis_inspired`, the five 0.2.1
-experimental identities and the three 0.2.2 bound-pruned strategies) against the verified frozen
-Mantle snapshot
+To demonstrate how these strategies behave on real blockchain liquidity, we execute all nineteen
+`--strategies all` strategies of Release 0.2.4 (six base, two optimized, `metis_inspired`, the five
+0.2.1 experimental identities, the three 0.2.2 bound-pruned strategies and the two 0.2.3
+post-processors with their selected 0.2.4 presets) against the verified frozen Mantle snapshot
 `mantle-5src-101082044-091b0759-fixture`:
 - **Parent Bundle:** `mantle-5src-101082044-091b0759-fixture`
 - **Bundle Hash:** `5401b1de8c83a3527e5f9b5afae4510a760f171f2b306d49dbb5c830256c9ad0`
@@ -1891,9 +1914,9 @@ Mantle snapshot
   `--strategies all` is the default. It runs the profile's six base strategies, then
   `uni_sor_adaptive` and `uni_sor_optimized`, then `metis_inspired`, then `metis_history`,
   `direct_split_certified`, `incremental_graph_repair`, `uni_sor_cycle_safe` and `cfmm_dual`, then
-  `single_path_bounded`, `incremental_graph_bounded` and `metis_history_bounded`, one after the
-  other, each in its own isolated worker and with exactly one solve attempt.
-  `--strategies base` reproduces the six-row table.
+  `single_path_bounded`, `incremental_graph_bounded` and `metis_history_bounded`, then
+  `split_polish` and `marginal_activation`, one after the other, each in its own isolated worker and
+  with exactly one solve attempt. `--strategies base` reproduces the six-row table.
 - **`metis_inspired` settings:** the profile's `search.*`, budget and `graph.chunks: 200`, plus
   `label_hops: 4` and `label_pruning: true` from the pinned arm `config/metis_challenge/m4.yaml`.
   Its chunk search therefore reaches 4 hops while the others search at most 2. This is a
@@ -1910,20 +1933,38 @@ Mantle snapshot
   | `uni_sor_cycle_safe` | `config/uni_sor_cycle_safe/preset_v1.yaml` v1 (`{}`) | `44136fa3…` |
   | `cfmm_dual` | `config/cfmm_dual/preset_v2.yaml` v2, the current CL stage (`constant_product+concentrated`) | `aa6eea57…` |
 
-  The historical `cfmm_dual/1` CPMM-only preset is not one of the 17 rows; it runs only through
+  The historical `cfmm_dual/1` CPMM-only preset is not one of the 19 rows; it runs only through
   the explicit profile `config/cfmm_dual/cpmm.yaml` (§11.3 item 10).
 - **0.2.2 settings:** `single_path_bounded` and `incremental_graph_bounded` accept no options.
   `metis_history_bounded` receives `metis_history`'s preset values from its own identical preset file
   `config/metis_history_bounded/preset_v1.yaml` (same `settings_sha256` `183bb1ff…`; §22.7) and the same
   `chunks` and `label_hops` as `metis_history`.
+- **0.2.4 settings:** the source configures neither post-processor, so `all` writes each one's
+  selected preset into the effective profile (§§23.10, 24.10):
+
+  | Identity | Options source | `settings_sha256` |
+  |---|---|---|
+  | `split_polish` | `config/split_polish/preset_v1.yaml` (`R024-P01-split_polish` v1: base `metis_inspired`, `golden`, 2 rounds, tolerance 0.00001, grid 1000000000, `maxiter` 60) | `04b363a7…` |
+  | `marginal_activation` | `config/marginal_activation/preset_v1.yaml` (`R024-P02-marginal_activation` v1: base `incremental_graph`, `pf`, 4 activations, top 9, `delta_share` 0.001, `seed_share` 0.0001; E1 stage `brent`, 2 rounds, tolerance 0.0001) | `6aec619d…` |
+
+  Each base runs as its own registered identity with exactly its own row's configuration
+  (`metis_inspired`: 2 hops, 200 chunks, `label_hops` 4, `label_pruning`; `incremental_graph`: 2
+  hops, 200 chunks). These pins count as `{kind: preset}` only in a document that `all` derived
+  (`selection.mode: all`); the same options in any other profile stay `{kind: override}` (§11.4).
+  The presets were selected under P\*, the settings of `config/full_gross.yaml` (3 hops, 50
+  chunks); the two rows below run under `config/daily_gross.yaml` and are results under these
+  settings, never evidence that the preset is best here (contract `R024-C/1` §4.5).
 
 *Classification:* This is an **exploratory single request** evaluated on a checked-in 19-pool fixture
 subset, not a held-out corpus result. The fixture is not the full frozen corpus (whose tuning
 bundle alone has 143 pools). The `quote` command solves on a derived single-case request bundle of
 the same 19 pools (it records that bundle's own hash); `r021_examples.py` section 17 re-runs the
-same 17 rows in process on the fixture itself and checks each gross against the exact protocol
-quotes below. The two 0.2.3 post-processors are not `--strategies all` rows; §11.5 runs them on the
-same request through an explicit profile.
+same rows in process on the fixture itself and checks each gross against the exact protocol
+quotes below; `r024_examples.py` section 27 checks the two 0.2.4 rows (legs, exact quotes, the
+activation proposals). Nothing in §11 is a campaign result: the measured 0.2.4 evidence is the
+research-024 campaign on the full corpus (§§23.10, 24.10), and no fixture figure stands for it. §11.5
+keeps, as 0.2.3 history, the run of the two 0.2.3 nominees on the same request through an explicit
+profile.
 
 ### 11.1 Summary Comparison Table
 
@@ -1946,6 +1987,8 @@ same request through an explicit profile.
 | `single_path_bounded` | `ok` | 10000.660449 | 10000660449 | 4 | `single_path`'s plan; rule S1 evaluated 2 bounds and skipped 0 |
 | `incremental_graph_bounded` | `ok` | **10000.663447** | **10000663447** | 264 | `incremental_graph`'s plan; rule I1 evaluated 400 bounds and skipped 0 |
 | `metis_history_bounded` | `ok` | **10000.663447** | **10000663447** | 264 | `metis_history`'s plan; M1 evaluated 400 bounds and skipped 0, M2 inactive (no label can exist) |
+| `split_polish` | `ok` | **10000.663635** | **10000663635** | 376 | `metis_inspired`'s plan re-split by golden section: Agni V3 9964137490 raw, Moe LB 35862510 raw (+188 raw over its base) |
+| `marginal_activation` | `ok` | **10000.663636** | **10000663636** | 588 | E1 stage (Brent) on `incremental_graph`'s plan: Agni V3 9964149090 raw, Moe LB 35850910 raw (+189 raw); no branch accepted |
 
 The gross values are checked by `r021_examples.py` section 17 against independent exact protocol
 quotes: Agni V3 at the full input gives 10000660449, and Agni V3 at 9950000000 plus the Moe LB
@@ -1955,7 +1998,11 @@ performance comparison. The three bounded rows return exactly their references' 
 quotes (4, 264 and 264): on this request no bound proves a candidate worse than the incumbent, so
 nothing is skipped (`r022_examples.py` section 22 compares each row with the reference solver and
 with the module's own rule oracles, §§20.5, 21.5 and 22.5). That is a statement about this request, not
-a general rate of pruning.
+a general rate of pruning. The two post-processor rows count their base's quotes plus their own on one
+ledger: $264 + 112 = 376$ and $264 + 96 + 228 = 588$. Each re-splits the same two pools as its base, and
+each leg is an exact protocol quote: $9964797543 + 35866092 = 10000663635$ and
+$9964809143 + 35854493 = 10000663636$ (`r024_examples.py` section 27). Both are at least the best split
+of the two pools on a 0.1-USDC grid of the Liquidity Book leg, 10000663634.
 
 ### 11.2 Execution Order and Fund Ledger Trace
 
@@ -1985,6 +2032,31 @@ Step 1: moe_lb_v2_2 pool 0x368b148052a1a775dbe70e56d04474e54c694cac
   Input:     REQUEST ALL_REMAINING (0.5% = 50 USDC = 50000000 raw)
   Output:    F2 50003554 raw (50.003554 USDT0)
 Terminal Total: 9950659893 + 50003554 = 10000663447 raw
+Residuals: None. Reconciled exactly.
+```
+
+#### The Polished Plans (`split_polish`, `marginal_activation`; since 0.2.4)
+Both keep the two pools of the incremental split plan and move part of the Liquidity Book leg back to
+Agni V3. `split_polish` (golden section on `metis_inspired`'s plan):
+```
+Step 0: agni_v3 pool 0x36f66548cda219c6fc037037cee063b9f28b13ef
+  Input:     REQUEST 9964137490 raw
+  Output:    F1 9964797543 raw
+Step 1: moe_lb_v2_2 pool 0x368b148052a1a775dbe70e56d04474e54c694cac
+  Input:     REQUEST 35862510 raw
+  Output:    F2 35866092 raw
+Terminal Total: 9964797543 + 35866092 = 10000663635 raw
+Residuals: None. Reconciled exactly.
+```
+`marginal_activation` (its E1 stage, Brent on `incremental_graph`'s plan; no branch is added):
+```
+Step 0: agni_v3 pool 0x36f66548cda219c6fc037037cee063b9f28b13ef
+  Input:     REQUEST 9964149090 raw
+  Output:    F1 9964809143 raw
+Step 1: moe_lb_v2_2 pool 0x368b148052a1a775dbe70e56d04474e54c694cac
+  Input:     REQUEST 35850910 raw
+  Output:    F2 35854493 raw
+Terminal Total: 9964809143 + 35854493 = 10000663636 raw
 Residuals: None. Reconciled exactly.
 ```
 
@@ -2067,7 +2139,7 @@ smaller domain next to `direct_split` rows that use all four pools (§15.1).
     - The research diagnostic prints `estimate 10000660450.063116 (not a bound)`: a numerical dual
       value, 1.06 raw units above the exact plan, not an upper bound on anything.
     - **CPMM-stage ablation** (historical `cfmm_dual/1`, only through
-      `--profile config/cfmm_dual/cpmm.yaml --strategies profile`, never one of the 14 rows): the
+      `--profile config/cfmm_dual/cpmm.yaml --strategies profile`, never one of the `all` rows): the
       only market is the Moe Classic pool, whose USDT0 reserve in the fixture's `pools.json` is
       only 14410 raw units. The row is
       **14409**, equal to the best exact CPMM single path by hand. This is the limitation of the
@@ -2084,6 +2156,27 @@ smaller domain next to `direct_split` rows that use all four pools (§15.1).
     - A request this large for its pools gives the bound nothing to prove; the 96 fixture cases of
       §20.5 item 4 and §21.5 item 7 are where it does skip. This is a count of work, never a
       time, and no row here is a speed claim.
+12. **The two post-processors re-split the Liquidity Book chunk and add nothing else** (0.2.4 rows).
+    - `split_polish` runs its base `metis_inspired` (the incremental split plan, item 5) and
+      re-splits its one split fund by golden section at tolerance 0.00001. One accepted exchange moves
+      14137490 raw of the LB leg back to Agni V3 and gains 188 raw. Factory counters: 1 polish call,
+      57 simulations, 48 golden iterations, 112 quotes (the reconstruction included).
+    - `marginal_activation`'s E1 stage (Brent, tolerance 0.0001) re-splits `incremental_graph`'s
+      plan to 9964149090 / 35850910 raw, the plan of the 0.2.3 nominee in §11.5: 1 accepted exchange,
+      49 simulations, 96 quotes. That it ends 1 raw above `split_polish` is a fact of this request
+      and these two solvers, not a ranking.
+    - The activation stage starts from that plan with
+      $\delta = \max(1, \lfloor A \cdot 0.001 \rfloor) = 10000000$ raw. As in §11.5 the label
+      search on the post-plan states finds three 1-hop terminals, and the fourth direct pool fails at
+      $\delta$: Agni V3 returns 10000111 and Moe LB `0x368b...` 9999978, both pools already in the
+      plan; Moe Classic `0x69a7...` returns 14389, novel, but its USDT0 reserve is only 14410 raw.
+      Each terminal is tried and logged `no_gain_or_zero_flow`, and the stage stops with
+      `stop_no_candidate` after its first iteration. Factory counters: 3 optimiser invocations, 74
+      simulations, 228 quotes, as many as the 0.2.3 nominee's: with 2 hops only three terminals exist,
+      so the preset's 4 activations and top 9 change nothing here.
+    - These rows are one request on the fixture under `config/daily_gross.yaml`. The base records
+      inside them (`search.base`) are the `metis_inspired` and `incremental_graph` rows, 10000663447
+      with 264 quotes.
 
 ### 11.4 Reproducing the Walkthrough: `quote --details`, the Saved Replay and Explicit Profiles
 
@@ -2092,7 +2185,11 @@ smaller domain next to `direct_split` rows that use all four pools (§15.1).
    includes every internal validation replay) and the final independent evaluation, with the
    quote and candidate counters. The 0.2.1 rows add a *research diagnostics* block: bound kind,
    domain hash, `max_candidates` unit, named work units, fallback/repair, scope, and observed
-   per-stage seconds (for `cfmm_dual`: `prepare_cl_indexes`, `initial_solve`, `recovery`).
+   per-stage seconds (for `cfmm_dual`: `prepare_cl_indexes`, `initial_solve`, `recovery`). Since
+   0.2.4 the two post-processor rows add a *post-processor* block: the recorded options provenance
+   (`preset R024-P01-split_polish v1 (config/split_polish/preset_v1.yaml, sha256 …); settings_sha256 …`),
+   the base row (its identity, status, quotes and gross), the result (gross, own quotes, scope,
+   truncation) and, for `marginal_activation`, the E1 and activation stages.
 2. **Timing.** Each latency is one observation of one solve. There is no sample list, no p95 and
    no distribution statistic, and nothing here is a performance or latency claim.
 3. **The replay.** The quote prints `saved: <quote dir>` and `replay: …`. The replay command is
@@ -2103,8 +2200,11 @@ smaller domain next to `direct_split` rows that use all four pools (§15.1).
      --results-dir <quote dir>/runs --strategies profile
    ```
    `--strategies profile` runs the saved effective profile **literally**: the same algorithms (17 for
-   a profile saved under `all` since Release 0.2.2), preset identities and settings, never a
-   re-expansion under a later default.
+   a profile saved under `all` by Releases 0.2.2 and 0.2.3, 19 since 0.2.4), preset identities and
+   settings, never a re-expansion under a later default. A saved 0.2.4 `all` profile keeps its
+   `selection.mode: all` record, so its two post-processors replay as `{kind: preset}`; the same
+   options written into any other profile are recorded as `{kind: override}` (WHI-1632, contract
+   `R024-C/1` §6.3), which keeps every earlier explicit profile, such as §11.5's, at its old identity.
 4. **Explicit comparison profiles** (each runs literally with `--strategies profile`):
 
    | Profile | Runs | Options source |
@@ -2122,14 +2222,17 @@ smaller domain next to `direct_split` rows that use all four pools (§15.1).
 and [`strategy-groups.md`](strategy-groups.md) the selection modes and the literal replay of
 older saved profiles.
 
-### 11.5 The 0.2.3 Post-Processors on the Same Request (Explicit Profile)
+### 11.5 History (0.2.3): the Post-Processors' Nominees on the Same Request (Explicit Profile)
 
-`split_polish` (§23) and `marginal_activation` (§24) are not rows of the §11.1 table. Each is
-selected only by a profile that names it, and `--strategies all` adds neither, so the 17-row table and
-its count stay as they are. Each one also runs a declared base strategy and returns at least the base's
-gross, so its row is read against its base's row, not against the other sixteen. This subsection runs
-both on the same request through an explicit profile: the values of `config/daily_gross.yaml`, with only
-`algorithms` replaced and the two nominees' options written out (§23.7, §24.7; neither has a preset):
+*This subsection is kept as Release 0.2.3 history.* In 0.2.3, `split_polish` (§23) and
+`marginal_activation` (§24) were not rows of the §11.1 table: each was selected only by a profile that
+named it, `--strategies all` added neither, and the table had 17 rows. Since 0.2.4 both are rows of
+§11.1 with their selected presets (above). Each one runs a declared base strategy and returns at least
+the base's gross, so its row is read against its base's row, not against the other rows. This
+subsection runs the two 0.2.3 nominees on the same request through an explicit profile: the values of
+`config/daily_gross.yaml`, with only `algorithms` replaced and the two nominees' options written out
+(§23.7, §24.7; in 0.2.3 neither had a preset). The profile still runs literally, and its options are
+still recorded as `{kind: override}` (§11.4):
 
 ```yaml
 schema_version: 2
@@ -2299,22 +2402,23 @@ differs only in which candidates it quotes. "Result" is the identity they claim,
 | **Where counters are** | `search.bound_pruning` in the case record; `quote --details` | same | same |
 
 The two 0.2.3 post-processors (§§23–24) are not searches of their own: each runs a declared base
-strategy, then re-optimises that base's finished plan with exact integer replay. They are selected only
-by a profile that names them and are not in `--strategies all` (§11.5).
+strategy, then re-optimises that base's finished plan with exact integer replay. In 0.2.3 they were
+selected only by a profile that named them (§11.5, history); since 0.2.4 they are the last two rows of
+`--strategies all`, each with its selected preset (§§23.10, 24.10).
 
 | Property | `split_polish` (E1) | `marginal_activation` (E2) |
 |---|---|---|
-| **Reference control** | its base, run as the base's own identity (campaign arms A0, C100, M4, S4, REP, PS; §23.9) | its base and E1; the `work_matched` and `call_matched` control arms (campaign only) |
-| **Bases** | `incremental_graph`, `path_split`, `metis_inspired`, `metis_history`, `incremental_graph_repair` | `incremental_graph`, `path_split` |
+| **Reference control** | its base, run as the base's own identity (0.2.3 campaign arms A0, C100, M4, S4, REP, PS, §23.9; 0.2.4: the `metis_inspired` row, §23.10) | its base and E1; the `work_matched` and `call_matched` control arms (campaign only; 0.2.4: the `incremental_graph` row, `E2-E1only`, `E2-wm`, `E2-cm`, §24.10) |
+| **Bases** | `incremental_graph`, `path_split`, `metis_inspired`, `metis_history`, `incremental_graph_repair`; preset: `metis_inspired` | `incremental_graph`, `path_split`; preset: `incremental_graph` |
 | **Multi-Hop / Split Support** | the base plan's routes and funds only (fixed funding topology) | the base plan plus up to `activations` appended branches of $\le H$ hops |
 | **Shared Intermediate Pools** | as the base plan (sequential pool state) | **Yes**; a new branch may reuse a plan pool (`shared_sequential`) |
 | **Supported Protocols** | All 5 (exact replay) | All 5 (exact replay) |
 | **Search Mechanism** | pairwise 1-D Brent (or golden) line search over exact rational shares | E1, then a hop-layered label search of $\delta$ quotes on the post-plan states; PF grouped line search or a full E1 re-polish |
 | **Optimality Scope** | local; never below the base | local heuristic; never below the base |
 | **Objective** | `gross_only` | `gross_only` |
-| **Options** | six, all required, no preset | twelve, all required, no preset |
-| **Group / Default** | Experimental (NOT Jupiter Metis), profile-selected | Experimental (NOT Jupiter Metis), profile-selected |
-| **Campaign disposition** | `keep_experimental` (§23.9) | `keep_experimental` (§24.9) |
+| **Options** | six, all required; preset `R024-P01-split_polish` v1 under `all` (0.2.4; none in 0.2.3) | twelve, all required; preset `R024-P02-marginal_activation` v1 under `all` (0.2.4; none in 0.2.3) |
+| **Group / Default** | Experimental (NOT Jupiter Metis), opt-in; a `--strategies all` row since 0.2.4 (profile-selected in 0.2.3) | Experimental (NOT Jupiter Metis), opt-in; a `--strategies all` row since 0.2.4 (profile-selected in 0.2.3) |
+| **Campaign disposition** | `keep_experimental` in 0.2.3 (§23.9) and 0.2.4 (§23.10) | `keep_experimental` in 0.2.3 (§24.9) and 0.2.4 (§24.10) |
 | **Where counters are** | `search.split_polish` and `search.base` in the case record | `search.marginal_activation` (`e1`, `activation`, `control`) and `search.base` |
 
 ### 12.2 Asymptotic Search Complexity
@@ -2366,7 +2470,7 @@ declared caps, and a cap is reported, never hidden. The two 0.2.3 rows count sim
 finished plan: one quote per positive step and evaluated point, with the cached points of a pair
 never re-simulated (§§23.8, 24.8). Their polish quotes are physically cheaper than the base's: on the
 report split, `split_polish` on A0 executes 1.276× its base's quotes but 1.014× its CL swap steps
-(§23.8).
+(§23.8); the 0.2.4 presets show the same pattern (§§23.10, 24.10).
 
 ### 12.3 Source Reading Map
 
@@ -2393,8 +2497,8 @@ When navigating the codebase, consult these authoritative entry points:
   - `pools/bounds.py` (0.2.2): `OutputBound` (line 68), `output_bound` (165), `BoundTable` (180), `build_bounds` (204)
   - `routing/algorithms/chunk_pruning.py` (0.2.2): `hop_bound` (line 33), `chain_bound` (50), `UTable` (85), `m2_gate` (167), `LabelPruner` (196)
   - `routing/algorithms/single_path_bounded.py`, `incremental_graph_bounded.py`, `metis_history_bounded.py` (0.2.2): `solve`, `FACTORY`; the rules live in `single_path.py` (`_path_upper_bound`, line 153; the S1 block, lines 251–259), `incremental_graph.py` (`_bound_start`, line 449; the I1 block, lines 648–660) and `metis_history.py` (`choose_history`, line 351; the gate and table in `_solve`, lines 536–551)
-  - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the base and optimized comparison groups; `metis_inspired`, the five 0.2.1 identities (`R021_ADDITIONS`, contract order) and the three 0.2.2 bounded strategies (`R022_ADDITIONS`, line 122) are added by `benchmark/strategies.py` under `--strategies all`)
-  - `routing/algorithms/split_polish.py` (0.2.3, E1): `validate_options` / `Settings`, `graph_params_for`, `prepare`, `Ledger`, `Topology`, `canonical_from_evaluation`, `shares_or_refusal`, `simulate`, `Incumbent`, `rebuild`, `line_search` (`_golden`, `_brent`), `polish`, `polish_plan`, `solve`; `routing/algorithms/marginal_activation.py` (0.2.3, E2): `top_paths`, `union`, `pf_split`, `accepts`, `activate`, `run_activation`, `ControlLedger`, `run_control`, `solve`. Both are registered in `registry.py` and are not among `benchmark/strategies.py`'s `--strategies all` additions (§§23–24 name functions, not lines)
+  - `routing/algorithms/registry.py`: `BASE_STRATEGIES` / `OPTIMIZED_STRATEGIES` (the base and optimized comparison groups; `metis_inspired`, the five 0.2.1 identities (`R021_ADDITIONS`, contract order) and the three 0.2.2 bounded strategies (`R022_ADDITIONS`) and, since 0.2.4, the two post-processors (`R024_ADDITIONS`) are added by `benchmark/strategies.py` under `--strategies all`; `frozen_roster` derives an earlier campaign's roster)
+  - `routing/algorithms/split_polish.py` (0.2.3, E1): `validate_options` / `Settings`, `graph_params_for`, `prepare`, `Ledger`, `Topology`, `canonical_from_evaluation`, `shares_or_refusal`, `simulate`, `Incumbent`, `rebuild`, `line_search` (`_golden`, `_brent`), `polish`, `polish_plan`, `solve`; `routing/algorithms/marginal_activation.py` (0.2.3, E2): `top_paths`, `union`, `pf_split`, `accepts`, `activate`, `run_activation`, `ControlLedger`, `run_control`, `solve`. Both are registered in `registry.py`; since 0.2.4 they are `benchmark/strategies.py`'s `R024_ADDITIONS`, and `benchmark/profile.py::ALL_SCOPED_PRESETS` recognises their preset pins only in an `all` document (§§23–24 name functions, not lines)
 - **Contract Verification:**
   - Uniswap SOR: [`uni-sor-port-contract.md`](uni-sor-port-contract.md) and `tests/routing/test_uni_sor_parity.py`.
   - Optimized strategies: [`strategy-groups.md`](strategy-groups.md), [`latency-optimization-results.md`](latency-optimization-results.md) (L08), `tests/routing/test_uni_sor_strategies.py` and `tests/routing/test_uni_sor_fast.py`.
@@ -2403,6 +2507,7 @@ When navigating the codebase, consult these authoritative entry points:
   - 0.2.2 bound pruning: [`research-022/output-bounds.md`](research-022/output-bounds.md) (the per-pool bounds and proofs), [`research-022/pruning-contract.md`](research-022/pruning-contract.md) (the rules, the exactness argument, the interface and its §14 amendment). Worked examples: `docs/examples/routing-algorithms/r022_examples.py` and `tests/docs/test_r022_examples.py`; strategy tests `tests/routing/test_single_path_bounded.py`, `tests/routing/test_chunk_bounded.py`, `tests/routing/test_pruning_contract.py`, `tests/pools/test_bounds.py`, `tests/pools/test_output_bounds_contract.py`.
   - Cost Model: [`cost-model.md`](cost-model.md) and `benchmark/costs.py`.
   - 0.2.3 post-processors: the contract [`research-023/contract.md`](research-023/contract.md) (`R023-C/1`), its source register [`research-023/sources.md`](research-023/sources.md), the pinned probe ([`research-023/probe/README.md`](research-023/probe/README.md); publication check `tests/docs/test_research_023_contract.py`) and the campaign record [`research-023/results.md`](research-023/results.md) with [`report-tables.md`](research-023/campaign/report-tables.md), generated from `report-analysis.json` by `tools/research_023/` (`tests/research_023/test_r023_campaign.py`). Strategy tests: `tests/routing/test_split_polish.py`, `tests/routing/test_split_polish_bases.py`, `tests/routing/test_marginal_activation.py`. Worked examples: `docs/examples/routing-algorithms/r023_examples.py` and `tests/docs/test_r023_examples.py`.
+  - 0.2.4 presets and roster: the contract [`research-024/contract.md`](research-024/contract.md) (`R024-C/1`), the selection record [`research-024/selection.md`](research-024/selection.md) and the campaign record [`research-024/results.md`](research-024/results.md) with its generated `campaign/` tables (`tools/research_024/`, `tests/research_024/`). Roster and provenance tests: `tests/benchmark/test_r024_roster.py`. Guide checks: `docs/examples/routing-algorithms/r024_examples.py` and `tests/docs/test_r024_examples.py`.
 
 ---
 
@@ -2520,13 +2625,15 @@ When navigating the codebase, consult these authoritative entry points:
 14. **Literal Replay:** Saved effective profiles, including the pre-0.2.1 eight- and nine-strategy
     ones and the 14-strategy 0.2.1 ones, replay literally with `--strategies profile` and never gain
     a 0.2.1 identity, a 0.2.2 bounded strategy or a 0.2.3 post-processor; use each manifest's
-    `replay_command` (§11.4, [`strategy-groups.md`](strategy-groups.md)). Release 0.2.3 adds nothing to
-    `--strategies all` (still 17 rows): `split_polish` and `marginal_activation` run only from a
-    profile that names them (§11.5). The preregistered 0.2.1 campaign (WHI-1562) froze its own 14-ID
-    roster and `tools/research_021/` is kept as it was by design: do not "fix" it to 17 (its tests
-    switch the 0.2.2 additions off); replay a 0.2.1 run with `--strategies profile`. Likewise the 0.2.2
-    campaign's roster (`all17` in `config/research_022/schedule.yaml`) and `tools/research_022/` are
-    unchanged in 0.2.3 and name neither post-processor (`r023_examples.py` section 25 checks both).
+    `replay_command` (§11.4, [`strategy-groups.md`](strategy-groups.md)). Release 0.2.3 added nothing
+    to `--strategies all` (17 rows): `split_polish` and `marginal_activation` ran only from a profile
+    that named them (§11.5). Release 0.2.4 appends both, so `all` has 19 rows (item 17); a saved
+    17-row profile still replays its 17. The preregistered 0.2.1 campaign (WHI-1562) froze its own
+    14-ID roster and `tools/research_021/` is kept as it was by design: do not "fix" it to 17 or 19 (its
+    tests switch the later additions off); replay a 0.2.1 run with `--strategies profile`. Likewise the
+    0.2.2 campaign's roster (`all17` in `config/research_022/schedule.yaml`) is unchanged and names
+    neither post-processor; since 0.2.4 `tools/research_022/` derives it inside `frozen_roster`
+    (`r023_examples.py` section 25 checks both).
 15. **The 0.2.2 Bounded Strategies Are Exact Accelerations, Not Speedups:**
     - `single_path_bounded`, `incremental_graph_bounded` and `metis_history_bounded` return their
       references' plans whenever the bounded run is not budget-truncated. Under a binding
@@ -2550,9 +2657,10 @@ When navigating the codebase, consult these authoritative entry points:
       topology, and E2 adds branches proposed by a heuristic label oracle. Neither claims an optimum,
       Jupiter equivalence or a speedup, and neither replaces finer chunking (§§23.9, 24.9).
     - **Gross-only.** Any other objective is `unsupported` (`scope: objective`) and the base never runs.
-    - **Profile-selected.** Neither is in `--strategies all` (§11.5). Each runs only from a profile
-      that names it, with all of its options written out (no preset); one profile holds one entry of
-      each.
+    - **Selection.** In 0.2.3 neither was in `--strategies all`: each ran only from a profile that
+      named it, with all of its options written out (no preset existed; §11.5, history). Since 0.2.4
+      both are `all` rows with their selected presets (item 17). A profile that names them still
+      writes all of the options out; one profile holds one entry of each.
     - **Bases.** `split_polish`: `incremental_graph`, `path_split`, `metis_inspired`,
       `metis_history`, `incremental_graph_repair`. `marginal_activation`: `incremental_graph` and
       `path_split`.
@@ -2564,6 +2672,39 @@ When navigating the codebase, consult these authoritative entry points:
       contract §8 (one block, a previously exposed report split, tuning-informed nominees, no speed
       claim). [`research-023/results.md`](research-023/results.md) is the record. Nothing is adopted and
       no default changes.
+17. **Release 0.2.4: Selected Presets in the 19-Strategy Comparison, Not Adoption:**
+    - **Roster.** `--strategies all` appends `split_polish` and `marginal_activation` after the 0.2.2
+      strategies, each with its selected preset (§11, contract `R024-C/1` §6). Inclusion is not
+      adoption: both stay experimental and opt-in, and no default changes.
+    - **The presets' claim** is exactly the contract's (§5.12): "selected by the registered rule
+      `R024-C/1` §5.7 among these 90 (`split_polish`) / 108 (`marginal_activation`) candidates under
+      P\*, on the already exposed tuning split." It is conditional on P\* (the settings of
+      `config/full_gross.yaml`) and does not transfer: a result under another profile, such as
+      `config/daily_gross.yaml` in §11, is a result under those settings, never evidence that the
+      preset is best there (§4.5). Not claimed: global optimality, optimality among unregistered
+      values, validity outside block 101082044, or adoption.
+    - **Provenance.** The pins count as `{kind: preset}` only in a document that `all` derived; equal
+      options in any other profile stay `{kind: override}`, so no earlier profile or saved record
+      changes its identity (§11.4).
+    - **Disposition.** The research-024 campaign kept both `keep_experimental` (§§23.10, 24.10) under
+      its evidence boundaries (contract §9.2): report split `previously_exposed` (0.1.0, 0.2.0, 0.2.1,
+      0.2.2, 0.2.3), presets selected on the already exposed tuning split, one block, no new-block
+      generalisation. [`research-024/results.md`](research-024/results.md) is the record.
+    - **Timing.** Only the timing units `U6` (the three 0.2.2 bounded strategies and `cfmm_dual`) and
+      `UQ` (five single-request CLI runs) are valid; `UP` (the post-processor overhead, so not
+      measured validly) and `U1`–`U5` ended `inconclusive (cap_exhausted)`. This guide states timing
+      only as `results.md` §4.3 does, verbatim:
+
+      > **(b) Usable latency obtained: `U6` and `UQ`.** Nothing else is stated. In particular, the 0.2.4
+      > overhead of `split_polish` over `metis_inspired` and of `marginal_activation` over
+      > `incremental_graph` was **not measured validly**. No warm, cold or memory latency is stated for
+      > `direct`, `single_path`, `direct_split`, `path_split`, `incremental_graph`, the four `uni_sor_*` rows,
+      > `metis_inspired`, `metis_history`, `direct_split_certified`, `incremental_graph_repair`,
+      > `split_polish` or `marginal_activation`. Their only latency figures are `UQ`'s single-request CLI
+      > times, as `UQ`'s descriptive yield.
+
+      Statement (a), "measurement attempted correctly", is **yes**: every unit reached a terminal
+      outcome under the protocol, with no `protocol_breach`. Neither statement is a speed claim.
 
 ---
 
@@ -4216,9 +4357,10 @@ is the stable anchor.
   The batch console, CSV and HTML summaries do not show them: HTML and `report` only label the row
   "Bound-pruned strategy … no speedup claimed". Bound-preparation *time* is not in the record (it
   would break literal replay): it is on the prepared object and in the runner's preparation event.
-- **Roster.** `--strategies all` is **17** strategies: the fourteen 0.2.1 rows, then
+- **Roster.** Release 0.2.2 made `--strategies all` **17** strategies: the fourteen 0.2.1 rows, then
   `single_path_bounded`, `incremental_graph_bounded`, `metis_history_bounded`, in that order
-  (`benchmark/strategies.py::R022_ADDITIONS`). `--strategies profile` replays a saved
+  (`benchmark/strategies.py::R022_ADDITIONS`); since 0.2.4 the two post-processors follow them (19
+  rows, §11). `--strategies profile` replays a saved
   profile literally and never gains them. The preregistered 0.2.1 campaign (WHI-1562) froze its
   own 14-ID roster and its tool (`tools/research_021/`) is left as it was by design, with the 0.2.2
   additions switched off in its tests: do not "fix" it to 17. Replay a 0.2.1 run with
@@ -4945,15 +5087,16 @@ fraction of a chunk away from the best split *of the same routes*. `split_polish
 contract `R023-C/1` §3, §4, §6, E1) is a **post-processor**: it runs a declared base strategy, keeps
 the base plan's routes exactly and re-optimises only the split shares, with exact integer replay.
 
-- **Identity:** experimental, `custom` group, selected only by a profile that names it (`--strategies
-  all` does **not** add it). Label: "Jupiter-inspired (Ultra V3 / Metis v7 Brent splitting), **NOT
-  Jupiter Metis**". Gross-only.
+- **Identity:** experimental, `custom` group. In 0.2.3 it was selected only by a profile that named
+  it; since 0.2.4 `--strategies all` also runs it, with its selected preset (§23.10). Label:
+  "Jupiter-inspired (Ultra V3 / Metis v7 Brent splitting), **NOT Jupiter Metis**". Gross-only.
 - **What is claimed:** never worse than the base plan it ran on, and every returned plan is an
   evaluator-valid exact integer plan. **Not claimed:** optimality (a local pairwise heuristic over a
   fixed topology, not SCO), Jupiter equivalence, any speedup.
 - **What was measured:** on the research-023 report split it is never below its base and adds a
-  fraction of a bps on average, but loses to finer chunking case by case (§23.9). §23.9 also explains,
-  from the sources only, why that gain is small next to Jupiter's announcements.
+  fraction of a bps on average, but loses to finer chunking case by case (§23.9, history). §23.9 also
+  explains, from the sources only, why that gain is small next to Jupiter's announcements. The
+  research-024 campaign measured the selected preset (§23.10).
 
 ### 23.2 Mathematical Model and Assumptions
 **Domain (fixed funding topology).** The base plan's evaluated trace is canonicalised: zero
@@ -5043,8 +5186,8 @@ approach it.
 On the tuning split (96 cases, `incremental_graph` c50 under `config/full_gross.yaml`) the nominee
 reproduces the pinned probe outputs case by case (`probe/results/ig_b2.json.gz`): 72 of 96 cases
 improve, by +0.473 bps on average (contract §7). That figure is tuning evidence, not a campaign result.
-The campaign result is the report split's: 199 of 291 scored cases improve, by +0.447 bps on average
-(§23.9).
+The 0.2.3 campaign result is the report split's: 199 of 291 scored cases improve, by +0.447 bps on
+average (§23.9).
 
 ### 23.6 Implementation Map
 - File: `routing/algorithms/split_polish.py`: `validate_split_polish_options`, `validate_options`
@@ -5062,11 +5205,13 @@ The campaign result is the report split's: 199 of 291 scored cases improve, by +
   on the tracked corpus and, behind `ROUTER_TUNING_BUNDLE`, on the tuning split).
 
 ### 23.7 Parameters, Budgets, and Ties
-- **Options** (`algorithm_options.split_polish`, all six required, no preset, no defaults):
+- **Options** (`algorithm_options.split_polish`, all six required, no defaults; since 0.2.4 `all`
+  writes the selected preset out, §23.10):
   `base` (`incremental_graph`, `path_split`, `metis_inspired`, `metis_history` or
   `incremental_graph_repair`), `solver` (`brent` or `golden`), `rounds` (1–16),
-  `tolerance` (share of a fund, converted exactly to grid units), `grid` ($D$), `maxiter`. Nominee:
-  `incremental_graph`, `brent`, 2, 0.0001, 1000000000, 60; golden with 2 rounds is the solver control.
+  `tolerance` (share of a fund, converted exactly to grid units), `grid` ($D$), `maxiter`. The 0.2.3
+  nominee: `incremental_graph`, `brent`, 2, 0.0001, 1000000000, 60; golden with 2 rounds was the solver
+  control.
 - **The base runs as its own registered identity** (WHI-1626). It gets exactly the configuration
   its own run gets under the same profile, from one source each:
   - **Profile keys:** `search.max_hops`, `max_splits`, `percent_step` and `graph.chunks` whatever
@@ -5101,7 +5246,7 @@ The campaign result is the report split's: 199 of 291 scored cases improve, by +
   1.072× its LB bins swapped, because a polish quote re-quotes the pools of a finished plan at nearby
   amounts. The golden solver control spends a median 1.207× Brent's polish quotes (p95 1.432) for
   practically the same gross (§23.9, Q5).
-- **Time** is not claimed.
+- **Time** is not claimed. The 0.2.4 overhead over the base was not measured validly (§23.10).
 
 ### 23.9 Guarantees and Limitations
 - **Guarantees:** never worse than the base; every returned plan is the evaluator-valid incumbent
@@ -5119,8 +5264,8 @@ The campaign result is the report split's: 199 of 291 scored cases improve, by +
     bases, contract §13). On the report split E1 improves 214, 214 and 199 of 291 scored cases on
     M4, S4 and REP (Q1 below).
 
-**Measured on the report split (WHI-1627, contract §8).** [`research-023/results.md`](research-023/results.md)
-reports one frozen pass of 23 arms over the 302 cases of the report split. The arms are contract
+**Measured on the report split in 0.2.3 (history; WHI-1627, contract `R023-C/1` §8).**
+[`research-023/results.md`](research-023/results.md) reports one frozen pass of 23 arms over the 302 cases of the report split. The arms are contract
 §8's: the references A0, C100 and C200 (`incremental_graph` with 50, 100 and 200 chunks), M4
 (`metis_inspired`, label hops 4), S4 (`metis_history`), REP (`incremental_graph_repair`) and PS
 (`path_split`); `split_polish(B)` on each base B except C200, with golden on A0 as the solver control;
@@ -5167,8 +5312,8 @@ Q2 (against finer chunking) and Q5 (between the solvers):
   plans, 0 never-worse violations against the identical base record, 0 ledger ≠ seam counts, 0
   `unsupported_topology` refusals, 0 reconstruction errors. 2 of the 302 C100 cells stopped
   cooperatively at `max_quotes` (the base had spent most of the shared ledger) and return the last
-  validated incumbent. `keep_experimental` is not adoption: `split_polish` stays opt-in and
-  profile-selected, and no default changes.
+  validated incumbent. `keep_experimental` is not adoption: in 0.2.3 `split_polish` stayed opt-in
+  and profile-selected, and no default changed.
 - **Evidence boundaries (contract §8).** Report split `previously_exposed` (0.1.0, 0.2.0, 0.2.1,
   0.2.2); tuning-informed nominees; pinned source, settings and analysis hashes; every scheduled
   status kept; one block; no speed claim without L01; no new-block generalisation. Every figure above
@@ -5209,6 +5354,76 @@ The measured gain is therefore small because the lever this release can act on, 
 finished plan's own routes, is a small part of routing quality (P1, Q1), and the bases here leave
 little of it (Q1, Q2). The sourced Jupiter figures measure other things.
 
+### 23.10 Release 0.2.4: the Selected Preset and the 19-Strategy Campaign
+**The preset.** `config/split_polish/preset_v1.yaml` (key `R024-P01-split_polish`, version 1;
+WHI-1631): base `metis_inspired`, solver `golden`, 2 rounds, tolerance 0.00001, grid 1000000000,
+`maxiter` 60, the registered candidate `sp|metis_inspired|golden|r2|t1e-5`. Since 0.2.4
+`--strategies all` runs `split_polish` with exactly these options as its 18th row (§11), recorded as
+`{kind: preset}`.
+
+**How it was chosen** (contract `R024-C/1` §§4–5; [`research-024/selection.md`](research-024/selection.md)).
+- **P\*.** All 90 registered candidates ran once on the 96-case tuning split under P\*, the settings
+  `--strategies all` derives from `config/full_gross.yaml`: 3 hops, 4 splits, 5 %, 50 chunks, the M4
+  label settings (4 label hops, label pruning), 900 s and 300,000 quotes per solve.
+- **The rule.** Each candidate's Q is its mean bps against the per-case best of the five P\* base
+  arms, so a negative Q means only "below that per-case best". A candidate above 2.0× the
+  `incremental_graph` base arm's work in any unit (quotes, CL swap steps, LB bins) is ineligible;
+  among the eligible candidates within 0.01 bps of the best Q, the one with the fewest quotes wins.
+- **The outcome.** 88 of the 90 candidates were eligible (2 exceeded the work limit). The best Q was
+  +0.1249; 3 golden candidates on `metis_inspired` lay within 0.01 bps of it, and the winner is the
+  one with the fewest quotes, Q +0.1172, +0.0025 above the best candidate outside that band. Against
+  its own base on the tuning split it gains +0.791 bps (H/E/L 81/15/0, 29 / 0 directed pairs net + /
+  −). The 0.2.3 nominee ranks 59th of the 88: its base, `incremental_graph`, trails `metis_inspired`
+  on the tuning split.
+- **The claim** is exactly the contract's (§5.12): "selected by the registered rule `R024-C/1` §5.7
+  among these 90 (`split_polish`) / 108 (`marginal_activation`) candidates under P\*, on the already
+  exposed tuning split." Not claimed: global optimality, optimality among unregistered values,
+  validity outside block 101082044, best under any other profile, or adoption.
+- **Not transferred (§4.5).** The ranking holds under P\* only. Under `config/daily_gross.yaml` (2 hops,
+  200 chunks, 120 s and 50,000 quotes), as in §11, a result is a result under those settings, never
+  evidence that the preset is best there. The chunk-sensitivity arms under otherwise unchanged P\*
+  are results at their settings too: at 100 and 200 chunks the preset gains +0.5688 and +0.3575 bps
+  over `metis_inspired` at the same chunks (85/11/0 each, tuning split).
+
+**Measured on the report split in 0.2.4** (WHI-1633, [`research-024/results.md`](research-024/results.md)).
+One frozen pass of the 19 rows over the 302 report cases, on both cohorts. The base control (BASE-E1)
+is the `metis_inspired` row of the same run, whose configuration equals the base's on every key it
+reads; every `split_polish` record's base row equals it case by case (302 / 302). Each cohort scores
+the cases with a non-zero baseline gross (10 zero on `full_source`, 12 on `sor_compatible`). H/E/L and
+"pairs net + / −" are as in §23.9; nothing here is a p-value.
+
+| Cohort, vs `metis_inspired` | Scored / scheduled | H/E/L | Mean bps | p50 | p95 | Pairs net + / − |
+|---|---|---|---|---|---|---|
+| `full_source` | 291 / 302 | 214/77/0 | +0.496 | 0.129 | 2.388 | 29 / 0 |
+| `sor_compatible` | 288 / 302 | 194/94/0 | +0.532 | 0.064 | 2.509 | 28 / 0 |
+
+- **Never below its base.** 0 lower cases on either cohort; on `full_source` 301 cells are polished
+  and the 1 `no_route` case passes the base through; 0 gate failures.
+- **Next to 0.2.3 (history).** The 0.2.3 Brent nominee on the same base, M4, gave 214/77/0, +0.494 bps,
+  p95 2.383 (§23.9 Q1); the selected golden preset gives practically the same gain.
+- **Tuning against report.** The own-base gain shrinks from +0.791 on the tuning split to +0.496 on
+  `full_source` (its SOR figure, +0.532, does not move). The preset was selected on that exposed
+  tuning split, so some shrinkage on new cases is expected from the selection itself
+  (`results.md` §5).
+- **Against the other rows** (`full_source`, rankable rows; H/E/L, mean bps): `incremental_graph`
+  182/74/35, +1.908; `incremental_graph_repair` 180/74/37, +1.870; `metis_history` 205/76/10, -0.743,
+  higher in more cases but with a negative mean, driven by one boundary dust case at -351.107 bps where
+  the label search finds a route the polished plan does not reach; `marginal_activation` 99/58/134,
+  +0.958 with 13 / 16 pairs: neither dominates. It equals the per-case best of the 13 all-protocol rows
+  on 154 of 291 scored cases (`marginal_activation` 190); that is an envelope, not a portfolio.
+- **Work** (untimed work pass; totals over 302 cases): 9,299,891 quotes against the base's 5,324,859
+  (1.747×), but CL swap steps 1.043×
+  and LB bins 1.127×: a polish quote re-quotes the pools of a finished plan at nearby amounts.
+- **Disposition (contract §9.1): `keep_experimental`.** No reject and no inconclusive condition: 0
+  gate defects, 0 work-pass differences, no invalid plan, no truncated or refused case. It carries the
+  evidence boundaries of contract §9.2 (§13 item 17) and is not adoption.
+- **Time is not claimed.** The timing unit of the post-processor overhead (`UP`) ended
+  `inconclusive (cap_exhausted)`: the overhead of `split_polish` over `metis_inspired` was not
+  measured validly (§13 item 17).
+- **Fixture and campaign are separate.** The §11 row (10000663635 on the 19-pool fixture, under
+  `config/daily_gross.yaml`) is one exploratory request; it is not part of this evidence, and no
+  figure above describes it.
+
 ## 24. Algorithm 19: `marginal_activation` (Branch Activation After Split Polishing; Jupiter-Inspired, NOT Jupiter Metis)
 
 ### 24.1 Problem and Inclusion Rationale
@@ -5220,9 +5435,9 @@ proposes paths, each is appended to the plan, re-split, and kept only if an inde
 confirms a strict gain with positive flow on the new branch. The closest published precedent is
 PRIME-Flow (overlapping paths, a split between the current flow and a new path, contract §1 P2).
 
-- **Identity:** experimental, `custom` group, selected only by a profile that names it (`--strategies
-  all` does **not** add it). Label: "Jupiter-inspired (Ultra V3 / Metis v7 Brent splitting), **NOT
-  Jupiter Metis**". Gross-only.
+- **Identity:** experimental, `custom` group. In 0.2.3 it was selected only by a profile that named
+  it; since 0.2.4 `--strategies all` also runs it, with its selected preset (§24.10). Label:
+  "Jupiter-inspired (Ultra V3 / Metis v7 Brent splitting), **NOT Jupiter Metis**". Gross-only.
 - **What is claimed:** never worse than the base plan it ran on, and every returned plan is an
   evaluator-valid exact integer plan. **Not claimed:** optimality (a heuristic label oracle and local
   line searches; not SCO, not FVO), Jupiter equivalence, any speedup.
@@ -5322,8 +5537,8 @@ On the tuning split (96 cases, `incremental_graph` c50 under `config/full_gross.
 reproduces the pinned probe output case by case, controls included (`probe/results/ig_actpf.json.gz`):
 85 of 96 cases improve on the base, and activation is +0.199 bps over the work-matched control
 (74 better / 3 worse, contract §7). Those figures are tuning evidence, not a campaign result. The
-campaign result is the report split's: PF (A0) is +0.210 bps over its work-matched control, 209/78/4
-of 291 scored cases (§24.9).
+0.2.3 campaign result is the report split's: PF (A0) is +0.210 bps over its work-matched control,
+209/78/4 of 291 scored cases (§24.9).
 
 ### 24.6 Implementation Map
 - File: `routing/algorithms/marginal_activation.py`: `validate_options` and `Settings` (options),
@@ -5340,11 +5555,12 @@ of 291 scored cases (§24.9).
   controls, CLI, tuning reproduction behind `ROUTER_TUNING_BUNDLE`).
 
 ### 24.7 Parameters, Budgets, and Ties
-- **Options** (`algorithm_options.marginal_activation`, all twelve required, no preset): E1's six
+- **Options** (`algorithm_options.marginal_activation`, all twelve required; since 0.2.4 `all` writes
+  the selected preset out, §24.10): E1's six
   (§23), `mode` (`pf` or `full`), `activations` (K, 1–16), `top_k` (1–16), `delta_share` and
   `seed_share` (exact decimals; $\delta = \max(1, \lfloor A \cdot \texttt{delta\_share} \rfloor)$),
-  and `arm` (`treatment`, `work_matched`, `call_matched`). Nominee: the E1 nominee with `pf`, 2, 3,
-  0.0001, 0.0001, `treatment`. $H$ is the profile's `search.max_hops`.
+  and `arm` (`treatment`, `work_matched`, `call_matched`). The 0.2.3 nominee: the E1 nominee with
+  `pf`, 2, 3, 0.0001, 0.0001, `treatment`. $H$ is the profile's `search.max_hops`.
 - **Budgets:** one ledger with the base and E1 (§23). The label search, every simulation and the
   acceptance replay are charged. A cooperative stop is `ok` with
   `search.marginal_activation.truncated_by`; if it happens before E1 ends, the row is labelled
@@ -5369,7 +5585,7 @@ of 291 scored cases (§24.9).
 - **Measured work** (report split, the untimed work pass of [`research-023/results.md`](research-023/results.md)),
   against the A0 base: PF (A0) executes 1.305× its quotes, 1.046× its CL swap steps and 1.079× its
   LB bins swapped; full (A0) 2.260×, 1.448× and 1.283×, the only arm with a large physical cost.
-- **Time** is not claimed.
+- **Time** is not claimed. The 0.2.4 overhead over the base was not measured validly (§24.10).
 
 ### 24.9 Guarantees and Limitations
 - **Guarantees:** never worse than the base; an accepted activation has positive first-hop flow, a
@@ -5387,7 +5603,7 @@ of 291 scored cases (§24.9).
   - **Bases:** `incremental_graph` and `path_split` only (§23.7); the campaign ran E2 on
     `incremental_graph` with chunks 50 and 100 (A0, C100).
 
-**Measured on the report split (WHI-1627, contract §8).** The denominators are §23.9's: 302 scheduled
+**Measured on the report split in 0.2.3 (history; WHI-1627, contract `R023-C/1` §8).** The denominators are §23.9's: 302 scheduled
 cases per arm, 291 scored after the 10 zero-gross baselines. In 2 rows of each C100 E2 arm, E1 stopped
 at `max_quotes` before the activation stage, so the row is labelled `not_reached` ("activation/control
 not reached: E1 truncated"). These 2 PF-C100 rows stay in the 302 denominators, are excluded from the
@@ -5430,9 +5646,81 @@ own base):
   in every matched row: 0 above the work target, 0 call-count mismatches, 0 embedded-activation or
   target mismatches. At most 6 of an arm's 302 cells stopped at `max_quotes`: `E2full-A0`, and the
   call-matched control `E2pf-C100-cm` counting its 2 E1-truncated rows. `keep_experimental` is not
-  adoption: the identity stays opt-in and profile-selected, the controls are campaign arms only, and
-  no default changes.
+  adoption: in 0.2.3 the identity stayed opt-in and profile-selected, the controls were campaign arms
+  only, and no default changed.
 - **Evidence boundaries** are those of §23.9 (contract §8), and every figure is
   `report-analysis.json`'s as `report-tables.md` renders it (`r023_examples.py` section 26).
 - **Why the gain is small next to Jupiter's announcements:** §23.9. Activation is the lever P1 finds
   dominant, and it is the larger lever here too, but its measured size is still a fraction of a bps.
+
+### 24.10 Release 0.2.4: the Selected Preset and the 19-Strategy Campaign
+**The preset.** `config/marginal_activation/preset_v1.yaml` (key `R024-P02-marginal_activation`,
+version 1; WHI-1631): base `incremental_graph`, mode `pf`, 4 activations, top 9, `delta_share` 0.001,
+`seed_share` 0.0001, `arm` `treatment`, and the fixed E1 stage of the 0.2.3 nominee (`brent`, 2 rounds,
+tolerance 0.0001, grid 1000000000, `maxiter` 60): the registered candidate
+`ma|incremental_graph|pf|k4|top9|d1e-3`. Since 0.2.4 `--strategies all` runs `marginal_activation`
+with exactly these options as its 19th and last row (§11), recorded as `{kind: preset}`.
+
+**How it was chosen.** By the same rule as §23.10, under P\*, on the 96-case tuning split, among 108
+registered candidates on the two E2 bases.
+- **The outcome.** 93 of the 108 were eligible. The 15 others, all `full`-mode candidates, exceeded the
+  work limit of 2.0× the base's quotes, which therefore binds: it excludes the highest Q of the grid,
+  a `full`-mode candidate. The winner has the best Q, -2.7808, alone within 0.01 bps of it, +0.0995
+  above the next candidate. Q is negative because the reference is the per-case best of the five P\*
+  base arms: the `incremental_graph` base arm itself scores -3.819 against it. Against its own base on
+  the tuning split the winner gains +1.038 bps (82/14/0, 28 / 0 pairs). The 0.2.3 nominee ranks 21st
+  of the 93.
+- **The ladders.** The winner takes the edge of the registered ladder on three knobs (4 activations,
+  top 9, `delta_share` 0.001); better values may lie outside the ladders, which the claim does not
+  cover ([`research-024/selection.md`](research-024/selection.md) §4).
+- **The claim and its limit** are §23.10's: "selected by the registered rule `R024-C/1` §5.7 among
+  these 90 (`split_polish`) / 108 (`marginal_activation`) candidates under P\*, on the already exposed
+  tuning split", conditional on P\* and never transferred to another profile (§4.5). At 100 and 200
+  chunks under otherwise unchanged P\* the preset gains +0.7627 and +0.6178 bps over `incremental_graph`
+  at the same chunks (82/14/0 each, tuning split): results at those settings.
+
+**Measured on the report split in 0.2.4** (WHI-1633, [`research-024/results.md`](research-024/results.md);
+denominators and notation as in §23.10). The base control (BASE-E2) is the `incremental_graph` row of
+the same run. The attribution arms run on `full_source`: `E2-E1only` is E2's own E1 stage on its base
+(a separate arm, because `split_polish`'s preset is a different configuration), and `E2-wm` / `E2-cm`
+are the preset with `arm` `work_matched` / `call_matched`.
+
+| Cohort, vs `incremental_graph` | Scored / scheduled | H/E/L | Mean bps | p50 | p95 | Pairs net + / − |
+|---|---|---|---|---|---|---|
+| `full_source` | 291 / 302 | 224/67/0 | +0.950 | 0.505 | 3.252 | 28 / 0 |
+| `sor_compatible` | 288 / 302 | 229/59/0 | +0.892 | 0.463 | 3.001 | 28 / 0 |
+
+| `marginal_activation` vs | Scored / scheduled | H/E/L | Mean bps | p50 | p95 | Pairs net + / − |
+|---|---|---|---|---|---|---|
+| `E2-E1only` (E2's own E1 stage on its base) | 291 / 302 | 213/78/0 | +0.503 | 0.216 | 1.753 | 28 / 0 |
+| `E2-wm` (work-matched control) | 291 / 302 | 212/74/5 | +0.499 | 0.215 | 1.753 | 28 / 0 |
+| `E2-cm` (call-matched control) | 291 / 302 | 208/76/7 | +0.484 | 0.165 | 1.753 | 28 / 0 |
+
+- **Never below its base.** 0 lower cases on either cohort; 0 gate failures.
+- **The activation is about half of the gain.** E2's E1 stage alone (`E2-E1only`) already improves its
+  base, so E2's +0.950 over its base splits into about +0.45 from E1 and +0.50 from activation. The
+  matched controls spend the activation's budget on more E1 polishing and recover almost none of it.
+  Both controls are matched on all 301 `ok` cells (the `no_route` case is the 1 non-`ok` cell), with 0
+  audit defects.
+- **Next to 0.2.3 (history).** In 0.2.3 the PF nominee on A0 was +0.210 bps over its work-matched
+  control, 209/78/4 (§24.9 Q3); the selected preset is +0.499, 212/74/5. `E2-E1only` reproduces 0.2.3's
+  `E1b-A0` work pass exactly.
+- **Tuning against report.** +1.038 on the tuning split, +0.950 on `full_source`; against the three
+  attribution arms +0.503 / +0.499 / +0.484 on the report split (`results.md` §5).
+- **Against the other rows** (`full_source`, rankable; H/E/L, mean bps): `incremental_graph_repair`
+  223/67/1, +0.912; `metis_inspired` 153/58/80, -0.457 and `metis_history` 150/57/84, -1.696, higher in
+  more cases but with negative means (against `metis_history` the minimum is the same boundary dust
+  case, -351.107 bps); `split_polish` 134/58/99, -0.953. It equals the per-case best of the 13
+  all-protocol rows on 190 of 291 scored cases, more often than any other row; an envelope, not a
+  portfolio.
+- **Work** (untimed work pass): 11,581,715 quotes against the base's 8,591,807 (1.348×), CL swap
+  steps 1.063×, LB bins 1.097×. The controls have no work pass; their charged quotes (11,373,837
+  work-matched, 18,470,093 call-matched) and the uncharged activation embedded in them (622,672 quotes
+  over 301 cells) are reported apart.
+- **Disposition (contract §9.1): `keep_experimental`.** As §23.10, plus complete attribution arms, 0
+  control-audit defects and no control above its target. Not adoption.
+- **Time is not claimed.** `UP` ended `inconclusive (cap_exhausted)`: the overhead of
+  `marginal_activation` over `incremental_graph` was not measured validly (§13 item 17).
+- **Fixture and campaign are separate.** The §11 row (10000663636, under `config/daily_gross.yaml` on
+  the 19-pool fixture) accepts no branch; that one request says nothing about the activation's
+  campaign gain, and no figure above describes it.

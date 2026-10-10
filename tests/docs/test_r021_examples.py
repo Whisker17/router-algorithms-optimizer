@@ -172,7 +172,8 @@ def test_cfmm_dual_example() -> None:
 
 
 def test_real_state_walkthrough_has_every_row_of_the_all_roster() -> None:
-    """The fourteen 0.2.1 rows plus the three 0.2.2 bounded rows (WHI-1599, WHI-1600; `all`)."""
+    """The fourteen 0.2.1 rows, the three 0.2.2 bounded rows (WHI-1599, WHI-1600) and the two
+    0.2.3 post-processors with their selected presets (WHI-1632; `all`)."""
     d = data("real_state")
     rows = {r["algorithm"]: r for r in d["rows"]}
     assert list(rows) == [
@@ -193,6 +194,8 @@ def test_real_state_walkthrough_has_every_row_of_the_all_roster() -> None:
         "single_path_bounded",
         "incremental_graph_bounded",
         "metis_history_bounded",
+        "split_polish",
+        "marginal_activation",
     ]
     assert d["bundle"]["pools"] == 19 and d["bundle"]["block"]["number"] == 101082044
     for name in ("metis_history", "incremental_graph_repair", "incremental_graph"):
@@ -201,6 +204,12 @@ def test_real_state_walkthrough_has_every_row_of_the_all_roster() -> None:
         assert rows[name]["score"] == rows[name.removesuffix("_bounded")]["score"]
     for name in ("direct", "uni_sor_cycle_safe", "cfmm_dual"):
         assert rows[name]["score"] == 10000660449
+    # WHI-1632: never worse than their bases (metis_inspired / incremental_graph, 10000663447)
+    assert rows["split_polish"]["score"] == 10000663635 > rows["metis_inspired"]["score"]
+    assert rows["marginal_activation"]["score"] == 10000663636 > rows["incremental_graph"]["score"]
+    for name, key in (("split_polish", "R024-P01-split_polish"),
+                      ("marginal_activation", "R024-P02-marginal_activation")):  # fmt: skip
+        assert rows[name]["options"]["source"]["key"] == key
     assert rows["direct_split_certified"]["status"] == "unsupported"
     assert rows["direct_split_certified"]["scope"]["reason"] == "non_constant_product_direct_pool"
     assert rows["cfmm_dual"]["options"]["source"]["version"] == 2

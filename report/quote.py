@@ -55,6 +55,7 @@ from report.aggregate import (
     _verified_bundle,
     bundle_path_from_replay,
     metis_settings,
+    options_provenance,
     strategy_groups,
     strategy_recipe,
 )
@@ -560,6 +561,41 @@ def _bound_pruning_lines(record: dict[str, Any]) -> list[str]:
     ]
 
 
+POST_PROCESSORS = ("split_polish", "marginal_activation")  # their `search.<name>` block
+
+
+def _post_processor_lines(view: QuoteView, name: str, record: dict[str, Any]) -> list[str]:
+    """WHI-1632: the recorded options provenance and the `search.base` / `search.<name>`
+    counters of a post-processor (R023-C/1 E1/E2); empty for any other algorithm and for a
+    terminated record without the blocks (nothing is defaulted)."""
+    raw = record.get("search")
+    search: dict[str, Any] = raw if isinstance(raw, dict) else {}
+    block, base = search.get(name), search.get("base")
+    if name not in POST_PROCESSORS or not isinstance(block, dict):
+        return []
+    base = base if isinstance(base, dict) else {}
+    lines = [
+        f"  post-processor ({block.get('contract')}): options "
+        f"{options_provenance(view.manifest, name) or 'not recorded'}",
+        f"    base {block.get('base')}: status {_na(base.get('status'))}, quotes "
+        f"{_na(base.get('quotes'))}, gross {_na(block.get('base_gross'))}",
+        f"    result: gross {_na(block.get('gross'))}, own quotes {_na(block.get('quotes'))}, "
+        f"scope {_na(block.get('scope'))}, truncated by {block.get('truncated_by') or 'none'}"
+        + (f", reason {block['reason']}" if block.get("reason") else ""),
+    ]
+    stages = [("E1 polish", block.get("e1")), ("activation", block.get("activation"))]
+    for label, stage in stages:
+        if isinstance(stage, dict):
+            lines.append(
+                f"    {label}: gross {_na(stage.get('gross'))}, quotes {_na(stage.get('quotes'))}"
+                + (f", invocations {stage['invocations']}" if "invocations" in stage else "")
+                + f", truncated by {stage.get('truncated_by') or 'none'}"
+            )
+    if block.get("not_reached"):
+        lines.append(f"    {block['not_reached']}")
+    return lines
+
+
 def _diagnostics_lines(record: dict[str, Any]) -> list[str]:
     """The record's research-diagnostics block; empty for a record without one."""
     view = read_view(record)
@@ -633,6 +669,7 @@ def render_details(view: QuoteView) -> str:
                 lines += _plan_lines(view, candidate["evaluation"], "    ")
         lines += _performance_lines(view, record)
         lines += _bound_pruning_lines(record)
+        lines += _post_processor_lines(view, name, record)
         lines += _diagnostics_lines(record)
     return "\n".join(lines) + "\n"
 

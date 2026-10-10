@@ -244,6 +244,17 @@ def _strategy_groups(run: RunData, min_samples: int) -> str:
                     left=5,
                 )  # fmt: skip
             )
+        options = [  # WHI-1632: each options identity's recorded preset or override
+            [f"<code>{esc(algorithm)}</code>", esc(note)]
+            for algorithm in members
+            if (note := agg.options_provenance(run.manifest, algorithm)) is not None
+        ]
+        if options:
+            parts.append(
+                "<p class='note'>Algorithm options as recorded in this run (a preset is named "
+                "only when the options equal its sha256-pinned file):</p>"
+                + table(["strategy", "options provenance"], options, left=2)
+            )
     return "".join(parts)
 
 

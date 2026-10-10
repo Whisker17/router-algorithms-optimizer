@@ -301,11 +301,11 @@ def test_registered_once_after_uni_sor_cycle_safe_and_appended_by_all() -> None:
             source_path=f"config/{name}",
             source_sha256="x",
         )
-        assert list(profile.algorithms)[-5:] == [
+        assert list(profile.algorithms)[-7:] == [
             uni_sor_cycle_safe.NAME, NAME, "single_path_bounded", "incremental_graph_bounded",
-            "metis_history_bounded",
+            "metis_history_bounded", "split_polish", "marginal_activation",
         ]  # fmt: skip
-        assert len(profile.algorithms) == 17  # WHI-1599/1600 append the bounded identities
+        assert len(profile.algorithms) == 19  # WHI-1599/1600, WHI-1632 append after it
         # WHI-1559: `all` writes out the CURRENT preset, cfmm_dual/2 (the CL stage)
         assert document["algorithm_options"][NAME] == preset_options(FACTORY) != PRESET
         assert profile.algorithm_options[NAME]["source"]["kind"] == "preset"
@@ -1253,8 +1253,10 @@ def test_saved_pre_whi_1558_profiles_replay_literally() -> None:
             "single_path_bounded",
             "incremental_graph_bounded",
             "metis_history_bounded",
+            "split_polish",
+            "marginal_activation",
             *later[:k],
-        ]  # WHI-1599/1600 are added after this identity
+        ]  # WHI-1599/1600, WHI-1632 are added after this identity
         saved = json.loads(json.dumps(document))
         saved["algorithms"] = [a for a in saved["algorithms"] if a not in drop]
         saved["selection"]["groups"]["custom"] = [

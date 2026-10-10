@@ -42,6 +42,7 @@ ALL17 = [
     "direct_split_certified", "incremental_graph_repair", "uni_sor_cycle_safe", "cfmm_dual",
     "single_path_bounded", "incremental_graph_bounded", "metis_history_bounded",
 ]  # fmt: skip
+LIVE = [*ALL17, "split_polish", "marginal_activation"]  # WHI-1632: today's `--strategies all`
 
 
 def _load(name: str) -> ModuleType:
@@ -413,11 +414,17 @@ def test_disposition_is_inconclusive_without_a_pruned_cell_and_names_the_timing_
 # ----------------------------------------------------------------------------- stage I
 
 
-def test_all_17_ids_batch_report_replay_and_order_check_on_the_fixture(tmp_path: Path) -> None:
+def test_all_17_ids_batch_report_replay_and_order_check_on_the_fixture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     raw = fixture_raw([])
     inv = yaml.safe_load((REPO / "config/research_022/schedule.yaml").read_text())["invocations"][0]
-    assert inv["id"] == "I-batch17"
-    raw["invocations"] = [inv]
+    assert inv["id"] == "I-batch17" and inv["algorithms"] == ALL17
+    # WHI-1632: a re-execution today runs the live 19-identity `main.py run --strategies all`, so
+    # this fixture registers (and derives) the live roster; the frozen `all17` schedule itself is
+    # checked by `test_the_committed_schedule_files_and_roster_are_consistent`.
+    raw["invocations"] = [{**inv, "algorithms": LIVE}]
+    monkeypatch.setattr(C, "FROZEN_ADDITIONS", tuple(LIVE[LIVE.index("metis_history") :]))
     campaign = mini_campaign(tmp_path, raw)
     root = tmp_path / "root"
     C.prepare_inputs(campaign, REPO, root / "inputs")
@@ -430,13 +437,14 @@ def test_all_17_ids_batch_report_replay_and_order_check_on_the_fixture(tmp_path:
         "I-batch17": "ok", "I-batch17.report": "ok", "I-batch17.replay": "ok",
         "I-batch17.order": "ok"}  # fmt: skip
     manifest = load_manifest(ledger["I-batch17"]["run_dir"])
-    assert list(manifest.algorithms) == ALL17
+    assert list(manifest.algorithms) == LIVE
     replay = load_manifest(ledger["I-batch17.replay"]["run_dir"])
-    assert list(replay.algorithms) == ALL17 and replay.case_count == manifest.case_count
+    assert list(replay.algorithms) == LIVE and replay.case_count == manifest.case_count
     report = out / "I-batch17.report" / "report"
     assert report.is_dir()
     html = "\n".join(p.read_text(errors="replace") for p in report.rglob("*.html"))
-    for name in ("single_path_bounded", "incremental_graph_bounded", "metis_history_bounded"):
+    for name in ("single_path_bounded", "incremental_graph_bounded", "metis_history_bounded",
+                 "split_polish", "marginal_activation"):
         assert name in html
     # the group profiles run the strategies with exactly the settings the 17-ID run recorded
     resolved = manifest.resolved_profile
@@ -456,7 +464,7 @@ def test_all_17_ids_batch_report_replay_and_order_check_on_the_fixture(tmp_path:
     assert [p for p in result["reconciliation_problems"] if "dirty tree" not in p] == []
     assert set(result["invocations"]) == {"I-batch17", "I-batch17.report", "I-batch17.replay",
                                           "I-batch17.order"}  # fmt: skip
-    assert set(result["invocations"]["I-batch17"]["status_counts"]) == set(ALL17)
+    assert set(result["invocations"]["I-batch17"]["status_counts"]) == set(LIVE)
     assert result["invocations"]["I-batch17.replay"]["status_counts"] == result["invocations"][
         "I-batch17"]["status_counts"]  # fmt: skip
     assert result["invocations"]["I-batch17"]["holdout_exposure"] == "not_a_corpus_split"
