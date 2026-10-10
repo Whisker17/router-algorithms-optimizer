@@ -1496,10 +1496,10 @@ def verify_unit(
             )
             if moment is not None:
                 # §8.4 item 2: what was detectable by the abort: the load samples and capture lines
-                # up to it, the experiments ended by then; the capture's success and the caffeinate
-                # holding are recorded only at the window end and the driver never aborts on the
-                # former
-                by_then = [x for x in run_here if (_num(x.get("t_end")) or math.inf) <= moment]
+                # up to it, the experiments ended before it (not the one the abort stopped); the
+                # capture's success and the caffeinate holding are recorded only at the window end
+                # and the driver never aborts on the former
+                by_then = [x for x in run_here if (_num(x.get("t_end")) or math.inf) < moment]
                 detected = attempt_validity(
                     **evidence,
                     experiments=by_then,

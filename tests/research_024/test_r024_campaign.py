@@ -819,6 +819,111 @@ def test_the_reviewers_round_2_reproductions_never_certify(tmp_path: Path) -> No
         assert "U2: the retained evidence supports no terminal outcome" in found[what]["problems"]
 
 
+# WHI-1747 (release review R3-F1, R3-F2, R3-F3): an abort's reason is an event detected by its
+# time, experiment records are reconciled by identity as well as time, a load sample is never
+# negative.
+
+
+def test_the_reviewers_round_3_reproductions_never_certify(tmp_path: Path) -> None:
+    """The three certified cases of round 3 (`review-r3/reviewer-probes/probes.py`), verbatim, on
+    the driver's own fixtures; plus a T4 abort whose only support would be the pmset capture that
+    fails at the window end."""
+    stages = _perturbation_stages(tmp_path)
+    found = {
+        # R3-F1: the T1 abort moved to the attempt start, before the first sample above T1
+        "abort_before_trigger": _perturbed(
+            stages["retried"],
+            lambda es, ss: _set(es, "abort", "t", _of(es, "attempt_start")[0]["t_start"]),
+        ),
+        # R3-F2: the U2 start renamed, its time unchanged
+        "wrong_experiment_start_identity": _perturbed(
+            stages["valid"], lambda es, ss: _set(es, "experiment_start", "experiment", "UP-cand")
+        ),
+        # R3-F3: the passing gate's loads -1.0, in the gate, load.jsonl and its peak
+        "negative_gate_load": _perturbed(
+            stages["valid"],
+            lambda es, ss: (
+                _move(es, ss, _group_times(es), load1=-1.0),
+                _set(es, "launch_gate", "max_load1", -1.0),
+            ),
+        ),
+    }
+    for what, analysis in found.items():
+        assert _refuted(analysis), what
+        assert analysis["statements"]["usable_latency_obtained"] == [], what
+    assert found["abort_before_trigger"]["problems"] == [
+        "U2: recorded outcome {'outcome': 'valid', 'attempt': 'L-U2-a2', 'invalid_attempts': None} "
+        "differs from the evidence {'outcome': 'inconclusive_protocol_breach'}"
+    ]
+    assert found["wrong_experiment_start_identity"]["problems"] == [
+        "L-U2-a1: its experiment and abort records are not its registered experiments, each "
+        "started then ended in order"
+    ]
+    assert (
+        "load.jsonl: 10 samples without a time and a nonnegative load"
+        in found["negative_gate_load"]["problems"]
+    )
+    # a T4 abort with the capture missing, recorded consistently: the capture fails only at the
+    # window end, after the abort, and the driver never aborts on it
+    stage = stages["retried"]
+    pmset = stage.out / "U2" / "a1" / "pmset.txt"
+    kept = pmset.read_text()
+    pmset.unlink()
+    try:
+        analysis = _perturbed(
+            stage,
+            lambda es, ss: (
+                _abort_reason(es, "T4_sleep_prevention_or_capture"),
+                _set(
+                    es,
+                    "attempt_validity",
+                    "triggers",
+                    ["T1_load", "T4_sleep_prevention_or_capture", "T5_incomplete_execution"],
+                    attempt="L-U2-a1",
+                ),
+            ),
+        )
+    finally:
+        pmset.write_text(kept)
+    assert "'inconclusive_protocol_breach'" in " ".join(_refuted(analysis))
+
+
+def test_the_drivers_t3_and_t4_aborts_verify_clean(tmp_path: Path) -> None:
+    """An abort the driver records on a detected T3 (a DarkWake in the capture) or T4 (caffeinate
+    gone) is supported by the evidence up to it: the unit verifies, its retry is selected."""
+    start = 1_800_000_000.0
+    stamp = _datetime_stamp(start + 300)
+    sleep = _stage(
+        tmp_path / "t3",
+        FakeHost(pmset=f"{stamp} DarkWake            \tDarkWake from Deep Idle"),
+        ["U2"],
+    )
+    host = FakeHost()
+    awake = _stage(tmp_path / "t4", host, ["U2"])
+    dead: list[Any] = []
+
+    def popen(argv: list[str], **kwargs: Any) -> Any:
+        proc = host.popen(argv, **kwargs)
+        if argv[0] == "caffeinate" and not dead:  # the stage's first caffeinate dies at +300 s
+            proc.ends = start + 300
+            dead.append(proc)
+        return proc
+
+    awake.popen = popen
+    for stage, trigger in ((sleep, "T3_sleep"), (awake, "T4_sleep_prevention_or_capture")):
+        stage.run()
+        assert [e["trigger"] for e in _events(stage, "abort")] == [trigger]
+        analysis = _verified(stage)
+        assert analysis["problems"] == [], trigger
+        assert analysis["units"]["U2"]["outcome"]["attempt"] == "L-U2-a2"
+
+
+def _datetime_stamp(moment: float) -> str:
+    from datetime import UTC, datetime
+
+    return datetime.fromtimestamp(moment, UTC).strftime("%Y-%m-%d %H:%M:%S +0000")
+
+
 def _perturbed(
     stage: Any, change: Callable[[list[dict[str, Any]], list[dict[str, Any]]], Any]
 ) -> Any:
@@ -913,6 +1018,29 @@ def _resampled_late(
 def _start_late(entries: list[dict[str, Any]], seconds: float) -> None:
     for kind in ("attempt_start", "attempt_end"):
         _set(entries, kind, "t_start", lambda e: e["t_start"] + seconds)
+
+
+def _swap(entries: list[dict[str, Any]], a: dict[str, Any], b: dict[str, Any]) -> None:
+    """Two records' places in the ledger exchanged."""
+    i, j = entries.index(a), entries.index(b)
+    entries[i], entries[j] = b, a
+
+
+def _rename(entries: list[dict[str, Any]], old: str, new: str) -> None:
+    """Experiment `old` called `new` in every record of it (start, end and attempt_end)."""
+    for e in [
+        *_of(entries, "experiment_start"),
+        *_of(entries, "experiment_end"),
+        *(x for a in _of(entries, "attempt_end") for x in a["experiments"]),
+    ]:
+        if e["experiment"] == old:
+            e["experiment"] = new
+
+
+def _abort_reason(entries: list[dict[str, Any]], trigger: str) -> None:
+    """The first attempt's abort recorded with another reason, in the abort and attempt_end."""
+    _set(entries, "abort", "trigger", trigger)
+    _set(entries, "attempt_end", "aborted", trigger, attempt="L-U2-a1")
 
 
 PERTURBATIONS: dict[str, tuple[str, Callable[..., Any]]] = {
@@ -1103,6 +1231,59 @@ PERTURBATIONS: dict[str, tuple[str, Callable[..., Any]]] = {
     "abort: the interrupted attempt's after the next gate": (
         "resumed",
         lambda es, ss: _set(es, "abort", "t", lambda e: e["t"] + 5000),
+    ),
+    # WHI-1747 (release review round 3): abort timing, experiment identity, load-sample domain
+    "abort: before its triggering sample": (
+        "retried",
+        lambda es, ss: _set(es, "abort", "t", lambda e: e["t"] - 30),
+    ),
+    "abort: for T5, the experiment it stopped": (
+        "retried",
+        lambda es, ss: _abort_reason(es, "T5_incomplete_execution"),
+    ),
+    "abort: for T3 without a sleep entry": (
+        "retried",
+        lambda es, ss: _abort_reason(es, "T3_sleep"),
+    ),
+    "abort: for T4 with caffeinate held": (
+        "retried",
+        lambda es, ss: _abort_reason(es, "T4_sleep_prevention_or_capture"),
+    ),
+    "abort: names another experiment": (
+        "retried",
+        lambda es, ss: _set(es, "abort", "experiment", "UP-cand"),
+    ),
+    "abort: after its experiment's end": (
+        "retried",
+        lambda es, ss: _swap(es, _of(es, "abort")[0], _of(es, "experiment_end")[0]),
+    ),
+    "experiment: started twice": (
+        "valid",
+        lambda es, ss: es.insert(
+            es.index(_of(es, "experiment_start")[0]), copy.deepcopy(_of(es, "experiment_start")[0])
+        ),
+    ),
+    "experiment: another one started after the abort": (
+        "retried",
+        lambda es, ss: es.insert(
+            es.index(_of(es, "experiment_end")[0]) + 1, {**_of(es, "experiment_start")[0]}
+        ),
+    ),
+    "experiment: labels out of the registered order": (
+        "quote",
+        lambda es, ss: (_rename(es, "q2", "qx"), _rename(es, "q3", "q2"), _rename(es, "qx", "q3")),
+    ),
+    "experiment: the interrupted one's start of another unit": (
+        "resumed",
+        lambda es, ss: _set(es, "experiment_start", "experiment", "U2", attempt="L-U4-a1"),
+    ),
+    "abort: the interrupted one's before its experiment started": (
+        "resumed",
+        lambda es, ss: _set(es, "abort", "t", lambda e: e["t"] - 100),
+    ),
+    "load: a negative sample in the attempt": (
+        "valid",
+        lambda es, ss: ss[-3].update(load1=-1.0),
     ),
     # stage-wide evidence
     "load: a sample without a load": ("valid", lambda es, ss: ss[len(ss) // 2].update(load1=None)),
