@@ -658,20 +658,26 @@ def test_recorded_validity_must_match_the_retained_evidence(tmp_path: Path) -> N
 def test_the_experiments_are_read_from_the_attempts_own_slot(tmp_path: Path) -> None:
     stage = _stage(tmp_path, FakeHost(), ["U2"])
     stage.run()
-    # the attempt's experiment moved out of its slot, the ledger pointing at the moved copy
-    moved = tmp_path / "elsewhere" / "U2"
-    shutil.move(stage.out / "U2" / "a1" / "U2", moved)
+    # the attempt's own experiment interrupted, the ledger pointing at a complete copy elsewhere
+    own = stage.out / "U2" / "a1" / "U2"
+    copy_ = shutil.copytree(own, tmp_path / "elsewhere" / "U2")
+    record = own / "exp" / "experiment.json"
+    record.write_text(json.dumps({**json.loads(record.read_text()), "state": "interrupted"}))
     _rewrite(
         stage,
         lambda es: [
-            {**e, "experiments": [{**x, "dir": str(moved)} for x in e["experiments"]]}
+            {**e, "experiments": [{**x, "dir": str(copy_)} for x in e["experiments"]]}
             if e["event"] == "attempt_end"
             else e
             for e in es
         ],
     )
     problems = _refuted(_verified(stage))
-    assert any(p.startswith("L-U2-a1: recorded validity True") for p in problems)
+    assert problems == [
+        "L-U2-a1: recorded validity True [] differs from the retained evidence: False "
+        "['T5_incomplete_execution']",
+        "U2: the retained evidence supports no terminal outcome",
+    ]
 
 
 def test_an_attempt_needs_its_passing_gate_and_its_place_in_the_sequence(tmp_path: Path) -> None:
