@@ -1603,8 +1603,8 @@ def analyze_timing(
         for s in retained
         if isinstance(s, Mapping)
         and _num(s.get("t")) is not None
-        and (load := _num(s.get("load1"))) is not None
-        and load >= 0  # a load average is never negative (WHI-1747)
+        and (level := _num(s.get("load1"))) is not None
+        and level >= 0  # a load average is never negative (WHI-1747)
     ]
     problems: list[str] = []
     if len(samples) != len(retained):

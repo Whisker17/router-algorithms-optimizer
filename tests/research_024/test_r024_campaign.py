@@ -839,14 +839,8 @@ def test_the_reviewers_round_3_reproductions_never_certify(tmp_path: Path) -> No
         "wrong_experiment_start_identity": _perturbed(
             stages["valid"], lambda es, ss: _set(es, "experiment_start", "experiment", "UP-cand")
         ),
-        # R3-F3: the passing gate's loads -1.0, in the gate, load.jsonl and its peak
-        "negative_gate_load": _perturbed(
-            stages["valid"],
-            lambda es, ss: (
-                _move(es, ss, _group_times(es), load1=-1.0),
-                _set(es, "launch_gate", "max_load1", -1.0),
-            ),
-        ),
+        # R3-F3
+        "negative_gate_load": _perturbed(stages["valid"], _negative_gate),
     }
     for what, analysis in found.items():
         assert _refuted(analysis), what
@@ -869,20 +863,14 @@ def test_the_reviewers_round_3_reproductions_never_certify(tmp_path: Path) -> No
     pmset = stage.out / "U2" / "a1" / "pmset.txt"
     kept = pmset.read_text()
     pmset.unlink()
+
+    def recorded_t4(es: list[dict[str, Any]], ss: list[dict[str, Any]]) -> None:
+        _abort_reason(es, "T4_sleep_prevention_or_capture")
+        triggers = ["T1_load", "T4_sleep_prevention_or_capture", "T5_incomplete_execution"]
+        _set(es, "attempt_validity", "triggers", triggers, attempt="L-U2-a1")
+
     try:
-        analysis = _perturbed(
-            stage,
-            lambda es, ss: (
-                _abort_reason(es, "T4_sleep_prevention_or_capture"),
-                _set(
-                    es,
-                    "attempt_validity",
-                    "triggers",
-                    ["T1_load", "T4_sleep_prevention_or_capture", "T5_incomplete_execution"],
-                    attempt="L-U2-a1",
-                ),
-            ),
-        )
+        analysis = _perturbed(stage, recorded_t4)
     finally:
         pmset.write_text(kept)
     assert "'inconclusive_protocol_breach'" in " ".join(_refuted(analysis))
@@ -1026,15 +1014,20 @@ def _swap(entries: list[dict[str, Any]], a: dict[str, Any], b: dict[str, Any]) -
     entries[i], entries[j] = b, a
 
 
-def _rename(entries: list[dict[str, Any]], old: str, new: str) -> None:
-    """Experiment `old` called `new` in every record of it (start, end and attempt_end)."""
+def _relabel(entries: list[dict[str, Any]], names: dict[str, str]) -> None:
+    """Experiments renamed by `names` in every record of them (start, end and attempt_end)."""
     for e in [
         *_of(entries, "experiment_start"),
         *_of(entries, "experiment_end"),
         *(x for a in _of(entries, "attempt_end") for x in a["experiments"]),
     ]:
-        if e["experiment"] == old:
-            e["experiment"] = new
+        e["experiment"] = names.get(e["experiment"], e["experiment"])
+
+
+def _negative_gate(entries: list[dict[str, Any]], samples: list[dict[str, Any]]) -> None:
+    """R3-F3: the passing gate's loads -1.0, in the gate, load.jsonl and its recorded peak."""
+    _move(entries, samples, _group_times(entries), load1=-1.0)
+    _set(entries, "launch_gate", "max_load1", -1.0)
 
 
 def _abort_reason(entries: list[dict[str, Any]], trigger: str) -> None:
@@ -1271,7 +1264,7 @@ PERTURBATIONS: dict[str, tuple[str, Callable[..., Any]]] = {
     ),
     "experiment: labels out of the registered order": (
         "quote",
-        lambda es, ss: (_rename(es, "q2", "qx"), _rename(es, "q3", "q2"), _rename(es, "qx", "q3")),
+        lambda es, ss: _relabel(es, {"q2": "q3", "q3": "q2"}),
     ),
     "experiment: the interrupted one's start of another unit": (
         "resumed",
