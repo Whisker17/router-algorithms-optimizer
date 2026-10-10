@@ -1300,7 +1300,12 @@ def verify_unit(
     complete failing groups re-sampled over the whole window. An attempt window must end after its
     start and contain every execution record of the attempt (experiment starts and ends, aborts),
     which must agree with `attempt_end`; the triggers are evaluated over the window that contains
-    them."""
+    them.
+
+    WHI-1747: an attempt's experiment and abort records, in ledger order, are its registered
+    experiments by name, each started then ended, an abort only inside the last one, their times
+    never running backwards from the attempt start; an abort's reason must be an event detected by
+    the abort's time (`attempt_validity` over the window up to it)."""
     timing = raw["timing"]
     launch = timing["launch"]
     tolerance = CADENCE_TOLERANCE_SECONDS
@@ -1316,6 +1321,7 @@ def verify_unit(
     executed: dict[str, dict[str, list[Mapping[str, Any]]]] = {
         kind: defaultdict(list) for kind in ("abort", "experiment_start", "experiment_end")
     }
+    trail: dict[str, list[Mapping[str, Any]]] = defaultdict(list)  # the three, in ledger order
     gates: dict[Any, list[tuple[int, Mapping[str, Any]]]] = defaultdict(list)
     gave_up: dict[Any, Mapping[str, Any]] = {}
     run = 0  # driver runs (`stage` entries) so far
@@ -1333,6 +1339,7 @@ def verify_unit(
             gave_up[e.get("attempt")] = e
         elif kind in executed and attempt.startswith(prefix):
             executed[str(kind)][attempt].append(e)
+            trail[attempt].append(e)
         elif e.get("unit") != name:
             continue
         elif kind == "attempt_start":
@@ -1388,6 +1395,26 @@ def verify_unit(
         times = [t for t in map(_num, stamps) if t is not None]
         if len(times) != len(stamps):
             problems.append(f"{attempt}: an execution record without a valid time")
+        # §8.2/§8.5: the experiments by identity, as the driver runs them (an interrupted attempt
+        # may stop inside its last experiment, before that experiment's end record)
+        names = [x.get("experiment") for x in trail[attempt] if x["event"] == "experiment_start"]
+        shape = [(k, n) for n in names for k in ("experiment_start", "experiment_end")]
+        if aborts[attempt] and names:
+            shape.insert(len(shape) - 1, ("abort", names[-1]))
+        if names != unit_experiments(unit)[: len(names)] or [
+            (x["event"], x.get("experiment")) for x in trail[attempt]
+        ] not in [shape, *([shape[:-1]] if end.get("aborted") == "driver_interrupted" else [])]:
+            problems.append(
+                f"{attempt}: its experiment and abort records are not its registered experiments, "
+                "each started then ended in order"
+            )
+        moments = [  # an end record's own start is its start record's (checked below)
+            t
+            for x in trail[attempt]
+            if (t := _num(x.get("t_end" if x["event"] == "experiment_end" else "t"))) is not None
+        ]
+        if any(b < a for a, b in zip([start, *moments], moments, strict=False)):
+            problems.append(f"{attempt}: its experiment and abort records run backwards in time")
         triggers = [x.get("trigger") for x in aborts[attempt]]
         if triggers != ([end["aborted"]] if end.get("aborted") else []) and not (
             end.get("aborted") == "driver_interrupted" and not triggers
@@ -1398,6 +1425,7 @@ def verify_unit(
             )
         cpu_count, awake_started = host.get(attempt, (None, None))
         derived: dict[str, Any] = {"valid": False, "triggers": ["T5_incomplete_execution"]}
+        detected: list[str] = []  # the events detected by the abort's time
         previous_end = max([start, *times])
         if end.get("t_end") is not None and cpu_count is not None:
             if end.get("t_start") != starts[attempt]["t_start"]:
@@ -1438,25 +1466,48 @@ def verify_unit(
             ):
                 problems.append(f"{attempt}: its experiments do not run one after another")
             pmset = out / name / f"a{k}" / "pmset.txt"
+            pmset_text = pmset.read_text(encoding="utf-8") if pmset.is_file() else None
+            # each experiment read from this attempt's own slot, where the driver ran it
+            run_here = [
+                {**x, "dir": str(out / name / f"a{k}" / str(x.get("experiment")))}
+                for x in listed
+                if isinstance(x, Mapping)
+            ]
+            evidence: dict[str, Any] = {
+                "unit": unit,
+                "start": min([start, *times]),
+                "samples": samples,
+                "cpus": int(cpu_count),
+                "validity": timing["validity"],
+                "caffeinate_held": end.get("caffeinate_held") is True,
+                "caffeinate_started": _num(awake_started),
+            }
             derived = attempt_validity(
-                unit=unit,
-                # each experiment read from this attempt's own slot, where the driver ran it
-                experiments=[
-                    {**x, "dir": str(out / name / f"a{k}" / str(x.get("experiment")))}
-                    for x in listed
-                    if isinstance(x, Mapping)
-                ],
-                start=min([start, *times]),
+                **evidence,
+                experiments=run_here,
                 end=previous_end,
-                samples=samples,
-                cpus=int(cpu_count),
-                validity=timing["validity"],
-                pmset_text=pmset.read_text(encoding="utf-8") if pmset.is_file() else None,
-                caffeinate_held=end.get("caffeinate_held") is True,
-                caffeinate_started=_num(awake_started),
+                pmset_text=pmset_text,
                 aborted=end.get("aborted"),
                 expected=unit_experiments(unit),
             )
+            moment = min(
+                (t for t in map(_num, (x.get("t") for x in aborts[attempt])) if t is not None),
+                default=None,
+            )
+            if moment is not None:
+                # §8.4 item 2: what was detectable by the abort: the load samples and capture lines
+                # up to it, the experiments ended by then; the capture's success and the caffeinate
+                # holding are recorded only at the window end and the driver never aborts on the
+                # former
+                by_then = [x for x in run_here if (_num(x.get("t_end")) or math.inf) <= moment]
+                detected = attempt_validity(
+                    **evidence,
+                    experiments=by_then,
+                    end=moment,
+                    pmset_text=pmset_text or "",
+                    aborted=None,
+                    expected=[str(x.get("experiment")) for x in by_then],
+                )["triggers"]
         elif end.get("aborted") != "driver_interrupted":  # §10.4: only that one has no window end
             problems.append(f"{attempt}: no attempt end, window or CPU count to evaluate")
         mine = recorded.get(attempt) or {}
@@ -1467,7 +1518,7 @@ def verify_unit(
                 f"from the retained evidence: {derived['valid']} {derived['triggers']}"
             )
         reasons = {*map(str, triggers), *([end["aborted"]] if end.get("aborted") else [])}
-        if any(r != "driver_interrupted" and r not in derived["triggers"] for r in reasons):
+        if any(r != "driver_interrupted" and r not in detected for r in reasons):
             breach = True  # §8.4 item 2: an abort without a detected T1-T5 event
         if derived["valid"]:
             valid.append(attempt)
@@ -1552,12 +1603,14 @@ def analyze_timing(
         for s in retained
         if isinstance(s, Mapping)
         and _num(s.get("t")) is not None
-        and _num(s.get("load1")) is not None
+        and (load := _num(s.get("load1"))) is not None
+        and load >= 0  # a load average is never negative (WHI-1747)
     ]
     problems: list[str] = []
     if len(samples) != len(retained):
         problems.append(
-            f"load.jsonl: {len(retained) - len(samples)} samples without a time and load"
+            f"load.jsonl: {len(retained) - len(samples)} samples without a time and a "
+            "nonnegative load"
         )
     if any(b["t"] < a["t"] for a, b in zip(samples, samples[1:], strict=False)):
         problems.append("load.jsonl: samples out of time order")
