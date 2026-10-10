@@ -18,6 +18,10 @@ changed example, factory or analysis fails here too, and they show that the chec
 * every campaign table row of §§23.9 and 24.9 is the row the example module renders from the
   analysis (`test_the_guide_tables_are_the_rendered_rows`).
 
+Since Release 0.2.4 (WHI-1634) the 0.2.3 text is history; the 0.2.4 passages next to it (the
+header's 0.2.4 bullet, the inspected-commit 0.2.4 bullet, §13 item 17 and §§23.10 / 24.10) are
+checked, with the research-024 evidence, by `tests/docs/test_r024_examples.py`.
+
 Everything is offline: tracked files only, no RPC, Dune, credentials or `data/`. Nothing here
 asserts or implies a timing.
 """
@@ -410,8 +414,8 @@ def test_campaign_q3_q4_and_the_activation() -> None:
 def _table_problems(text: str) -> list[str]:
     """The campaign rows of §§23.9 / 24.9 that are not, verbatim, the rendered rows, in the
     chapter that owns them, plus any other campaign row."""
-    ch23 = text[text.index("## 23. ") : text.index("## 24. ")]
-    ch24 = text[text.index("## 24. ") :]
+    ch23 = _between(text, "## 23. ", "### 23.10 ")  # §23.10 / §24.10: test_r024_examples.py
+    ch24 = _between(text, "## 24. ", "### 24.10 ")
     rows = data("campaign")["guide_rows"]
     missing = [r for r in rows["q1"] + rows["q2"] if r not in ch23]
     missing += [r for r in rows["q3"] + rows["q4"] if r not in ch24]
@@ -527,8 +531,9 @@ def _between(text: str, start: str, end: str) -> str:
 def _r023_text(text: str) -> str:
     """The 0.2.3 chapters and every 0.2.3 passage of the shared sections."""
     parts = [
-        _between(text, "- the **0.2.3 post-processors**", "For each strategy"),
-        _between(text, "- §§23–24, §11.5 and the 0.2.3 parts", "\n---\n"),
+        _between(text, "- the **0.2.3 post-processors**", "- the **0.2.4 roster**"),
+        _between(text, "- §§23–24, §11.5 and the 0.2.3 parts", "- The 0.2.4 parts"),
+        _between(text, "All numeric traces", "\n---\n"),
         *(
             line
             for line in _between(text, "### 1.2 ", "### 1.3 ").splitlines()
@@ -544,8 +549,9 @@ def _r023_text(text: str) -> str:
         ),
         _between(text, "The two 0.2.3 rows count", "### 12.3 "),
         _between(text, "14. **Literal Replay:**", "15. **"),
-        _between(text, "16. **The 0.2.3 Post-Processors", "\n---\n"),
-        text[text.index("## 23. ") :],  # chapters 23 and 24 in full
+        _between(text, "16. **The 0.2.3 Post-Processors", "17. **Release 0.2.4"),
+        _between(text, "## 23. ", "### 23.10 "),  # chapters 23 and 24 up to their 0.2.4 sections
+        _between(text, "## 24. ", "### 24.10 "),
     ]
     return re.sub(r"```(?:python|mermaid)\n.*?```", " ", "\n".join(parts), flags=re.S)
 
