@@ -635,6 +635,28 @@ def test_a_changed_published_number_is_caught() -> None:
     assert quoted != examples().statement_b()
 
 
+def _claim(text: str) -> str:
+    return " ".join(text.split()).rstrip(".")
+
+
+def test_the_preset_claim_is_quoted_verbatim_everywhere() -> None:
+    """Every quotation of the presets' claim in the guide and the roster documents is contract
+    `R024-C/1` §5.12 word for word (its counts 90 / 108 included)."""
+    contract = (R024 / "contract.md").read_text(encoding="utf-8")
+    (want,) = re.findall(r'Exactly: \*\*"(selected by the registered rule.*?)"\*\*', contract, re.S)
+    found = 0
+    for doc in (
+        GUIDE,
+        ROOT / "docs" / "references" / "strategy-groups.md",
+        ROOT / "docs" / "DESIGN.md",
+    ):  # (config/README.md states each preset's own count, as its file header does)
+        quotes = re.findall(r'"(selected by the registered rule.*?)"', doc.read_text(), re.S)
+        for quote in quotes:
+            assert _claim(quote) == _claim(want), (doc.name, quote)
+        found += len(quotes)
+    assert found >= 6  # the header, §13 item 17, §§23.10, 24.10, strategy-groups.md, DESIGN.md
+
+
 def test_the_0_2_4_text_never_claims_a_speedup() -> None:
     """A 0.2.4 line mentioning speed or latency denies a claim, or is the quoted statement (b)."""
     prose = re.sub(r"`[^`]*`|\]\([^)]*\)", " ", _r024_text(guide()))
